@@ -19,7 +19,8 @@
         }
     ],
     "require": {
-        "php": ">=8.1"
+        "php": ">=8.1",
+        "yiisoft/injector": "^1.2"
     },
     "require-dev": {
         "buggregator/trap": "^1.10",

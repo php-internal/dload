@@ -1,5 +1,5 @@
-<p align="center">Simplify any binaries downloading</p>
 <h1 align="center">DLoad</h1>
+<p align="center">Simplify any binaries downloading</p>
 
 <div align="center">
 
