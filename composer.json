@@ -1,0 +1,89 @@
+{
+    "name": "internal/dload",
+    "description": "DLoads binaries.",
+    "license": "BSD-3-Clause",
+    "type": "library",
+    "keywords": [
+        "dloader"
+    ],
+    "authors": [
+        {
+            "name": "Aleksei Gagarin (roxblnfk)",
+            "homepage": "https://github.com/roxblnfk"
+        }
+    ],
+    "funding": [
+        {
+            "type": "patreon",
+            "url": "https://patreon.com/roxblnfk"
+        }
+    ],
+    "require": {
+        "php": ">=8.1"
+    },
+    "require-dev": {
+        "buggregator/trap": "^1.10",
+        "dereuromark/composer-prefer-lowest": "^0.1.10",
+        "ergebnis/phpunit-slow-test-detector": "^2.14",
+        "friendsofphp/php-cs-fixer": "^3.54",
+        "pestphp/pest": "^2.34",
+        "phpunit/phpunit": "^10.5",
+        "vimeo/psalm": "^5.11",
+        "wayofdev/cs-fixer-config": "^1.4"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "autoload": {
+        "psr-4": {
+            "Internal\\DLoad\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Internal\\DLoad\\Tests\\": "tests/"
+        }
+    },
+    "bin": [
+        "bin/dload"
+    ],
+    "config": {
+        "allow-plugins": {
+            "ergebnis/composer-normalize": true,
+            "infection/extension-installer": true,
+            "pestphp/pest-plugin": true
+        },
+        "audit": {
+            "abandoned": "report"
+        },
+        "platform": {
+            "php": "8.1.27"
+        },
+        "sort-packages": true
+    },
+    "scripts": {
+        "cs:diff": "php-cs-fixer fix --dry-run -v --diff",
+        "cs:fix": "php-cs-fixer fix -v",
+        "infect": [
+            "@putenv XDEBUG_MODE=coverage",
+            "roave-infection-static-analysis-plugin --configuration=infection.json.dist"
+        ],
+        "infect:ci": [
+            "@putenv XDEBUG_MODE=coverage",
+            "roave-infection-static-analysis-plugin --ansi --configuration=infection.json.dist --logger-github --ignore-msi-with-no-mutations --only-covered"
+        ],
+        "psalm": "psalm",
+        "psalm:baseline": "psalm --set-baseline=psalm-baseline.xml",
+        "psalm:ci": "psalm --output-format=github --shepherd --show-info=false --stats --threads=4",
+        "refactor": "rector process --config=rector.php",
+        "refactor:ci": "rector process --config=rector.php --dry-run --ansi",
+        "test": [
+            "@putenv XDEBUG_MODE=coverage",
+            "phpunit --color=always"
+        ],
+        "test:arch": "pest --color=always --configuration pest.xml.dist",
+        "test:cc": [
+            "@putenv XDEBUG_MODE=coverage",
+            "phpunit --coverage-clover=.build/phpunit/logs/clover.xml --color=always"
+        ]
+    }
+}
