@@ -10,6 +10,8 @@ use Internal\DLoad\Module\Repository\ReleaseInterface;
 /**
  * @template-extends Collection<ReleaseInterface>
  * @psalm-import-type StabilityType from Stability
+ * @internal
+ * @psalm-internal Internal\DLoad\Module\Repository
  */
 final class ReleasesCollection extends Collection
 {

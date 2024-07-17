@@ -9,6 +9,10 @@ use Internal\DLoad\Module\Environment\Stability;
 use Internal\DLoad\Module\Repository\ReleaseInterface;
 use Internal\DLoad\Module\Repository\RepositoryInterface;
 
+/**
+ * @internal
+ * @psalm-internal Internal\DLoad\Module\Repository
+ */
 abstract class Release implements ReleaseInterface
 {
     /**
@@ -31,11 +35,12 @@ abstract class Release implements ReleaseInterface
         protected RepositoryInterface $repository,
         string $name,
         protected string $version,
+        ?Stability $stability = null,
         iterable $assets = [],
     ) {
         $this->name = $this->simplifyReleaseName($name);
         $this->assets = AssetsCollection::create($assets);
-        $this->stability = $this->parseStability($version);
+        $this->stability = $stability ?? $this->parseStability($version);
     }
 
     public function getRepository(): RepositoryInterface

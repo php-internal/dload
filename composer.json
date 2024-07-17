@@ -20,6 +20,7 @@
     ],
     "require": {
         "php": ">=8.1",
+        "symfony/http-client": "^4.4.11 || ^5.0 || ^6.0 || ^7.0",
         "yiisoft/injector": "^1.2"
     },
     "require-dev": {

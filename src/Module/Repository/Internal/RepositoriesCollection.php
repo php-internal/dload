@@ -6,6 +6,10 @@ namespace Internal\DLoad\Module\Repository\Internal;
 
 use Internal\DLoad\Module\Repository\RepositoryInterface;
 
+/**
+ * @internal
+ * @psalm-internal Internal\DLoad\Module\Repository
+ */
 class RepositoriesCollection implements RepositoryInterface
 {
     /**

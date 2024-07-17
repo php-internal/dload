@@ -28,14 +28,30 @@ enum OperatingSystem: string implements Factoriable
 
     public static function fromGlobals(): self
     {
-        return match (\PHP_OS_FAMILY) {
+        return self::tryFromString(\PHP_OS_FAMILY) ?? throw new \OutOfRangeException(
+            \sprintf(self::ERROR_UNKNOWN_OS, \PHP_OS_FAMILY),
+        );
+    }
+
+    public static function tryFromString(string $name): ?self
+    {
+        return match ($name) {
             'Windows' => self::Windows,
             'BSD' => self::BSD,
             'Darwin' => self::Darwin,
             'Linux' => \str_contains(\PHP_OS, 'Alpine')
                 ? self::Alpine
                 : self::Linux,
-            default => throw new \OutOfRangeException(\sprintf(self::ERROR_UNKNOWN_OS, \PHP_OS_FAMILY)),
+            default => null,
         };
+    }
+
+    public static function tryFromBuildName(string $name): ?self
+    {
+        if (\preg_match('/\b(windows|linux|darwin|bsd|alpine)\b/i', $name, $matches)) {
+            return null;
+        }
+
+        return self::tryFromString(\strtolower($matches[1]));
     }
 }

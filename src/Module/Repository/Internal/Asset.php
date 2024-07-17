@@ -9,6 +9,10 @@ use Internal\DLoad\Module\Environment\OperatingSystem;
 use Internal\DLoad\Module\Repository\AssetInterface;
 use Internal\DLoad\Module\Repository\ReleaseInterface;
 
+/**
+ * @internal
+ * @psalm-internal Internal\DLoad\Module\Repository
+ */
 abstract class Asset implements AssetInterface
 {
     /**
@@ -17,10 +21,10 @@ abstract class Asset implements AssetInterface
      */
     public function __construct(
         protected ReleaseInterface $release,
-        protected ?OperatingSystem $os,
-        protected ?Architecture $arch,
         protected string $name,
         protected string $uri,
+        protected ?OperatingSystem $os,
+        protected ?Architecture $arch,
     ) {}
 
     public function getRelease(): ReleaseInterface

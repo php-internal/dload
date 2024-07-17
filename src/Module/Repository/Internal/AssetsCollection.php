@@ -10,6 +10,8 @@ use Internal\DLoad\Module\Repository\AssetInterface;
 
 /**
  * @template-extends Collection<AssetInterface>
+ * @internal
+ * @psalm-internal Internal\DLoad\Module\Repository
  */
 final class AssetsCollection extends Collection
 {
