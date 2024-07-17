@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Repository\Internal;
 
-use Internal\DLoad\Module\Environment\Stability;
+use Internal\DLoad\Module\Common\Stability;
 use Internal\DLoad\Module\Repository\ReleaseInterface;
 
 /**

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Internal\DLoad\Service\Config;
+namespace Internal\DLoad\Module\Container\Internal;
 
 /**
  * @internal

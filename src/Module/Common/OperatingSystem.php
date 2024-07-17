@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Internal\DLoad\Module\Environment;
+namespace Internal\DLoad\Module\Common;
 
 use Internal\DLoad\Service\Factoriable;
 

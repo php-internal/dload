@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Repository\Internal;
 
-use Internal\DLoad\Module\Environment\Architecture;
-use Internal\DLoad\Module\Environment\OperatingSystem;
+use Internal\DLoad\Module\Common\Architecture;
+use Internal\DLoad\Module\Common\OperatingSystem;
 use Internal\DLoad\Module\Repository\AssetInterface;
 
 /**

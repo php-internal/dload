@@ -1,10 +1,11 @@
 {
     "name": "internal/dload",
-    "description": "DLoads binaries.",
+    "description": "Downloads binaries.",
     "license": "BSD-3-Clause",
     "type": "library",
     "keywords": [
-        "dloader"
+        "downloader",
+        "download binaries"
     ],
     "authors": [
         {
@@ -32,6 +33,9 @@
         "phpunit/phpunit": "^10.5",
         "vimeo/psalm": "^5.11",
         "wayofdev/cs-fixer-config": "^1.4"
+    },
+    "suggest": {
+        "ext-simplexml": "to support XML configs parsing"
     },
     "minimum-stability": "dev",
     "prefer-stable": true,

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Internal\DLoad;
 
-use Internal\DLoad\Module\Environment\Architecture;
-use Internal\DLoad\Module\Environment\OperatingSystem;
-use Internal\DLoad\Module\Environment\Stability;
-use Internal\DLoad\Service\Config\ConfigLoader;
+use Internal\DLoad\Module\Common\Architecture;
+use Internal\DLoad\Module\Common\OperatingSystem;
+use Internal\DLoad\Module\Common\Stability;
+use Internal\DLoad\Module\Container\Internal\ConfigLoader;
 use Internal\DLoad\Service\Container;
 
 /**
@@ -21,7 +21,7 @@ final class Bootstrap
         private Container $container,
     ) {}
 
-    public static function init(Container $container = new Container()): self
+    public static function init(Container $container = new Module\Container\Internal\Container()): self
     {
         return new self($container);
     }
