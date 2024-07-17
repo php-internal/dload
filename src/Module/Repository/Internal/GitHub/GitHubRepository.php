@@ -55,7 +55,7 @@ final class GitHubRepository implements RepositoryInterface, Destroyable
      */
     public static function fromDsn(string $package, HttpClientInterface $client = null): GitHubRepository
     {
-        [$owner, $name] = $package;
+        [$owner, $name] = explode('/', $package);
         return new GitHubRepository($owner, $name, $client);
     }
 

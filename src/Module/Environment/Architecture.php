@@ -41,7 +41,7 @@ enum Architecture: string implements Factoriable
 
     public static function tryFromBuildName(string $name): ?self
     {
-        if (\preg_match('/\b(amd64|arm64|aarch64|x86_64|x64|x86)\b/i', $name, $matches)) {
+        if (\preg_match('/\b(amd64|arm64|aarch64|x86_64|x64|x86)\b/i', $name, $matches) !== 1) {
             return null;
         }
 

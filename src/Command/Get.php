@@ -8,6 +8,7 @@ use Internal\DLoad\Bootstrap;
 use Internal\DLoad\Module\Environment\Architecture;
 use Internal\DLoad\Module\Environment\OperatingSystem;
 use Internal\DLoad\Module\Environment\Stability;
+use Internal\DLoad\Module\Repository\Internal\GitHub\GitHubRepository;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Command\SignalableCommandInterface;
@@ -82,6 +83,14 @@ final class Get extends Command implements SignalableCommandInterface
         $output->writeln('Architecture: ' . $container->get(Architecture::class)->name);
         $output->writeln('Operating system: ' . $container->get(OperatingSystem::class)->name);
         $output->writeln('Stability: ' . $container->get(Stability::class)->name);
+
+
+        $repo = 'roadrunner-server/roadrunner';
+        trap(GitHubRepository::fromDsn($repo)->getReleases()->first()->getAssets()
+            ->whereArchitecture($container->get(Architecture::class))
+            ->whereOperatingSystem($container->get(OperatingSystem::class))
+        );
+
 
         return Command::SUCCESS;
     }

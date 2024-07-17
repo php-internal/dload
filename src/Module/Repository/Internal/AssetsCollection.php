@@ -26,16 +26,14 @@ final class AssetsCollection extends Collection
     public function whereArchitecture(Architecture $arch): self
     {
         return $this->filter(
-            static fn(AssetInterface $asset): bool =>
-            \str_contains($asset->getName(), '-' . \strtolower($arch->name) . '.'),
+            static fn(AssetInterface $asset): bool => $asset->getArchitecture() === $arch,
         );
     }
 
     public function whereOperatingSystem(OperatingSystem $os): self
     {
         return $this->filter(
-            static fn(AssetInterface $asset): bool =>
-            \str_contains($asset->getName(), '-' . \strtolower($os->name) . '-'),
+            static fn(AssetInterface $asset): bool => $asset->getOperatingSystem() === $os,
         );
     }
 }
