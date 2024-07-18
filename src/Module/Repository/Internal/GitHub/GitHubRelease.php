@@ -75,8 +75,9 @@ final class GitHubRelease extends Release implements Destroyable
 
     public function destroy(): void
     {
-        $this->assets === null or \array_walk($this->assets, static fn(object $asset) =>
-            $asset instanceof Destroyable and $asset->destroy());
+        $this->assets === null or $this->assets->map(
+            static fn(object $asset) => $asset instanceof Destroyable and $asset->destroy(),
+        );
 
         unset($this->assets, $this->repository, $this->client);
     }

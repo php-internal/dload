@@ -2,25 +2,21 @@
 
 declare(strict_types=1);
 
-namespace Internal\DLoad\Module\Downloader\Internal;
+namespace Internal\DLoad\Module\Downloader\Task;
 
-use Internal\DLoad\Module\Common\Config\Embed\Repository;
 use Internal\DLoad\Module\Common\Config\Embed\Software;
-use Internal\DLoad\Module\Downloader\Progress;
+use React\Promise\PromiseInterface;
 
-final class DownloadContext
+final class DownloadTask
 {
-    /** Current repository config */
-    public Repository $repoConfig;
-    /** Downloaded file */
-    public \SplFileObject $file;
-
     /**
      * @param \Closure(Progress): mixed $onProgress Callback to report progress.
      *        Exception thrown in this callback will stop and revert the task.
+     * @param \Closure(): PromiseInterface<\SplFileObject> $handler
      */
     public function __construct(
         public readonly Software $software,
         public readonly \Closure $onProgress,
+        public readonly \Closure $handler,
     ) {}
 }

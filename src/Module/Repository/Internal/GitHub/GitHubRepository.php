@@ -80,8 +80,9 @@ final class GitHubRepository implements RepositoryInterface, Destroyable
 
     public function destroy(): void
     {
-        $this->releases === null or \array_walk($this->releases, static fn(object $release) =>
-            $release instanceof Destroyable and $release->destroy());
+        $this->releases === null or $this->releases->map(
+            static fn(object $release) => $release instanceof Destroyable and $release->destroy(),
+        );
 
         unset($this->releases, $this->client);
     }

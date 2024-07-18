@@ -5,26 +5,25 @@ declare(strict_types=1);
 namespace Internal\DLoad\Module\Downloader;
 
 use Internal\DLoad\Module\Common\Architecture;
-use Internal\DLoad\Module\Common\Config\Destination;
 use Internal\DLoad\Module\Common\Config\DownloaderConfig;
 use Internal\DLoad\Module\Common\Config\Embed\Software;
 use Internal\DLoad\Module\Common\OperatingSystem;
 use Internal\DLoad\Module\Common\Stability;
 use Internal\DLoad\Module\Downloader\Internal\DownloadContext;
+use Internal\DLoad\Module\Downloader\Task\DownloadTask;
 use Internal\DLoad\Module\Repository\AssetInterface;
 use Internal\DLoad\Module\Repository\ReleaseInterface;
 use Internal\DLoad\Module\Repository\RepositoryInterface;
 use Internal\DLoad\Module\Repository\RepositoryProvider;
-
+use Internal\DLoad\Service\Destroyable;
 use Internal\DLoad\Service\Logger;
+use React\Promise\PromiseInterface;
 
 use function React\Async\await;
 use function React\Async\coroutine;
 
 final class Downloader
 {
-    private array $tasks = [];
-
     public function __construct(
         private readonly DownloaderConfig $config,
         private readonly Logger $logger,
@@ -42,34 +41,43 @@ final class Downloader
      */
     public function download(
         Software $software,
-        Destination $destination,
         \Closure $onProgress,
-    ): Task {
-        $task = new Task();
+    ): DownloadTask {
         $context = new DownloadContext(
             software: $software,
-            destination: $destination,
             onProgress: $onProgress,
         );
 
         $repositories = $software->repositories;
-        $task->handler = function () use ($repositories, $context): void {
-            // todo Try every repo to load software.
-            start:
-            $repositories === [] and throw new \RuntimeException('No relevant repository found.');
-            $context->repoConfig = \array_shift($repositories);
-            $repository = $this->repositoryProvider->getByConfig($context->repoConfig);
+        $handler = function () use ($repositories, $context): PromiseInterface {
+            return coroutine(function () use ($repositories, $context) {
+                // Try every repo to load software.
+                start:
+                $repositories === [] and throw new \RuntimeException('No relevant repository found.');
+                $context->repoConfig = \array_shift($repositories);
+                $repository = $this->repositoryProvider->getByConfig($context->repoConfig);
 
-            $this->logger->debug('Trying to load from repo `%s`', $repository->getName());
+                $this->logger->debug('Trying to load from repo `%s`', $repository->getName());
 
-            try {
-                await(coroutine($this->processRepository($repository, $context)));
-            } catch (\Throwable $e) {
-                $this->logger->exception($e);
-                goto start;
-            }
+                try {
+                    await(coroutine($this->processRepository($repository, $context)));
+                } catch (\Throwable $e) {
+                    $this->logger->exception($e);
+                    yield;
+                    goto start;
+                } finally {
+                    $repository instanceof Destroyable and $repository->destroy();
+                }
+
+                return $context->file;
+            });
         };
-        return $task;
+
+        return new DownloadTask(
+            software: $software,
+            onProgress: $onProgress,
+            handler: $handler,
+        );
     }
 
     /**
@@ -130,22 +138,23 @@ final class Downloader
         };
     }
 
+    /**
+     * @return \Closure(): \SplFileObject
+     */
     private function processAsset(AssetInterface $asset, DownloadContext $context): \Closure
     {
-        return function () use ($asset, $context): void {
+        return function () use ($asset, $context): \SplFileObject {
             // Create a file
-            $temp = $this->getTempDirectory() . '/' . $asset->getName();
+            $temp = $this->getTempDirectory() . DIRECTORY_SEPARATOR . $asset->getName();
             $file = new \SplFileObject($temp, 'wb+');
 
-            $this->logger->info('Downloading into ' . $temp);
+            $this->logger->debug('Downloading into ' . $temp);
 
             await(coroutine(
                 (static function () use ($asset, $context, $file): void {
                     $generator = $asset->download(
                         static fn(int $dlNow, int $dlSize, array $info) => ($context->onProgress)(
                             new Progress(
-                                step: 1,
-                                steps: 2,
                                 total: $dlSize,
                                 current: $dlNow,
                                 message: 'downloading...',
@@ -162,8 +171,7 @@ final class Downloader
                 throw $e;
             }));
 
-            // todo Unpack
-            $this->logger->info('Downloaded into ' . $temp);
+            return $context->file = $file;
         };
     }
 

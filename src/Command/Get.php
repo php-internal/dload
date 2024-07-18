@@ -97,10 +97,11 @@ final class Get extends Command implements SignalableCommandInterface
         $downloader = $container->get(Downloader::class);
         $task = $downloader->download(
             $softwareCollection->findSoftware('rr') ?? throw new \RuntimeException('Software not found.'),
-            $container->get(Destination::class),
             // trap(...),
             static fn() => null,
         );
+
+        // $container->get(Destination::class),
 
         ($task->handler)();
 
