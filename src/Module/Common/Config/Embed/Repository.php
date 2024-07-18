@@ -10,8 +10,10 @@ final class Repository
 {
     #[XPath('@type')]
     public string $type = 'github';
+
     #[XPath('@uri')]
     public string $uri;
+
     #[XPath('@pattern')]
     public string $pattern = '/^.*$/';
 }
