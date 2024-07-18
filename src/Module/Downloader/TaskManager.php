@@ -31,6 +31,7 @@ final class TaskManager
             try {
                 if ($task->isTerminated()) {
                     unset($this->tasks[$key]);
+                    continue;
                 }
 
                 if (!$task->isStarted()) {
