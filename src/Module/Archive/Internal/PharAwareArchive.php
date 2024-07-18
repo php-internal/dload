@@ -16,7 +16,7 @@ abstract class PharAwareArchive extends Archive
 
     public function extract(): \Generator
     {
-        $phar = $this->open($this->archive);
+        $phar = $this->archive;
         $phar->isReadable() or throw new \LogicException(
             \sprintf('Could not open "%s" for reading.', $this->archive->getPathname()),
         );

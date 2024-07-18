@@ -123,6 +123,10 @@ final class ReleasesCollection extends Collection
     {
         $stability = $release->getStability();
 
-        return \str_replace('-' . $stability->value, '.' . $stability->getWeight() . '.', $release->getVersion());
+        return \ltrim(\str_replace(
+            '-' . $stability->value,
+            '.' . $stability->getWeight() . '.',
+            $release->getVersion(),
+        ), 'v');
     }
 }

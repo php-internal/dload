@@ -49,7 +49,7 @@ enum OperatingSystem: string implements Factoriable
 
     public static function tryFromBuildName(string $name): ?self
     {
-        if (\preg_match('/\b(windows|linux|darwin|alpine|bsd|freebsd)\b/i', $name, $matches) !== 1) {
+        if (\preg_match('/(?:\b|_)(windows|linux|darwin|alpine|bsd|freebsd)(?:\b|_)/i', $name, $matches) !== 1) {
             return null;
         }
 

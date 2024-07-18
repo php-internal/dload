@@ -19,3 +19,9 @@ composer require internal/dload -W
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/internal/dload.svg?style=flat-square&logo=packagist)](https://packagist.org/packages/internal/dload)
 [![License](https://img.shields.io/packagist/l/internal/dload.svg?style=flat-square)](LICENSE.md)
 [![Total DLoads](https://img.shields.io/packagist/dt/internal/dload.svg?style=flat-square)](https://packagist.org/packages/internal/dload/stats)
+
+## Usage
+
+```bash
+./vendor/bin/dload dolt
+```

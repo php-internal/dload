@@ -69,7 +69,6 @@ final class Downloader
                     );
                 } catch (\Throwable $e) {
                     $this->logger->exception($e);
-                    yield;
                     goto start;
                 } finally {
                     $repository instanceof Destroyable and $repository->destroy();
