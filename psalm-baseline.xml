@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<files psalm-version="5.25.0@01a8eb06b9e9cc6cfb6a320bf9fb14331919d505">
+  <file src="src/Command/Get.php">
+    <MixedArgument>
+      <code><![CDATA[$binary]]></code>
+    </MixedArgument>
+    <MixedAssignment>
+      <code><![CDATA[$binary]]></code>
+    </MixedAssignment>
+    <MixedOperand>
+      <code><![CDATA[$input->getArgument('binary')]]></code>
+      <code><![CDATA[$input->getOption('path')]]></code>
+    </MixedOperand>
+    <PropertyNotSetInConstructor>
+      <code><![CDATA[$container]]></code>
+      <code><![CDATA[$logger]]></code>
+    </PropertyNotSetInConstructor>
+  </file>
+  <file src="src/DLoad.php">
+    <ArgumentTypeCoercion>
+      <code><![CDATA[$conf->pattern]]></code>
+    </ArgumentTypeCoercion>
+  </file>
+  <file src="src/Module/Archive/ArchiveFactory.php">
+    <MixedPropertyTypeCoercion>
+      <code><![CDATA[$this->matchers]]></code>
+    </MixedPropertyTypeCoercion>
+    <PropertyTypeCoercion>
+      <code><![CDATA[\array_unique(\array_merge($this->extensions, $extensions))]]></code>
+    </PropertyTypeCoercion>
+  </file>
+  <file src="src/Module/Archive/Internal/PharAwareArchive.php">
+    <MoreSpecificReturnType>
+      <code><![CDATA[\Generator]]></code>
+    </MoreSpecificReturnType>
+  </file>
+  <file src="src/Module/Common/Config/Embed/Repository.php">
+    <MissingConstructor>
+      <code><![CDATA[$uri]]></code>
+    </MissingConstructor>
+  </file>
+  <file src="src/Module/Common/Config/Embed/Software.php">
+    <MissingConstructor>
+      <code><![CDATA[$name]]></code>
+    </MissingConstructor>
+  </file>
+  <file src="src/Module/Common/Internal/Container.php">
+    <MixedPropertyTypeCoercion>
+      <code><![CDATA[$this->factory]]></code>
+    </MixedPropertyTypeCoercion>
+    <UndefinedMethod>
+      <code><![CDATA[$id::create(...)]]></code>
+    </UndefinedMethod>
+  </file>
+  <file src="src/Module/Common/Internal/Injection/ConfigLoader.php">
+    <MixedMethodCall>
+      <code><![CDATA[new $attribute->class()]]></code>
+    </MixedMethodCall>
+    <RedundantCondition>
+      <code><![CDATA[\assert($xml instanceof \SimpleXMLElement)]]></code>
+    </RedundantCondition>
+  </file>
+  <file src="src/Module/Common/OperatingSystem.php">
+    <DocblockTypeContradiction>
+      <code><![CDATA['bSD' => self::BSD]]></code>
+    </DocblockTypeContradiction>
+  </file>
+  <file src="src/Module/Downloader/Downloader.php">
+    <ArgumentTypeCoercion>
+      <code><![CDATA[$context->repoConfig->assetPattern]]></code>
+    </ArgumentTypeCoercion>
+    <InternalMethod>
+      <code><![CDATA[toArray]]></code>
+      <code><![CDATA[toArray]]></code>
+    </InternalMethod>
+    <InvalidNullableReturnType>
+      <code><![CDATA[AssetInterface]]></code>
+      <code><![CDATA[ReleaseInterface]]></code>
+    </InvalidNullableReturnType>
+    <MissingClosureReturnType>
+      <code><![CDATA[static fn(int $dlNow, int $dlSize, array $info) => ($context->onProgress)(]]></code>
+    </MissingClosureReturnType>
+    <TooManyArguments>
+      <code><![CDATA[download]]></code>
+    </TooManyArguments>
+  </file>
+  <file src="src/Module/Downloader/Internal/DownloadContext.php">
+    <PropertyNotSetInConstructor>
+      <code><![CDATA[$asset]]></code>
+      <code><![CDATA[$file]]></code>
+      <code><![CDATA[$release]]></code>
+      <code><![CDATA[$repoConfig]]></code>
+    </PropertyNotSetInConstructor>
+  </file>
+  <file src="src/Module/Repository/Collection/ReleasesCollection.php">
+    <LessSpecificReturnStatement>
+      <code><![CDATA[\ltrim(\str_replace(
+            '-' . $stability->value,
+            '.' . $stability->getWeight() . '.',
+            $release->getVersion(),
+        ), 'v')]]></code>
+    </LessSpecificReturnStatement>
+    <MoreSpecificReturnType>
+      <code><![CDATA[non-empty-string]]></code>
+    </MoreSpecificReturnType>
+  </file>
+  <file src="src/Module/Repository/Internal/Collection.php">
+    <MixedArgument>
+      <code><![CDATA[$generator()]]></code>
+    </MixedArgument>
+    <UnsafeGenericInstantiation>
+      <code><![CDATA[new static($items)]]></code>
+      <code><![CDATA[new static(\array_filter($this->items, $callback))]]></code>
+      <code><![CDATA[new static(\array_filter($this->items, $filter))]]></code>
+      <code><![CDATA[new static(\array_map($map, $this->items))]]></code>
+      <code><![CDATA[new static(\iterator_to_array($items))]]></code>
+    </UnsafeGenericInstantiation>
+  </file>
+  <file src="src/Module/Repository/Internal/GitHub/Factory.php">
+    <ArgumentTypeCoercion>
+      <code><![CDATA[$org]]></code>
+      <code><![CDATA[$repo]]></code>
+    </ArgumentTypeCoercion>
+    <InternalClass>
+      <code><![CDATA[new GitHubRepository($org, $repo, $this->createClient())]]></code>
+    </InternalClass>
+    <InternalMethod>
+      <code><![CDATA[new GitHubRepository($org, $repo, $this->createClient())]]></code>
+    </InternalMethod>
+    <PossiblyUndefinedArrayOffset>
+      <code><![CDATA[$org]]></code>
+    </PossiblyUndefinedArrayOffset>
+    <RiskyTruthyFalsyComparison>
+      <code><![CDATA[$this->config->token]]></code>
+    </RiskyTruthyFalsyComparison>
+  </file>
+  <file src="src/Module/Repository/Internal/GitHub/GitHubAsset.php">
+    <InternalClass>
+      <code><![CDATA[new self($client, $release, $data['name'], $data['browser_download_url'])]]></code>
+    </InternalClass>
+    <InternalMethod>
+      <code><![CDATA[new self($client, $release, $data['name'], $data['browser_download_url'])]]></code>
+    </InternalMethod>
+    <LessSpecificImplementedReturnType>
+      <code><![CDATA[\Traversable]]></code>
+    </LessSpecificImplementedReturnType>
+  </file>
+  <file src="src/Module/Repository/Internal/GitHub/GitHubRelease.php">
+    <ArgumentTypeCoercion>
+      <code><![CDATA[$name]]></code>
+    </ArgumentTypeCoercion>
+    <InternalClass>
+      <code><![CDATA[GitHubAsset::fromApiResponse($client, $result, $item)]]></code>
+      <code><![CDATA[new self($client, $repository, $name, $version)]]></code>
+      <code><![CDATA[self::getTagName($data)]]></code>
+    </InternalClass>
+    <InternalMethod>
+      <code><![CDATA[GitHubAsset::fromApiResponse($client, $result, $item)]]></code>
+      <code><![CDATA[new self($client, $repository, $name, $version)]]></code>
+      <code><![CDATA[self::getTagName($data)]]></code>
+    </InternalMethod>
+    <InvalidArgument>
+      <code><![CDATA[$data]]></code>
+    </InvalidArgument>
+    <InvalidArrayOffset>
+      <code><![CDATA[$data['tag_name']]]></code>
+    </InvalidArrayOffset>
+    <LessSpecificReturnStatement>
+      <code><![CDATA[$this->client->request('GET', $config)->getContent()]]></code>
+    </LessSpecificReturnStatement>
+    <MixedArgument>
+      <code><![CDATA[$version]]></code>
+    </MixedArgument>
+    <MixedAssignment>
+      <code><![CDATA[$version]]></code>
+    </MixedAssignment>
+    <MoreSpecificReturnType>
+      <code><![CDATA[non-empty-string]]></code>
+    </MoreSpecificReturnType>
+    <RedundantCondition>
+      <code><![CDATA[$this->assets === null]]></code>
+    </RedundantCondition>
+    <TypeDoesNotContainNull>
+      <code><![CDATA[$this->assets === null]]></code>
+    </TypeDoesNotContainNull>
+  </file>
+  <file src="src/Module/Repository/Internal/GitHub/GitHubRepository.php">
+    <InternalClass>
+      <code><![CDATA[GitHubRelease::fromApiResponse($this, $this->client, $data)]]></code>
+      <code><![CDATA[self::URL_RELEASES]]></code>
+    </InternalClass>
+    <InternalMethod>
+      <code><![CDATA[GitHubRelease::fromApiResponse($this, $this->client, $data)]]></code>
+      <code><![CDATA[getName]]></code>
+      <code><![CDATA[hasNextPage]]></code>
+      <code><![CDATA[releasesRequest]]></code>
+      <code><![CDATA[request]]></code>
+      <code><![CDATA[uri]]></code>
+    </InternalMethod>
+    <InternalProperty>
+      <code><![CDATA[$this->client]]></code>
+      <code><![CDATA[$this->name]]></code>
+      <code><![CDATA[$this->releases]]></code>
+    </InternalProperty>
+    <LessSpecificImplementedReturnType>
+      <code><![CDATA[string]]></code>
+    </LessSpecificImplementedReturnType>
+    <LessSpecificReturnStatement>
+      <code><![CDATA[\sprintf($pattern, $this->getName())]]></code>
+    </LessSpecificReturnStatement>
+    <MoreSpecificReturnType>
+      <code><![CDATA[non-empty-string]]></code>
+    </MoreSpecificReturnType>
+  </file>
+  <file src="src/Module/Repository/Internal/Release.php">
+    <InvalidNullableReturnType>
+      <code><![CDATA[Stability]]></code>
+    </InvalidNullableReturnType>
+    <LessSpecificReturnStatement>
+      <code><![CDATA[isset($parts[1])
+            ? $number . '-' . $parts[1]
+            : $number]]></code>
+    </LessSpecificReturnStatement>
+    <MoreSpecificReturnType>
+      <code><![CDATA[non-empty-string]]></code>
+    </MoreSpecificReturnType>
+    <NullableReturnStatement>
+      <code><![CDATA[Stability::tryFrom(VersionParser::parseStability($version))]]></code>
+    </NullableReturnStatement>
+  </file>
+  <file src="src/Module/Repository/RepositoryProvider.php">
+    <ArgumentTypeCoercion>
+      <code><![CDATA[$config->uri]]></code>
+    </ArgumentTypeCoercion>
+  </file>
+  <file src="src/Service/Factoriable.php">
+    <InvalidDocblock>
+      <code><![CDATA[Factoriable]]></code>
+    </InvalidDocblock>
+  </file>
+  <file src="src/Service/Logger.php">
+    <ArgumentTypeCoercion>
+      <code><![CDATA[$values]]></code>
+      <code><![CDATA[$values]]></code>
+      <code><![CDATA[$values]]></code>
+      <code><![CDATA[$values]]></code>
+    </ArgumentTypeCoercion>
+  </file>
+</files>

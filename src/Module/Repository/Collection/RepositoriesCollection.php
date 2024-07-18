@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Internal\DLoad\Module\Repository\Internal;
+namespace Internal\DLoad\Module\Repository\Collection;
 
 use Internal\DLoad\Module\Repository\RepositoryInterface;
 
 /**
  * @internal
- * @psalm-internal Internal\DLoad\Module\Repository
+ * @psalm-internal Internal\DLoad\Module
  */
 class RepositoriesCollection implements RepositoryInterface
 {

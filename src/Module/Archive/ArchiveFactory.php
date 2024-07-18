@@ -14,6 +14,9 @@ use Internal\DLoad\Module\Archive\Internal\ZipPharArchive;
  */
 final class ArchiveFactory
 {
+    /** @var list<non-empty-string> */
+    private array $extensions = [];
+
     /**
      * @var array<ArchiveMatcher>
      */
@@ -27,9 +30,13 @@ final class ArchiveFactory
         $this->bootDefaultMatchers();
     }
 
-    public function extend(\Closure $matcher): void
+    /**
+     * @param list<non-empty-string> $extensions List of supported extensions
+     */
+    public function extend(\Closure $matcher, array $extensions = []): void
     {
         \array_unshift($this->matchers, $matcher);
+        $this->extensions = \array_unique(\array_merge($this->extensions, $extensions));
     }
 
     public function create(\SplFileInfo $file): Archive
@@ -52,22 +59,30 @@ final class ArchiveFactory
         throw new \InvalidArgumentException($error);
     }
 
+    /**
+     * @return list<non-empty-string>
+     */
+    public function getSupportedExtensions(): array
+    {
+        return $this->extensions;
+    }
+
     private function bootDefaultMatchers(): void
     {
         $this->extend($this->matcher(
             'zip',
             static fn(\SplFileInfo $info): Archive => new ZipPharArchive($info),
-        ));
+        ), ['zip']);
 
         $this->extend($this->matcher(
             'tar.gz',
             static fn(\SplFileInfo $info): Archive => new TarPharArchive($info),
-        ));
+        ), ['tar.gz']);
 
         $this->extend($this->matcher(
             'phar',
             static fn(\SplFileInfo $info): Archive => new PharArchive($info),
-        ));
+        ), ['phar']);
     }
 
     /**

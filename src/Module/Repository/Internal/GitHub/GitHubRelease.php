@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Internal\DLoad\Module\Repository\Internal\GitHub;
 
 use Composer\Semver\VersionParser;
-use Internal\DLoad\Module\Repository\Internal\AssetsCollection;
+use Internal\DLoad\Module\Repository\Collection\AssetsCollection;
 use Internal\DLoad\Module\Repository\Internal\Release;
 use Internal\DLoad\Service\Destroyable;
 use Symfony\Contracts\HttpClient\Exception\ExceptionInterface;

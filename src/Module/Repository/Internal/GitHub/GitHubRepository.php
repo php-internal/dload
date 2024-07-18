@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Repository\Internal\GitHub;
 
-use Internal\DLoad\Module\Repository\Internal\ReleasesCollection;
+use Internal\DLoad\Module\Repository\Collection\ReleasesCollection;
 use Internal\DLoad\Module\Repository\RepositoryInterface;
 use Internal\DLoad\Service\Destroyable;
 use Symfony\Component\HttpClient\HttpClient;

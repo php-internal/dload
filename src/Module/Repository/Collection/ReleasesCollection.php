@@ -2,21 +2,21 @@
 
 declare(strict_types=1);
 
-namespace Internal\DLoad\Module\Repository\Internal;
+namespace Internal\DLoad\Module\Repository\Collection;
 
 use Internal\DLoad\Module\Common\Stability;
+use Internal\DLoad\Module\Repository\Internal\Collection;
 use Internal\DLoad\Module\Repository\ReleaseInterface;
 
 /**
  * @template-extends Collection<ReleaseInterface>
- * @psalm-import-type StabilityType from Stability
  * @internal
- * @psalm-internal Internal\DLoad\Module\Repository
+ * @psalm-internal Internal\DLoad\Module
  */
 final class ReleasesCollection extends Collection
 {
     /**
-     * @param string ...$constraints
+     * @param non-empty-string ...$constraints
      * @return $this
      */
     public function satisfies(string ...$constraints): self

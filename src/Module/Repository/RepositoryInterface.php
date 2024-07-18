@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Repository;
 
-use Internal\DLoad\Module\Repository\Internal\ReleasesCollection;
+use Internal\DLoad\Module\Repository\Collection\ReleasesCollection;
 
 interface RepositoryInterface
 {

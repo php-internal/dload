@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Repository\Internal;
 
+use Composer\Semver\Semver;
 use Composer\Semver\VersionParser;
 use Internal\DLoad\Module\Common\Stability;
+use Internal\DLoad\Module\Repository\Collection\AssetsCollection;
 use Internal\DLoad\Module\Repository\ReleaseInterface;
 use Internal\DLoad\Module\Repository\RepositoryInterface;
 
@@ -66,6 +68,11 @@ abstract class Release implements ReleaseInterface
     public function getAssets(): AssetsCollection
     {
         return $this->assets;
+    }
+
+    public function satisfies(string $constraint): bool
+    {
+        return Semver::satisfies($this->getName(), $constraint);
     }
 
     /**

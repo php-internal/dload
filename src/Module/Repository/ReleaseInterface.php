@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Internal\DLoad\Module\Repository;
 
 use Internal\DLoad\Module\Common\Stability;
-use Internal\DLoad\Module\Repository\Internal\AssetsCollection;
+use Internal\DLoad\Module\Repository\Collection\AssetsCollection;
 
 interface ReleaseInterface
 {
@@ -30,4 +30,6 @@ interface ReleaseInterface
     public function getStability(): Stability;
 
     public function getAssets(): AssetsCollection;
+
+    public function satisfies(string $constraint): bool;
 }

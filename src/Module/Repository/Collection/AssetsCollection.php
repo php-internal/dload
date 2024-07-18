@@ -2,16 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Internal\DLoad\Module\Repository\Internal;
+namespace Internal\DLoad\Module\Repository\Collection;
 
 use Internal\DLoad\Module\Common\Architecture;
 use Internal\DLoad\Module\Common\OperatingSystem;
 use Internal\DLoad\Module\Repository\AssetInterface;
+use Internal\DLoad\Module\Repository\Internal\Collection;
 
 /**
  * @template-extends Collection<AssetInterface>
  * @internal
- * @psalm-internal Internal\DLoad\Module\Repository
+ * @psalm-internal Internal\DLoad\Module
  */
 final class AssetsCollection extends Collection
 {
@@ -34,6 +35,20 @@ final class AssetsCollection extends Collection
     {
         return $this->filter(
             static fn(AssetInterface $asset): bool => $asset->getOperatingSystem() === $os,
+        );
+    }
+
+    /**
+     * @param list<non-empty-string> $extensions
+     */
+    public function whereFileExtensions(array $extensions): self
+    {
+        return $this->filter(
+            static fn(AssetInterface $asset): bool => \in_array(
+                \pathinfo($asset->getName(), \PATHINFO_EXTENSION),
+                $extensions,
+                true,
+            ),
         );
     }
 
