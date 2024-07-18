@@ -9,7 +9,7 @@ use Internal\DLoad\Module\Common\Internal\Attribute\InputOption;
 /**
  * @internal
  */
-final class DestinationInput
+final class Destination
 {
     #[InputOption('path')]
     public ?string $path = null;

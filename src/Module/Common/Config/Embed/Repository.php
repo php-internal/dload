@@ -14,6 +14,6 @@ final class Repository
     #[XPath('@uri')]
     public string $uri;
 
-    #[XPath('@pattern')]
-    public string $pattern = '/^.*$/';
+    #[XPath('@asset-pattern')]
+    public string $assetPattern = '/^.*$/';
 }

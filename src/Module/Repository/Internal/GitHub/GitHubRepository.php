@@ -41,22 +41,13 @@ final class GitHubRepository implements RepositoryInterface, Destroyable
     ];
 
     /**
-     * @param non-empty-string $owner
-     * @param non-empty-string $repository
+     * @param non-empty-string $org
+     * @param non-empty-string $repo
      */
-    public function __construct(string $owner, string $repository, HttpClientInterface $client = null)
+    public function __construct(string $org, string $repo, HttpClientInterface $client = null)
     {
-        $this->name = $owner . '/' . $repository;
+        $this->name = $org . '/' . $repo;
         $this->client = $client ?? HttpClient::create();
-    }
-
-    /**
-     * @param non-empty-string $package Package name in format "owner/repository"
-     */
-    public static function fromDsn(string $package, HttpClientInterface $client = null): GitHubRepository
-    {
-        [$owner, $name] = \explode('/', $package);
-        return new GitHubRepository($owner, $name, $client);
     }
 
     /**

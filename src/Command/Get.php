@@ -6,9 +6,14 @@ namespace Internal\DLoad\Command;
 
 use Internal\DLoad\Bootstrap;
 use Internal\DLoad\Module\Common\Architecture;
+use Internal\DLoad\Module\Common\Config\BuildInput;
+use Internal\DLoad\Module\Common\Config\Destination;
 use Internal\DLoad\Module\Common\OperatingSystem;
 use Internal\DLoad\Module\Common\Stability;
+use Internal\DLoad\Module\Downloader\Downloader;
+use Internal\DLoad\Module\Downloader\SoftwareCollection;
 use Internal\DLoad\Module\Repository\Internal\GitHub\GitHubRepository;
+use Internal\DLoad\Service\Logger;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Command\SignalableCommandInterface;
@@ -27,6 +32,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 final class Get extends Command implements SignalableCommandInterface
 {
     private bool $cancelling = false;
+    private Logger $logger;
 
     public function configure(): void
     {
@@ -66,6 +72,7 @@ final class Get extends Command implements SignalableCommandInterface
         InputInterface $input,
         OutputInterface $output,
     ): int {
+        $this->logger = new Logger($output);
         $output->writeln('Binary to load: ' . $input->getArgument('binary'));
         $output->writeln('Path to store the binary: ' . $input->getOption('path'));
 
@@ -75,13 +82,27 @@ final class Get extends Command implements SignalableCommandInterface
             inputArguments: $input->getArguments(),
             environment: \getenv(),
         )->finish();
+        $container->set($input, InputInterface::class);
+        $container->set($this->logger);
 
         $output->writeln('Architecture: ' . $container->get(Architecture::class)->name);
         $output->writeln('Op. system:   ' . $container->get(OperatingSystem::class)->name);
         $output->writeln('Stability:    ' . $container->get(Stability::class)->name);
 
 
-        tr($container->get(\Internal\DLoad\Module\Common\Config\SoftwareRegistry::class));
+        /** @var SoftwareCollection $softwareCollection */
+        $softwareCollection = $container->get(SoftwareCollection::class);
+
+        /** @var Downloader $downloader */
+        $downloader = $container->get(Downloader::class);
+        $task = $downloader->download(
+            $softwareCollection->findSoftware('rr') ?? throw new \RuntimeException('Software not found.'),
+            $container->get(Destination::class),
+            // trap(...),
+            fn() => null,
+        );
+
+        ($task->handler)();
 
         // $repo = 'roadrunner-server/roadrunner';
         // trap(

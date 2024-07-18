@@ -21,8 +21,11 @@
     ],
     "require": {
         "php": ">=8.1",
-        "symfony/http-client": "^4.4.11 || ^5.0 || ^6.0 || ^7.0",
-        "yiisoft/injector": "^1.2"
+        "react/promise": "2 - 3",
+        "react/async": "3 - 4",
+        "symfony/http-client": "4 - 7",
+        "psr/container": "1 - 2",
+        "yiisoft/injector": "^1"
     },
     "require-dev": {
         "buggregator/trap": "^1.10",

@@ -9,11 +9,15 @@ use Internal\DLoad\Module\Common\Internal\Attribute\XPathEmbedList;
 
 final class Software
 {
+    /**
+     * @var non-empty-string
+     */
     #[XPath('@name')]
     public string $name;
 
     /**
      * If {@see null}, the name in lower case will be used.
+     * @var non-empty-string|null
      */
     #[XPath('@alias')]
     public ?string $alias = null;
@@ -26,4 +30,12 @@ final class Software
 
     #[XPathEmbedList('file', File::class)]
     public array $files = [];
+
+    /**
+     * @return non-empty-string
+     */
+    public function getId(): string
+    {
+        return $this->alias ?? \strtolower($this->name);
+    }
 }

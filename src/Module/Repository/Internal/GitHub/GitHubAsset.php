@@ -60,6 +60,11 @@ final class GitHubAsset extends Asset implements Destroyable
     }
 
     /**
+     * @param null|\Closure(int $dlNow, int $dlSize, array $info): mixed $progress
+     *        throwing any exceptions MUST abort the request;
+     *        it MUST be called on DNS resolution, on arrival of headers and on completion;
+     *        it SHOULD be called on upload/download of data and at least 1/s
+     *
      * @throws ExceptionInterface
      */
     public function download(\Closure $progress = null): \Traversable

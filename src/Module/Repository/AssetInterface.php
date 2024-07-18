@@ -24,4 +24,11 @@ interface AssetInterface
     public function getOperatingSystem(): ?OperatingSystem;
 
     public function getArchitecture(): ?Architecture;
+
+    /**
+     * Load content from the asset.
+     *
+     * @return \Traversable<non-empty-string>
+     */
+    public function download(): \Traversable;
 }

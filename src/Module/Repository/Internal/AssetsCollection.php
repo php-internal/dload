@@ -36,4 +36,16 @@ final class AssetsCollection extends Collection
             static fn(AssetInterface $asset): bool => $asset->getOperatingSystem() === $os,
         );
     }
+
+    /**
+     * Select all the assets with names that match the given pattern.
+     *
+     * @param non-empty-string $pattern
+     */
+    public function whereNameMatches(string $pattern): self
+    {
+        return $this->filter(
+            static fn(AssetInterface $asset): bool => \preg_match($pattern, $asset->getName()) === 1,
+        );
+    }
 }
