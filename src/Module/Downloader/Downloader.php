@@ -10,6 +10,7 @@ use Internal\DLoad\Module\Common\Config\Embed\Software;
 use Internal\DLoad\Module\Common\OperatingSystem;
 use Internal\DLoad\Module\Common\Stability;
 use Internal\DLoad\Module\Downloader\Internal\DownloadContext;
+use Internal\DLoad\Module\Downloader\Task\DownloadResult;
 use Internal\DLoad\Module\Downloader\Task\DownloadTask;
 use Internal\DLoad\Module\Repository\AssetInterface;
 use Internal\DLoad\Module\Repository\ReleaseInterface;
@@ -61,6 +62,11 @@ final class Downloader
 
                 try {
                     await(coroutine($this->processRepository($repository, $context)));
+
+                    return new DownloadResult(
+                        file: $context->file,
+                        version: $context->release->getVersion(),
+                    );
                 } catch (\Throwable $e) {
                     $this->logger->exception($e);
                     yield;
@@ -68,8 +74,6 @@ final class Downloader
                 } finally {
                     $repository instanceof Destroyable and $repository->destroy();
                 }
-
-                return $context->file;
             });
         };
 
@@ -95,13 +99,13 @@ final class Downloader
 
             process_release:
             $releases === [] and throw new \RuntimeException('No relevant release found.');
-            $release = \array_shift($releases);
+            $context->release = \array_shift($releases);
 
-            $this->logger->debug('Trying to load release `%s`', $release->getName());
+            $this->logger->debug('Trying to load release `%s`', $context->release->getName());
 
             try {
-                await(coroutine($this->processRelease($release, $context)));
-                return $release;
+                await(coroutine($this->processRelease($context)));
+                return $context->release;
             } catch (\Throwable $e) {
                 $this->logger->exception($e);
                 goto process_release;
@@ -112,11 +116,11 @@ final class Downloader
     /**
      * @return \Closure(): AssetInterface
      */
-    private function processRelease(ReleaseInterface $asset, DownloadContext $context): \Closure
+    private function processRelease(DownloadContext $context): \Closure
     {
-        return function () use ($asset, $context): AssetInterface {
+        return function () use ($context): AssetInterface {
             /** @var AssetInterface[] $assets */
-            $assets = $asset->getAssets()
+            $assets = $context->release->getAssets()
                 ->whereArchitecture($this->architecture)
                 ->whereOperatingSystem($this->operatingSystem)
                 ->whereNameMatches($context->repoConfig->assetPattern)
@@ -126,11 +130,11 @@ final class Downloader
 
             process_asset:
             $assets === [] and throw new \RuntimeException('No relevant asset found.');
-            $asset = \array_shift($assets);
-            $this->logger->debug('Trying to load asset `%s`', $asset->getName());
+            $context->asset = \array_shift($assets);
+            $this->logger->debug('Trying to load asset `%s`', $context->asset->getName());
             try {
-                await(coroutine($this->processAsset($asset, $context)));
-                return $asset;
+                await(coroutine($this->processAsset($context)));
+                return $context->asset;
             } catch (\Throwable $e) {
                 $this->logger->exception($e);
                 goto process_asset;
@@ -141,18 +145,18 @@ final class Downloader
     /**
      * @return \Closure(): \SplFileObject
      */
-    private function processAsset(AssetInterface $asset, DownloadContext $context): \Closure
+    private function processAsset(DownloadContext $context): \Closure
     {
-        return function () use ($asset, $context): \SplFileObject {
+        return function () use ($context): \SplFileObject {
             // Create a file
-            $temp = $this->getTempDirectory() . DIRECTORY_SEPARATOR . $asset->getName();
+            $temp = $this->getTempDirectory() . DIRECTORY_SEPARATOR . $context->asset->getName();
             $file = new \SplFileObject($temp, 'wb+');
 
             $this->logger->debug('Downloading into ' . $temp);
 
             await(coroutine(
-                (static function () use ($asset, $context, $file): void {
-                    $generator = $asset->download(
+                (static function () use ($context, $file): void {
+                    $generator = $context->asset->download(
                         static fn(int $dlNow, int $dlSize, array $info) => ($context->onProgress)(
                             new Progress(
                                 total: $dlSize,

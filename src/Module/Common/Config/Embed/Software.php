@@ -25,9 +25,11 @@ final class Software
     #[XPath('@description')]
     public string $description = '';
 
+    /** @var list<Repository> */
     #[XPathEmbedList('repository', Repository::class)]
     public array $repositories = [];
 
+    /** @var list<File> */
     #[XPathEmbedList('file', File::class)]
     public array $files = [];
 

@@ -3,15 +3,15 @@
     <registry>
         <software name="RoadRunner" alias="rr" description="High performant Application server">
             <repository type="github" uri="roadrunner-server/roadrunner" asset-pattern="/^roadrunner-.*/"/>
-            <file rename="rr" pattern="/^(roadrunner|rr)(?:\.exe)?/" />
+            <file rename="rr" pattern="/^(roadrunner|rr)(?:\.exe)?$/" />
         </software>
         <software name="Dolt" description="Dolt is a SQL database that you can fork, clone, branch, merge, push and pull just like a Git repository">
             <repository type="github" uri="dolthub/dolt" asset-pattern="/^dolt-.*/"/>
-            <file pattern="/^(dolt)(?:\.exe)?/" />
+            <file pattern="/^(dolt)(?:\.exe)?$/" />
         </software>
         <software name="Temporal" description="Temporal command-line interface and development server">
             <repository type="github" uri="temporalio/cli" asset-pattern="/^temporal_cli_.*/"/>
-            <file pattern="/^(temporal)(?:\.exe)?/" />
+            <file pattern="/^(temporal)(?:\.exe)?$/" />
         </software>
     </registry>
 </dload>

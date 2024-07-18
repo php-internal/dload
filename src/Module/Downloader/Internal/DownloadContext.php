@@ -7,6 +7,8 @@ namespace Internal\DLoad\Module\Downloader\Internal;
 use Internal\DLoad\Module\Common\Config\Embed\Repository;
 use Internal\DLoad\Module\Common\Config\Embed\Software;
 use Internal\DLoad\Module\Downloader\Progress;
+use Internal\DLoad\Module\Repository\AssetInterface;
+use Internal\DLoad\Module\Repository\ReleaseInterface;
 
 final class DownloadContext
 {
@@ -15,6 +17,12 @@ final class DownloadContext
 
     /** Downloaded file */
     public \SplFileObject $file;
+
+    /** Current asset */
+    public AssetInterface $asset;
+
+    /** Current release */
+    public ReleaseInterface $release;
 
     /**
      * @param \Closure(Progress): mixed $onProgress Callback to report progress.

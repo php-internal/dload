@@ -13,7 +13,4 @@ final class Destination
 {
     #[InputOption('path')]
     public ?string $path = null;
-
-    #[InputOption('rename')]
-    public ?string $rename = null;
 }
