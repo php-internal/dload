@@ -2,13 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Internal\DLoad\Module\Container\Internal;
+namespace Internal\DLoad\Module\Common\Internal\Injection;
 
-use Internal\DLoad\Module\Container\Attribute\Env;
-use Internal\DLoad\Module\Container\Attribute\InputArgument;
-use Internal\DLoad\Module\Container\Attribute\InputOption;
-use Internal\DLoad\Module\Container\Attribute\PhpIni;
-use Internal\DLoad\Module\Container\Attribute\XPath;
+use Internal\DLoad\Module\Common\Internal\Attribute\ConfigAttribute;
+use Internal\DLoad\Module\Common\Internal\Attribute\Env;
+use Internal\DLoad\Module\Common\Internal\Attribute\InputArgument;
+use Internal\DLoad\Module\Common\Internal\Attribute\InputOption;
+use Internal\DLoad\Module\Common\Internal\Attribute\PhpIni;
+use Internal\DLoad\Module\Common\Internal\Attribute\XPath;
 use Internal\DLoad\Service\Logger;
 
 /**

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Common;
 
+use Internal\DLoad\Module\Common\Config\BuildInput;
 use Internal\DLoad\Service\Factoriable;
 
 /**
@@ -21,9 +22,9 @@ enum OperatingSystem: string implements Factoriable
 
     private const ERROR_UNKNOWN_OS = 'Current OS `%s` may not be supported';
 
-    public static function create(): static
+    public static function create(BuildInput $config): static
     {
-        return self::fromGlobals();
+        return self::tryFrom((string) $config->os) ?? self::fromGlobals();
     }
 
     public static function fromGlobals(): self

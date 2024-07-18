@@ -14,6 +14,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Command\SignalableCommandInterface;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -29,17 +30,11 @@ final class Get extends Command implements SignalableCommandInterface
 
     public function configure(): void
     {
-        $this->addArgument(
-            'binary',
-            InputArgument::REQUIRED,
-            'Binary name, e.g. "rr", "dolt", "temporal" etc.',
-        );
-        $this->addArgument(
-            'path',
-            InputArgument::OPTIONAL,
-            'Path to store the binary, e.g. "./bin"',
-            ".",
-        );
+        $this->addArgument('binary', InputArgument::REQUIRED, 'Binary name, e.g. "rr", "dolt", "temporal" etc.');
+        $this->addOption('path', null, InputOption::VALUE_OPTIONAL, 'Path to store the binary, e.g. "./bin"', ".");
+        $this->addOption('arch', null, InputOption::VALUE_OPTIONAL, 'Architecture, e.g. "amd64", "arm64" etc.');
+        $this->addOption('os', null, InputOption::VALUE_OPTIONAL, 'Operating system, e.g. "linux", "darwin" etc.');
+        $this->addOption('stability', null, InputOption::VALUE_OPTIONAL, 'Stability, e.g. "stable", "beta" etc.');
     }
 
     public function handleSignal(int $signal, int|false $previousExitCode = 0): int|false
@@ -71,7 +66,7 @@ final class Get extends Command implements SignalableCommandInterface
         OutputInterface $output,
     ): int {
         $output->writeln('Binary to load: ' . $input->getArgument('binary'));
-        $output->writeln('Path to store the binary: ' . $input->getArgument('path'));
+        $output->writeln('Path to store the binary: ' . $input->getOption('path'));
 
         $container = Bootstrap::init()->withConfig(
             xml: \dirname(__DIR__, 2) . '/dload.xml',
@@ -85,11 +80,12 @@ final class Get extends Command implements SignalableCommandInterface
         $output->writeln('Stability: ' . $container->get(Stability::class)->name);
 
 
-        $repo = 'roadrunner-server/roadrunner';
-        trap(GitHubRepository::fromDsn($repo)->getReleases()->first()->getAssets()
-            ->whereArchitecture($container->get(Architecture::class))
-            ->whereOperatingSystem($container->get(OperatingSystem::class))
-        );
+        // $repo = 'roadrunner-server/roadrunner';
+        // trap(
+        //     GitHubRepository::fromDsn($repo)->getReleases()->first()->getAssets()
+        //         ->whereArchitecture($container->get(Architecture::class))
+        //         ->whereOperatingSystem($container->get(OperatingSystem::class)),
+        // );
 
 
         return Command::SUCCESS;

@@ -2,9 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Internal\DLoad\Module\Container\Attribute;
-
-use Internal\DLoad\Module\Container\Internal\ConfigAttribute;
+namespace Internal\DLoad\Module\Common\Internal\Attribute;
 
 /**
  * @internal

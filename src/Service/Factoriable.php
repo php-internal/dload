@@ -7,9 +7,8 @@ namespace Internal\DLoad\Service;
 /**
  * Class creates new instances of itself.
  *
+ * @method static create
+ *
  * @internal
  */
-interface Factoriable
-{
-    public static function create(): static;
-}
+interface Factoriable {}

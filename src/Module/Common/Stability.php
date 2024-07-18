@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Common;
 
+use Internal\DLoad\Module\Common\Config\BuildInput;
 use Internal\DLoad\Service\Factoriable;
 
 /**
@@ -19,9 +20,9 @@ enum Stability: string implements Factoriable
     case Alpha = 'alpha';
     case Dev = 'dev';
 
-    public static function create(): static
+    public static function create(BuildInput $config): static
     {
-        return self::fromGlobals();
+        return self::tryFrom((string) $config->stability) ?? self::fromGlobals();
     }
 
     public static function fromGlobals(): self

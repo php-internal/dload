@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Common;
 
+use Internal\DLoad\Module\Common\Config\BuildInput;
 use Internal\DLoad\Service\Factoriable;
 
 /**
@@ -18,9 +19,9 @@ enum Architecture: string implements Factoriable
 
     private const ERROR_UNKNOWN_ARCH = 'Current architecture `%s` may not be supported.';
 
-    public static function create(): static
+    public static function create(BuildInput $config): self
     {
-        return self::fromGlobals();
+        return self::tryFrom((string) $config->arch) ?? self::fromGlobals();
     }
 
     public static function fromGlobals(): self

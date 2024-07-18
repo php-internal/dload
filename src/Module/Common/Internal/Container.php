@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Internal\DLoad\Module\Container\Internal;
+namespace Internal\DLoad\Module\Common\Internal;
 
+use Internal\DLoad\Module\Common\Internal\Injection\ConfigLoader;
 use Internal\DLoad\Service\Container as AppContainerInterface;
 use Internal\DLoad\Service\Destroyable;
 use Internal\DLoad\Service\Factoriable;
@@ -84,7 +85,7 @@ final class Container implements AppContainerInterface, ContainerInterface, Dest
         $binding = $this->factory[$class] ?? null;
 
         if ($binding instanceof \Closure) {
-            $result = $binding($this);
+            $result = $this->injector->invoke($binding);
         } else {
             try {
                 $result = $this->injector->make($class, \array_merge((array) $binding, $arguments));
@@ -97,7 +98,7 @@ final class Container implements AppContainerInterface, ContainerInterface, Dest
 
         // Detect related types
         // Configs
-        if (\str_starts_with($class, 'Internal\\DLoad\\Config\\')) {
+        if (\str_starts_with($class, 'Internal\\DLoad\\Module\\Common\\Config\\')) {
             // Hydrate config
             /** @var ConfigLoader $configLoader */
             $configLoader = $this->get(ConfigLoader::class);
