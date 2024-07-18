@@ -6,7 +6,6 @@ namespace Internal\DLoad\Command;
 
 use Internal\DLoad\Bootstrap;
 use Internal\DLoad\Module\Common\Architecture;
-use Internal\DLoad\Module\Common\Config\BuildInput;
 use Internal\DLoad\Module\Common\Config\Destination;
 use Internal\DLoad\Module\Common\OperatingSystem;
 use Internal\DLoad\Module\Common\Stability;
@@ -32,6 +31,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 final class Get extends Command implements SignalableCommandInterface
 {
     private bool $cancelling = false;
+
     private Logger $logger;
 
     public function configure(): void
@@ -99,7 +99,7 @@ final class Get extends Command implements SignalableCommandInterface
             $softwareCollection->findSoftware('rr') ?? throw new \RuntimeException('Software not found.'),
             $container->get(Destination::class),
             // trap(...),
-            fn() => null,
+            static fn() => null,
         );
 
         ($task->handler)();

@@ -11,7 +11,7 @@ use IteratorAggregate;
 /**
  * @implements IteratorAggregate<Software>
  */
-final class SoftwareCollection implements IteratorAggregate
+final class SoftwareCollection implements \IteratorAggregate
 {
     public function __construct(
         private SoftwareRegistry $softwareRegistry,
