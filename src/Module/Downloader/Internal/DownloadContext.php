@@ -12,6 +12,7 @@ final class DownloadContext
 {
     /** Current repository config */
     public Repository $repoConfig;
+
     /** Downloaded file */
     public \SplFileObject $file;
 
