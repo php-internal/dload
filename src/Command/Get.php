@@ -32,7 +32,7 @@ final class Get extends Base implements SignalableCommandInterface
     public function configure(): void
     {
         parent::configure();
-        $this->addArgument(self::ARG_SOFTWARE, InputArgument::OPTIONAL|InputArgument::IS_ARRAY, 'Software name, e.g. "rr", "dolt", "temporal" etc.');
+        $this->addArgument(self::ARG_SOFTWARE, InputArgument::OPTIONAL | InputArgument::IS_ARRAY, 'Software name, e.g. "rr", "dolt", "temporal" etc.');
         $this->addOption('path', null, InputOption::VALUE_OPTIONAL, 'Path to store the binary, e.g. "./bin"', ".");
         $this->addOption('arch', null, InputOption::VALUE_OPTIONAL, 'Architecture, e.g. "amd64", "arm64" etc.');
         $this->addOption('os', null, InputOption::VALUE_OPTIONAL, 'Operating system, e.g. "linux", "darwin" etc.');
@@ -66,37 +66,51 @@ final class Get extends Base implements SignalableCommandInterface
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         parent::execute($input, $output);
-
         $container = $this->container;
 
-        $software = $input->getArgument(self::ARG_SOFTWARE);
+        /** @var Actions $actionsConfig */
+        $actionsConfig = $container->get(Actions::class);
+        $actions = $this->getDownloadActions($input, $actionsConfig);
 
-        $output->writeln('Binary to load: ' . \implode(',', $software));
+        $output->writeln('Binary to load: ' . \implode(',', $actions));
         $output->writeln('Path to store the binary: ' . $input->getOption('path'));
         $output->writeln('Architecture: ' . $container->get(Architecture::class)->name);
         $output->writeln('  Op. system: ' . $container->get(OperatingSystem::class)->name);
         $output->writeln('   Stability: ' . $container->get(Stability::class)->name);
 
-        // Decide if we use CLI arguments or config
-        if ($software === []) {
-            /** @var Actions $actions */
-            $actions = $container->get(Actions::class);
-            $software = \array_map(
-                static fn(DownloadConfig $download): string => $download->software,
-                $actions->downloads
-            );
-        }
-
-        $software === [] and throw new \RuntimeException('No software to download.');
+        $actions === [] and throw new \RuntimeException('No software to download.');
 
         /** @var DLoad $dload */
         $dload = $container->get(DLoad::class);
 
-        foreach ($software as $binary) {
-            $dload->addTask($binary);
+        foreach ($actions as $action) {
+            $dload->addTask($action);
         }
         $dload->run();
 
         return Command::SUCCESS;
+    }
+
+    /**
+     * @return list<DownloadConfig>
+     */
+    private function getDownloadActions(InputInterface $input, Actions $actionsConfig): array
+    {
+        $argument = $input->getArgument(self::ARG_SOFTWARE);
+        if ($argument === []) {
+            // Use configured actions if CLI arguments are empty
+            return $actionsConfig->downloads;
+        }
+
+        $toDownload = [];
+        foreach ($actionsConfig->downloads as $action) {
+            $toDownload[$action->software] = $action;
+        }
+
+        return \array_map(
+            static fn(mixed $software): DownloadConfig => $toDownload[$software]
+                ?? DownloadConfig::fromSoftwareId((string) $software),
+            $input->getArgument(self::ARG_SOFTWARE),
+        );
     }
 }

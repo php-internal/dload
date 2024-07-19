@@ -12,6 +12,7 @@ use Internal\DLoad\Module\Common\Internal\Attribute\XPathEmbedList;
  */
 final class Actions
 {
+    /** @var list<Download> */
     #[XPathEmbedList('/dload/actions/download', Download::class)]
     public array $downloads = [];
 }

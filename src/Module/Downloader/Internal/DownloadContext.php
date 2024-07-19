@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Downloader\Internal;
 
+use Internal\DLoad\Module\Common\Config\Action\Download as DownloadConfig;
 use Internal\DLoad\Module\Common\Config\Embed\Repository;
 use Internal\DLoad\Module\Common\Config\Embed\Software;
 use Internal\DLoad\Module\Downloader\Progress;
@@ -31,5 +32,6 @@ final class DownloadContext
     public function __construct(
         public readonly Software $software,
         public readonly \Closure $onProgress,
+        public readonly DownloadConfig $actionConfig,
     ) {}
 }

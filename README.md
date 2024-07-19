@@ -47,14 +47,15 @@ Create `dload.xml` file in the root of the project with the following content:
 <?xml version="1.0"?>
 <dload>
     <actions>
-        <download software="rr"/>
+        <download software="rr" version="^2.12.0" />
         <download software="temporal"/>
     </actions>
 </dload>
 ```
 
-There are two software packages to download: `temporal` and `rr`.
-To download all the software, run `dload get` without arguments:
+There are two software packages to download: `temporal` and `rr` with version `^2.12.0`.
+Optionally, you may specify the version of the software package using Composer versioning syntax.  
+To download all the configured software, run `dload get` without arguments:
 
 ```bash
 ./vendor/bin/dload get

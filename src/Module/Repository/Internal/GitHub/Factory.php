@@ -15,7 +15,7 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 final class Factory
 {
     public function __construct(
-        private readonly GitHub $config,
+        private readonly GitHubConfig $config,
     ) {}
 
     /**

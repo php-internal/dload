@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Internal\DLoad;
 
 use Internal\DLoad\Module\Archive\ArchiveFactory;
+use Internal\DLoad\Module\Common\Config\Action\Download as DownloadConfig;
 use Internal\DLoad\Module\Common\Config\Embed\File;
 use Internal\DLoad\Module\Common\Config\Embed\Software;
 use Internal\DLoad\Module\Common\Input\Destination;
@@ -38,18 +39,16 @@ final class DLoad
         private readonly StyleInterface $io,
     ) {}
 
-    public function addTask(
-        string $softwareName,
-    ): void {
-        $this->useMock and $softwareName = 'rr';
-        $this->taskManager->addTask(function () use ($softwareName): void {
+    public function addTask(DownloadConfig $action): void
+    {
+        $this->taskManager->addTask(function () use ($action): void {
             // Find Software
-            $software = $this->softwareCollection->findSoftware($softwareName) ?? throw new \RuntimeException(
+            $software = $this->softwareCollection->findSoftware($action->software) ?? throw new \RuntimeException(
                 'Software not found.',
             );
 
             // Create a Download task
-            $task = $this->prepareDownloadTask($software);
+            $task = $this->prepareDownloadTask($software, $action);
 
             // Extract files
             ($task->handler)()->then($this->prepareExtractTask($software));
@@ -61,7 +60,7 @@ final class DLoad
         $this->taskManager->await();
     }
 
-    private function prepareDownloadTask(Software $software): DownloadTask
+    private function prepareDownloadTask(Software $software, DownloadConfig $action): DownloadTask
     {
         return $this->useMock
             ? new DownloadTask(
@@ -74,7 +73,7 @@ final class DLoad
                     ),
                 ),
             )
-            : $this->downloader->download($software, static fn() => null);
+            : $this->downloader->download($software, $action, static fn() => null);
     }
 
     /**

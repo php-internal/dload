@@ -6,6 +6,7 @@ namespace Internal\DLoad\Module\Downloader;
 
 use Internal\DLoad\Module\Archive\ArchiveFactory;
 use Internal\DLoad\Module\Common\Architecture;
+use Internal\DLoad\Module\Common\Config\Action\Download as DownloadConfig;
 use Internal\DLoad\Module\Common\Config\Downloader as DownloaderConfig;
 use Internal\DLoad\Module\Common\Config\Embed\Software;
 use Internal\DLoad\Module\Common\OperatingSystem;
@@ -44,11 +45,13 @@ final class Downloader
      */
     public function download(
         Software $software,
+        DownloadConfig $actionConfig,
         \Closure $onProgress,
     ): DownloadTask {
         $context = new DownloadContext(
             software: $software,
             onProgress: $onProgress,
+            actionConfig: $actionConfig,
         );
 
         $repositories = $software->repositories;
@@ -91,10 +94,17 @@ final class Downloader
     private function processRepository(RepositoryInterface $repository, DownloadContext $context): \Closure
     {
         return function () use ($repository, $context): ReleaseInterface {
+            $releasesCollection = $repository->getReleases()
+                ->minimumStability($this->stability);
+
+            // Filter by version if specified
+            $context->actionConfig->version === null or $releasesCollection = $releasesCollection
+                ->satisfies($context->actionConfig->version);
+
             /** @var ReleaseInterface[] $releases */
-            $releases = $repository->getReleases()
-                ->minimumStability($this->stability)
-                ->sortByVersion()->toArray();
+            $releases = $releasesCollection->sortByVersion()->toArray();
+
+            td($releases);
 
             $this->logger->debug('%d releases found.', \count($releases));
 

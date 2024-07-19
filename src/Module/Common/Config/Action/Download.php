@@ -11,9 +11,21 @@ use Internal\DLoad\Module\Common\Internal\Attribute\XPath;
  */
 final class Download
 {
+    /** @var non-empty-string */
     #[XPath('@software')]
     public string $software;
 
+    /** @var non-empty-string|null */
     #[XPath('@version')]
     public ?string $version = null;
+
+    /**
+     * @param non-empty-string $software
+     */
+    public static function fromSoftwareId(string $software): self
+    {
+        $action = new self();
+        $action->software = $software;
+        return $action;
+    }
 }

@@ -16,33 +16,21 @@ use Internal\DLoad\Module\Repository\ReleaseInterface;
 final class ReleasesCollection extends Collection
 {
     /**
-     * @param non-empty-string ...$constraints
+     * @param non-empty-string $constraint
      * @return $this
      */
-    public function satisfies(string ...$constraints): self
+    public function satisfies(string $constraint): self
     {
-        $result = $this;
-
-        foreach ($this->constraints($constraints) as $constraint) {
-            $result = $result->filter(static fn(ReleaseInterface $r): bool => $r->satisfies($constraint));
-        }
-
-        return $result;
+        return $this->filter(static fn(ReleaseInterface $r): bool => $r->satisfies($constraint));
     }
 
     /**
-     * @param string ...$constraints
+     * @param non-empty-string $constraint
      * @return $this
      */
-    public function notSatisfies(string ...$constraints): self
+    public function notSatisfies(string $constraint): self
     {
-        $result = $this;
-
-        foreach ($this->constraints($constraints) as $constraint) {
-            $result = $result->except(static fn(ReleaseInterface $r): bool => $r->satisfies($constraint));
-        }
-
-        return $result;
+        return $this->except(static fn(ReleaseInterface $r): bool => $r->satisfies($constraint));
     }
 
     /**
@@ -97,23 +85,6 @@ final class ReleasesCollection extends Collection
         return $this->filter(
             static fn(ReleaseInterface $release): bool => $release->getStability()->getWeight() >= $weight,
         );
-    }
-
-    /**
-     * @param array<string> $constraints
-     * @return array<string>
-     */
-    private function constraints(array $constraints): array
-    {
-        $result = [];
-
-        foreach ($constraints as $constraint) {
-            foreach (\explode('|', $constraint) as $expression) {
-                $result[] = $expression;
-            }
-        }
-
-        return \array_unique(\array_filter(\array_map('\\trim', $result)));
     }
 
     /**
