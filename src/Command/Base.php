@@ -19,6 +19,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 abstract class Base extends Command
 {
     protected Logger $logger;
+
     protected Container $container;
 
     protected function execute(
