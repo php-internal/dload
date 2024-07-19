@@ -39,18 +39,22 @@ composer require internal/dload -W
 ./vendor/bin/dload get dolt
 ```
 
-### Configure preset for the project (WIP)
+### Configure preset for the project
 
 Create `dload.xml` file in the root of the project with the following content:
 
 ```xml
 <?xml version="1.0"?>
 <dload>
-    <todo />
+    <actions>
+        <download software="rr"/>
+        <download software="temporal"/>
+    </actions>
 </dload>
 ```
 
-Download all the software from the preset:
+There are two software packages to download: `temporal` and `rr`.
+To download all the software, run `dload get` without arguments:
 
 ```bash
 ./vendor/bin/dload get

@@ -6,6 +6,8 @@ namespace Internal\DLoad\Command;
 
 use Internal\DLoad\DLoad;
 use Internal\DLoad\Module\Common\Architecture;
+use Internal\DLoad\Module\Common\Config\Action\Download as DownloadConfig;
+use Internal\DLoad\Module\Common\Config\Actions;
 use Internal\DLoad\Module\Common\OperatingSystem;
 use Internal\DLoad\Module\Common\Stability;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -25,10 +27,12 @@ use Symfony\Component\Console\Output\OutputInterface;
 )]
 final class Get extends Base implements SignalableCommandInterface
 {
+    private const ARG_SOFTWARE = 'software';
+
     public function configure(): void
     {
         parent::configure();
-        $this->addArgument('binary', InputArgument::REQUIRED, 'Binary name, e.g. "rr", "dolt", "temporal" etc.');
+        $this->addArgument(self::ARG_SOFTWARE, InputArgument::OPTIONAL|InputArgument::IS_ARRAY, 'Software name, e.g. "rr", "dolt", "temporal" etc.');
         $this->addOption('path', null, InputOption::VALUE_OPTIONAL, 'Path to store the binary, e.g. "./bin"', ".");
         $this->addOption('arch', null, InputOption::VALUE_OPTIONAL, 'Architecture, e.g. "amd64", "arm64" etc.');
         $this->addOption('os', null, InputOption::VALUE_OPTIONAL, 'Operating system, e.g. "linux", "darwin" etc.');
@@ -65,17 +69,32 @@ final class Get extends Base implements SignalableCommandInterface
 
         $container = $this->container;
 
-        $output->writeln('Binary to load: ' . $input->getArgument('binary'));
+        $software = $input->getArgument(self::ARG_SOFTWARE);
+
+        $output->writeln('Binary to load: ' . \implode(',', $software));
         $output->writeln('Path to store the binary: ' . $input->getOption('path'));
         $output->writeln('Architecture: ' . $container->get(Architecture::class)->name);
         $output->writeln('  Op. system: ' . $container->get(OperatingSystem::class)->name);
         $output->writeln('   Stability: ' . $container->get(Stability::class)->name);
 
+        // Decide if we use CLI arguments or config
+        if ($software === []) {
+            /** @var Actions $actions */
+            $actions = $container->get(Actions::class);
+            $software = \array_map(
+                static fn(DownloadConfig $download): string => $download->software,
+                $actions->downloads
+            );
+        }
+
+        $software === [] and throw new \RuntimeException('No software to download.');
+
         /** @var DLoad $dload */
         $dload = $container->get(DLoad::class);
 
-        $binary = $input->getArgument('binary');
-        $dload->addTask($binary);
+        foreach ($software as $binary) {
+            $dload->addTask($binary);
+        }
         $dload->run();
 
         return Command::SUCCESS;
