@@ -35,6 +35,7 @@ final class ListSoftware extends Base
         /** @var Software $software */
         foreach ($registry->getIterator() as $software) {
             $output->writeln("<fg=green;options=bold>{$software->getId()}</>  $software->name");
+            $software->homepage and $output->writeln("<fg=blue>Homepage: $software->homepage</>");
 
             foreach ($software->repositories as $repo) {
                 $output->writeln("<fg=blue>{$repo->type}: {$repo->uri}</>");

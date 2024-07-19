@@ -41,6 +41,7 @@ final class TaskManager
 
                 yield $task->resume();
             } catch (\Throwable $e) {
+                $this->logger->error($e->getMessage());
                 $this->logger->exception($e);
                 unset($this->tasks[$key]);
                 yield $e;
@@ -55,7 +56,7 @@ final class TaskManager
         $processor = $this->getProcessor();
         $processor->current();
         while ($processor->valid()) {
-            $processor->send(null);
+            $processor->next();
         }
     }
 }

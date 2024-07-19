@@ -5,14 +5,16 @@ declare(strict_types=1);
 namespace Internal\DLoad;
 
 use Internal\DLoad\Module\Archive\ArchiveFactory;
-use Internal\DLoad\Module\Common\Config\Destination;
+use Internal\DLoad\Module\Common\Config\Action\Download as DownloadConfig;
 use Internal\DLoad\Module\Common\Config\Embed\File;
 use Internal\DLoad\Module\Common\Config\Embed\Software;
+use Internal\DLoad\Module\Common\Input\Destination;
 use Internal\DLoad\Module\Downloader\Downloader;
 use Internal\DLoad\Module\Downloader\SoftwareCollection;
 use Internal\DLoad\Module\Downloader\Task\DownloadResult;
 use Internal\DLoad\Module\Downloader\Task\DownloadTask;
 use Internal\DLoad\Module\Downloader\TaskManager;
+use Internal\DLoad\Service\Logger;
 use React\Promise\PromiseInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\StyleInterface;
@@ -29,6 +31,7 @@ final class DLoad
     public bool $useMock = false;
 
     public function __construct(
+        private readonly Logger $logger,
         private readonly TaskManager $taskManager,
         private readonly SoftwareCollection $softwareCollection,
         private readonly Downloader $downloader,
@@ -38,18 +41,16 @@ final class DLoad
         private readonly StyleInterface $io,
     ) {}
 
-    public function addTask(
-        string $softwareName,
-    ): void {
-        $this->useMock and $softwareName = 'rr';
-        $this->taskManager->addTask(function () use ($softwareName): void {
+    public function addTask(DownloadConfig $action): void
+    {
+        $this->taskManager->addTask(function () use ($action): void {
             // Find Software
-            $software = $this->softwareCollection->findSoftware($softwareName) ?? throw new \RuntimeException(
+            $software = $this->softwareCollection->findSoftware($action->software) ?? throw new \RuntimeException(
                 'Software not found.',
             );
 
             // Create a Download task
-            $task = $this->prepareDownloadTask($software);
+            $task = $this->prepareDownloadTask($software, $action);
 
             // Extract files
             ($task->handler)()->then($this->prepareExtractTask($software));
@@ -61,7 +62,7 @@ final class DLoad
         $this->taskManager->await();
     }
 
-    private function prepareDownloadTask(Software $software): DownloadTask
+    private function prepareDownloadTask(Software $software, DownloadConfig $action): DownloadTask
     {
         return $this->useMock
             ? new DownloadTask(
@@ -74,7 +75,7 @@ final class DLoad
                     ),
                 ),
             )
-            : $this->downloader->download($software, static fn() => null);
+            : $this->downloader->download($software, $action, static fn() => null);
     }
 
     /**
@@ -86,6 +87,7 @@ final class DLoad
             $fileInfo = $downloadResult->file;
             $archive = $this->archiveFactory->create($fileInfo);
             $extractor = $archive->extract();
+            $this->logger->info('Extracting %s', $fileInfo->getFilename());
 
             while ($extractor->valid()) {
                 $file = $extractor->current();

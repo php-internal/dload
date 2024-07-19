@@ -9,7 +9,7 @@ use Internal\DLoad\Module\Common\Internal\Attribute\Env;
 /**
  * @internal
  */
-final class GitHubConfig
+final class GitHub
 {
     #[Env('GITHUB_TOKEN')]
     public ?string $token = null;

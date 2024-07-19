@@ -126,8 +126,12 @@ final class ConfigLoader
 
     private function getXPathEmbeddedList(XPathEmbedList $attribute): array
     {
+        if ($this->xml === null) {
+            return [];
+        }
+
         $result = [];
-        $value = $this->xml?->xpath($attribute->path);
+        $value = $this->xml->xpath($attribute->path);
         \is_array($value) or throw new \Exception(\sprintf('Invalid XPath `%s`', $attribute->path));
 
         foreach ($value as $xml) {

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Repository\Internal\GitHub;
 
-use Internal\DLoad\Module\Common\Config\GitHubConfig;
+use Internal\DLoad\Module\Common\Config\GitHub as GitHubConfig;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 

@@ -1,0 +1,57 @@
+[
+    {
+        "name": "RoadRunner",
+        "alias": "rr",
+        "homepage": "https://roadrunner.dev",
+        "description": "High-performance PHP application server, load-balancer and process manager written in Golang",
+        "repositories": [
+            {
+                "type": "github",
+                "uri": "roadrunner-server/roadrunner",
+                "asset-pattern": "/^roadrunner-.*/"
+            }
+        ],
+        "files": [
+            {
+                "pattern": "/^(roadrunner|rr)(?:\\.exe)?$/",
+                "rename": "rr"
+            }
+        ]
+    },
+    {
+        "name": "Temporal",
+        "alias": "temporal",
+        "description": "Temporal SDK",
+        "homepage": "https://temporal.io",
+        "repositories": [
+            {
+                "type": "github",
+                "uri": "temporalio/cli",
+                "asset-pattern": "/^temporal_cli_.*/"
+            }
+        ],
+        "files": [
+            {
+                "pattern": "/^(temporal)(?:\\.exe)?$/"
+            }
+        ]
+    },
+    {
+        "name": "Dolt",
+        "alias": "dolt",
+        "description": "Dolt is a SQL database that you can fork, clone, branch, merge, push and pull just like a git repository.",
+        "homepage": "https://www.dolthub.com",
+        "repositories": [
+            {
+                "type": "github",
+                "uri": "dolthub/dolt",
+                "asset-pattern": "/^dolt-.*/"
+            }
+        ],
+        "files": [
+            {
+                "pattern": "/^(dolt)(?:\\.exe)?$/"
+            }
+        ]
+    }
+]
