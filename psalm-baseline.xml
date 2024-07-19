@@ -1,25 +1,70 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <files psalm-version="5.25.0@01a8eb06b9e9cc6cfb6a320bf9fb14331919d505">
+  <file src="src/Command/Base.php">
+    <LessSpecificReturnStatement>
+      <code><![CDATA[$config]]></code>
+    </LessSpecificReturnStatement>
+    <MoreSpecificReturnType>
+      <code><![CDATA[non-empty-string|null]]></code>
+    </MoreSpecificReturnType>
+  </file>
   <file src="src/Command/Get.php">
+    <ArgumentTypeCoercion>
+      <code><![CDATA[(string) $software]]></code>
+    </ArgumentTypeCoercion>
+    <LessSpecificReturnStatement>
+      <code><![CDATA[\array_map(
+            static fn(mixed $software): DownloadConfig => $toDownload[$software]
+                ?? DownloadConfig::fromSoftwareId((string) $software),
+            $input->getArgument(self::ARG_SOFTWARE),
+        )]]></code>
+    </LessSpecificReturnStatement>
     <MixedArgument>
-      <code><![CDATA[$binary]]></code>
+      <code><![CDATA[$input->getArgument(self::ARG_SOFTWARE)]]></code>
     </MixedArgument>
+    <MixedArrayOffset>
+      <code><![CDATA[$toDownload[$software]]]></code>
+    </MixedArrayOffset>
     <MixedAssignment>
-      <code><![CDATA[$binary]]></code>
+      <code><![CDATA[$argument]]></code>
     </MixedAssignment>
-    <MixedOperand>
-      <code><![CDATA[$input->getArgument('binary')]]></code>
-      <code><![CDATA[$input->getOption('path')]]></code>
-    </MixedOperand>
+    <MoreSpecificReturnType>
+      <code><![CDATA[list<DownloadConfig>]]></code>
+    </MoreSpecificReturnType>
     <PropertyNotSetInConstructor>
-      <code><![CDATA[$container]]></code>
-      <code><![CDATA[$logger]]></code>
+      <code><![CDATA[Get]]></code>
+      <code><![CDATA[Get]]></code>
     </PropertyNotSetInConstructor>
+    <UndefinedThisPropertyAssignment>
+      <code><![CDATA[$this->cancelling]]></code>
+    </UndefinedThisPropertyAssignment>
+  </file>
+  <file src="src/Command/ListSoftware.php">
+    <MixedAssignment>
+      <code><![CDATA[$repo]]></code>
+    </MixedAssignment>
+    <MixedPropertyFetch>
+      <code><![CDATA[$repo->type]]></code>
+      <code><![CDATA[$repo->uri]]></code>
+    </MixedPropertyFetch>
+    <PropertyNotSetInConstructor>
+      <code><![CDATA[ListSoftware]]></code>
+      <code><![CDATA[ListSoftware]]></code>
+    </PropertyNotSetInConstructor>
+    <RawObjectIteration>
+      <code><![CDATA[$software->repositories]]></code>
+    </RawObjectIteration>
+    <RiskyTruthyFalsyComparison>
+      <code><![CDATA[$software->homepage]]></code>
+    </RiskyTruthyFalsyComparison>
   </file>
   <file src="src/DLoad.php">
     <ArgumentTypeCoercion>
       <code><![CDATA[$conf->pattern]]></code>
     </ArgumentTypeCoercion>
+    <InvalidArgument>
+      <code><![CDATA[$software->files]]></code>
+    </InvalidArgument>
   </file>
   <file src="src/Module/Archive/ArchiveFactory.php">
     <MixedPropertyTypeCoercion>
@@ -34,12 +79,33 @@
       <code><![CDATA[\Generator]]></code>
     </MoreSpecificReturnType>
   </file>
+  <file src="src/Module/Common/Config/Action/Download.php">
+    <MissingConstructor>
+      <code><![CDATA[$software]]></code>
+    </MissingConstructor>
+  </file>
   <file src="src/Module/Common/Config/Embed/Repository.php">
     <MissingConstructor>
       <code><![CDATA[$uri]]></code>
     </MissingConstructor>
   </file>
   <file src="src/Module/Common/Config/Embed/Software.php">
+    <InvalidPropertyAssignmentValue>
+      <code><![CDATA[[]]]></code>
+      <code><![CDATA[[]]]></code>
+      <code><![CDATA[\array_map(
+            static fn(array $fileArray): File => File::fromArray($fileArray),
+            $softwareArray['files'] ?? [],
+        )]]></code>
+      <code><![CDATA[\array_map(
+            static fn(array $repositoryArray): Repository => Repository::fromArray($repositoryArray),
+            $softwareArray['repositories'] ?? [],
+        )]]></code>
+    </InvalidPropertyAssignmentValue>
+    <MismatchingDocblockPropertyType>
+      <code><![CDATA[array]]></code>
+      <code><![CDATA[array]]></code>
+    </MismatchingDocblockPropertyType>
     <MissingConstructor>
       <code><![CDATA[$name]]></code>
     </MissingConstructor>
@@ -69,10 +135,16 @@
     <ArgumentTypeCoercion>
       <code><![CDATA[$context->repoConfig->assetPattern]]></code>
     </ArgumentTypeCoercion>
+    <DocblockTypeContradiction>
+      <code><![CDATA[$repositories === []]]></code>
+    </DocblockTypeContradiction>
     <InternalMethod>
       <code><![CDATA[toArray]]></code>
       <code><![CDATA[toArray]]></code>
     </InternalMethod>
+    <InvalidArgument>
+      <code><![CDATA[$repositories]]></code>
+    </InvalidArgument>
     <InvalidNullableReturnType>
       <code><![CDATA[AssetInterface]]></code>
       <code><![CDATA[ReleaseInterface]]></code>
@@ -80,6 +152,12 @@
     <MissingClosureReturnType>
       <code><![CDATA[static fn(int $dlNow, int $dlSize, array $info) => ($context->onProgress)(]]></code>
     </MissingClosureReturnType>
+    <MixedArgument>
+      <code><![CDATA[$context->repoConfig]]></code>
+    </MixedArgument>
+    <MixedAssignment>
+      <code><![CDATA[$context->repoConfig]]></code>
+    </MixedAssignment>
     <TooManyArguments>
       <code><![CDATA[download]]></code>
     </TooManyArguments>
@@ -91,6 +169,15 @@
       <code><![CDATA[$release]]></code>
       <code><![CDATA[$repoConfig]]></code>
     </PropertyNotSetInConstructor>
+  </file>
+  <file src="src/Module/Downloader/SoftwareCollection.php">
+    <MixedArgument>
+      <code><![CDATA[$softwareArray]]></code>
+    </MixedArgument>
+    <MixedAssignment>
+      <code><![CDATA[$json]]></code>
+      <code><![CDATA[$softwareArray]]></code>
+    </MixedAssignment>
   </file>
   <file src="src/Module/Repository/Collection/ReleasesCollection.php">
     <LessSpecificReturnStatement>

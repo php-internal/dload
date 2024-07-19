@@ -27,13 +27,12 @@
             {
                 "type": "github",
                 "uri": "temporalio/cli",
-                "asset-pattern": "/^temporal-.*/"
+                "asset-pattern": "/^temporal_cli_.*/"
             }
         ],
         "files": [
             {
-                "pattern": "/^temporal-.*/",
-                "rename": "temporal"
+                "pattern": "/^(temporal)(?:\\.exe)?$/"
             }
         ]
     },
@@ -51,7 +50,7 @@
         ],
         "files": [
             {
-                "pattern": "/^dolt-.*/"
+                "pattern": "/^(dolt)(?:\\.exe)?$/"
             }
         ]
     }

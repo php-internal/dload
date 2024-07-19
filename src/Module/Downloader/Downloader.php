@@ -94,6 +94,12 @@ final class Downloader
     private function processRepository(RepositoryInterface $repository, DownloadContext $context): \Closure
     {
         return function () use ($repository, $context): ReleaseInterface {
+            $this->logger->info(
+                'Loading releases from `%s` repository %s',
+                $context->repoConfig->type,
+                $repository->getName(),
+            );
+
             $releasesCollection = $repository->getReleases()
                 ->minimumStability($this->stability);
 
@@ -104,20 +110,19 @@ final class Downloader
             /** @var ReleaseInterface[] $releases */
             $releases = $releasesCollection->sortByVersion()->toArray();
 
-            td($releases);
-
             $this->logger->debug('%d releases found.', \count($releases));
 
             process_release:
             $releases === [] and throw new \RuntimeException('No relevant release found.');
             $context->release = \array_shift($releases);
 
-            $this->logger->debug('Trying to load release `%s`', $context->release->getName());
+            $this->logger->info('Loading release `%s`', $context->release->getName());
 
             try {
                 await(coroutine($this->processRelease($context)));
                 return $context->release;
             } catch (\Throwable $e) {
+                $this->logger->error('%s', $e->getMessage());
                 $this->logger->exception($e);
                 goto process_release;
             }
@@ -164,7 +169,7 @@ final class Downloader
             $temp = $this->getTempDirectory() . DIRECTORY_SEPARATOR . $context->asset->getName();
             $file = new \SplFileObject($temp, 'wb+');
 
-            $this->logger->debug('Downloading into ' . $temp);
+            $this->logger->info('Downloading into %s', $temp);
 
             await(coroutine(
                 (static function () use ($context, $file): void {

@@ -82,3 +82,11 @@ To download all the configured software, run `dload get` without arguments:
     </registry>
 </dload>
 ```
+
+### GitHub Token
+
+To increase the rate limit for GitHub API, you can specify the token in the environment variable `GITHUB_TOKEN`:
+
+```bash
+GITHUB_TOKEN=your_token_here ./vendor/bin/dload get
+```

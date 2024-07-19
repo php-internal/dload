@@ -36,7 +36,7 @@ final class Logger
 
     public function info(string $message, string|int|float|bool ...$values): void
     {
-        $this->echo("\033[32m" . \sprintf($message, ...$values) . "\033[0m\n", !$this->verbose);
+        $this->echo("\033[32m" . \sprintf($message, ...$values) . "\033[0m\n", false);
     }
 
     public function debug(string $message, string|int|float|bool ...$values): void

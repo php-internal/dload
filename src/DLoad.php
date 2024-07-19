@@ -14,6 +14,7 @@ use Internal\DLoad\Module\Downloader\SoftwareCollection;
 use Internal\DLoad\Module\Downloader\Task\DownloadResult;
 use Internal\DLoad\Module\Downloader\Task\DownloadTask;
 use Internal\DLoad\Module\Downloader\TaskManager;
+use Internal\DLoad\Service\Logger;
 use React\Promise\PromiseInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\StyleInterface;
@@ -30,6 +31,7 @@ final class DLoad
     public bool $useMock = false;
 
     public function __construct(
+        private readonly Logger $logger,
         private readonly TaskManager $taskManager,
         private readonly SoftwareCollection $softwareCollection,
         private readonly Downloader $downloader,
@@ -85,6 +87,7 @@ final class DLoad
             $fileInfo = $downloadResult->file;
             $archive = $this->archiveFactory->create($fileInfo);
             $extractor = $archive->extract();
+            $this->logger->info('Extracting %s', $fileInfo->getFilename());
 
             while ($extractor->valid()) {
                 $file = $extractor->current();

@@ -72,8 +72,6 @@ final class Get extends Base implements SignalableCommandInterface
         $actionsConfig = $container->get(Actions::class);
         $actions = $this->getDownloadActions($input, $actionsConfig);
 
-        $output->writeln('Binary to load: ' . \implode(',', $actions));
-        $output->writeln('Path to store the binary: ' . $input->getOption('path'));
         $output->writeln('Architecture: ' . $container->get(Architecture::class)->name);
         $output->writeln('  Op. system: ' . $container->get(OperatingSystem::class)->name);
         $output->writeln('   Stability: ' . $container->get(Stability::class)->name);
