@@ -17,6 +17,7 @@ psalm.*                export-ignore
 psalm-baseline.xml     export-ignore
 infection.*            export-ignore
 codecov.*              export-ignore
+resources/mock         export-ignore
 
 *.http binary
 *.gpg binary

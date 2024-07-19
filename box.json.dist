@@ -7,11 +7,11 @@
     "compression": "GZ",
     "git": "git",
     "directories": [
-        "resources",
         "src",
         "vendor"
     ],
     "files": [
+        "resources/version.json",
         "bin/dload",
         "LICENSE.md",
         "composer.json",

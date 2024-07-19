@@ -1,5 +1,10 @@
-<h1 align="center">DLoad</h1>
-<p align="center">Simplify any binaries downloading</p>
+<div align="center">
+
+![DLoad](./resources/logo.svg)
+
+</div>
+
+<p align="center">Download artifacts easily</p>
 
 <div align="center">
 
