@@ -11,10 +11,10 @@ use IteratorAggregate;
 /**
  * @implements IteratorAggregate<Software>
  */
-final class SoftwareCollection implements \IteratorAggregate
+final class SoftwareCollection implements \IteratorAggregate, \Countable
 {
     public function __construct(
-        private SoftwareRegistry $softwareRegistry,
+        private readonly SoftwareRegistry $softwareRegistry,
     ) {}
 
     public function findSoftware(string $name): ?Software
@@ -34,5 +34,13 @@ final class SoftwareCollection implements \IteratorAggregate
     public function getIterator(): \Traversable
     {
         yield from $this->softwareRegistry->software;
+    }
+
+    /**
+     * @return int<0, max>
+     */
+    public function count(): int
+    {
+        return \count($this->softwareRegistry->software);
     }
 }

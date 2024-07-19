@@ -4,13 +4,10 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Command;
 
-use Internal\DLoad\Bootstrap;
 use Internal\DLoad\DLoad;
 use Internal\DLoad\Module\Common\Architecture;
 use Internal\DLoad\Module\Common\OperatingSystem;
 use Internal\DLoad\Module\Common\Stability;
-use Internal\DLoad\Service\Container;
-use Internal\DLoad\Service\Logger;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Command\SignalableCommandInterface;
@@ -18,8 +15,6 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Style\StyleInterface;
-use Symfony\Component\Console\Style\SymfonyStyle;
 
 /**
  * @internal
@@ -28,14 +23,8 @@ use Symfony\Component\Console\Style\SymfonyStyle;
     name: 'get',
     description: 'Download a binary',
 )]
-final class Get extends Command implements SignalableCommandInterface
+final class Get extends Base implements SignalableCommandInterface
 {
-    private bool $cancelling = false;
-
-    private Logger $logger;
-
-    private Container $container;
-
     public function configure(): void
     {
         $this->addArgument('binary', InputArgument::REQUIRED, 'Binary name, e.g. "rr", "dolt", "temporal" etc.');
@@ -69,25 +58,14 @@ final class Get extends Command implements SignalableCommandInterface
         return $result;
     }
 
-    protected function execute(
-        InputInterface $input,
-        OutputInterface $output,
-    ): int {
-        $this->logger = new Logger($output);
+    protected function execute(InputInterface $input, OutputInterface $output): int
+    {
+        parent::execute($input, $output);
+
+        $container = $this->container;
+
         $output->writeln('Binary to load: ' . $input->getArgument('binary'));
         $output->writeln('Path to store the binary: ' . $input->getOption('path'));
-
-        $this->container = $container = Bootstrap::init()->withConfig(
-            xml: \dirname(__DIR__, 2) . '/dload.xml',
-            inputOptions: $input->getOptions(),
-            inputArguments: $input->getArguments(),
-            environment: \getenv(),
-        )->finish();
-        $container->set($input, InputInterface::class);
-        $container->set($output, OutputInterface::class);
-        $container->set(new SymfonyStyle($input, $output), StyleInterface::class);
-        $container->set($this->logger);
-
         $output->writeln('Architecture: ' . $container->get(Architecture::class)->name);
         $output->writeln('  Op. system: ' . $container->get(OperatingSystem::class)->name);
         $output->writeln('   Stability: ' . $container->get(Stability::class)->name);

@@ -27,6 +27,31 @@ composer require internal/dload -W
 
 ## Usage
 
+### Get predefined software list
+
 ```bash
-./vendor/bin/dload dolt
+./vendor/bin/dload list
+```
+
+### Download single software
+
+```bash
+./vendor/bin/dload get dolt
+```
+
+### Configure preset for the project (WIP)
+
+Create `dload.xml` file in the root of the project with the following content:
+
+```xml
+<?xml version="1.0"?>
+<dload>
+    <todo />
+</dload>
+```
+
+Download all the software from the preset:
+
+```bash
+./vendor/bin/dload get
 ```
