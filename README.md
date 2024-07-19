@@ -55,3 +55,25 @@ Download all the software from the preset:
 ```bash
 ./vendor/bin/dload get
 ```
+
+### Custom software registry
+
+```xml
+<?xml version="1.0"?>
+<dload>
+    <registry>
+        <software name="RoadRunner"
+                  alias="rr"
+                  description="High performant Application server"
+        >
+            <repository type="github"
+                        uri="roadrunner-server/roadrunner"
+                        asset-pattern="/^roadrunner-.*/"
+            />
+            <file pattern="/^(roadrunner|rr)(?:\.exe)?$/"
+                  rename="rr"
+            />
+        </software>
+    </registry>
+</dload>
+```

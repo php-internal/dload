@@ -16,4 +16,14 @@ final class Repository
 
     #[XPath('@asset-pattern')]
     public string $assetPattern = '/^.*$/';
+
+    public static function fromArray(mixed $repositoryArray): self
+    {
+        $self = new self();
+        $self->type = $repositoryArray['type'] ?? 'github';
+        $self->uri = $repositoryArray['uri'];
+        $self->assetPattern = $repositoryArray['asset-pattern'] ?? '/^.*$/';
+
+        return $self;
+    }
 }

@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Common\Config;
 
+use Internal\DLoad\Module\Common\Internal\Attribute\XPath;
 use Internal\DLoad\Module\Common\Internal\Attribute\XPathEmbedList;
 
-final class SoftwareRegistry
+final class CustomSoftwareRegistry
 {
+    #[XPath('/dload/registry/@overwrite')]
+    public bool $overwrite = false;
+
     /**
      * @var Embed\Software[]
      */

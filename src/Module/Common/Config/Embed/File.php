@@ -16,4 +16,13 @@ final class File
 
     #[XPath('@pattern')]
     public string $pattern = '/^.*$/';
+
+    public static function fromArray(mixed $fileArray): self
+    {
+        $self = new self();
+        $self->rename = $fileArray['rename'] ?? null;
+        $self->pattern = $fileArray['pattern'] ?? '/^.*$/';
+
+        return $self;
+    }
 }

@@ -33,6 +33,24 @@ final class Software
     #[XPathEmbedList('file', File::class)]
     public array $files = [];
 
+    public static function fromArray(mixed $softwareArray): self
+    {
+        $self = new self();
+        $self->name = $softwareArray['name'];
+        $self->alias = $softwareArray['alias'] ?? null;
+        $self->description = $softwareArray['description'] ?? '';
+        $self->repositories = \array_map(
+            static fn(array $repositoryArray) => Repository::fromArray($repositoryArray),
+            $softwareArray['repository'] ?? [],
+        );
+        $self->files = \array_map(
+            static fn(array $fileArray) => File::fromArray($fileArray),
+            $softwareArray['file'] ?? [],
+        );
+
+        return $self;
+    }
+
     /**
      * @return non-empty-string
      */
