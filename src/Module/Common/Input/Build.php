@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Internal\DLoad\Module\Common\Config;
+namespace Internal\DLoad\Module\Common\Input;
 
 use Internal\DLoad\Module\Common\Architecture;
 use Internal\DLoad\Module\Common\Internal\Attribute\InputOption;
@@ -12,7 +12,7 @@ use Internal\DLoad\Module\Common\Stability;
 /**
  * @internal
  */
-final class BuildInput
+final class Build
 {
     /**
      * Use {@see Architecture} to get final value.

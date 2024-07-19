@@ -13,7 +13,7 @@ final class CustomSoftwareRegistry
     public bool $overwrite = false;
 
     /**
-     * @var Embed\Software[]
+     * @var \Internal\DLoad\Module\Common\Config\Embed\Software[]
      */
     #[XPathEmbedList('/dload/registry/software', Embed\Software::class)]
     public array $software = [];

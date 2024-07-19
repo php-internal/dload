@@ -6,7 +6,7 @@ namespace Internal\DLoad\Module\Downloader;
 
 use Internal\DLoad\Module\Archive\ArchiveFactory;
 use Internal\DLoad\Module\Common\Architecture;
-use Internal\DLoad\Module\Common\Config\DownloaderConfig;
+use Internal\DLoad\Module\Common\Config\Downloader as DownloaderConfig;
 use Internal\DLoad\Module\Common\Config\Embed\Software;
 use Internal\DLoad\Module\Common\OperatingSystem;
 use Internal\DLoad\Module\Common\Stability;

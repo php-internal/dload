@@ -1,8 +1,15 @@
 <?xml version="1.0"?>
 <!-- Example -->
-<dload>
+<dload
+    temp-dir="./runtime"
+>
+    <actions>
+        <download name="rr" version="^2.12.0" />
+    </actions>
     <registry overwrite="false">
-        <software name="RoadRunner" alias="rr" description="High performant Application server">
+        <software name="RoadRunner" alias="rr"
+                  homepage="https://roadrunner.dev"
+                  description="High performant Application server">
             <repository type="github" uri="roadrunner-server/roadrunner" asset-pattern="/^roadrunner-.*/"/>
             <file rename="rr" pattern="/^(roadrunner|rr)(?:\.exe)?$/" />
         </software>

@@ -17,9 +17,8 @@ final class SoftwareCollection implements \IteratorAggregate, \Countable
     /** @var array<non-empty-string, Software> */
     private array $registry = [];
 
-    public function __construct(
-        CustomSoftwareRegistry $softwareRegistry,
-    ) {
+    public function __construct(CustomSoftwareRegistry $softwareRegistry)
+    {
         foreach ($softwareRegistry->software as $software) {
             $this->registry[$software->getId()] = $software;
         }

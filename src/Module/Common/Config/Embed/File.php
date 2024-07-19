@@ -6,6 +6,12 @@ namespace Internal\DLoad\Module\Common\Config\Embed;
 
 use Internal\DLoad\Module\Common\Internal\Attribute\XPath;
 
+/**
+ * @psalm-type FileArray = array{
+ *     rename?: non-empty-string,
+ *     pattern?: non-empty-string
+ * }
+ */
 final class File
 {
     /**
@@ -17,6 +23,9 @@ final class File
     #[XPath('@pattern')]
     public string $pattern = '/^.*$/';
 
+    /**
+     * @param FileArray $fileArray
+     */
     public static function fromArray(mixed $fileArray): self
     {
         $self = new self();
