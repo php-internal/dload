@@ -25,7 +25,7 @@
         "react/async": "3 - 4",
         "symfony/http-client": "4 - 7",
         "psr/container": "1 - 2",
-        "yiisoft/injector": "^1"
+        "yiisoft/injector": "^1.2"
     },
     "require-dev": {
         "buggregator/trap": "^1.10",
