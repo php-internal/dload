@@ -51,5 +51,6 @@ if ('cli' !== PHP_SAPI) {
     );
     $application->setDefaultCommand(Command\Get::getDefaultName(), false);
     $application->setVersion(Info::version());
+    $application->setName(Info::NAME);
     $application->run();
 })();
