@@ -2,6 +2,10 @@
 
 ## 0.2.1 (2024-07-20)
 
+## What's Changed
+* Fixed asset file extension detection by @roxblnfk
+* Updated min version of `yiisoft/injector` by @roxblnfk
+
 **Full Changelog**: https://github.com/php-internal/dload/compare/0.2.0...0.2.1
 
 ## 0.2.0 (2024-07-19)
