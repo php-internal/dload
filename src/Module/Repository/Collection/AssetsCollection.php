@@ -44,11 +44,16 @@ final class AssetsCollection extends Collection
     public function whereFileExtensions(array $extensions): self
     {
         return $this->filter(
-            static fn(AssetInterface $asset): bool => \in_array(
-                \pathinfo($asset->getName(), \PATHINFO_EXTENSION),
-                $extensions,
-                true,
-            ),
+            static function (AssetInterface $asset) use ($extensions): bool {
+                $assetName = \strtolower($asset->getName());
+                foreach ($extensions as $extension) {
+                    if (\str_ends_with($assetName, '.' . $extension)) {
+                        return true;
+                    }
+                }
+
+                return false;
+            },
         );
     }
 
