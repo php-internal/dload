@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.0-alpha (2024-07-20)
+
+**Full Changelog**: https://github.com/php-internal/dload/compare/0.2.0...0.2.1
+
 ## 0.2.0 (2024-07-19)
 
 ## What's Changed
