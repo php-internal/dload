@@ -48,7 +48,7 @@ final class GitHubRelease extends Release implements Destroyable
         );
 
         $name = self::getTagName($data);
-        $version = $data['tag_name'] ?? (string)$data['name'];
+        $version = $data['tag_name'] ?? (string) $data['name'];
         $result = new self($client, $repository, $name, $version);
 
         $result->assets = AssetsCollection::from(static function () use ($client, $result, $data): \Generator {
@@ -99,7 +99,7 @@ final class GitHubRelease extends Release implements Destroyable
             return $parser->normalize($data['tag_name']);
         } catch (\Throwable $e) {
             try {
-                return $parser->normalize((string)$data['name']);
+                return $parser->normalize((string) $data['name']);
             } catch (\Throwable $e) {
                 return 'dev-' . $data['tag_name'];
             }
