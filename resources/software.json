@@ -87,5 +87,23 @@
                 "pattern": "/^(protoc)(?:\\.exe)?$/"
             }
         ]
+    },
+    {
+        "name": "TigerBeetle ",
+        "alias": "tigerbeetle",
+        "description": "TigerBeetle is a financial transactions database designed for mission critical safety and performance to power the next 30 years of OLTP.",
+        "homepage": "https://tigerbeetle.com/",
+        "repositories": [
+            {
+                "type": "github",
+                "uri": "tigerbeetle/tigerbeetle",
+                "asset-pattern": "/^tigerbeetle-.*/"
+            }
+        ],
+        "files": [
+            {
+                "pattern": "/^(tigerbeetle)(?:\\.exe)?$/"
+            }
+        ]
     }
 ]
