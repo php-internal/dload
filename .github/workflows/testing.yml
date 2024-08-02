@@ -151,8 +151,8 @@ jobs:
         dependencies:
           - locked
     env:
-      DLOAD_PHAR: ".build/phar/DLOAD.phar"
-      DLOAD_PHAR_SIGNATURE: ".build/phar/DLOAD.phar.asc"
+      DLOAD_PHAR: ".build/phar/dload.phar"
+      DLOAD_PHAR_SIGNATURE: ".build/phar/dload.phar.asc"
     steps:
       - name: 📦 Check out the codebase
         uses: actions/checkout@v4.1.5
