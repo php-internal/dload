@@ -1,10 +1,10 @@
 # Changelog
 
-## 0.2.2 (2024-07-20)
+## 1.0.0-alpha (2024-07-20)
 
 ## What's Changed
 * Fix compatibility with synfony console 4-5 by @roxblnfk in https://github.com/php-internal/dload/pull/9
-
+* Add `protoc`, `protoc-gen-php-grpc` and `tigerbeetle` software  by @roxblnfk in https://github.com/php-internal/dload/pull/13
 
 **Full Changelog**: https://github.com/php-internal/dload/compare/0.2.1...0.2.2
 
