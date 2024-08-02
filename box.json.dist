@@ -11,6 +11,7 @@
         "vendor"
     ],
     "files": [
+        "resources/software.json",
         "resources/version.json",
         "bin/dload",
         "LICENSE.md",

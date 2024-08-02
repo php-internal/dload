@@ -53,5 +53,57 @@
                 "pattern": "/^(dolt)(?:\\.exe)?$/"
             }
         ]
+    },
+    {
+        "name": "ProtoC PHP gRPC Plugin",
+        "alias": "protoc-gen-php-grpc",
+        "description": "Protobuf PHP gRPC generator plugin",
+        "repositories": [
+            {
+                "type": "github",
+                "uri": "roadrunner-server/roadrunner",
+                "asset-pattern": "/^protoc-gen-php-grpc-.*/"
+            }
+        ],
+        "files": [
+            {
+                "pattern": "/^(protoc-gen-php-grpc)(?:\\.exe)?$/"
+            }
+        ]
+    },
+    {
+        "name": "Protobuf compiler",
+        "alias": "protoc",
+        "homepage": "https://protobuf.dev/",
+        "repositories": [
+            {
+                "type": "github",
+                "uri": "protocolbuffers/protobuf",
+                "asset-pattern": "/^protoc-.*/"
+            }
+        ],
+        "files": [
+            {
+                "pattern": "/^(protoc)(?:\\.exe)?$/"
+            }
+        ]
+    },
+    {
+        "name": "TigerBeetle ",
+        "alias": "tigerbeetle",
+        "description": "TigerBeetle is a financial transactions database designed for mission critical safety and performance to power the next 30 years of OLTP.",
+        "homepage": "https://tigerbeetle.com/",
+        "repositories": [
+            {
+                "type": "github",
+                "uri": "tigerbeetle/tigerbeetle",
+                "asset-pattern": "/^tigerbeetle-.*/"
+            }
+        ],
+        "files": [
+            {
+                "pattern": "/^(tigerbeetle)(?:\\.exe)?$/"
+            }
+        ]
     }
 ]
