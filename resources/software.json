@@ -53,5 +53,39 @@
                 "pattern": "/^(dolt)(?:\\.exe)?$/"
             }
         ]
+    },
+    {
+        "name": "ProtoC PHP gRPC Plugin",
+        "alias": "protoc-gen-php-grpc",
+        "description": "Protobuf PHP gRPC generator plugin",
+        "repositories": [
+            {
+                "type": "github",
+                "uri": "roadrunner-server/roadrunner",
+                "asset-pattern": "/^protoc-gen-php-grpc-.*/"
+            }
+        ],
+        "files": [
+            {
+                "pattern": "/^(protoc-gen-php-grpc)(?:\\.exe)?$/"
+            }
+        ]
+    },
+    {
+        "name": "Protobuf compiler",
+        "alias": "protoc",
+        "homepage": "https://protobuf.dev/",
+        "repositories": [
+            {
+                "type": "github",
+                "uri": "protocolbuffers/protobuf",
+                "asset-pattern": "/^protoc-.*/"
+            }
+        ],
+        "files": [
+            {
+                "pattern": "/^(protoc)(?:\\.exe)?$/"
+            }
+        ]
     }
 ]
