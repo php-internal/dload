@@ -15,7 +15,7 @@ prompts:
         content: |
           Read {{class-name}} class(es) or interface(s).
 
-          Cover it with comments using following instructions:
+          Cover it with comments using following important instructions:
           - Don't break signatures. You can only add or improve comments.
           - Don't remove existing @internal, @link, @see, @api, or @deprecated annotations.
           - Use passive forms instead of we or you.
@@ -26,11 +26,12 @@ prompts:
           - Don't use @inheritDoc annotations.
           - Keep docs clean:
             - If the method has the same signature in the parent, don't comment the implementation if there is no additional things.
-            - Keep only essential and non-obvious documentation.
+            - Keep only essential and non-obvious documentation. It's important to avoid redundancy.
             - remove trailing spaces even in empty comment lines
-          - Use generic annotations if possible. Iven f.e. for int<min, max> based on the logic.
+          - Use generic annotations if possible based on the logic. For example for a `count()` has `int<0, max>` return type because the amount of items can't be negative.
           - Use inline annotations like {@see ClassName} if it needed to  mention in a text block.
-          - Add class or method usage example using markdown like:
+          - Add class or method usage example using markdown like.
+            Note that there is leading space before inside the code block:
             ```php
              // Comment for the following code
              some code
