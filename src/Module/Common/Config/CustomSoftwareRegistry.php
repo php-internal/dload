@@ -14,7 +14,7 @@ use Internal\DLoad\Module\Common\Internal\Attribute\XPathEmbedList;
  */
 final class CustomSoftwareRegistry
 {
-    /** @var bool $overwrite Whether to overwrite built-in software definitions */
+    /** @var bool $overwrite Replace the built-in software collection with custom ones */
     #[XPath('/dload/registry/@overwrite')]
     public bool $overwrite = false;
 
