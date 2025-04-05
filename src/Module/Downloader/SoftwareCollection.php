@@ -10,6 +10,8 @@ use Internal\DLoad\Module\Common\Config\Embed\Software;
 use IteratorAggregate;
 
 /**
+ * Collection of software package configurations.
+ *
  * @implements IteratorAggregate<Software>
  */
 final class SoftwareCollection implements \IteratorAggregate, \Countable
@@ -17,6 +19,9 @@ final class SoftwareCollection implements \IteratorAggregate, \Countable
     /** @var array<non-empty-string, Software> */
     private array $registry = [];
 
+    /**
+     * Creates a collection from registry and optionally loads default entries.
+     */
     public function __construct(CustomSoftwareRegistry $softwareRegistry)
     {
         foreach ($softwareRegistry->software as $software) {
@@ -26,6 +31,19 @@ final class SoftwareCollection implements \IteratorAggregate, \Countable
         $softwareRegistry->overwrite or $this->loadDefaultRegistry();
     }
 
+    /**
+     * Finds software configuration by name.
+     *
+     * ```php
+     * $software = $collection->findSoftware('rr');
+     * if ($software !== null) {
+     *     // Process software configuration
+     * }
+     * ```
+     *
+     * @param non-empty-string $name Software name or alias
+     * @return Software|null Found software configuration or null
+     */
     public function findSoftware(string $name): ?Software
     {
         return $this->registry[$name] ?? null;
@@ -39,14 +57,16 @@ final class SoftwareCollection implements \IteratorAggregate, \Countable
         yield from $this->registry;
     }
 
-    /**
-     * @return int<0, max>
-     */
     public function count(): int
     {
         return \count($this->registry);
     }
 
+    /**
+     * Loads default software registry from embedded JSON file.
+     *
+     * @see Software::fromArray() For parsing logic
+     */
     private function loadDefaultRegistry(): void
     {
         $json = \json_decode(

@@ -2,3 +2,19 @@ $schema: 'https://raw.githubusercontent.com/context-hub/generator/refs/heads/mai
 
 import:
     - path: resources/prompts.yaml
+
+documents:
+  # Project structure overview
+  - description: 'Project structure overview'
+    outputPath: project-structure.md
+    overwrite: true
+    sources:
+      - type: text
+        content: |
+          The PSR-4 is used in the project.
+      - type: tree
+        sourcePaths: ['src']
+        showCharCount: true
+        showSize: true
+      - type: file
+        sourcePaths: ['README.md']

@@ -1,0 +1,44 @@
+$schema: 'https://raw.githubusercontent.com/context-hub/generator/refs/heads/main/json-schema.json'
+
+prompts:
+  - id: cover-class-by-docs
+    description: Generate documentation for a specific class in the project
+    schema:
+      properties:
+        class-name:
+          description: Class name to cover with docs
+      required:
+        - class-name
+
+    messages:
+      - role: user
+        content: |
+          Open {{class-name}} class.
+
+          Cover it with comments or improve existing ones using following instructions:
+          - Use passive forms instead of we or you.
+          - Separate title and content with empty line.
+          - Use @link annotation if it's necessary to write some URL.
+          - Use @see annotation if it's necessary to reference to a class or method.
+          - Keep only essential and non-obvious documentation.
+          - Don't use @inheritDoc annotations.
+          - Keep docs clean
+            - if the method has the same signature in the parent interface, don't comment the implementation if there is no additional things.
+            - remove trailing spaces
+          - Use generic annotations if possible.
+          - Use inline annotations like {@see ClassName} if it needed to  mention in a text block.
+          - Add class or method usage example using markdown like.
+            ```php
+             // Comment for the following code
+             some code
+            ```
+          - Inner comments order: title, description, example, template annotations, params and return annotations, references and internal/deprecated annotations.
+          - Property comments rules: If it possible, write inline comment without title like `/** @var non-empty-string $name User name */`.
+          - Multiline comments rules: if a comment starts with an annotation, the second line should start with whitespaces aligned with the annotation length:
+            ```php
+            /**
+             * @var non-empty-string $name Comment on the first line
+             *      comment on the second line...
+             *      comment on the third line
+             */
+            ```
