@@ -22,12 +22,13 @@ prompts:
           - Separate title and content with empty line.
           - Use @link annotation if it's necessary to write some URL.
           - Use @see annotation if it's necessary to reference to a class or method.
+          - Use extended types like class-string, non-empty-string, non-empty-array, non-empty-list, etc, if it's logically correct.
           - Keep only essential and non-obvious documentation.
           - Don't use @inheritDoc annotations.
           - Keep docs clean
             - if the method has the same signature in the parent, don't comment the implementation if there is no additional things.
             - remove trailing spaces even in empty comment lines
-          - Use generic annotations if possible.
+          - Use generic annotations if possible. Iven f.e. for int<min, max> based on the logic.
           - Use inline annotations like {@see ClassName} if it needed to  mention in a text block.
           - Add class or method usage example using markdown like:
             ```php

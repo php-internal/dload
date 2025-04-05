@@ -10,6 +10,16 @@ use Internal\DLoad\Service\Factoriable;
 /**
  * Operating system enumeration.
  *
+ * Represents the different operating systems supported by the downloader.
+ *
+ * ```php
+ * // Recommended: Get from container (autowired with build config)
+ * $os = $container->get(OperatingSystem::class);
+ *
+ * // Or create from build config name
+ * $os = OperatingSystem::tryFromBuildName('my-software_darwin');
+ * ```
+ *
  * @internal
  */
 enum OperatingSystem: string implements Factoriable

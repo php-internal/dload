@@ -6,6 +6,7 @@ namespace Internal\DLoad;
 
 use Internal\DLoad\Module\Common\Architecture;
 use Internal\DLoad\Module\Common\Internal\Injection\ConfigLoader;
+use Internal\DLoad\Module\Common\Internal\ObjectContainer;
 use Internal\DLoad\Module\Common\OperatingSystem;
 use Internal\DLoad\Module\Common\Stability;
 use Internal\DLoad\Service\Container;
@@ -21,7 +22,7 @@ final class Bootstrap
         private Container $container,
     ) {}
 
-    public static function init(Container $container = new Module\Common\Internal\Container()): self
+    public static function init(Container $container = new ObjectContainer()): self
     {
         return new self($container);
     }

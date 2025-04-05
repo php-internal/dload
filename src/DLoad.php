@@ -141,7 +141,7 @@ final class DLoad
 
         foreach ($mapping as $conf) {
             if (\preg_match($conf->pattern, $source->getFilename())) {
-                $newName = match(true) {
+                $newName = match (true) {
                     $conf->rename === null => $source->getFilename(),
                     $source->getExtension() === '' => $conf->rename,
                     default => $conf->rename . '.' . $source->getExtension(),

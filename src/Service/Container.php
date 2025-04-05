@@ -47,7 +47,7 @@ interface Container extends Destroyable
     /**
      * Registers an existing service instance in the container.
      *
-     * @template T of object
+     * @template T
      * @param T $service Service instance to register
      * @param class-string<T>|null $id Optional service identifier (defaults to object's class)
      */
@@ -64,11 +64,13 @@ interface Container extends Destroyable
     public function make(string $class, array $arguments = []): object;
 
     /**
+     * Declares a factory or predefined arguments for the specified class.
+     *
      * Configures how a service should be instantiated.
      *
      * @template T of object
      * @param class-string<T> $id Service identifier
-     * @param array|\Closure(Container): T $binding Factory function or constructor arguments
+     * @param null|array|\Closure(Container): T $binding Factory function or constructor arguments
      */
     public function bind(string $id, \Closure|array|null $binding = null): void;
 }

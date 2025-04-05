@@ -5,19 +5,21 @@ declare(strict_types=1);
 namespace Internal\DLoad\Module\Common\Internal;
 
 use Internal\DLoad\Module\Common\Internal\Injection\ConfigLoader;
-use Internal\DLoad\Service\Container as AppContainerInterface;
-use Internal\DLoad\Service\Destroyable;
+use Internal\DLoad\Service\Container;
 use Internal\DLoad\Service\Factoriable;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use Yiisoft\Injector\Injector;
 
 /**
- * Simple container.
+ * Simple dependency injection container.
+ *
+ * Provides service creation and caching with autowiring capabilities.
+ * Automatically loads configuration for config classes.
  *
  * @internal
  */
-final class Container implements AppContainerInterface, ContainerInterface, Destroyable
+final class ObjectContainer implements Container, ContainerInterface
 {
     /** @var array<class-string, object> */
     private array $cache = [];
@@ -38,48 +40,23 @@ final class Container implements AppContainerInterface, ContainerInterface, Dest
         $this->cache[ContainerInterface::class] = $this;
     }
 
-    /**
-     * @template T of object
-     * @param class-string<T> $id
-     * @param array $arguments Will be used if the object is created for the first time.
-     * @return T
-     *
-     * @psalm-suppress MoreSpecificImplementedParamType, InvalidReturnType
-     */
     public function get(string $id, array $arguments = []): object
     {
         /** @psalm-suppress InvalidReturnStatement */
         return $this->cache[$id] ??= $this->make($id, $arguments);
     }
 
-    /**
-     * @param class-string $id
-     *
-     * @psalm-suppress MoreSpecificImplementedParamType
-     */
     public function has(string $id): bool
     {
         return \array_key_exists($id, $this->cache) || \array_key_exists($id, $this->factory);
     }
 
-    /**
-     * @template T of object
-     * @param T $service
-     * @param class-string<T>|null $id
-     */
     public function set(object $service, ?string $id = null): void
     {
         \assert($id === null || $service instanceof $id, "Service must be instance of {$id}.");
         $this->cache[$id ?? \get_class($service)] = $service;
     }
 
-    /**
-     * Create an object of the specified class without caching.
-     *
-     * @template T
-     * @param class-string<T> $class
-     * @return T
-     */
     public function make(string $class, array $arguments = []): object
     {
         $binding = $this->factory[$class] ?? null;
@@ -109,11 +86,9 @@ final class Container implements AppContainerInterface, ContainerInterface, Dest
     }
 
     /**
-     * Declare a factory or predefined arguments for the specified class.
-     *
-     * @template T of object
-     * @param class-string<T> $id
-     * @param array|\Closure(Container): T $binding
+     * @template T
+     * @param class-string<T> $id Service identifier
+     * @param null|array|\Closure(Container): T $binding Factory function or constructor arguments
      */
     public function bind(string $id, \Closure|array|null $binding = null): void
     {
@@ -126,7 +101,9 @@ final class Container implements AppContainerInterface, ContainerInterface, Dest
             "Class `$id` must have a factory or be a factory itself and implement `Factoriable`.",
         );
 
-        $this->factory[$id] = $id::create(...);
+        /** @var T $object */
+        $object = $id::create(...);
+        $this->factory[$id] = $object;
     }
 
     public function destroy(): void

@@ -16,10 +16,10 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 /**
  * Base abstract class for all DLoad commands.
- * 
+ *
  * Provides common functionality for command initialization, container setup,
  * and configuration handling.
- * 
+ *
  * ```php
  * // Extend to create a custom command
  * final class CustomCommand extends Base
@@ -32,7 +32,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
  *     }
  * }
  * ```
- * 
+ *
  * @internal
  */
 abstract class Base extends Command
@@ -45,7 +45,7 @@ abstract class Base extends Command
 
     /**
      * Configures command options.
-     * 
+     *
      * Adds option for specifying configuration file location.
      */
     public function configure(): void
@@ -56,12 +56,12 @@ abstract class Base extends Command
 
     /**
      * Initializes the command execution environment.
-     * 
+     *
      * Sets up logger, container, and registers input/output in the container.
-     * 
+     *
      * @param InputInterface $input Command input
      * @param OutputInterface $output Command output
-     * 
+     *
      * @return int Command success code
      */
     protected function execute(
@@ -86,9 +86,9 @@ abstract class Base extends Command
 
     /**
      * Resolves configuration file path from input or default location.
-     * 
+     *
      * @param InputInterface $input Command input
-     * 
+     *
      * @return non-empty-string|null Path to the configuration file
      */
     private function getConfigFile(InputInterface $input): ?string

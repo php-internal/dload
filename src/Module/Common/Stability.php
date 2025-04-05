@@ -10,6 +10,17 @@ use Internal\DLoad\Service\Factoriable;
 /**
  * Software stability level.
  *
+ * Defines the stability level of software releases from most stable to least.
+ * Used to filter releases based on desired stability.
+ *
+ * ```php
+ * // Getting stability from build config
+ * $stability = Stability::create($buildConfig);
+ *
+ * // Getting the stability level weight (higher number means more stable)
+ * $weight = $stability->getWeight();
+ * ```
+ *
  * @internal
  */
 enum Stability: string implements Factoriable

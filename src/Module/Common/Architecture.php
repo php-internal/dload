@@ -10,6 +10,16 @@ use Internal\DLoad\Service\Factoriable;
 /**
  * Architecture enumeration.
  *
+ * Represents CPU architectures supported by the downloader system.
+ *
+ * ```php
+ * // To get the current system architecture, use DI Container:
+ * $arch = $container->get(Architecture::class);
+ *
+ * // To create an architecture instance from a build configuration name:
+ * $arch = Architecture::tryFromBuildName('my-software_amd64');
+ * ```
+ *
  * @internal
  */
 enum Architecture: string implements Factoriable
