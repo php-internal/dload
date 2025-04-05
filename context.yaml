@@ -18,3 +18,19 @@ documents:
         showSize: true
       - type: file
         sourcePaths: ['README.md']
+
+  # Modules API
+  - description: 'Modules API allowed to be used in the project'
+    outputPath: modules-api.md
+    overwrite: true
+    sources:
+      - type: file
+        sourcePaths: ['src/Module', 'src/Service']
+        filePattern: '*.php'
+        excludePatterns: ['/Internal/']
+        modifiers:
+          - name: php-content-filter
+            options:
+              method_visibility:
+                - public
+              keep_method_bodies: false
