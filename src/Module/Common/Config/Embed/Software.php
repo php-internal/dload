@@ -13,6 +13,17 @@ use Internal\DLoad\Module\Common\Internal\Attribute\XPathEmbedList;
  * Represents a software package that can be downloaded through the system.
  * Contains all necessary metadata for proper identification and retrieval.
  *
+ * ```php
+ * $software = Software::fromArray([
+ *     'name' => 'RoadRunner',
+ *     'alias' => 'rr',
+ *     'description' => 'High performance PHP application server',
+ *     'repositories' => [
+ *         ['type' => 'github', 'uri' => 'roadrunner-server/roadrunner']
+ *     ]
+ * ]);
+ * ```
+ *
  * @psalm-import-type RepositoryArray from Repository
  * @psalm-import-type FileArray from File
  * @psalm-type SoftwareArray = array{
@@ -55,17 +66,6 @@ final class Software
 
     /**
      * Creates a Software instance from array configuration.
-     *
-     * ```php
-     * $software = Software::fromArray([
-     *     'name' => 'RoadRunner',
-     *     'alias' => 'rr',
-     *     'description' => 'High performance PHP application server',
-     *     'repositories' => [
-     *         ['type' => 'github', 'uri' => 'roadrunner-server/roadrunner']
-     *     ]
-     * ]);
-     * ```
      *
      * @param SoftwareArray $softwareArray Configuration array
      */
