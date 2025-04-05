@@ -9,8 +9,14 @@ use Internal\DLoad\Module\Repository\Collection\ReleasesCollection;
 /**
  * Represents a software repository that contains releases.
  *
- * This interface defines the contract for accessing repository information
- * and retrieving all available releases.
+ * Defines the contract for accessing repository information and retrieving all available releases.
+ * Repositories act as the primary source for software packages that can be downloaded.
+ *
+ * ```php
+ * $repository = $repositoryProvider->getByConfig($repoConfig);
+ * $releases = $repository->getReleases();
+ * $filteredReleases = $releases->satisfies('^2.0.0')->sortByVersion();
+ * ```
  */
 interface RepositoryInterface
 {

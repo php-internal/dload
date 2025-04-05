@@ -11,7 +11,20 @@ use Internal\DLoad\Module\Common\OperatingSystem;
  * Represents a downloadable asset from a software release.
  *
  * Assets are individual binary files or archives associated with a specific release,
- * often targeting particular operating systems or architectures.
+ * often targeting particular operating systems or architectures. They represent
+ * the actual files that will be downloaded and extracted by the application.
+ *
+ * ```php
+ * $assets = $release->getAssets()
+ *     ->whereArchitecture($architecture)
+ *     ->whereOperatingSystem($operatingSystem)
+ *     ->whereNameMatches($pattern);
+ *
+ * foreach ($assets as $asset) {
+ *     $chunks = $asset->download();
+ *     // Process downloaded chunks
+ * }
+ * ```
  */
 interface AssetInterface
 {

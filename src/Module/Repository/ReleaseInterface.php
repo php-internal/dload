@@ -11,7 +11,18 @@ use Internal\DLoad\Module\Repository\Collection\AssetsCollection;
  * Represents a single release of software from a repository.
  *
  * A release contains information about its version, stability and associated assets
- * that can be downloaded.
+ * that can be downloaded. Release objects provide access to all distributable files
+ * for a particular software version.
+ *
+ * ```php
+ * $releases = $repository->getReleases()
+ *     ->minimumStability(Stability::Stable)
+ *     ->satisfies('^2.0.0')
+ *     ->sortByVersion();
+ *
+ * $latestRelease = $releases->first();
+ * $assets = $latestRelease->getAssets();
+ * ```
  */
 interface ReleaseInterface
 {
@@ -37,8 +48,6 @@ interface ReleaseInterface
      * This version string may include prefixes or suffixes that aren't
      * compatible with Composer's comparators.
      *
-     * @note This version may not be compatible with Composer's comparators
-     *
      * @return non-empty-string Raw version string (e.g. "v1.2.3-beta")
      */
     public function getVersion(): string;
@@ -59,6 +68,9 @@ interface ReleaseInterface
 
     /**
      * Checks if this release satisfies the given version constraint.
+     *
+     * Uses Composer's version comparison logic to determine if this release
+     * satisfies the specified constraint.
      *
      * @param string $constraint Version constraint in Composer format (e.g. "^1.0", ">2.5")
      * @return bool True if the release satisfies the constraint

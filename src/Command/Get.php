@@ -24,12 +24,6 @@ use Symfony\Component\Console\Output\OutputInterface;
  * system/architecture detection. Can work with both CLI arguments and
  * configuration file definitions.
  *
- * ```php
- * // Download software programmatically
- * $command = new Get();
- * $command->run(new ArrayInput(['software' => 'rr']), new ConsoleOutput());
- * ```
- *
  * ```bash
  * # Download single software
  * ./vendor/bin/dload get rr

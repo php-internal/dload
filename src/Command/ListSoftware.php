@@ -17,12 +17,6 @@ use Symfony\Component\Console\Output\OutputInterface;
  * Shows all registered software packages with their IDs, names,
  * repository information, and descriptions.
  *
- * ```php
- * // List software programmatically
- * $command = new ListSoftware();
- * $command->run(new ArrayInput([]), new ConsoleOutput());
- * ```
- *
  * ```bash
  * # List all available software packages
  * ./vendor/bin/dload software

@@ -7,24 +7,27 @@ namespace Internal\DLoad\Service;
 /**
  * Interface for classes that can create instances of themselves.
  *
- * Implementing classes should provide a static factory method for instantiation.
+ * Implementing classes should provide the static factory method `create()` for instantiation.
+ * This pattern is useful for objects that require complex initialization logic or dependency resolution.
  *
  * ```php
  * class Config implements Factoriable
  * {
  *     private function __construct(
- *         private string $path
+ *         private Logger $logger,
  *     ) {}
  *
- *     public static function create(string $path): self
+ *     public static function create(Logger $logger): self
  *     {
- *         return new self($path);
+ *         return new self($logger);
  *     }
  * }
+ *
+ * $container->get(Config::class); // Will be created via the `create()` method with autowiring
  * ```
  *
- * @method static create
- *         Method creates new instance of the class. May contain any injectable parameters.
+ * @method static self create
+ *         Method creates new instance of the class with injectable parameters
  *
  * @internal
  */

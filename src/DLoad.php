@@ -22,12 +22,22 @@ use Symfony\Component\Console\Style\StyleInterface;
 use function React\Promise\resolve;
 
 /**
- * To have a short syntax.
+ * Main application facade providing simplified access to download functionality.
+ *
+ * Acts as a high-level interface for downloading and extracting software packages
+ * based on configuration actions.
+ *
+ * ```php
+ * $dload = $container->get(DLoad::class);
+ * $dload->addTask(new DownloadConfig('rr', '^2.12.0'));
+ * $dload->run();
+ * ```
  *
  * @internal
  */
 final class DLoad
 {
+    /** @var bool Flag to use mock data instead of actual downloads for testing */
     public bool $useMock = false;
 
     public function __construct(
@@ -41,6 +51,14 @@ final class DLoad
         private readonly StyleInterface $io,
     ) {}
 
+    /**
+     * Adds a download task to the execution queue.
+     *
+     * Creates and schedules a task to download and extract a software package based on the provided action.
+     *
+     * @param DownloadConfig $action Download configuration action
+     * @throws \RuntimeException When software package is not found
+     */
     public function addTask(DownloadConfig $action): void
     {
         $this->taskManager->addTask(function () use ($action): void {
@@ -57,11 +75,25 @@ final class DLoad
         });
     }
 
+    /**
+     * Executes all queued download tasks.
+     *
+     * Processes all scheduled tasks sequentially until completion.
+     */
     public function run(): void
     {
         $this->taskManager->await();
     }
 
+    /**
+     * Creates a download task for the specified software package.
+     *
+     * Either uses a mock task (for testing) or creates a real download task.
+     *
+     * @param Software $software Software package configuration
+     * @param DownloadConfig $action Download action configuration
+     * @return DownloadTask Task object for downloading the specified software
+     */
     private function prepareDownloadTask(Software $software, DownloadConfig $action): DownloadTask
     {
         return $this->useMock
@@ -79,7 +111,10 @@ final class DLoad
     }
 
     /**
-     * @return \Closure(DownloadResult): void
+     * Creates a closure to handle extraction of downloaded files.
+     *
+     * @param Software $software Software package configuration
+     * @return \Closure(DownloadResult): void Function that extracts files from the downloaded archive
      */
     private function prepareExtractTask(Software $software): \Closure
     {
@@ -117,7 +152,10 @@ final class DLoad
     }
 
     /**
-     * @return bool True if the file should be extracted, false otherwise.
+     * Checks if a file already exists and prompts for confirmation to overwrite.
+     *
+     * @param \SplFileInfo $bin Target file information
+     * @return bool True if the file should be extracted, false otherwise
      */
     private function checkExisting(\SplFileInfo $bin): bool
     {
@@ -133,7 +171,11 @@ final class DLoad
     }
 
     /**
-     * @param list<File> $mapping
+     * Determines the target path for an extracted file based on file mapping configurations.
+     *
+     * @param \SplFileInfo $source Source file from the archive
+     * @param list<File> $mapping File mapping configurations
+     * @return \SplFileInfo|null Target file path or null if file should not be extracted
      */
     private function shouldBeExtracted(\SplFileInfo $source, array $mapping): ?\SplFileInfo
     {

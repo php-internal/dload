@@ -7,11 +7,18 @@ namespace Internal\DLoad\Service;
 /**
  * Application dependency injection container.
  *
- * Manages service instances throughout the application lifecycle.
+ * Manages service instances throughout the application lifecycle. Services are lazy-loaded
+ * and cached for reuse. The container handles dependencies between services and
+ * provides a way to customize service instantiation through bindings.
  *
  * ```php
  * // Retrieving a service instance
  * $downloader = $container->get(Downloader::class);
+ *
+ * // Binding a factory for service creation
+ * $container->bind(Logger::class, function (Container $c) {
+ *     return new Logger($c->get(OutputInterface::class));
+ * });
  * ```
  *
  * @internal
@@ -25,7 +32,7 @@ interface Container extends Destroyable
      *
      * @template T
      * @param class-string<T> $id Service identifier
-     * @param array $arguments Constructor arguments used only on first instantiation
+     * @param array<string, mixed> $arguments Constructor arguments used only on first instantiation
      * @return T The requested service instance
      *
      * @psalm-suppress MoreSpecificImplementedParamType, InvalidReturnType
@@ -58,7 +65,7 @@ interface Container extends Destroyable
      *
      * @template T
      * @param class-string<T> $class Class to instantiate
-     * @param array $arguments Constructor arguments
+     * @param array<string, mixed> $arguments Constructor arguments
      * @return T Newly created instance
      */
     public function make(string $class, array $arguments = []): object;
@@ -68,9 +75,9 @@ interface Container extends Destroyable
      *
      * Configures how a service should be instantiated.
      *
-     * @template T of object
+     * @template T
      * @param class-string<T> $id Service identifier
-     * @param null|array|\Closure(Container): T $binding Factory function or constructor arguments
+     * @param null|array<string, mixed>|\Closure(Container): T $binding Factory function or constructor arguments
      */
     public function bind(string $id, \Closure|array|null $binding = null): void;
 }

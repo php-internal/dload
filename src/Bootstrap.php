@@ -12,7 +12,20 @@ use Internal\DLoad\Module\Common\Stability;
 use Internal\DLoad\Service\Container;
 
 /**
- * Build the container based on the configuration.
+ * Bootstraps the application by configuring the dependency container.
+ *
+ * Initializes the application container with configuration values and core services.
+ * Serves as the entry point for the dependency injection setup.
+ *
+ * ```php
+ * // Initialize application with default container and XML config
+ * $container = Bootstrap::init()
+ *     ->withConfig('dload.xml', $inputOptions, $inputArguments)
+ *     ->finish();
+ *
+ * // Use container to access services
+ * $downloader = $container->get(Downloader::class);
+ * ```
  *
  * @internal
  */
@@ -22,11 +35,22 @@ final class Bootstrap
         private Container $container,
     ) {}
 
+    /**
+     * Creates a new bootstrap instance with the specified container.
+     *
+     * @param Container $container Dependency injection container (defaults to ObjectContainer)
+     * @return self Bootstrap instance
+     */
     public static function init(Container $container = new ObjectContainer()): self
     {
         return new self($container);
     }
 
+    /**
+     * Finalizes the bootstrap process and returns the configured container.
+     *
+     * @return Container Fully configured dependency container
+     */
     public function finish(): Container
     {
         $c = $this->container;
@@ -36,7 +60,18 @@ final class Bootstrap
     }
 
     /**
-     * @param non-empty-string|null $xml File or XML content
+     * Configures the container with XML configuration and input values.
+     *
+     * Registers core services and bindings for system architecture, OS detection,
+     * and stability settings.
+     *
+     * @param non-empty-string|null $xml Path to XML file or raw XML content
+     * @param array<string, mixed> $inputOptions Command-line options
+     * @param array<string, mixed> $inputArguments Command-line arguments
+     * @param array<string, string> $environment Environment variables
+     * @return self Configured bootstrap instance
+     * @throws \InvalidArgumentException When config file is not found
+     * @throws \RuntimeException When config file cannot be read
      */
     public function withConfig(
         ?string $xml = null,
@@ -62,6 +97,14 @@ final class Bootstrap
         return $this;
     }
 
+    /**
+     * Reads XML configuration from file or direct content string.
+     *
+     * @param non-empty-string $fileOrContent Path to XML file or raw XML content
+     * @return string Parsed XML content
+     * @throws \InvalidArgumentException When config file is not found
+     * @throws \RuntimeException When config file cannot be read
+     */
     private function readXml(string $fileOrContent): string
     {
         // Load content
