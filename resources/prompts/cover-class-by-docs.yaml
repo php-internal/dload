@@ -25,14 +25,19 @@ prompts:
           - Keep only essential and non-obvious documentation.
           - Don't use @inheritDoc annotations.
           - Keep docs clean
-            - if the method has the same signature in the parent interface, don't comment the implementation if there is no additional things.
-            - remove trailing spaces
+            - if the method has the same signature in the parent, don't comment the implementation if there is no additional things.
+            - remove trailing spaces even in empty comment lines
           - Use generic annotations if possible.
           - Use inline annotations like {@see ClassName} if it needed to  mention in a text block.
-          - Add class or method usage example using markdown like.
+          - Add class or method usage example using markdown like:
             ```php
              // Comment for the following code
              some code
+            ```
+            If commenting a console command, feel fre to provide a usage example in the form of a command line:
+            ```bash
+             # Comment for the following command
+             some command
             ```
           - Inner comments order: title, description, example, template annotations, params and return annotations, references and internal/deprecated annotations.
           - Property comments rules: If it possible, write inline comment without title like `/** @var non-empty-string $name User name */`.

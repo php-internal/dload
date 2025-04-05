@@ -18,6 +18,32 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
+ * Fetches software packages based on command arguments or configuration.
+ *
+ * Downloads software binaries from configured repositories with proper
+ * system/architecture detection. Can work with both CLI arguments and
+ * configuration file definitions.
+ *
+ * ```php
+ * // Download software programmatically
+ * $command = new Get();
+ * $command->run(new ArrayInput(['software' => 'rr']), new ConsoleOutput());
+ * ```
+ *
+ * ```bash
+ * # Download single software
+ * ./vendor/bin/dload get rr
+ *
+ * # Download specific version of software
+ * ./vendor/bin/dload get rr --stability=beta
+ *
+ * # Download multiple software packages
+ * ./vendor/bin/dload get rr dolt temporal
+ *
+ * # Download software defined in config file
+ * ./vendor/bin/dload get --config=./dload.xml
+ * ```
+ *
  * @internal
  */
 #[AsCommand(
@@ -26,18 +52,39 @@ use Symfony\Component\Console\Output\OutputInterface;
 )]
 final class Get extends Base
 {
+    /** @var string Argument name for software identifiers */
     private const ARG_SOFTWARE = 'software';
 
+    /**
+     * Configures command arguments and options.
+     */
     public function configure(): void
     {
         parent::configure();
-        $this->addArgument(self::ARG_SOFTWARE, InputArgument::OPTIONAL | InputArgument::IS_ARRAY, 'Software name, e.g. "rr", "dolt", "temporal" etc.');
+        $this->addArgument(
+            self::ARG_SOFTWARE,
+            InputArgument::OPTIONAL | InputArgument::IS_ARRAY,
+            'Software name, e.g. "rr", "dolt", "temporal" etc.',
+        );
         $this->addOption('path', null, InputOption::VALUE_OPTIONAL, 'Path to store the binary, e.g. "./bin"', ".");
         $this->addOption('arch', null, InputOption::VALUE_OPTIONAL, 'Architecture, e.g. "amd64", "arm64" etc.');
         $this->addOption('os', null, InputOption::VALUE_OPTIONAL, 'Operating system, e.g. "linux", "darwin" etc.');
         $this->addOption('stability', null, InputOption::VALUE_OPTIONAL, 'Stability, e.g. "stable", "beta" etc.');
     }
 
+    /**
+     * Executes the command to download specified software.
+     *
+     * Determines system parameters, resolves download actions based on input,
+     * and runs the download tasks.
+     *
+     * @param InputInterface $input Command input
+     * @param OutputInterface $output Command output
+     *
+     * @return int Command result code
+     *
+     * @throws \RuntimeException When no software is specified to download
+     */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         parent::execute($input, $output);
@@ -65,7 +112,15 @@ final class Get extends Base
     }
 
     /**
-     * @return list<DownloadConfig>
+     * Resolves download actions from input arguments or config.
+     *
+     * Uses explicitly specified software names from CLI arguments if present,
+     * otherwise falls back to configuration file definitions.
+     *
+     * @param InputInterface $input Command input
+     * @param Actions $actionsConfig Available actions from config
+     *
+     * @return list<DownloadConfig> List of download configurations to process
      */
     private function getDownloadActions(InputInterface $input, Actions $actionsConfig): array
     {
