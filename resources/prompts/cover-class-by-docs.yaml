@@ -39,6 +39,7 @@ prompts:
              # Comment for the following command
              some command
             ```
+            Don't skip internal classes.
           - Inner comments order: title, description, example, template annotations, params and return annotations, references and internal/deprecated annotations.
           - Property comments rules: If it possible, write inline comment without title like `/** @var non-empty-string $name User name */`.
           - Multiline comments rules: if a comment starts with an annotation, the second line should start with whitespaces aligned with the annotation length:
