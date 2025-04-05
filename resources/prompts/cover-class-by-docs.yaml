@@ -13,9 +13,11 @@ prompts:
     messages:
       - role: user
         content: |
-          Open {{class-name}} class.
+          Read {{class-name}} class(es) or interface(s).
 
-          Cover it with comments or improve existing ones using following instructions:
+          Cover it with comments using following instructions:
+          - Don't break signatures. You can only add or improve comments.
+          - Don't remove existing @internal, @link, @see, @api, or @deprecated annotations.
           - Use passive forms instead of we or you.
           - Separate title and content with empty line.
           - Use @link annotation if it's necessary to write some URL.
