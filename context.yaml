@@ -1,0 +1,4 @@
+$schema: 'https://raw.githubusercontent.com/context-hub/generator/refs/heads/main/json-schema.json'
+
+import:
+    - path: resources/prompts.yaml
