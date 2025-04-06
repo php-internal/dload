@@ -1,9 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<files psalm-version="5.25.0@01a8eb06b9e9cc6cfb6a320bf9fb14331919d505">
+<files psalm-version="6.10.0@9c0add4eb88d4b169ac04acb7c679918cbb9c252">
   <file src="src/Command/Base.php">
     <LessSpecificReturnStatement>
       <code><![CDATA[$config]]></code>
     </LessSpecificReturnStatement>
+    <MixedArgumentTypeCoercion>
+      <code><![CDATA[$input->getArguments()]]></code>
+      <code><![CDATA[$input->getOptions()]]></code>
+    </MixedArgumentTypeCoercion>
     <MoreSpecificReturnType>
       <code><![CDATA[non-empty-string|null]]></code>
     </MoreSpecificReturnType>
@@ -37,31 +41,21 @@
     </PropertyNotSetInConstructor>
   </file>
   <file src="src/Command/ListSoftware.php">
-    <MixedAssignment>
-      <code><![CDATA[$repo]]></code>
-    </MixedAssignment>
-    <MixedPropertyFetch>
-      <code><![CDATA[$repo->type]]></code>
-      <code><![CDATA[$repo->uri]]></code>
-    </MixedPropertyFetch>
     <PropertyNotSetInConstructor>
       <code><![CDATA[ListSoftware]]></code>
       <code><![CDATA[ListSoftware]]></code>
     </PropertyNotSetInConstructor>
-    <RawObjectIteration>
-      <code><![CDATA[$software->repositories]]></code>
-    </RawObjectIteration>
     <RiskyTruthyFalsyComparison>
       <code><![CDATA[$software->homepage]]></code>
     </RiskyTruthyFalsyComparison>
   </file>
   <file src="src/DLoad.php">
     <ArgumentTypeCoercion>
-      <code><![CDATA[$conf->pattern]]></code>
-    </ArgumentTypeCoercion>
-    <InvalidArgument>
       <code><![CDATA[$software->files]]></code>
-    </InvalidArgument>
+    </ArgumentTypeCoercion>
+    <PossiblyFalseOperand>
+      <code><![CDATA[$path]]></code>
+    </PossiblyFalseOperand>
   </file>
   <file src="src/Module/Archive/ArchiveFactory.php">
     <MixedPropertyTypeCoercion>
@@ -87,33 +81,9 @@
     </MissingConstructor>
   </file>
   <file src="src/Module/Common/Config/Embed/Software.php">
-    <InvalidPropertyAssignmentValue>
-      <code><![CDATA[[]]]></code>
-      <code><![CDATA[[]]]></code>
-      <code><![CDATA[\array_map(
-            static fn(array $fileArray): File => File::fromArray($fileArray),
-            $softwareArray['files'] ?? [],
-        )]]></code>
-      <code><![CDATA[\array_map(
-            static fn(array $repositoryArray): Repository => Repository::fromArray($repositoryArray),
-            $softwareArray['repositories'] ?? [],
-        )]]></code>
-    </InvalidPropertyAssignmentValue>
-    <MismatchingDocblockPropertyType>
-      <code><![CDATA[array]]></code>
-      <code><![CDATA[array]]></code>
-    </MismatchingDocblockPropertyType>
     <MissingConstructor>
       <code><![CDATA[$name]]></code>
     </MissingConstructor>
-  </file>
-  <file src="src/Module/Common/Internal/Container.php">
-    <MixedPropertyTypeCoercion>
-      <code><![CDATA[$this->factory]]></code>
-    </MixedPropertyTypeCoercion>
-    <UndefinedMethod>
-      <code><![CDATA[$id::create(...)]]></code>
-    </UndefinedMethod>
   </file>
   <file src="src/Module/Common/Internal/Injection/ConfigLoader.php">
     <MixedMethodCall>
@@ -123,33 +93,56 @@
       <code><![CDATA[\assert($xml instanceof \SimpleXMLElement)]]></code>
     </RedundantCondition>
   </file>
+  <file src="src/Module/Common/Internal/ObjectContainer.php">
+    <ArgumentTypeCoercion>
+      <code><![CDATA[$id]]></code>
+    </ArgumentTypeCoercion>
+    <ImplementedReturnTypeMismatch>
+      <code><![CDATA[object]]></code>
+    </ImplementedReturnTypeMismatch>
+    <InvalidPropertyAssignmentValue>
+      <code><![CDATA[$this->factory]]></code>
+    </InvalidPropertyAssignmentValue>
+    <MixedArgumentTypeCoercion>
+      <code><![CDATA[$arguments]]></code>
+      <code><![CDATA[$service]]></code>
+    </MixedArgumentTypeCoercion>
+    <MixedPropertyTypeCoercion>
+      <code><![CDATA[$this->cache]]></code>
+    </MixedPropertyTypeCoercion>
+    <MoreSpecificImplementedParamType>
+      <code><![CDATA[$service]]></code>
+    </MoreSpecificImplementedParamType>
+    <PropertyTypeCoercion>
+      <code><![CDATA[$this->cache]]></code>
+    </PropertyTypeCoercion>
+    <UndefinedMethod>
+      <code><![CDATA[$id::create(...)]]></code>
+    </UndefinedMethod>
+  </file>
   <file src="src/Module/Downloader/Downloader.php">
     <ArgumentTypeCoercion>
-      <code><![CDATA[$context->repoConfig->assetPattern]]></code>
+      <code><![CDATA[$dlNow]]></code>
+      <code><![CDATA[$dlSize]]></code>
     </ArgumentTypeCoercion>
-    <DocblockTypeContradiction>
-      <code><![CDATA[$repositories === []]]></code>
-    </DocblockTypeContradiction>
     <InternalMethod>
       <code><![CDATA[toArray]]></code>
       <code><![CDATA[toArray]]></code>
     </InternalMethod>
-    <InvalidArgument>
-      <code><![CDATA[$repositories]]></code>
-    </InvalidArgument>
     <InvalidNullableReturnType>
       <code><![CDATA[AssetInterface]]></code>
       <code><![CDATA[ReleaseInterface]]></code>
     </InvalidNullableReturnType>
+    <LessSpecificReturnStatement>
+      <code><![CDATA[$temp]]></code>
+      <code><![CDATA[\sys_get_temp_dir()]]></code>
+    </LessSpecificReturnStatement>
     <MissingClosureReturnType>
       <code><![CDATA[static fn(int $dlNow, int $dlSize, array $info) => ($context->onProgress)(]]></code>
     </MissingClosureReturnType>
-    <MixedArgument>
-      <code><![CDATA[$context->repoConfig]]></code>
-    </MixedArgument>
-    <MixedAssignment>
-      <code><![CDATA[$context->repoConfig]]></code>
-    </MixedAssignment>
+    <MoreSpecificReturnType>
+      <code><![CDATA[non-empty-string]]></code>
+    </MoreSpecificReturnType>
     <TooManyArguments>
       <code><![CDATA[download]]></code>
     </TooManyArguments>
@@ -170,6 +163,9 @@
       <code><![CDATA[$json]]></code>
       <code><![CDATA[$softwareArray]]></code>
     </MixedAssignment>
+    <PossiblyFalseArgument>
+      <code><![CDATA[\file_get_contents(Info::ROOT_DIR . '/resources/software.json')]]></code>
+    </PossiblyFalseArgument>
   </file>
   <file src="src/Module/Repository/Collection/ReleasesCollection.php">
     <LessSpecificReturnStatement>
@@ -206,6 +202,9 @@
     <InternalMethod>
       <code><![CDATA[new GitHubRepository($org, $repo, $this->createClient())]]></code>
     </InternalMethod>
+    <PossiblyFalseArgument>
+      <code><![CDATA[$uri]]></code>
+    </PossiblyFalseArgument>
     <PossiblyUndefinedArrayOffset>
       <code><![CDATA[$org]]></code>
     </PossiblyUndefinedArrayOffset>
@@ -288,15 +287,6 @@
       <code><![CDATA[$this->name]]></code>
       <code><![CDATA[$this->releases]]></code>
     </InternalProperty>
-    <LessSpecificImplementedReturnType>
-      <code><![CDATA[string]]></code>
-    </LessSpecificImplementedReturnType>
-    <LessSpecificReturnStatement>
-      <code><![CDATA[\sprintf($pattern, $this->getName())]]></code>
-    </LessSpecificReturnStatement>
-    <MoreSpecificReturnType>
-      <code><![CDATA[non-empty-string]]></code>
-    </MoreSpecificReturnType>
   </file>
   <file src="src/Module/Repository/Internal/Release.php">
     <InvalidNullableReturnType>
@@ -314,22 +304,9 @@
       <code><![CDATA[Stability::tryFrom(VersionParser::parseStability($version))]]></code>
     </NullableReturnStatement>
   </file>
-  <file src="src/Module/Repository/RepositoryProvider.php">
-    <ArgumentTypeCoercion>
-      <code><![CDATA[$config->uri]]></code>
-    </ArgumentTypeCoercion>
-  </file>
   <file src="src/Service/Factoriable.php">
     <InvalidDocblock>
       <code><![CDATA[Factoriable]]></code>
     </InvalidDocblock>
-  </file>
-  <file src="src/Service/Logger.php">
-    <ArgumentTypeCoercion>
-      <code><![CDATA[$values]]></code>
-      <code><![CDATA[$values]]></code>
-      <code><![CDATA[$values]]></code>
-      <code><![CDATA[$values]]></code>
-    </ArgumentTypeCoercion>
   </file>
 </files>

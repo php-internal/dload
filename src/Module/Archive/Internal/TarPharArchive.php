@@ -24,7 +24,6 @@ final class TarPharArchive extends PharAwareArchive
      * Opens TAR.GZ archive for reading
      *
      * @param \SplFileInfo $file Archive file
-     * @return \PharData
      */
     protected function open(\SplFileInfo $file): \PharData
     {

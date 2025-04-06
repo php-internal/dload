@@ -25,7 +25,6 @@ final class PharArchive extends PharAwareArchive
      * Opens PHAR archive for reading
      *
      * @param \SplFileInfo $file Archive file
-     * @return \PharData
      */
     protected function open(\SplFileInfo $file): \PharData
     {

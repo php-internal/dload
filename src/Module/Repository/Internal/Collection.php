@@ -125,7 +125,7 @@ abstract class Collection implements \IteratorAggregate, \Countable
      * @param null|callable(T): bool $filter Optional filter function
      * @return T|null First matching item or null
      */
-    public function first(callable $filter = null): ?object
+    public function first(?callable $filter = null): ?object
     {
         $self = $filter === null ? $this : $this->filter($filter);
 
@@ -139,7 +139,7 @@ abstract class Collection implements \IteratorAggregate, \Countable
      * @param null|callable(T): bool $filter Optional filter function
      * @return T First matching item or default value
      */
-    public function firstOr(callable $otherwise, callable $filter = null): object
+    public function firstOr(callable $otherwise, ?callable $filter = null): object
     {
         return $this->first($filter) ?? $otherwise();
     }

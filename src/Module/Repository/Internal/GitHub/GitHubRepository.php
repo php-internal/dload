@@ -23,7 +23,6 @@ final class GitHubRepository implements RepositoryInterface, Destroyable
     private const URL_RELEASES = 'https://api.github.com/repos/%s/releases';
 
     private HttpClientInterface $client;
-
     private ?ReleasesCollection $releases = null;
 
     /**
@@ -44,7 +43,7 @@ final class GitHubRepository implements RepositoryInterface, Destroyable
      * @param non-empty-string $org
      * @param non-empty-string $repo
      */
-    public function __construct(string $org, string $repo, HttpClientInterface $client = null)
+    public function __construct(string $org, string $repo, ?HttpClientInterface $client = null)
     {
         $this->name = $org . '/' . $repo;
         $this->client = $client ?? HttpClient::create();
@@ -70,9 +69,6 @@ final class GitHubRepository implements RepositoryInterface, Destroyable
         });
     }
 
-    /**
-     * @return string
-     */
     public function getName(): string
     {
         return $this->name;
@@ -88,10 +84,6 @@ final class GitHubRepository implements RepositoryInterface, Destroyable
     }
 
     /**
-     * @param string $method
-     * @param string $uri
-     * @param array $options
-     * @return ResponseInterface
      * @throws TransportExceptionInterface
      * @see HttpClientInterface::request()
      */

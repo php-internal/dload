@@ -25,13 +25,11 @@ abstract class Release implements ReleaseInterface
     protected string $name;
 
     protected Stability $stability;
-
     protected AssetsCollection $assets;
 
     /**
      * @param non-empty-string $name
      * @param non-empty-string $version
-     * @param iterable $assets
      */
     public function __construct(
         protected RepositoryInterface $repository,

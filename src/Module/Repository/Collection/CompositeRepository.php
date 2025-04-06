@@ -23,7 +23,7 @@ use Internal\DLoad\Module\Repository\RepositoryInterface;
  * @internal
  * @psalm-internal Internal\DLoad\Module
  */
-class CompositeRepository implements RepositoryInterface
+final class CompositeRepository implements RepositoryInterface
 {
     /**
      * @var array<RepositoryInterface>

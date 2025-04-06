@@ -6,10 +6,12 @@
        findUnusedBaselineEntry="false"
        findUnusedCode="false"
        errorBaseline="psalm-baseline.xml"
+       phpVersion="8.1"
 >
     <issueHandlers>
         <RedundantConditionGivenDocblockType errorLevel="suppress"/>
         <RedundantCastGivenDocblockType errorLevel="suppress"/>
+        <MissingOverrideAttribute errorLevel="suppress"/>
     </issueHandlers>
     <projectFiles>
         <directory name="src"/>
@@ -18,4 +20,15 @@
             <directory name="tests"/>
         </ignoreFiles>
     </projectFiles>
+    <forbiddenFunctions>
+        <function name="dd"/>
+        <function name="exit"/>
+        <function name="die"/>
+        <function name="var_dump"/>
+        <function name="echo"/>
+        <function name="print"/>
+        <function name="trap"/>
+        <function name="td"/>
+        <function name="tr"/>
+    </forbiddenFunctions>
 </psalm>

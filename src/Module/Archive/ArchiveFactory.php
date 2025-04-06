@@ -126,7 +126,6 @@ final class ArchiveFactory
      *
      * @param string $extension File extension to match
      * @param ArchiveMatcher $then Function to create archive handler
-     * @return ArchiveMatcher
      */
     private function matcher(string $extension, \Closure $then): \Closure
     {

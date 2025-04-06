@@ -30,7 +30,6 @@ final class ZipPharArchive extends PharAwareArchive
      * Uses ZIP and GZ formats to properly handle ZIP archives.
      *
      * @param \SplFileInfo $file Archive file
-     * @return \PharData
      */
     protected function open(\SplFileInfo $file): \PharData
     {

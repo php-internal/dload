@@ -67,7 +67,6 @@ final class ConfigLoader
     /**
      * Injects values into a property based on its configuration attributes.
      *
-     * @param \ReflectionProperty $property
      * @param list<\ReflectionAttribute<ConfigAttribute>> $attributes
      */
     private function injectValue(object $config, \ReflectionProperty $property, array $attributes): void

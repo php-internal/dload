@@ -89,7 +89,6 @@ final class GitHubRelease extends Release implements Destroyable
      * @note The return value is "pretty", but that does not mean that the tag physically exists.
      *
      * @param array{tag_name: string|null, name: string|null} $data
-     * @return string
      */
     private static function getTagName(array $data): string
     {

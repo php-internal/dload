@@ -71,7 +71,6 @@ abstract class PharAwareArchive extends Archive
      * Opens archive with specific format
      *
      * @param \SplFileInfo $file Archive file
-     * @return \PharData
      */
     abstract protected function open(\SplFileInfo $file): \PharData;
 }
