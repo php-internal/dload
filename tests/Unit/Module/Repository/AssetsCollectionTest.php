@@ -166,7 +166,7 @@ final class AssetsCollectionTest extends TestCase
     protected function setUp(): void
     {
         // Arrange
-        $this->repository = new RepositoryStub('vendor/package', []);
+        $this->repository = new RepositoryStub('vendor/package');
         $this->release = new ReleaseStub(
             $this->repository,
             '1.2.3',

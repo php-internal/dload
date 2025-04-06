@@ -5,23 +5,16 @@ declare(strict_types=1);
 namespace Internal\DLoad\Tests\Unit\Module\Repository\Stub\Collection;
 
 use Internal\DLoad\Module\Repository\Collection\ReleasesCollection;
+use Internal\DLoad\Module\Repository\Internal\Collection;
 use Internal\DLoad\Module\Repository\ReleaseInterface;
 
 /**
  * Stub implementation of ReleasesCollection for testing.
  */
-final class ReleasesCollectionStub implements ReleasesCollection
+final class ReleasesCollectionStub extends Collection
 {
     /** @var ReleaseInterface[] */
     private array $releases;
-
-    /**
-     * @param ReleaseInterface[] $releases List of releases
-     */
-    public function __construct(array $releases = [])
-    {
-        $this->releases = $releases;
-    }
 
     public function count(): int
     {
@@ -43,11 +36,6 @@ final class ReleasesCollectionStub implements ReleasesCollection
     {
         // Simple implementation for testing - returns same collection
         return $this;
-    }
-
-    public function first(): ?ReleaseInterface
-    {
-        return $this->releases[0] ?? null;
     }
 
     public function last(): ?ReleaseInterface

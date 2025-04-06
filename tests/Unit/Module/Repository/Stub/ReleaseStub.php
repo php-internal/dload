@@ -22,10 +22,10 @@ final class ReleaseStub implements ReleaseInterface
      * @param array<AssetInterface> $assets
      */
     public function __construct(
-        private Repository $repository,
-        private string $name,
-        private string $version,
-        private Stability $stability,
+        private readonly RepositoryStub $repository,
+        private readonly string $name,
+        private readonly string $version,
+        private readonly Stability $stability,
         private array $assets = [],
     ) {}
 
@@ -51,12 +51,15 @@ final class ReleaseStub implements ReleaseInterface
 
     public function getAssets(): AssetsCollection
     {
-        // For repository stub integration
-        if ($this->repository instanceof RepositoryStub) {
-            $this->assets = $this->repository->getAssetsForRelease($this);
-        }
-
         return new AssetsCollection($this->assets);
+    }
+
+    /**
+     * @param array<AssetInterface> $assets
+     */
+    public function setAssets(array $assets): void
+    {
+        $this->assets = $assets;
     }
 
     public function satisfies(string $constraint): bool

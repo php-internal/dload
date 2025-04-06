@@ -19,6 +19,7 @@ use PHPUnit\Framework\TestCase;
 final class ReleasesCollectionTest extends TestCase
 {
     private RepositoryStub $repository;
+    /** @var list<ReleaseStub> */
     private array $releases;
     private ReleasesCollection $collection;
 
@@ -138,7 +139,7 @@ final class ReleasesCollectionTest extends TestCase
             ),
         ];
 
-        $this->repository->setAssets($assets, $release);
+        $release->setAssets($assets);
 
         // Act
         $result = $this->collection->withAssets();
@@ -152,7 +153,7 @@ final class ReleasesCollectionTest extends TestCase
     protected function setUp(): void
     {
         // Arrange
-        $this->repository = new RepositoryStub('vendor/package', []);
+        $this->repository = new RepositoryStub('vendor/package');
 
         // Create a series of releases with different versions and stabilities
         $this->releases = [
