@@ -135,7 +135,7 @@ final class ReleasesCollectionTest extends TestCase
                 'https://example.com/downloads/package-1.5.0-linux-x64.tar.gz',
                 OperatingSystem::Linux,
                 Architecture::X86_64,
-            )
+            ),
         ];
 
         $this->repository->setAssets($assets, $release);

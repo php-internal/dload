@@ -18,7 +18,7 @@ use Internal\DLoad\Module\Repository\Collection\ReleasesCollection;
  * $filteredReleases = $releases->satisfies('^2.0.0')->sortByVersion();
  * ```
  */
-interface RepositoryInterface
+interface Repository
 {
     /**
      * Returns the unique identifier of the repository.

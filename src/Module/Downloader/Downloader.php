@@ -16,7 +16,7 @@ use Internal\DLoad\Module\Downloader\Task\DownloadResult;
 use Internal\DLoad\Module\Downloader\Task\DownloadTask;
 use Internal\DLoad\Module\Repository\AssetInterface;
 use Internal\DLoad\Module\Repository\ReleaseInterface;
-use Internal\DLoad\Module\Repository\RepositoryInterface;
+use Internal\DLoad\Module\Repository\Repository;
 use Internal\DLoad\Module\Repository\RepositoryProvider;
 use Internal\DLoad\Service\Destroyable;
 use Internal\DLoad\Service\Logger;
@@ -115,11 +115,11 @@ final class Downloader
      *
      * Fetches and filters releases from the repository based on stability and version constraints.
      *
-     * @param RepositoryInterface $repository Repository to process
+     * @param Repository $repository Repository to process
      * @param DownloadContext $context Download context information
      * @return \Closure(): ReleaseInterface Closure that returns the selected release
      */
-    private function processRepository(RepositoryInterface $repository, DownloadContext $context): \Closure
+    private function processRepository(Repository $repository, DownloadContext $context): \Closure
     {
         return function () use ($repository, $context): ReleaseInterface {
             $this->logger->info(

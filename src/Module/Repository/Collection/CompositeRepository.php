@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Repository\Collection;
 
-use Internal\DLoad\Module\Repository\RepositoryInterface;
+use Internal\DLoad\Module\Repository\Repository;
 
 /**
  * Collection of repositories that also implements the repository interface.
@@ -23,15 +23,15 @@ use Internal\DLoad\Module\Repository\RepositoryInterface;
  * @internal
  * @psalm-internal Internal\DLoad\Module
  */
-final class CompositeRepository implements RepositoryInterface
+final class CompositeRepository implements Repository
 {
     /**
-     * @var array<RepositoryInterface>
+     * @var array<Repository>
      */
     private array $repositories;
 
     /**
-     * @param array<RepositoryInterface> $repositories List of repositories to include
+     * @param array<Repository> $repositories List of repositories to include
      */
     public function __construct(array $repositories)
     {

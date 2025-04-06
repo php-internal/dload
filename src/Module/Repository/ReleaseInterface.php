@@ -29,9 +29,9 @@ interface ReleaseInterface
     /**
      * Returns the repository this release belongs to.
      *
-     * @return RepositoryInterface The parent repository
+     * @return Repository The parent repository
      */
-    public function getRepository(): RepositoryInterface;
+    public function getRepository(): Repository;
 
     /**
      * Returns Composer's compatible "pretty" release version.

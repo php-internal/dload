@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Internal\DLoad\Module\Repository\Internal\GitHub;
 
 use Internal\DLoad\Module\Repository\Collection\ReleasesCollection;
-use Internal\DLoad\Module\Repository\RepositoryInterface;
+use Internal\DLoad\Module\Repository\Repository;
 use Internal\DLoad\Service\Destroyable;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Contracts\HttpClient\Exception\ExceptionInterface;
@@ -18,7 +18,7 @@ use Symfony\Contracts\HttpClient\ResponseInterface;
  * @internal
  * @psalm-internal Internal\DLoad\Module\Repository\GitHub
  */
-final class GitHubRepository implements RepositoryInterface, Destroyable
+final class GitHubRepository implements Repository, Destroyable
 {
     private const URL_RELEASES = 'https://api.github.com/repos/%s/releases';
 

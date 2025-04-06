@@ -4,14 +4,13 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Repository;
 
-use Internal\DLoad\Module\Common\Config\Embed\Repository;
-use Internal\DLoad\Module\Repository\Internal\GitHub\Factory as GithubFactory;
+use Internal\DLoad\Module\Common\Config\Embed\Repository as RepositoryConfig;
 
 /**
  * Factory service for creating repository instances from configuration.
  *
- * Handles the creation of appropriate repository implementations based on
- * the repository type specified in the configuration.
+ * Uses registered repository factories to create appropriate repository
+ * implementations based on the repository type.
  *
  * ```php
  * // Get the RepositoryProvider service
@@ -26,25 +25,33 @@ use Internal\DLoad\Module\Repository\Internal\GitHub\Factory as GithubFactory;
  */
 final class RepositoryProvider
 {
+    /** @var RepositoryFactory[] $factories */
+    private array $factories = [];
+
     /**
-     * @param GithubFactory $githubFactory Factory for creating GitHub repository instances
+     * Adds a repository factory to the provider.
      */
-    public function __construct(
-        private readonly GithubFactory $githubFactory,
-    ) {}
+    public function addRepositoryFactory(RepositoryFactory $factory): self
+    {
+        $this->factories[] = $factory;
+        return $this;
+    }
 
     /**
      * Creates a repository instance based on the provided configuration.
      *
-     * @param Repository $config Repository configuration
-     * @return RepositoryInterface Created repository instance
-     * @throws \RuntimeException When an unknown repository type is specified
+     * @param RepositoryConfig $config Repository configuration
+     * @return Repository Created repository instance
+     * @throws \RuntimeException When no factory supports the repository type
      */
-    public function getByConfig(Repository $config): RepositoryInterface
+    public function getByConfig(RepositoryConfig $config): Repository
     {
-        return match (\strtolower($config->type)) {
-            'github' => $this->githubFactory->create($config->uri),
-            default => throw new \RuntimeException("Unknown repository type `$config->type`."),
-        };
+        foreach ($this->factories as $factory) {
+            if ($factory->supports($config)) {
+                return $factory->create($config);
+            }
+        }
+
+        throw new \RuntimeException("No factory found for repository type `$config->type`.");
     }
 }

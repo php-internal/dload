@@ -9,6 +9,8 @@ use Internal\DLoad\Module\Common\Internal\Injection\ConfigLoader;
 use Internal\DLoad\Module\Common\Internal\ObjectContainer;
 use Internal\DLoad\Module\Common\OperatingSystem;
 use Internal\DLoad\Module\Common\Stability;
+use Internal\DLoad\Module\Repository\Internal\GitHub\Factory as GithubRepositoryFactory;
+use Internal\DLoad\Module\Repository\RepositoryProvider;
 use Internal\DLoad\Service\Container;
 
 /**
@@ -93,6 +95,11 @@ final class Bootstrap
         $this->container->bind(Architecture::class);
         $this->container->bind(OperatingSystem::class);
         $this->container->bind(Stability::class);
+        $this->container->bind(
+            RepositoryProvider::class,
+            static fn(Container $container): RepositoryProvider => (new RepositoryProvider())
+                ->addRepositoryFactory($container->get(GithubRepositoryFactory::class)),
+        );
 
         return $this;
     }

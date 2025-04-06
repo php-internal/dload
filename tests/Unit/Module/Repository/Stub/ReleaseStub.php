@@ -9,7 +9,7 @@ use Internal\DLoad\Module\Common\Stability;
 use Internal\DLoad\Module\Repository\AssetInterface;
 use Internal\DLoad\Module\Repository\Collection\AssetsCollection;
 use Internal\DLoad\Module\Repository\ReleaseInterface;
-use Internal\DLoad\Module\Repository\RepositoryInterface;
+use Internal\DLoad\Module\Repository\Repository;
 
 /**
  * Test stub implementation of ReleaseInterface for unit tests.
@@ -22,14 +22,14 @@ final class ReleaseStub implements ReleaseInterface
      * @param array<AssetInterface> $assets
      */
     public function __construct(
-        private RepositoryInterface $repository,
+        private Repository $repository,
         private string $name,
         private string $version,
         private Stability $stability,
         private array $assets = [],
     ) {}
 
-    public function getRepository(): RepositoryInterface
+    public function getRepository(): Repository
     {
         return $this->repository;
     }
