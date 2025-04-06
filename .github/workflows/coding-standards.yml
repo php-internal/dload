@@ -61,7 +61,6 @@ jobs:
         with:
           globs: |
             *.md
-            docs/**/*.md
             !CHANGELOG.md
 
   coding-standards:
