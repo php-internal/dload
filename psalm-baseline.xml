@@ -126,6 +126,9 @@
       <code><![CDATA[$dlSize]]></code>
     </ArgumentTypeCoercion>
     <InternalMethod>
+      <code><![CDATA[limit]]></code>
+      <code><![CDATA[limit]]></code>
+      <code><![CDATA[toArray]]></code>
       <code><![CDATA[toArray]]></code>
       <code><![CDATA[toArray]]></code>
     </InternalMethod>
@@ -167,6 +170,15 @@
       <code><![CDATA[\file_get_contents(Info::ROOT_DIR . '/resources/software.json')]]></code>
     </PossiblyFalseArgument>
   </file>
+  <file src="src/Module/Repository/Collection/CompositeRepository.php">
+    <InvalidArgument>
+      <code><![CDATA[function () {
+            foreach ($this->repositories as $repository) {
+                yield from $repository->getReleases();
+            }
+        }]]></code>
+    </InvalidArgument>
+  </file>
   <file src="src/Module/Repository/Collection/ReleasesCollection.php">
     <LessSpecificReturnStatement>
       <code><![CDATA[\ltrim(\str_replace(
@@ -179,16 +191,45 @@
       <code><![CDATA[non-empty-string]]></code>
     </MoreSpecificReturnType>
   </file>
+  <file src="src/Module/Repository/Internal/CachedGenerator.php">
+    <LessSpecificImplementedReturnType>
+      <code><![CDATA[\Traversable<array-key, T>]]></code>
+    </LessSpecificImplementedReturnType>
+    <MixedAssignment>
+      <code><![CDATA[$key]]></code>
+      <code><![CDATA[$value]]></code>
+    </MixedAssignment>
+  </file>
   <file src="src/Module/Repository/Internal/Collection.php">
+    <DocblockTypeContradiction>
+      <code><![CDATA[$items instanceof \Closure => static::create($items())]]></code>
+    </DocblockTypeContradiction>
+    <InvalidFunctionCall>
+      <code><![CDATA[$items()]]></code>
+    </InvalidFunctionCall>
+    <MissingClosureParamType>
+      <code><![CDATA[$item]]></code>
+    </MissingClosureParamType>
     <MixedArgument>
-      <code><![CDATA[$generator()]]></code>
+      <code><![CDATA[$item]]></code>
+      <code><![CDATA[$item]]></code>
+      <code><![CDATA[$items()]]></code>
     </MixedArgument>
+    <MixedArgumentTypeCoercion>
+      <code><![CDATA[$items]]></code>
+    </MixedArgumentTypeCoercion>
+    <MixedAssignment>
+      <code><![CDATA[$items[]]]></code>
+    </MixedAssignment>
+    <MixedReturnStatement>
+      <code><![CDATA[$this->items instanceof CachedGenerator
+                ? $this->items->first()
+                : ($this->items === [] ? null : $this->items[\array_key_first($this->items)])]]></code>
+    </MixedReturnStatement>
     <UnsafeGenericInstantiation>
       <code><![CDATA[new static($items)]]></code>
-      <code><![CDATA[new static(\array_filter($this->items, $callback))]]></code>
-      <code><![CDATA[new static(\array_filter($this->items, $filter))]]></code>
-      <code><![CDATA[new static(\array_map($map, $this->items))]]></code>
-      <code><![CDATA[new static(\iterator_to_array($items))]]></code>
+      <code><![CDATA[new static($items)]]></code>
+      <code><![CDATA[new static(new CachedGenerator($items))]]></code>
     </UnsafeGenericInstantiation>
   </file>
   <file src="src/Module/Repository/Internal/GitHub/Factory.php">
@@ -239,6 +280,12 @@
     </InternalMethod>
     <InvalidArgument>
       <code><![CDATA[$data]]></code>
+      <code><![CDATA[static function () use ($client, $result, $data): \Generator {
+            /** @var GitHubAssetApiResponse $item */
+            foreach ($data['assets'] ?? [] as $item) {
+                yield GitHubAsset::fromApiResponse($client, $result, $item);
+            }
+        }]]></code>
     </InvalidArgument>
     <InvalidArrayOffset>
       <code><![CDATA[$data['tag_name']]]></code>
@@ -270,12 +317,15 @@
     </TypeDoesNotContainNull>
   </file>
   <file src="src/Module/Repository/Internal/GitHub/GitHubRepository.php">
+    <ArgumentTypeCoercion>
+      <code><![CDATA[$pageLoader()]]></code>
+    </ArgumentTypeCoercion>
     <InternalClass>
-      <code><![CDATA[GitHubRelease::fromApiResponse($this, $this->client, $data)]]></code>
+      <code><![CDATA[GitHubRelease::fromApiResponse($this, $this->client, $releaseData)]]></code>
       <code><![CDATA[self::URL_RELEASES]]></code>
     </InternalClass>
     <InternalMethod>
-      <code><![CDATA[GitHubRelease::fromApiResponse($this, $this->client, $data)]]></code>
+      <code><![CDATA[GitHubRelease::fromApiResponse($this, $this->client, $releaseData)]]></code>
       <code><![CDATA[getName]]></code>
       <code><![CDATA[hasNextPage]]></code>
       <code><![CDATA[releasesRequest]]></code>
@@ -287,6 +337,14 @@
       <code><![CDATA[$this->name]]></code>
       <code><![CDATA[$this->releases]]></code>
     </InternalProperty>
+    <MixedArgumentTypeCoercion>
+      <code><![CDATA[$releaseData]]></code>
+    </MixedArgumentTypeCoercion>
+  </file>
+  <file src="src/Module/Repository/Internal/Paginator.php">
+    <PossiblyNullPropertyAssignmentValue>
+      <code><![CDATA[$loader->valid() ? $loader->current() : []]]></code>
+    </PossiblyNullPropertyAssignmentValue>
   </file>
   <file src="src/Module/Repository/Internal/Release.php">
     <InvalidNullableReturnType>
