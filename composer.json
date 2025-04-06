@@ -94,7 +94,7 @@
         ],
         "test:cc": [
             "@putenv XDEBUG_MODE=coverage",
-            "phpunit --coverage-clover=.build/phpunit/logs/clover.xml --color=always"
+            "phpunit --coverage-clover=runtime/phpunit/logs/clover.xml --color=always"
         ]
     }
 }

@@ -103,7 +103,11 @@ final class AssetsCollection extends Collection
     public function whereNameMatches(string $pattern): self
     {
         return $this->filter(
-            static fn(AssetInterface $asset): bool => \preg_match($pattern, $asset->getName()) === 1,
+            static fn(AssetInterface $asset): bool => @\preg_match(
+                $pattern,
+                $asset->getName(),
+                flags: \PREG_NO_ERROR,
+            ) === 1,
         );
     }
 }

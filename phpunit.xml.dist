@@ -9,6 +9,7 @@
          executionOrder="random"
          stderr="true"
          beStrictAboutOutputDuringTests="true"
+         displayDetailsOnTestsThatTriggerWarnings="true"
 >
     <testsuites>
         <testsuite name="Unit">
@@ -23,9 +24,9 @@
     </testsuites>
     <coverage>
         <report>
-            <html outputDirectory="runtime/coverage"/>
-            <text outputFile="runtime/coverage.txt"/>
-            <clover outputFile="runtime/logs/clover.xml"/>
+            <html outputDirectory="runtime/phpunit/coverage"/>
+            <text outputFile="runtime/phpunit/coverage.txt"/>
+            <clover outputFile="runtime/phpunit/logs/clover.xml"/>
         </report>
     </coverage>
     <logging>
