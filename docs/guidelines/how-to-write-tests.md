@@ -6,7 +6,7 @@ This document outlines the standards and best practices for writing unit tests f
 
 - Unit tests should be in `tests/Unit`, integration tests in `tests/Integration`, acceptance tests in `tests/Acceptance`, architecture tests in `tests/Arch`, etc.
 - Tests should be organized to mirror the project structure.
-- Each PHP class should have a corresponding test class
+- Each concrete PHP class should have a corresponding test class
 - Place tests in the appropriate namespace matching the source code structure
 - Use `final` keyword for test classes
 
@@ -14,6 +14,13 @@ This document outlines the standards and best practices for writing unit tests f
 Source: src/ExternalContext/LocalExternalContextSource.php
 Test: tests/Unit/ExternalContext/LocalExternalContextSourceTest.php
 ```
+
+## What to Test
+
+- **Test Concrete Implementations, Not Interfaces**: Interfaces define contracts but don't contain actual logic to test. Only test concrete implementations of interfaces.
+- **Focus on Behavior**: Test the behavior of classes rather than their internal implementation details.
+- **Test Public API**: Focus on testing the public methods and functionality that clients of the class will use.
+- **Test Edge Cases**: Include tests for boundary conditions, invalid inputs, and error scenarios.
 
 ## Module Testing
 
@@ -23,12 +30,11 @@ Modules located in `src/Module` are treated as independent units with their own 
   ```
   tests/Unit/Module/{ModuleName}/
   ├── Stub/ (Contains stubs for the module's dependencies)
-  ├── API/ (Tests for the module's public API)
   └── Internal/ (Tests for module's internal implementations)
   ```
 
 - Internal implementations of a module are located in the `Internal` folder of each module
-- Everything outside the `Internal` folder is considered part of the module's API
+- Tests for public classes of the module should be placed directly in the module's test directory corresponding to the source code structure
 - Each module's tests should be structured as independent areas with their own stubs
 
 ## Arrange-Act-Assert (AAA) Pattern
@@ -133,13 +139,13 @@ protected function setUp(): void
 When testing modules from `src/Module`:
 
 - Module tests should use stubs from their dedicated `Stub` directory
-- API tests should only rely on the public interfaces of the module, not internal implementations
+- Tests should only rely on the public interfaces of the module, not internal implementations
 - Internal tests can have additional stubs specific to internal components
 - Cross-module dependencies should be stubbed if possible (for interfaces), treating each module as an independent unit
 
 ```php
 // Example of module test setup with stubs
-namespace Tests\Unit\Module\Payment\API;
+namespace Tests\Unit\Module\Payment;
 
 use Tests\Unit\Module\Payment\Stub\PaymentGatewayStub;
 use Tests\Unit\Module\Payment\Stub\LoggerStub;
@@ -326,71 +332,6 @@ final class MyTest extends TestCase
         self::assertNotEmpty($result);
     }
 }
-```
-
-## Running Tests
-
-Run tests using Composer scripts from the project root:
-
-```bash
-# Run all tests with code coverage
-composer test
-
-# Run architecture tests
-composer test:arch
-
-# Run tests with clover coverage report
-composer test:cc
-```
-
-To run specific tests with PHPUnit directly:
-
-```bash
-# Run specific test class
-vendor/bin/phpunit tests/Unit/ExternalContext/LocalExternalContextSourceTest.php
-
-# Run specific test method
-vendor/bin/phpunit --filter testFetchContextReturnsValidData tests/Unit/ExternalContext/LocalExternalContextSourceTest.php
-
-# Run tests by group
-vendor/bin/phpunit --group slow
-```
-
-## Test Coverage
-
-Code coverage is automatically enabled in the test commands through the `XDEBUG_MODE=coverage` environment variable.
-
-```bash
-# Generate coverage report with clover XML format
-composer test:cc
-# The report will be available at .build/phpunit/logs/clover.xml
-
-# Run tests with coverage
-composer test
-```
-
-For local development, you can generate HTML coverage reports:
-
-```bash
-XDEBUG_MODE=coverage vendor/bin/phpunit --coverage-html .build/coverage
-```
-
-## Static Analysis & Code Quality
-
-The project includes additional tools to maintain code quality:
-
-```bash
-# Run PHP CS Fixer to check code style
-composer cs:diff
-
-# Fix code style issues
-composer cs:fix
-
-# Run Psalm static analysis
-composer psalm
-
-# Run Infection for mutation testing
-composer infect
 ```
 
 ## Example Test Class

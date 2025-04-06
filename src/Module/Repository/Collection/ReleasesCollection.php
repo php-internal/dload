@@ -68,7 +68,7 @@ final class ReleasesCollection extends Collection
     }
 
     /**
-     * Sorts releases by version in descending order (newest first).
+     * Sorts releases by version in descending order (newest first) and maintain index association.
      *
      * @return $this New sorted collection
      */
