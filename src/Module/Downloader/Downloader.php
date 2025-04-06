@@ -136,11 +136,13 @@ final class Downloader
                 ->satisfies($context->actionConfig->version);
 
             /** @var ReleaseInterface[] $releases */
-            $releases = $releasesCollection->sortByVersion()->toArray();
+            $releases = $releasesCollection->limit(10)->sortByVersion()->toArray();
 
             $this->logger->debug('%d releases found.', \count($releases));
 
             process_release:
+            // Try without limit
+            $releases === [] and $releases = $releasesCollection->limit(0)->toArray();
             $releases === [] and throw new \RuntimeException('No relevant release found.');
             $context->release = \array_shift($releases);
 

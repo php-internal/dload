@@ -40,6 +40,12 @@ abstract class Collection implements \IteratorAggregate, \Countable
     protected array $filters = [];
 
     /**
+     * Maximum number of items to return from the collection
+     * Zero means no limit
+     */
+    protected int $limitCount = 0;
+
+    /**
      * @param array<T>|CachedGenerator<T> $items Collection items
      */
     final public function __construct(
@@ -132,7 +138,7 @@ abstract class Collection implements \IteratorAggregate, \Countable
         if ($combinedFilter === null) {
             return $this->items instanceof CachedGenerator
                 ? $this->items->first()
-                : ($this->items === [] ? null : \reset($this->items));
+                : ($this->items === [] ? null : $this->items[\array_key_first($this->items)]);
         }
 
         // For iterables, iterate until we find a match
@@ -158,6 +164,21 @@ abstract class Collection implements \IteratorAggregate, \Countable
     }
 
     /**
+     * Limits the collection to a specified number of items.
+     * Using 0 as a count will reset any previous limit and return all items.
+     *
+     * @param int<0, max> $count Maximum number of items to include
+     * @return $this New collection with limited items
+     * @throws \InvalidArgumentException If count is negative
+     */
+    public function limit(int $count): static
+    {
+        $clone = clone $this;
+        $clone->limitCount = $count;
+        return $clone;
+    }
+
+    /**
      * Returns an iterator for traversing the collection.
      *
      * @return \Traversable<array-key, T> Collection iterator
@@ -165,17 +186,15 @@ abstract class Collection implements \IteratorAggregate, \Countable
     public function getIterator(): \Traversable
     {
         $combinedFilter = $this->getCombinedFilter();
+        $itemCount = 0;
 
-        // If no filters, return the items directly
-        if ($combinedFilter === null) {
-            yield from $this->items;
-            return;
-        }
-
-        // Apply filters during iteration
+        // Apply filters and limit during iteration
         foreach ($this->items as $item) {
-            if ($combinedFilter($item)) {
+            if ($combinedFilter === null || $combinedFilter($item)) {
                 yield $item;
+                if ($this->limitCount > 0 && ++$itemCount >= $this->limitCount) {
+                    return;
+                }
             }
         }
     }
@@ -187,13 +206,13 @@ abstract class Collection implements \IteratorAggregate, \Countable
      */
     public function count(): int
     {
-        if ($this->filters === []) {
+        if ($this->filters === [] && $this->limitCount === 0) {
             return $this->items instanceof CachedGenerator
                 ? $this->items->count()
                 : \count($this->items);
         }
 
-        // For iterables or with filters, we need to count matching items
+        // For iterables or with filters or limits, we need to count matching items
         $count = 0;
         foreach ($this as $item) {
             $count++;
@@ -227,7 +246,7 @@ abstract class Collection implements \IteratorAggregate, \Countable
                 : $this->items === [];
         }
 
-        // For iterables or with filters, try to get the first item
+        // For iterables or with filters or limits, try to get the first item
         return $this->first() === null;
     }
 

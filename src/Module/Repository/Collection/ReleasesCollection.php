@@ -74,7 +74,7 @@ final class ReleasesCollection extends Collection
      */
     public function sortByVersion(): self
     {
-        $result = $this->items;
+        $result = \iterator_to_array($this->getIterator());
 
         $sort = function (ReleaseInterface $a, ReleaseInterface $b): int {
             return \version_compare($this->comparisonVersionString($b), $this->comparisonVersionString($a));

@@ -37,6 +37,7 @@ final class ObjectContainer implements Container, ContainerInterface
         $this->injector = (new Injector($this))->withCacheReflections(false);
         $this->cache[Injector::class] = $this->injector;
         $this->cache[self::class] = $this;
+        $this->cache[Container::class] = $this;
         $this->cache[ContainerInterface::class] = $this;
     }
 
