@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "42e791fb2bb9b34d63eda84606615e2e",
+    "content-hash": "9993c6c2bb8ef3d475d105e3d098b2d1",
     "packages": [
         {
             "name": "psr/container",
@@ -2712,79 +2712,6 @@
                 "source": "https://github.com/doctrine/deprecations/tree/1.1.4"
             },
             "time": "2024-12-07T21:18:45+00:00"
-        },
-        {
-            "name": "ergebnis/phpunit-slow-test-detector",
-            "version": "2.19.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/ergebnis/phpunit-slow-test-detector.git",
-                "reference": "2f66ad7fcc468a5db03592a0c73a930e0c0eccce"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/ergebnis/phpunit-slow-test-detector/zipball/2f66ad7fcc468a5db03592a0c73a930e0c0eccce",
-                "reference": "2f66ad7fcc468a5db03592a0c73a930e0c0eccce",
-                "shasum": ""
-            },
-            "require": {
-                "php": "~7.0.0 || ~7.1.0 || ~7.2.0 || ~7.3.0 || ~7.4.0 || ~8.0.0 || ~8.1.0 || ~8.2.0 || ~8.3.0 || ~8.4.0",
-                "phpunit/phpunit": "^6.5.0 || ^7.5.0 || ^8.5.19 || ^9.0.0 || ^10.0.0 || ^11.0.0 || ^12.0.0"
-            },
-            "require-dev": {
-                "ergebnis/composer-normalize": "^2.45.0",
-                "ergebnis/license": "^2.6.0",
-                "ergebnis/php-cs-fixer-config": "^6.43.1",
-                "fakerphp/faker": "~1.20.0",
-                "phpstan/extension-installer": "^1.4.3",
-                "phpstan/phpstan": "^1.12.11",
-                "phpstan/phpstan-deprecation-rules": "^1.2.1",
-                "phpstan/phpstan-phpunit": "^1.4.1",
-                "phpstan/phpstan-strict-rules": "^1.6.1",
-                "psr/container": "~1.0.0",
-                "rector/rector": "^1.2.10"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-main": "2.16-dev"
-                },
-                "composer-normalize": {
-                    "indent-size": 2,
-                    "indent-style": "space"
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "Ergebnis\\PHPUnit\\SlowTestDetector\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Andreas Möller",
-                    "email": "am@localheinz.com",
-                    "homepage": "https://localheinz.com"
-                }
-            ],
-            "description": "Provides facilities for detecting slow tests in phpunit/phpunit.",
-            "homepage": "https://github.com/ergebnis/phpunit-slow-test-detector",
-            "keywords": [
-                "detector",
-                "extension",
-                "phpunit",
-                "slow",
-                "test"
-            ],
-            "support": {
-                "issues": "https://github.com/ergebnis/phpunit-slow-test-detector/issues",
-                "security": "https://github.com/ergebnis/phpunit-slow-test-detector/blob/main/.github/SECURITY.md",
-                "source": "https://github.com/ergebnis/phpunit-slow-test-detector"
-            },
-            "time": "2025-02-23T15:25:48+00:00"
         },
         {
             "name": "evenement/evenement",
