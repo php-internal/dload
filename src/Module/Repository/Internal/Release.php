@@ -9,7 +9,7 @@ use Composer\Semver\VersionParser;
 use Internal\DLoad\Module\Common\Stability;
 use Internal\DLoad\Module\Repository\Collection\AssetsCollection;
 use Internal\DLoad\Module\Repository\ReleaseInterface;
-use Internal\DLoad\Module\Repository\RepositoryInterface;
+use Internal\DLoad\Module\Repository\Repository;
 
 /**
  * @internal
@@ -25,16 +25,14 @@ abstract class Release implements ReleaseInterface
     protected string $name;
 
     protected Stability $stability;
-
     protected AssetsCollection $assets;
 
     /**
      * @param non-empty-string $name
      * @param non-empty-string $version
-     * @param iterable $assets
      */
     public function __construct(
-        protected RepositoryInterface $repository,
+        protected Repository $repository,
         string $name,
         protected string $version,
         ?Stability $stability = null,
@@ -45,7 +43,7 @@ abstract class Release implements ReleaseInterface
         $this->stability = $stability ?? $this->parseStability($version);
     }
 
-    public function getRepository(): RepositoryInterface
+    public function getRepository(): Repository
     {
         return $this->repository;
     }

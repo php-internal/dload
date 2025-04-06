@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace Internal\DLoad\Module\Repository\Internal\GitHub;
 
 use Internal\DLoad\Module\Repository\Collection\ReleasesCollection;
-use Internal\DLoad\Module\Repository\RepositoryInterface;
+use Internal\DLoad\Module\Repository\Internal\Paginator;
+use Internal\DLoad\Module\Repository\Repository;
 use Internal\DLoad\Service\Destroyable;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Contracts\HttpClient\Exception\ExceptionInterface;
@@ -18,12 +19,11 @@ use Symfony\Contracts\HttpClient\ResponseInterface;
  * @internal
  * @psalm-internal Internal\DLoad\Module\Repository\GitHub
  */
-final class GitHubRepository implements RepositoryInterface, Destroyable
+final class GitHubRepository implements Repository, Destroyable
 {
     private const URL_RELEASES = 'https://api.github.com/repos/%s/releases';
 
     private HttpClientInterface $client;
-
     private ?ReleasesCollection $releases = null;
 
     /**
@@ -44,35 +44,65 @@ final class GitHubRepository implements RepositoryInterface, Destroyable
      * @param non-empty-string $org
      * @param non-empty-string $repo
      */
-    public function __construct(string $org, string $repo, HttpClientInterface $client = null)
+    public function __construct(string $org, string $repo, ?HttpClientInterface $client = null)
     {
         $this->name = $org . '/' . $repo;
         $this->client = $client ?? HttpClient::create();
     }
 
     /**
+     * Returns a lazily loaded collection of repository releases.
+     * Pages are loaded only when needed during iteration or filtering.
+     *
      * @throws ExceptionInterface
      */
     public function getReleases(): ReleasesCollection
     {
-        return $this->releases ??= ReleasesCollection::from(function () {
+        if ($this->releases !== null) {
+            return $this->releases;
+        }
+
+        // Create a generator function for lazy loading release pages
+        $pageLoader = function (): \Generator {
             $page = 0;
 
-            // Iterate over all pages
             do {
-                $response = $this->releasesRequest(++$page);
+                try {
+                    // to avoid first eager loading because of generator
+                    yield [];
 
-                /** @psalm-var GitHubReleaseApiResponse $data */
-                foreach ($response->toArray() as $data) {
-                    yield GitHubRelease::fromApiResponse($this, $this->client, $data);
+                    $response = $this->releasesRequest(++$page);
+
+                    /** @psalm-var array<array-key, array{name: string|null, tag_name: string|null, assets: array}> $data */
+                    $data = $response->toArray();
+
+                    // If empty response, no more pages
+                    if ($data === []) {
+                        return;
+                    }
+
+                    yield \array_map(
+                        fn(array $releaseData): GitHubRelease => GitHubRelease::fromApiResponse($this, $this->client, $releaseData),
+                        $data,
+                    );
+
+                    // Check if there are more pages
+                    $hasMorePages = $this->hasNextPage($response);
+                } catch (ExceptionInterface) {
+                    return;
                 }
-            } while ($this->hasNextPage($response));
-        });
+            } while ($hasMorePages);
+        };
+
+        // Create paginator
+        $paginator = Paginator::createFromGenerator($pageLoader(), null);
+
+        // Create a collection with the paginator
+        $this->releases = ReleasesCollection::create($paginator);
+
+        return $this->releases;
     }
 
-    /**
-     * @return string
-     */
     public function getName(): string
     {
         return $this->name;
@@ -88,10 +118,6 @@ final class GitHubRepository implements RepositoryInterface, Destroyable
     }
 
     /**
-     * @param string $method
-     * @param string $uri
-     * @param array $options
-     * @return ResponseInterface
      * @throws TransportExceptionInterface
      * @see HttpClientInterface::request()
      */

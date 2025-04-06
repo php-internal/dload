@@ -10,12 +10,34 @@ use Internal\DLoad\Module\Repository\AssetInterface;
 use Internal\DLoad\Module\Repository\Internal\Collection;
 
 /**
+ * Collection of release assets with filtering capabilities.
+ *
+ * Provides methods to filter assets by architecture, operating system,
+ * file extension, and name patterns.
+ *
+ * ```php
+ * // Get Linux x86_64 assets with certain file extensions
+ * $assets = $release->getAssets()
+ *     ->whereOperatingSystem(OperatingSystem::Linux)
+ *     ->whereArchitecture(Architecture::X86_64)
+ *     ->whereFileExtensions(['tar.gz', 'zip'])
+ *     ->exceptDebPackages();
+ *
+ * // Find assets matching a pattern
+ * $assets = $release->getAssets()->whereNameMatches('/^app-v\d+/');
+ * ```
+ *
  * @template-extends Collection<AssetInterface>
  * @internal
  * @psalm-internal Internal\DLoad\Module
  */
 final class AssetsCollection extends Collection
 {
+    /**
+     * Filters out Debian package assets.
+     *
+     * @return self New filtered collection
+     */
     public function exceptDebPackages(): self
     {
         return $this->except(
@@ -24,6 +46,12 @@ final class AssetsCollection extends Collection
         );
     }
 
+    /**
+     * Filters assets to include only those matching the specified architecture.
+     *
+     * @param Architecture $arch Required architecture
+     * @return self New filtered collection
+     */
     public function whereArchitecture(Architecture $arch): self
     {
         return $this->filter(
@@ -31,6 +59,12 @@ final class AssetsCollection extends Collection
         );
     }
 
+    /**
+     * Filters assets to include only those matching the specified operating system.
+     *
+     * @param OperatingSystem $os Required operating system
+     * @return self New filtered collection
+     */
     public function whereOperatingSystem(OperatingSystem $os): self
     {
         return $this->filter(
@@ -39,7 +73,10 @@ final class AssetsCollection extends Collection
     }
 
     /**
-     * @param list<non-empty-string> $extensions
+     * Filters assets to include only those with specified file extensions.
+     *
+     * @param list<non-empty-string> $extensions List of file extensions without leading dot
+     * @return self New filtered collection
      */
     public function whereFileExtensions(array $extensions): self
     {
@@ -58,14 +95,19 @@ final class AssetsCollection extends Collection
     }
 
     /**
-     * Select all the assets with names that match the given pattern.
+     * Filters assets to include only those with names matching the given regex pattern.
      *
-     * @param non-empty-string $pattern
+     * @param non-empty-string $pattern Regular expression pattern
+     * @return self New filtered collection
      */
     public function whereNameMatches(string $pattern): self
     {
         return $this->filter(
-            static fn(AssetInterface $asset): bool => \preg_match($pattern, $asset->getName()) === 1,
+            static fn(AssetInterface $asset): bool => @\preg_match(
+                $pattern,
+                $asset->getName(),
+                flags: \PREG_NO_ERROR,
+            ) === 1,
         );
     }
 }

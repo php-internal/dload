@@ -51,7 +51,7 @@ final class GitHubRelease extends Release implements Destroyable
         $version = $data['tag_name'] ?? (string) $data['name'];
         $result = new self($client, $repository, $name, $version);
 
-        $result->assets = AssetsCollection::from(static function () use ($client, $result, $data): \Generator {
+        $result->assets = AssetsCollection::create(static function () use ($client, $result, $data): \Generator {
             /** @var GitHubAssetApiResponse $item */
             foreach ($data['assets'] ?? [] as $item) {
                 yield GitHubAsset::fromApiResponse($client, $result, $item);
@@ -89,7 +89,6 @@ final class GitHubRelease extends Release implements Destroyable
      * @note The return value is "pretty", but that does not mean that the tag physically exists.
      *
      * @param array{tag_name: string|null, name: string|null} $data
-     * @return string
      */
     private static function getTagName(array $data): string
     {

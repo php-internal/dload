@@ -1,0 +1,53 @@
+---
+
+$schema: 'https://raw.githubusercontent.com/context-hub/generator/refs/heads/main/json-schema.json'
+
+import:
+  - path: resources/prompts.yaml
+
+documents:
+  # Project structure overview
+  - description: 'Project structure overview'
+    outputPath: project-structure.md
+    overwrite: true
+    sources:
+      - type: text
+        content: |
+          The PSR-4 is used in the project.
+      - type: tree
+        sourcePaths: [ 'src' ]
+        showCharCount: true
+        showSize: true
+      - type: file
+        sourcePaths: [ 'README.md' ]
+
+  # Modules API
+  - description: 'Modules API allowed to be used in the project'
+    outputPath: modules-api.md
+    overwrite: true
+    sources:
+      - type: file
+        sourcePaths: [ 'src/Module', 'src/Service' ]
+        filePattern: '*.php'
+        excludePatterns: [ '/Internal/' ]
+        modifiers:
+          - name: php-content-filter
+            options:
+              method_visibility:
+                - public
+              keep_method_bodies: false
+
+  # Guidelines
+  - description: 'Guidelines and instructions'
+    outputPath: guidelines.md
+    overwrite: true
+    sources:
+      - type: text
+        tag: instruction
+        content: |
+          There are all the guidelines about how to do some things in the project.
+          Feel free to load any related guideline to the current context to make the work more efficient.
+      - type: tree
+        sourcePaths: 'docs/guidelines'
+        showCharCount: true
+        showSize: true

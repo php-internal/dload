@@ -14,6 +14,11 @@ use Internal\DLoad\Module\Common\Internal\Attribute\XPathEmbedList;
 use Internal\DLoad\Service\Logger;
 
 /**
+ * Configuration loader service.
+ *
+ * Hydrates configuration objects with values from different sources
+ * based on their property attributes.
+ *
  * @internal
  */
 final class ConfigLoader
@@ -21,6 +26,8 @@ final class ConfigLoader
     private \SimpleXMLElement|null $xml = null;
 
     /**
+     * Creates a new configuration loader.
+     *
      * @psalm-suppress RiskyTruthyFalsyComparison
      */
     public function __construct(
@@ -40,6 +47,9 @@ final class ConfigLoader
         }
     }
 
+    /**
+     * Hydrates a configuration object with values from the configured sources.
+     */
     public function hydrate(object $config): void
     {
         // Read class properties
@@ -55,7 +65,8 @@ final class ConfigLoader
     }
 
     /**
-     * @param \ReflectionProperty $property
+     * Injects values into a property based on its configuration attributes.
+     *
      * @param list<\ReflectionAttribute<ConfigAttribute>> $attributes
      */
     private function injectValue(object $config, \ReflectionProperty $property, array $attributes): void
@@ -115,6 +126,9 @@ final class ConfigLoader
         }
     }
 
+    /**
+     * Gets a value from XML using an XPath expression.
+     */
     private function getXPath(XPath $attribute): mixed
     {
         $value = $this->xml?->xpath($attribute->path);
@@ -124,6 +138,9 @@ final class ConfigLoader
             : null;
     }
 
+    /**
+     * Gets a list of objects from XML using an XPath expression.
+     */
     private function getXPathEmbeddedList(XPathEmbedList $attribute): array
     {
         if ($this->xml === null) {
@@ -147,6 +164,9 @@ final class ConfigLoader
         return $result;
     }
 
+    /**
+     * Creates a new loader instance with the specified XML element.
+     */
     private function withXml(\SimpleXMLElement $xml): self
     {
         $self = clone $this;

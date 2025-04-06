@@ -67,7 +67,7 @@ final class GitHubAsset extends Asset implements Destroyable
      *
      * @throws ExceptionInterface
      */
-    public function download(\Closure $progress = null): \Traversable
+    public function download(?\Closure $progress = null): \Traversable
     {
         $response = $this->client->request('GET', $this->getUri(), [
             'on_progress' => $progress,

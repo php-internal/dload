@@ -1,0 +1,57 @@
+---
+
+$schema: 'https://raw.githubusercontent.com/context-hub/generator/refs/heads/main/json-schema.json'
+
+prompts:
+  - id: cover-class-by-docs
+    description: Generate documentation for a specific class in the project
+    schema:
+      properties:
+        class-name:
+          description: Class name to cover with docs
+      required:
+        - class-name
+
+    messages:
+      - role: user
+        content: |
+          Read {{class-name}} class(es) or interface(s).
+
+          Cover it with comments using following important instructions:
+          - Don't break signatures. You can only add or improve comments.
+          - Don't remove existing @internal, @link, @see, @api, or @deprecated annotations.
+          - Use passive forms instead of we or you.
+          - Separate title and content with empty line.
+          - Use @link annotation if it's necessary to write some URL.
+          - Use @see annotation if it's necessary to reference to a class or method.
+          - Use extended types like class-string, non-empty-string, non-empty-array, non-empty-list, etc, if it's logically correct.
+          - Don't use @inheritDoc annotations.
+          - Keep docs clean:
+            - If the method has the same signature in the parent, don't comment the implementation if there is no additional things.
+            - Keep only essential and non-obvious documentation. It's important to avoid redundancy.
+            - remove trailing spaces even in empty comment lines
+          - Use generic annotations if possible based on the logic. For example for a `count()` has `int<0, max>` return type because the amount of items can't be negative.
+          - Use inline annotations like {@see ClassName} if it needed to  mention in a text block.
+          - Add class or method usage example using markdown like.
+            Note that there is leading space before inside the code block:
+            ```php
+             // Comment for the following code
+             some code
+            ```
+            If commenting a console command, feel fre to provide a usage example in the form of a command line:
+            ```bash
+             # Comment for the following command
+             some command
+            ```
+            Don't skip internal classes.
+          - Inner comments order: title, description, example, template annotations, params and return annotations, references and internal/deprecated annotations.
+          - Property comments rules: If it possible, write inline comment without title like `/** @var non-empty-string $name User name */`.
+          - Break long lines into multiple lines. Maximum line length is 120 characters.
+            Multiline comments rules: if a comment starts with an annotation, the second line should start with whitespaces aligned with the annotation length:
+            ```php
+            /**
+             * @var non-empty-string $name Comment on the first line
+             *      comment on the second line...
+             *      comment on the third line
+             */
+            ```

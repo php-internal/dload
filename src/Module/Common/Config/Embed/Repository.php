@@ -7,6 +7,18 @@ namespace Internal\DLoad\Module\Common\Config\Embed;
 use Internal\DLoad\Module\Common\Internal\Attribute\XPath;
 
 /**
+ * Repository configuration.
+ *
+ * Defines a source repository for software packages.
+ *
+ * ```php
+ * $repo = Repository::fromArray([
+ *     'type' => 'github',
+ *     'uri' => 'roadrunner-server/roadrunner',
+ *     'asset-pattern' => '#^roadrunner-.*#'
+ * ]);
+ * ```
+ *
  * @psalm-type RepositoryArray = array{
  *     type: non-empty-string,
  *     uri: non-empty-string,
@@ -15,17 +27,22 @@ use Internal\DLoad\Module\Common\Internal\Attribute\XPath;
  */
 final class Repository
 {
+    /** @var non-empty-string $type Repository type identifier */
     #[XPath('@type')]
     public string $type = 'github';
 
+    /** @var non-empty-string $uri Repository URI identifier */
     #[XPath('@uri')]
     public string $uri;
 
+    /** @var non-empty-string $assetPattern Regular expression pattern to match assets */
     #[XPath('@asset-pattern')]
     public string $assetPattern = '/^.*$/';
 
     /**
-     * @param RepositoryArray $repositoryArray
+     * Creates a Repository configuration from an array.
+     *
+     * @param RepositoryArray $repositoryArray Configuration array
      */
     public static function fromArray(mixed $repositoryArray): self
     {

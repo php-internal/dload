@@ -11,23 +11,35 @@ use Internal\DLoad\Module\Downloader\Progress;
 use Internal\DLoad\Module\Repository\AssetInterface;
 use Internal\DLoad\Module\Repository\ReleaseInterface;
 
+/**
+ * Context object for download operations.
+ *
+ * Contains all contextual information needed during a download operation, including
+ * configurations, selected components, and callback functions.
+ *
+ * @internal
+ */
 final class DownloadContext
 {
-    /** Current repository config */
+    /** @var Repository Current repository configuration */
     public Repository $repoConfig;
 
-    /** Downloaded file */
+    /** @var \SplFileObject Downloaded file handle */
     public \SplFileObject $file;
 
-    /** Current asset */
+    /** @var AssetInterface Current asset being processed */
     public AssetInterface $asset;
 
-    /** Current release */
+    /** @var ReleaseInterface Current release being processed */
     public ReleaseInterface $release;
 
     /**
+     * Creates a new download context.
+     *
+     * @param Software $software Software package configuration
      * @param \Closure(Progress): mixed $onProgress Callback to report progress.
      *        Exception thrown in this callback will stop and revert the task.
+     * @param DownloadConfig $actionConfig Download action configuration
      */
     public function __construct(
         public readonly Software $software,

@@ -12,6 +12,19 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
+ * Displays a list of available software packages.
+ *
+ * Shows all registered software packages with their IDs, names,
+ * repository information, and descriptions.
+ *
+ * ```bash
+ * # List all available software packages
+ * ./vendor/bin/dload software
+ *
+ * # List software with custom configuration
+ * ./vendor/bin/dload software --config=./custom-dload.xml
+ * ```
+ *
  * @internal
  */
 #[AsCommand(
@@ -20,6 +33,17 @@ use Symfony\Component\Console\Output\OutputInterface;
 )]
 final class ListSoftware extends Base
 {
+    /**
+     * Lists all available software packages in a formatted output.
+     *
+     * Displays the software ID, name, homepage (if available),
+     * repository information, and description for each registered software.
+     *
+     * @param InputInterface $input Command input
+     * @param OutputInterface $output Command output
+     *
+     * @return int Command result code
+     */
     protected function execute(
         InputInterface $input,
         OutputInterface $output,
