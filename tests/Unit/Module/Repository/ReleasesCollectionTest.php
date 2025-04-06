@@ -19,8 +19,10 @@ use PHPUnit\Framework\TestCase;
 final class ReleasesCollectionTest extends TestCase
 {
     private RepositoryStub $repository;
+
     /** @var list<ReleaseStub> */
     private array $releases;
+
     private ReleasesCollection $collection;
 
     public function testSatisfiesFiltersReleasesByVersionConstraint(): void

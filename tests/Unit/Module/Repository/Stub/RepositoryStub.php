@@ -16,6 +16,7 @@ use Internal\DLoad\Tests\Unit\Module\Repository\Stub\Collection\ReleasesCollecti
 final class RepositoryStub implements Repository
 {
     private string $name;
+
     /** @var Collection<ReleaseInterface> */
     private ?Collection $releases;
 
