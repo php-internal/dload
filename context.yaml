@@ -3,7 +3,7 @@
 $schema: 'https://raw.githubusercontent.com/context-hub/generator/refs/heads/main/json-schema.json'
 
 import:
-    - path: resources/prompts.yaml
+  - path: resources/prompts.yaml
 
 documents:
   # Project structure overview
@@ -15,11 +15,11 @@ documents:
         content: |
           The PSR-4 is used in the project.
       - type: tree
-        sourcePaths: ['src']
+        sourcePaths: [ 'src' ]
         showCharCount: true
         showSize: true
       - type: file
-        sourcePaths: ['README.md']
+        sourcePaths: [ 'README.md' ]
 
   # Modules API
   - description: 'Modules API allowed to be used in the project'
@@ -27,9 +27,9 @@ documents:
     overwrite: true
     sources:
       - type: file
-        sourcePaths: ['src/Module', 'src/Service']
+        sourcePaths: [ 'src/Module', 'src/Service' ]
         filePattern: '*.php'
-        excludePatterns: ['/Internal/']
+        excludePatterns: [ '/Internal/' ]
         modifiers:
           - name: php-content-filter
             options:
@@ -48,6 +48,6 @@ documents:
           There are all the guidelines about how to do some things in the project.
           Feel free to load any related guideline to the current context to make the work more efficient.
       - type: tree
-        sourcePaths: ['docs/guidelines']
+        sourcePaths: 'docs/guidelines'
         showCharCount: true
         showSize: true
