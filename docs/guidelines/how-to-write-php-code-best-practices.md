@@ -65,7 +65,7 @@ This document outlines key practices for generating high-quality PHP code using 
 
 ### 2. Code Structure
 
-- Follow PER-2 coding standards instead of PSR-12
+- Follow PER-2 coding standards which extends PSR-12
 - Maintain single responsibility principle
 - Keep methods focused and concise (under 20 lines when possible)
 - Favor composition over inheritance

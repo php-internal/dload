@@ -67,4 +67,12 @@ enum OperatingSystem: string implements Factoriable
             ? self::tryFromString(\strtolower($matches[1]))
             : null;
     }
+
+    public function getBinaryExtension(): string
+    {
+        return match ($this) {
+            self::Windows => '.exe',
+            default => '',
+        };
+    }
 }

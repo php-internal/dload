@@ -32,7 +32,8 @@ use Internal\DLoad\Module\Common\Internal\Attribute\XPathEmbedList;
  *     homepage?: non-empty-string,
  *     description?: non-empty-string,
  *     repositories?: list<RepositoryArray>,
- *     files?: list<FileArray>
+ *     files?: list<FileArray>,
+ *     binary?: non-empty-string|null
  * }
  */
 final class Software
@@ -56,6 +57,13 @@ final class Software
     #[XPath('@description')]
     public string $description = '';
 
+    /**
+     * @var non-empty-string|null $binary Binary executable name to check for existence
+     *      Used to avoid re-downloading existing binaries.
+     */
+    #[XPath('@binary')]
+    public ?string $binary = null;
+
     /** @var Repository[] $repositories List of repositories where the software can be found */
     #[XPathEmbedList('repository', Repository::class)]
     public array $repositories = [];
@@ -76,6 +84,7 @@ final class Software
         $self->alias = $softwareArray['alias'] ?? null;
         $self->homepage = $softwareArray['homepage'] ?? null;
         $self->description = $softwareArray['description'] ?? '';
+        $self->binary = $softwareArray['binary'] ?? null;
         $self->repositories = \array_map(
             static fn(array $repositoryArray): Repository => Repository::fromArray($repositoryArray),
             $softwareArray['repositories'] ?? [],

@@ -10,6 +10,7 @@ use Internal\DLoad\Module\Common\Config\Embed\File;
 use Internal\DLoad\Module\Common\Config\Embed\Software;
 use Internal\DLoad\Module\Common\Input\Destination;
 use Internal\DLoad\Module\Downloader\Downloader;
+use Internal\DLoad\Module\Downloader\Internal\BinaryExistenceChecker;
 use Internal\DLoad\Module\Downloader\SoftwareCollection;
 use Internal\DLoad\Module\Downloader\Task\DownloadResult;
 use Internal\DLoad\Module\Downloader\Task\DownloadTask;
@@ -49,24 +50,40 @@ final class DLoad
         private readonly Destination $configDestination,
         private readonly OutputInterface $output,
         private readonly StyleInterface $io,
+        private readonly BinaryExistenceChecker $binaryChecker,
     ) {}
 
     /**
      * Adds a download task to the execution queue.
      *
      * Creates and schedules a task to download and extract a software package based on the provided action.
+     * Skips download if binary already exists and force flag is not set.
      *
      * @param DownloadConfig $action Download configuration action
+     * @param bool $force Whether to force download even if binary exists
      * @throws \RuntimeException When software package is not found
      */
-    public function addTask(DownloadConfig $action): void
+    public function addTask(DownloadConfig $action, bool $force = false): void
     {
-        $this->taskManager->addTask(function () use ($action): void {
-            // Find Software
-            $software = $this->softwareCollection->findSoftware($action->software) ?? throw new \RuntimeException(
-                'Software not found.',
+        // Find Software
+        $software = $this->softwareCollection->findSoftware($action->software) ?? throw new \RuntimeException(
+            'Software not found.',
+        );
+
+        // Check if binary already exists
+        $destinationPath = $this->configDestination->path ?? \getcwd();
+        if (!$force && $software->binary !== null && $this->binaryChecker->exists($destinationPath, $software->binary)) {
+            $binaryPath = $this->binaryChecker->buildBinaryPath($destinationPath, $software->binary);
+            $this->logger->info(
+                "Binary '{$software->binary}' already exists at '{$binaryPath}'. " .
+                "Skipping download. Use --force to override.",
             );
 
+            // Skip task creation
+            return;
+        }
+
+        $this->taskManager->addTask(function () use ($software, $action): void {
             // Create a Download task
             $task = $this->prepareDownloadTask($software, $action);
 
