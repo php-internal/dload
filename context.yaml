@@ -34,3 +34,18 @@ documents:
               method_visibility:
                 - public
               keep_method_bodies: false
+
+  # Guidelines
+  - description: 'Guidelines and instructions'
+    outputPath: guidelines.md
+    overwrite: true
+    sources:
+      - type: text
+        tag: instruction
+        content: |
+          There are all the guidelines about how to do some things in the project.
+          Feel free to load any related guideline to the current context to make the work more efficient.
+      - type: tree
+        sourcePaths: ['docs/guidelines']
+        showCharCount: true
+        showSize: true
