@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Internal\DLoad\Module\Repository\Internal\GitHub;
 
 use Internal\DLoad\Module\Repository\Collection\ReleasesCollection;
+use Internal\DLoad\Module\Repository\Internal\Paginator;
 use Internal\DLoad\Module\Repository\Repository;
 use Internal\DLoad\Service\Destroyable;
 use Symfony\Component\HttpClient\HttpClient;
@@ -50,23 +51,56 @@ final class GitHubRepository implements Repository, Destroyable
     }
 
     /**
+     * Returns a lazily loaded collection of repository releases.
+     * Pages are loaded only when needed during iteration or filtering.
+     *
      * @throws ExceptionInterface
      */
     public function getReleases(): ReleasesCollection
     {
-        return $this->releases ??= ReleasesCollection::from(function () {
+        if ($this->releases !== null) {
+            return $this->releases;
+        }
+
+        // Create a generator function for lazy loading release pages
+        $pageLoader = function (): \Generator {
             $page = 0;
 
-            // Iterate over all pages
             do {
-                $response = $this->releasesRequest(++$page);
+                try {
+                    // to avoid first eager loading because of generator
+                    yield [];
 
-                /** @psalm-var GitHubReleaseApiResponse $data */
-                foreach ($response->toArray() as $data) {
-                    yield GitHubRelease::fromApiResponse($this, $this->client, $data);
+                    $response = $this->releasesRequest(++$page);
+
+                    /** @psalm-var array<array-key, array{name: string|null, tag_name: string|null, assets: array}> $data */
+                    $data = $response->toArray();
+
+                    // If empty response, no more pages
+                    if ($data === []) {
+                        return;
+                    }
+
+                    yield \array_map(
+                        fn(array $releaseData): GitHubRelease => GitHubRelease::fromApiResponse($this, $this->client, $releaseData),
+                        $data,
+                    );
+
+                    // Check if there are more pages
+                    $hasMorePages = $this->hasNextPage($response);
+                } catch (ExceptionInterface) {
+                    return;
                 }
-            } while ($this->hasNextPage($response));
-        });
+            } while ($hasMorePages);
+        };
+
+        // Create paginator
+        $paginator = Paginator::createFromGenerator($pageLoader(), null);
+
+        // Create a collection with the paginator
+        $this->releases = ReleasesCollection::create($paginator);
+
+        return $this->releases;
     }
 
     public function getName(): string

@@ -53,7 +53,7 @@ final class CompositeRepository implements Repository
      */
     public function getReleases(): ReleasesCollection
     {
-        return ReleasesCollection::from(function () {
+        return ReleasesCollection::create(function () {
             foreach ($this->repositories as $repository) {
                 yield from $repository->getReleases();
             }

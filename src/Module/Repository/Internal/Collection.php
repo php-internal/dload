@@ -33,17 +33,18 @@ namespace Internal\DLoad\Module\Repository\Internal;
 abstract class Collection implements \IteratorAggregate, \Countable
 {
     /**
-     * @var array<T>
+     * Array of filter callbacks to apply when iterating
+     *
+     * @var array<callable(T): bool>
      */
-    protected array $items;
+    protected array $filters = [];
 
     /**
-     * @param array<T> $items Collection items
+     * @param array<T>|CachedGenerator<T> $items Collection items
      */
-    final public function __construct(array $items)
-    {
-        $this->items = $items;
-    }
+    final public function __construct(
+        protected readonly array|CachedGenerator $items,
+    ) {}
 
     /**
      * Creates a new collection from various sources.
@@ -51,17 +52,19 @@ abstract class Collection implements \IteratorAggregate, \Countable
      * Supports creating from an existing collection, a traversable,
      * an array, or a generator function.
      *
-     * @param self|iterable|\Closure $items Source of items
-     * @return static New collection instance
+     * @template TNew
+     *
+     * @param iterable<TNew> $items Source of items
+     * @return static<TNew> New collection instance
      * @throws \InvalidArgumentException If the input cannot be converted to a collection
      */
     public static function create(mixed $items): static
     {
         return match (true) {
             $items instanceof static => $items,
-            $items instanceof \Traversable => new static(\iterator_to_array($items)),
             \is_array($items) => new static($items),
-            $items instanceof \Closure => static::from($items),
+            $items instanceof \Traversable => new static(new CachedGenerator($items)),
+            $items instanceof \Closure => static::create($items()),
             default => throw new \InvalidArgumentException(
                 \sprintf('Unsupported iterable type %s.', \get_debug_type($items)),
             ),
@@ -69,25 +72,18 @@ abstract class Collection implements \IteratorAggregate, \Countable
     }
 
     /**
-     * Creates a collection from a generator function.
-     *
-     * @param \Closure $generator Function that yields collection items
-     * @return static New collection instance
-     */
-    public static function from(\Closure $generator): static
-    {
-        return static::create($generator());
-    }
-
-    /**
-     * Filters the collection using the provided callback.
+     * Adds a filter to the collection.
+     * This does not immediately apply the filter, but stores it for later use during iteration.
      *
      * @param callable(T): bool $filter Function that returns true for items to keep
      * @return $this New filtered collection
      */
     public function filter(callable $filter): static
     {
-        return new static(\array_filter($this->items, $filter));
+        // For iterables or collections with existing filters, add the filter to the pipeline
+        $clone = clone $this;
+        $clone->filters[] = $filter;
+        return $clone;
     }
 
     /**
@@ -98,7 +94,13 @@ abstract class Collection implements \IteratorAggregate, \Countable
      */
     public function map(callable $map): static
     {
-        return new static(\array_map($map, $this->items));
+        // For iterables or collections with filters, we need to materialize and map
+        $items = [];
+        foreach ($this as $item) {
+            $items[] = $map($item);
+        }
+
+        return new static($items);
     }
 
     /**
@@ -112,9 +114,8 @@ abstract class Collection implements \IteratorAggregate, \Countable
      */
     public function except(callable $filter): static
     {
-        $callback = static fn(...$args): bool => ! $filter(...$args);
-
-        return new static(\array_filter($this->items, $callback));
+        $callback = static fn(...$args): bool => !$filter(...$args);
+        return $this->filter($callback);
     }
 
     /**
@@ -127,9 +128,21 @@ abstract class Collection implements \IteratorAggregate, \Countable
      */
     public function first(?callable $filter = null): ?object
     {
-        $self = $filter === null ? $this : $this->filter($filter);
+        $combinedFilter = $this->getCombinedFilter($filter);
+        if ($combinedFilter === null) {
+            return $this->items instanceof CachedGenerator
+                ? $this->items->first()
+                : ($this->items === [] ? null : \reset($this->items));
+        }
 
-        return $self->items === [] ? null : \reset($self->items);
+        // For iterables, iterate until we find a match
+        foreach ($this->getIterator() as $item) {
+            if ($filter === null || $filter($item)) {
+                return $item;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -151,7 +164,20 @@ abstract class Collection implements \IteratorAggregate, \Countable
      */
     public function getIterator(): \Traversable
     {
-        return new \ArrayIterator($this->items);
+        $combinedFilter = $this->getCombinedFilter();
+
+        // If no filters, return the items directly
+        if ($combinedFilter === null) {
+            yield from $this->items;
+            return;
+        }
+
+        // Apply filters during iteration
+        foreach ($this->items as $item) {
+            if ($combinedFilter($item)) {
+                yield $item;
+            }
+        }
     }
 
     /**
@@ -161,7 +187,19 @@ abstract class Collection implements \IteratorAggregate, \Countable
      */
     public function count(): int
     {
-        return \count($this->items);
+        if ($this->filters === []) {
+            return $this->items instanceof CachedGenerator
+                ? $this->items->count()
+                : \count($this->items);
+        }
+
+        // For iterables or with filters, we need to count matching items
+        $count = 0;
+        foreach ($this as $item) {
+            $count++;
+        }
+
+        return $count;
     }
 
     /**
@@ -172,10 +210,7 @@ abstract class Collection implements \IteratorAggregate, \Countable
      */
     public function whenEmpty(callable $then): static
     {
-        if ($this->empty()) {
-            $then();
-        }
-
+        $this->empty() and $then();
         return $this;
     }
 
@@ -186,7 +221,14 @@ abstract class Collection implements \IteratorAggregate, \Countable
      */
     public function empty(): bool
     {
-        return $this->items === [];
+        if ($this->filters === []) {
+            return $this->items instanceof CachedGenerator
+                ? $this->items->isEmpty()
+                : $this->items === [];
+        }
+
+        // For iterables or with filters, try to get the first item
+        return $this->first() === null;
     }
 
     /**
@@ -196,6 +238,31 @@ abstract class Collection implements \IteratorAggregate, \Countable
      */
     public function toArray(): array
     {
-        return \array_values($this->items);
+        return \iterator_to_array($this->getIterator());
+    }
+
+    /**
+     * Combines all filters with an optional additional filter.
+     * Returns null if there are no filters to apply.
+     *
+     * @param null|callable(T): bool $additionalFilter
+     * @return null|callable(T): bool
+     */
+    private function getCombinedFilter(?callable $additionalFilter = null): ?callable
+    {
+        if ($this->filters === []) {
+            return $additionalFilter;
+        }
+
+        // Combine collection filters with additional filter
+        return function ($item) use ($additionalFilter) {
+            foreach ($this->filters as $filter) {
+                if (!$filter($item)) {
+                    return false;
+                }
+            }
+
+            return $additionalFilter === null ? true : $additionalFilter($item);
+        };
     }
 }

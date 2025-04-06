@@ -24,7 +24,7 @@ final class Paginator implements \IteratorAggregate, \Countable
     private ?int $totalItems = null;
 
     /**
-     * @param \Generator<array-key, list<TItem>> $loader
+     * @param \Generator<array-key, list<TItem>, mixed, mixed> $loader
      * @param int<1, max> $pageNumber
      * @param null|\Closure(): int<0, max> $counter
      */
@@ -33,7 +33,7 @@ final class Paginator implements \IteratorAggregate, \Countable
         private readonly int $pageNumber,
         private ?\Closure $counter,
     ) {
-        $this->collection = $loader->current();
+        $this->collection = $loader->valid() ? $loader->current() : [];
     }
 
     /**

@@ -9,7 +9,7 @@ namespace Internal\DLoad\Module\Repository\Internal;
  * This prevents values from being "consumed" when iterating.
  *
  * @template T
- * @template-implements \IteratorAggregate<array-key, T>
+ * @template-implements \IteratorAggregate<int, T>
  *
  * @internal
  * @psalm-internal Internal\DLoad\Module\Repository
@@ -84,7 +84,7 @@ final class CachedGenerator implements \IteratorAggregate
     public function isEmpty(): bool
     {
         // If we already have items, it's not empty
-        if (!empty($this->cache)) {
+        if ($this->cache !== []) {
             return false;
         }
 
@@ -115,27 +115,28 @@ final class CachedGenerator implements \IteratorAggregate
      */
     private function rollItem(): mixed
     {
-        if ($this->inited) {
-            if ($this->generator === null) {
+        if ($this->generator === null) {
+            return null;
+        }
+
+        try {
+            if ($this->inited) {
+                $this->generator->next();
+            }
+
+            $this->inited = true;
+            /** @var T $next */
+            $next = $this->generator->current();
+            if (!$this->generator->valid()) {
+                $this->generator = null;
                 return null;
             }
 
-            try {
-                $this->generator->next();
-                if (!$this->generator->valid()) {
-                    $this->generator = null;
-                    return null;
-                }
-            } catch (\Throwable $e) {
-                $this->generator = null;
-                throw $e;
-            }
+            $this->cache[] = $next;
+        } catch (\Throwable $e) {
+            $this->generator = null;
+            throw $e;
         }
-
-        $this->inited = true;
-        /** @var T $next */
-        $next = $this->generator->current();
-        $this->cache[] = $next;
 
         return $next;
     }

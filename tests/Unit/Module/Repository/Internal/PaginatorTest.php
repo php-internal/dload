@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Internal\DLoad\Tests\Module\Repository\Internal;
+namespace Internal\DLoad\Tests\Unit\Module\Repository\Internal;
 
 use Internal\DLoad\Module\Repository\Internal\Paginator;
 use PHPUnit\Framework\TestCase;
