@@ -69,6 +69,7 @@ To download all the configured software, run `dload get` without arguments:
     <registry>
         <software name="RoadRunner"
                   alias="rr"
+                  binary="rr"
                   description="High performant Application server"
         >
             <repository type="github"
@@ -82,6 +83,8 @@ To download all the configured software, run `dload get` without arguments:
     </registry>
 </dload>
 ```
+
+DLoad will check the option `software.binary` to prevent downloading if the file already exists.
 
 ### GitHub Token
 

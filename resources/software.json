@@ -2,6 +2,7 @@
     {
         "name": "RoadRunner",
         "alias": "rr",
+        "binary": "rr",
         "homepage": "https://roadrunner.dev",
         "description": "High-performance PHP application server, load-balancer and process manager written in Golang",
         "repositories": [
@@ -21,6 +22,7 @@
     {
         "name": "Temporal",
         "alias": "temporal",
+        "binary": "temporal",
         "description": "Temporal SDK",
         "homepage": "https://temporal.io",
         "repositories": [
@@ -29,16 +31,12 @@
                 "uri": "temporalio/cli",
                 "asset-pattern": "/^temporal_cli_.*/"
             }
-        ],
-        "files": [
-            {
-                "pattern": "/^(temporal)(?:\\.exe)?$/"
-            }
         ]
     },
     {
         "name": "Dolt",
         "alias": "dolt",
+        "binary": "dolt",
         "description": "Dolt is a SQL database that you can fork, clone, branch, merge, push and pull just like a git repository.",
         "homepage": "https://www.dolthub.com",
         "repositories": [
@@ -47,16 +45,12 @@
                 "uri": "dolthub/dolt",
                 "asset-pattern": "/^dolt-.*/"
             }
-        ],
-        "files": [
-            {
-                "pattern": "/^(dolt)(?:\\.exe)?$/"
-            }
         ]
     },
     {
         "name": "ProtoC PHP gRPC Plugin",
         "alias": "protoc-gen-php-grpc",
+        "binary": "protoc-gen-php-grpc",
         "description": "Protobuf PHP gRPC generator plugin",
         "repositories": [
             {
@@ -64,16 +58,12 @@
                 "uri": "roadrunner-server/roadrunner",
                 "asset-pattern": "/^protoc-gen-php-grpc-.*/"
             }
-        ],
-        "files": [
-            {
-                "pattern": "/^(protoc-gen-php-grpc)(?:\\.exe)?$/"
-            }
         ]
     },
     {
         "name": "Protobuf compiler",
         "alias": "protoc",
+        "binary": "protoc",
         "homepage": "https://protobuf.dev/",
         "repositories": [
             {
@@ -81,16 +71,12 @@
                 "uri": "protocolbuffers/protobuf",
                 "asset-pattern": "/^protoc-.*/"
             }
-        ],
-        "files": [
-            {
-                "pattern": "/^(protoc)(?:\\.exe)?$/"
-            }
         ]
     },
     {
         "name": "TigerBeetle ",
         "alias": "tigerbeetle",
+        "binary": "tigerbeetle",
         "description": "TigerBeetle is a financial transactions database designed for mission critical safety and performance to power the next 30 years of OLTP.",
         "homepage": "https://tigerbeetle.com/",
         "repositories": [
@@ -98,11 +84,6 @@
                 "type": "github",
                 "uri": "tigerbeetle/tigerbeetle",
                 "asset-pattern": "/^tigerbeetle-.*/"
-            }
-        ],
-        "files": [
-            {
-                "pattern": "/^(tigerbeetle)(?:\\.exe)?$/"
             }
         ]
     }

@@ -36,6 +36,9 @@ use Symfony\Component\Console\Output\OutputInterface;
  *
  * # Download software defined in config file
  * ./vendor/bin/dload get --config=./dload.xml
+ *
+ * # Force download even if binary exists
+ * ./vendor/bin/dload get rr --force
  * ```
  *
  * @internal
@@ -64,6 +67,7 @@ final class Get extends Base
         $this->addOption('arch', null, InputOption::VALUE_OPTIONAL, 'Architecture, e.g. "amd64", "arm64" etc.');
         $this->addOption('os', null, InputOption::VALUE_OPTIONAL, 'Operating system, e.g. "linux", "darwin" etc.');
         $this->addOption('stability', null, InputOption::VALUE_OPTIONAL, 'Stability, e.g. "stable", "beta" etc.');
+        $this->addOption('force', 'f', InputOption::VALUE_NONE, 'Force download even if binary exists');
     }
 
     /**
@@ -96,9 +100,10 @@ final class Get extends Base
 
         /** @var DLoad $dload */
         $dload = $container->get(DLoad::class);
+        $forceDownload = $input->getOption('force');
 
         foreach ($actions as $action) {
-            $dload->addTask($action);
+            $dload->addTask($action, $forceDownload);
         }
         $dload->run();
 
