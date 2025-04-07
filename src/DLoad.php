@@ -237,9 +237,9 @@ final class DLoad
         // Check if binary is already covered by existing patterns
         foreach ($files as $file) {
             if (\preg_match(
-                    $file->pattern,
-                    $binary,
-                ) !== 1) {
+                $file->pattern,
+                $binary,
+            ) !== 1) {
                 continue;
             }
 
