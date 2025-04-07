@@ -24,6 +24,7 @@
         )]]></code>
     </LessSpecificReturnStatement>
     <MixedArgument>
+      <code><![CDATA[$forceDownload]]></code>
       <code><![CDATA[$input->getArgument(self::ARG_SOFTWARE)]]></code>
     </MixedArgument>
     <MixedArrayOffset>
@@ -31,6 +32,7 @@
     </MixedArrayOffset>
     <MixedAssignment>
       <code><![CDATA[$argument]]></code>
+      <code><![CDATA[$forceDownload]]></code>
     </MixedAssignment>
     <MoreSpecificReturnType>
       <code><![CDATA[list<DownloadConfig>]]></code>
@@ -51,8 +53,12 @@
   </file>
   <file src="src/DLoad.php">
     <ArgumentTypeCoercion>
-      <code><![CDATA[$software->files]]></code>
+      <code><![CDATA[$files]]></code>
     </ArgumentTypeCoercion>
+    <PossiblyFalseArgument>
+      <code><![CDATA[$destinationPath]]></code>
+      <code><![CDATA[$destinationPath]]></code>
+    </PossiblyFalseArgument>
     <PossiblyFalseOperand>
       <code><![CDATA[$path]]></code>
     </PossiblyFalseOperand>
