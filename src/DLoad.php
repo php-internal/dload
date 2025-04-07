@@ -9,6 +9,7 @@ use Internal\DLoad\Module\Common\Config\Action\Download as DownloadConfig;
 use Internal\DLoad\Module\Common\Config\Embed\File;
 use Internal\DLoad\Module\Common\Config\Embed\Software;
 use Internal\DLoad\Module\Common\Input\Destination;
+use Internal\DLoad\Module\Common\OperatingSystem;
 use Internal\DLoad\Module\Downloader\Downloader;
 use Internal\DLoad\Module\Downloader\Internal\BinaryExistenceChecker;
 use Internal\DLoad\Module\Downloader\SoftwareCollection;
@@ -51,13 +52,14 @@ final class DLoad
         private readonly OutputInterface $output,
         private readonly StyleInterface $io,
         private readonly BinaryExistenceChecker $binaryChecker,
+        private readonly OperatingSystem $os,
     ) {}
 
     /**
      * Adds a download task to the execution queue.
      *
      * Creates and schedules a task to download and extract a software package based on the provided action.
-     * Skips download if binary already exists and force flag is not set.
+     * Skips task creation if binary already exists and force flag is not set.
      *
      * @param DownloadConfig $action Download configuration action
      * @param bool $force Whether to force download even if binary exists
@@ -79,7 +81,7 @@ final class DLoad
                 "Skipping download. Use --force to override.",
             );
 
-            // Skip task creation
+            // Skip task creation entirely
             return;
         }
 
@@ -141,11 +143,14 @@ final class DLoad
             $extractor = $archive->extract();
             $this->logger->info('Extracting %s', $fileInfo->getFilename());
 
+            // Create a copy of the files list with binary included if necessary
+            $files = $this->filesToExtract($software);
+
             while ($extractor->valid()) {
                 $file = $extractor->current();
                 \assert($file instanceof \SplFileInfo);
 
-                $to = $this->shouldBeExtracted($file, $software->files);
+                $to = $this->shouldBeExtracted($file, $files);
 
                 if ($to === null || !$this->checkExisting($to)) {
                     $extractor->next();
@@ -156,12 +161,14 @@ final class DLoad
 
                 // Success
                 $path = $to->getRealPath() ?: $to->getPathname();
-                $this->output->writeln(\sprintf(
-                    '%s (<comment>%s</comment>) has been installed into <info>%s</info>',
-                    $to->getFilename(),
-                    $downloadResult->version,
-                    $path,
-                ));
+                $this->output->writeln(
+                    \sprintf(
+                        '%s (<comment>%s</comment>) has been installed into <info>%s</info>',
+                        $to->getFilename(),
+                        $downloadResult->version,
+                        $path,
+                    ),
+                );
 
                 $to->isExecutable() or @\chmod($path, 0755);
             }
@@ -211,5 +218,41 @@ final class DLoad
         }
 
         return null;
+    }
+
+    /**
+     * @return File[]
+     */
+    private function filesToExtract(Software $software): array
+    {
+        $files = $software->files;
+
+        // If binary is specified and not already covered by file patterns, add it
+        if ($software->binary === null) {
+            return $files;
+        }
+
+        $binary = $software->binary . $this->os->getBinaryExtension();
+
+        // Check if binary is already covered by existing patterns
+        foreach ($files as $file) {
+            if (\preg_match(
+                    $file->pattern,
+                    $binary,
+                ) !== 1) {
+                continue;
+            }
+
+            if ($file->rename === null || $file->rename === $binary) {
+                return $files;
+            }
+        }
+
+        // If binary not covered, add a new pattern for it
+        $binaryFile = new File();
+        $binaryFile->pattern = '/^' . \preg_quote($binary, '/') . '$/';
+        $files[] = $binaryFile;
+
+        return $files;
     }
 }

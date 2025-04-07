@@ -203,7 +203,7 @@ public function testFetchContextThrowsExceptionWhenFileNotFound(): void
 
 - Only mock direct dependencies of the class under test
 - Mock only what is necessary for the test
-- **Never mock final classes** - instead use real instances or create test alternatives
+- **DO NOT MOCK enums or final classes** - this is strictly prohibited
 - Prefer typed mock method returns
 - Verify critical interactions with mocks
 
@@ -215,14 +215,17 @@ $this->fileSystem->expects(self::once())
     ->willReturn('{"key": "value"}');
 ```
 
-### Dealing with Final Classes
+### Dealing with Final Classes and Enums
+
+- **Enumerations must not be mocked and need to be used as is** - always use real enum instances in tests
+- **Final classes should not be mocked** - use real instances or alternative approaches
 
 When a class under test depends on a final class:
 
-1. **Use real instances** when possible
-2. **Create test doubles** by implementing the same interface
-3. **Use wrapper/adapter pattern** to create a non-final class that delegates to the final class
-4. **Refactor dependencies** to use interfaces where appropriate
+1. **Use real instances** when possible - this is the preferred approach
+2. **Create test doubles** by implementing the same interface if the final class implements an interface
+3. **Use wrapper/adapter pattern** to create a non-final class that delegates to the final class if necessary
+4. **Refactor dependencies** to use interfaces where appropriate for improved testability
 
 ```php
 // Instead of mocking a final class:
@@ -249,6 +252,32 @@ class TestFileReader implements FileReaderInterface
 // Use in tests:
 $fileReader = new TestFileReader();
 $myService = new MyService($fileReader);
+```
+
+For enums, always use the real enum values directly:
+
+```php
+// When testing with an enum dependency:
+enum Status: string
+{
+    case PENDING = 'pending';
+    case APPROVED = 'approved';
+    case REJECTED = 'rejected';
+}
+
+// In your test - ALWAYS use the real enum instance:
+public function testProcessWithPendingStatus(): void
+{
+    // Arrange - use the real enum value
+    $status = Status::PENDING;
+    $processor = new StatusProcessor();
+    
+    // Act
+    $result = $processor->process($status);
+    
+    // Assert
+    self::assertTrue($result);
+}
 ```
 
 ## Additional Modern PHPUnit Features
@@ -395,7 +424,7 @@ final class LocalExternalContextSourceTest extends TestCase
         $this->expectExceptionMessage($expectedExceptionMessage);
 
         // Act
-        $this->contextSource->fetchContext($path);
+        $this->contextSource->fetchContext($filePath);
     }
 
     public static function provideInvalidPaths(): Generator
