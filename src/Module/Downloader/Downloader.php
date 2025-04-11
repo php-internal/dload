@@ -162,7 +162,8 @@ final class Downloader
     /**
      * Processes a release to find suitable assets.
      *
-     * Filters assets from the release based on architecture, operating system, and name pattern.
+     * Filters assets based on architecture, operating system, and name pattern.
+     * Then sorts them giving priority to archive files supported by the archive service.
      *
      * @param DownloadContext $context Download context information
      * @return \Closure(): AssetInterface Closure that returns the selected asset
@@ -170,19 +171,27 @@ final class Downloader
     private function processRelease(DownloadContext $context): \Closure
     {
         return function () use ($context): AssetInterface {
-            /** @var AssetInterface[] $assets */
-            $assets = $context->release->getAssets()
+            // First filter assets by architecture, operating system, and name pattern
+            $assetsCollection = $context->release->getAssets()
                 ->whereArchitecture($this->architecture)
                 ->whereOperatingSystem($this->operatingSystem)
-                ->whereNameMatches($context->repoConfig->assetPattern)
-                ->whereFileExtensions($this->archiveService->getSupportedExtensions())
-                ->toArray();
+                ->whereNameMatches($context->repoConfig->assetPattern);
 
-            $this->logger->debug('%d assets found.', \count($assets));
+            /** @var AssetInterface[] $allAssets */
+            $allAssets = $assetsCollection->toArray();
+            $this->logger->debug('%d matching assets found.', \count($allAssets));
+
+            $allAssets === [] and throw new \RuntimeException('No relevant assets found.');
+
+            // Get list of supported archive extensions
+            $supportedExtensions = $this->archiveService->getSupportedExtensions();
+
+            // Sort assets: archives first, other files second
+            $sortedAssets = $this->sortAssetsByPriority($allAssets, $supportedExtensions);
 
             process_asset:
-            $assets === [] and throw new \RuntimeException('No relevant asset found.');
-            $context->asset = \array_shift($assets);
+            $sortedAssets === [] and throw new \RuntimeException('No relevant asset found.');
+            $context->asset = \array_shift($sortedAssets);
             $this->logger->debug('Trying to load asset `%s`', $context->asset->getName());
             try {
                 await(coroutine($this->processAsset($context)));
@@ -192,6 +201,36 @@ final class Downloader
                 goto process_asset;
             }
         };
+    }
+
+    /**
+     * Sorts assets by priority with supported archives first, then other files.
+     *
+     * @param AssetInterface[] $assets List of assets to sort
+     * @param list<non-empty-string> $supportedExtensions List of supported archive extensions
+     * @return AssetInterface[] Sorted list of assets
+     */
+    private function sortAssetsByPriority(array $assets, array $supportedExtensions): array
+    {
+        $archiveAssets = [];
+        $otherAssets = [];
+
+        foreach ($assets as $asset) {
+            $assetName = \strtolower($asset->getName());
+            $isArchive = false;
+
+            foreach ($supportedExtensions as $extension) {
+                if (\str_ends_with($assetName, '.' . $extension)) {
+                    $archiveAssets[] = $asset;
+                    $isArchive = true;
+                    break;
+                }
+            }
+
+            $isArchive or $otherAssets[] = $asset;
+        }
+
+        return [...$archiveAssets, ...$otherAssets];
     }
 
     /**
