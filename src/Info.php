@@ -5,19 +5,33 @@ declare(strict_types=1);
 namespace Internal\DLoad;
 
 /**
+ * Application basic information provider.
+ *
+ * This class provides access to essential application metadata such as name, version, and paths.
+ *
  * @internal
  */
 final class Info
 {
+    /** @var non-empty-string Application name */
     public const NAME = 'DLoad';
+
+    /** @var string CLI logo color code */
     public const LOGO_CLI_COLOR = '';
+
+    /** @var non-empty-string Absolute path to the root directory */
     public const ROOT_DIR = __DIR__ . '/..';
+
+    /** @var non-empty-string Default version identifier if version file is not available */
     private const VERSION = 'experimental';
 
     /**
-     * Returns the version of the Trap.
+     * Returns the current application version.
      *
-     * @return non-empty-string
+     * Version is retrieved from version.json file or falls back to the default value.
+     * Results are cached for subsequent calls.
+     *
+     * @return non-empty-string The application version string
      */
     public static function version(): string
     {
