@@ -73,12 +73,11 @@ final class DLoad
         );
 
         // Check if binary already exists
-        $destinationPath = $this->configDestination->path ?? \getcwd();
+        $destinationPath = $this->configDestination->path ?? (string) \getcwd();
         if (!$force && $software->binary !== null && $this->binaryChecker->exists($destinationPath, $software->binary)) {
             $binaryPath = $this->binaryChecker->buildBinaryPath($destinationPath, $software->binary);
             $this->logger->info(
-                "Binary '{$software->binary}' already exists at '{$binaryPath}'. " .
-                "Skipping download. Use --force to override.",
+                "Binary {$binaryPath} already exists. Skipping download. Skipping download. Use --force to override.",
             );
 
             // Skip task creation entirely
@@ -226,32 +225,12 @@ final class DLoad
     private function filesToExtract(Software $software): array
     {
         $files = $software->files;
-
-        // If binary is specified and not already covered by file patterns, add it
-        if ($software->binary === null) {
-            return $files;
+        if ($software->binary !== null) {
+            $binary = new File();
+            $binary->pattern = $software->binary->pattern ?? "/{$software->binary->name}{$this->os->getBinaryExtension()}/";
+            $binary->rename = $software->binary->name;
+            $files[] = $binary;
         }
-
-        $binary = $software->binary . $this->os->getBinaryExtension();
-
-        // Check if binary is already covered by existing patterns
-        foreach ($files as $file) {
-            if (\preg_match(
-                $file->pattern,
-                $binary,
-            ) !== 1) {
-                continue;
-            }
-
-            if ($file->rename === null || $file->rename === $binary) {
-                return $files;
-            }
-        }
-
-        // If binary not covered, add a new pattern for it
-        $binaryFile = new File();
-        $binaryFile->pattern = '/^' . \preg_quote($binary, '/') . '$/';
-        $files[] = $binaryFile;
 
         return $files;
     }

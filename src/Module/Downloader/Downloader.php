@@ -253,13 +253,13 @@ final class Downloader
             await(coroutine(
                 (static function () use ($context, $file): void {
                     $generator = $context->asset->download(
-                        static fn(int $dlNow, int $dlSize, array $info) => ($context->onProgress)(
-                            new Progress(
-                                total: $dlSize,
-                                current: $dlNow,
-                                message: 'downloading...',
-                            ),
-                        ),
+                        // static fn(int $dlNow, int $dlSize, array $info): mixed => ($context->onProgress)(
+                        //     new Progress(
+                        //         total: $dlSize,
+                        //         current: $dlNow,
+                        //         message: 'downloading...',
+                        //     ),
+                        // ),
                     );
 
                     foreach ($generator as $chunk) {

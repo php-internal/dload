@@ -2,7 +2,10 @@
     {
         "name": "RoadRunner",
         "alias": "rr",
-        "binary": "rr",
+        "binary": {
+            "name": "rr",
+            "pattern": "/^(roadrunner|rr)(?:\\.exe)?$/"
+        },
         "homepage": "https://roadrunner.dev",
         "description": "High-performance PHP application server, load-balancer and process manager written in Golang",
         "repositories": [
@@ -11,18 +14,11 @@
                 "uri": "roadrunner-server/roadrunner",
                 "asset-pattern": "/^roadrunner-.*/"
             }
-        ],
-        "files": [
-            {
-                "pattern": "/^(roadrunner|rr)(?:\\.exe)?$/",
-                "rename": "rr"
-            }
         ]
     },
     {
         "name": "Temporal",
         "alias": "temporal",
-        "binary": "temporal",
         "description": "Temporal SDK",
         "homepage": "https://temporal.io",
         "repositories": [
@@ -31,12 +27,14 @@
                 "uri": "temporalio/cli",
                 "asset-pattern": "/^temporal_cli_.*/"
             }
-        ]
+        ],
+        "binary": {
+            "name": "temporal"
+        }
     },
     {
         "name": "Dolt",
         "alias": "dolt",
-        "binary": "dolt",
         "description": "Dolt is a SQL database that you can fork, clone, branch, merge, push and pull just like a git repository.",
         "homepage": "https://www.dolthub.com",
         "repositories": [
@@ -45,12 +43,14 @@
                 "uri": "dolthub/dolt",
                 "asset-pattern": "/^dolt-.*/"
             }
-        ]
+        ],
+        "binary": {
+            "name": "dolt"
+        }
     },
     {
         "name": "ProtoC PHP gRPC Plugin",
         "alias": "protoc-gen-php-grpc",
-        "binary": "protoc-gen-php-grpc",
         "description": "Protobuf PHP gRPC generator plugin",
         "repositories": [
             {
@@ -58,12 +58,14 @@
                 "uri": "roadrunner-server/roadrunner",
                 "asset-pattern": "/^protoc-gen-php-grpc-.*/"
             }
-        ]
+        ],
+        "binary": {
+            "name": "protoc-gen-php-grpc"
+        }
     },
     {
         "name": "Protobuf compiler",
         "alias": "protoc",
-        "binary": "protoc",
         "homepage": "https://protobuf.dev/",
         "repositories": [
             {
@@ -71,12 +73,14 @@
                 "uri": "protocolbuffers/protobuf",
                 "asset-pattern": "/^protoc-.*/"
             }
-        ]
+        ],
+        "binary": {
+            "name": "protoc"
+        }
     },
     {
         "name": "TigerBeetle ",
         "alias": "tigerbeetle",
-        "binary": "tigerbeetle",
         "description": "TigerBeetle is a financial transactions database designed for mission critical safety and performance to power the next 30 years of OLTP.",
         "homepage": "https://tigerbeetle.com/",
         "repositories": [
@@ -85,6 +89,26 @@
                 "uri": "tigerbeetle/tigerbeetle",
                 "asset-pattern": "/^tigerbeetle-.*/"
             }
-        ]
+        ],
+        "binary": {
+            "name": "tigerbeetle"
+        }
+    },
+    {
+        "name": "CTX ",
+        "alias": "ctx",
+        "description": "Context generator and MCP server",
+        "homepage": "https://docs.ctxgithub.com/",
+        "repositories": [
+            {
+                "type": "github",
+                "uri": "context-hub/generator",
+                "asset-pattern": "/^ctx-.*/"
+            }
+        ],
+        "binary": {
+            "name": "ctx",
+            "pattern": "/^ctx-.*$/"
+        }
     }
 ]

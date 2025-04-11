@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Common\Config\Embed;
 
+use Internal\DLoad\Module\Common\Internal\Attribute\XPathEmbed;
 use Internal\DLoad\Module\Common\Internal\Attribute\XPath;
 use Internal\DLoad\Module\Common\Internal\Attribute\XPathEmbedList;
 
@@ -20,12 +21,13 @@ use Internal\DLoad\Module\Common\Internal\Attribute\XPathEmbedList;
  *     'description' => 'High performance PHP application server',
  *     'repositories' => [
  *         ['type' => 'github', 'uri' => 'roadrunner-server/roadrunner']
- *     ]
+ *     ],
  * ]);
  * ```
  *
  * @psalm-import-type RepositoryArray from Repository
  * @psalm-import-type FileArray from File
+ * @psalm-import-type BinaryArray from Binary
  * @psalm-type SoftwareArray = array{
  *     name: non-empty-string,
  *     alias?: non-empty-string,
@@ -33,7 +35,7 @@ use Internal\DLoad\Module\Common\Internal\Attribute\XPathEmbedList;
  *     description?: non-empty-string,
  *     repositories?: list<RepositoryArray>,
  *     files?: list<FileArray>,
- *     binary?: non-empty-string|null
+ *     binary?: BinaryArray,
  * }
  */
 final class Software
@@ -57,12 +59,9 @@ final class Software
     #[XPath('@description')]
     public string $description = '';
 
-    /**
-     * @var non-empty-string|null $binary Binary executable name to check for existence
-     *      Used to avoid re-downloading existing binaries.
-     */
-    #[XPath('@binary')]
-    public ?string $binary = null;
+    /** @var Binary|null $binary Primary binary for this software */
+    #[XPathEmbed('binary', Binary::class)]
+    public ?Binary $binary = null;
 
     /** @var Repository[] $repositories List of repositories where the software can be found */
     #[XPathEmbedList('repository', Repository::class)]
@@ -84,11 +83,12 @@ final class Software
         $self->alias = $softwareArray['alias'] ?? null;
         $self->homepage = $softwareArray['homepage'] ?? null;
         $self->description = $softwareArray['description'] ?? '';
-        $self->binary = $softwareArray['binary'] ?? null;
+        $self->binary = isset($softwareArray['binary']) ? Binary::fromArray($softwareArray['binary']) : null;
         $self->repositories = \array_map(
             static fn(array $repositoryArray): Repository => Repository::fromArray($repositoryArray),
             $softwareArray['repositories'] ?? [],
         );
+
         $self->files = \array_map(
             static fn(array $fileArray): File => File::fromArray($fileArray),
             $softwareArray['files'] ?? [],

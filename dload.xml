@@ -9,10 +9,11 @@
         <download software="temporal" />
     </actions>
     <registry overwrite="false">
-        <software name="RoadRunner" alias="rr" binary="rr"
+        <software name="RoadRunner" alias="rr"
                   homepage="https://roadrunner.dev"
                   description="High performant Application server">
             <repository type="github" uri="roadrunner-server/roadrunner" asset-pattern="/^roadrunner-.*/"/>
+            <binary name="rr" />
         </software>
     </registry>
 </dload>
