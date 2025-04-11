@@ -5,6 +5,10 @@ declare(strict_types=1);
 namespace Internal\DLoad\Tests\Integration\Module\Archive;
 
 use Internal\DLoad\Module\Archive\ArchiveFactory;
+use Internal\DLoad\Module\Archive\Internal\NullArchive;
+use Internal\DLoad\Module\Archive\Internal\PharArchive;
+use Internal\DLoad\Module\Archive\Internal\TarPharArchive;
+use Internal\DLoad\Module\Archive\Internal\ZipPharArchive;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
@@ -23,9 +27,10 @@ final class ArchiveIntegrationTest extends TestCase
 
     public static function provideArchiveTypes(): \Generator
     {
-        yield 'zip' => ['zip', 'Internal\DLoad\Module\Archive\Internal\ZipPharArchive'];
-        yield 'tar.gz' => ['tar.gz', 'Internal\DLoad\Module\Archive\Internal\TarPharArchive'];
-        yield 'phar' => ['phar', 'Internal\DLoad\Module\Archive\Internal\PharArchive'];
+        yield 'zip' => ['zip', ZipPharArchive::class];
+        yield 'tar.gz' => ['tar.gz', TarPharArchive::class];
+        yield 'phar' => ['phar', PharArchive::class];
+        yield 'exe' => ['exe', NullArchive::class];
     }
 
     #[DataProvider('provideArchiveTypes')]
@@ -45,16 +50,10 @@ final class ArchiveIntegrationTest extends TestCase
         $file->method('isReadable')->willReturn(true);
 
         // Act - create archive handler
-        try {
-            $archive = $this->factory->create($file);
+        $archive = $this->factory->create($file);
 
-            // Assert - check implementation type
-            self::assertInstanceOf($className, $archive);
-        } catch (\InvalidArgumentException $e) {
-            // If creation fails due to real file requirements, just verify supported extensions
-            $extensions = $this->factory->getSupportedExtensions();
-            self::assertContains($extension, $extensions);
-        }
+        // Assert - check implementation type
+        self::assertInstanceOf($className, $archive);
     }
 
     public function testFactoryExtendWithCustomImplementation(): void

@@ -40,24 +40,23 @@ abstract class PharAwareArchive extends Archive
     /**
      * Creates and opens archive
      *
-     * @param \SplFileInfo $archive Archive file
+     * @param \SplFileInfo $asset Archive file
      * @throws \LogicException When archive cannot be opened
      */
-    public function __construct(\SplFileInfo $archive)
+    public function __construct(\SplFileInfo $asset)
     {
-        parent::__construct($archive);
-        $this->archive = $this->open($archive);
+        parent::__construct($asset);
     }
 
     public function extract(): \Generator
     {
-        $phar = $this->archive;
-        $phar->isReadable() or throw new ArchiveException(
-            \sprintf('Could not open "%s" for reading.', $this->archive->getPathname()),
+        $archive = $this->open($this->asset);
+        $archive->isReadable() or throw new ArchiveException(
+            \sprintf('Could not open "%s" for reading.', $archive->getPathname()),
         );
 
         /** @var \PharFileInfo $file */
-        foreach (new \RecursiveIteratorIterator($phar) as $file) {
+        foreach (new \RecursiveIteratorIterator($archive) as $file) {
             /** @var \SplFileInfo|null $fileTo */
             $fileTo = yield $file->getPathname() => $file;
             $fileTo instanceof \SplFileInfo and \copy(

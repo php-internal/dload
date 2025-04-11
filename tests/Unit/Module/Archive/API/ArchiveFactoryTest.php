@@ -6,6 +6,7 @@ namespace Internal\DLoad\Tests\Unit\Module\Archive\API;
 
 use Internal\DLoad\Module\Archive\Archive;
 use Internal\DLoad\Module\Archive\ArchiveFactory;
+use Internal\DLoad\Module\Archive\Internal\NullArchive;
 use Internal\DLoad\Module\Archive\Internal\PharArchive;
 use Internal\DLoad\Module\Archive\Internal\TarPharArchive;
 use Internal\DLoad\Module\Archive\Internal\ZipPharArchive;
@@ -95,14 +96,27 @@ final class ArchiveFactoryTest extends TestCase
         self::assertContains($customExtension, $extensions);
     }
 
-    public function testCreateThrowsExceptionWhenNoMatcherFound(): void
+    public function testCreateReturnsNullArchiveForNonArchiveFile(): void
     {
         // Arrange
-        $file = $this->createFileInfoMock('unsupported.format');
+        $file = $this->createFileInfoMock('binary-executable');
+
+        // Act
+        $archive = $this->factory->create($file);
+
+        // Assert
+        self::assertInstanceOf(NullArchive::class, $archive);
+    }
+
+    public function testCreateThrowsExceptionForInvalidFile(): void
+    {
+        // Arrange
+        $file = $this->createMock(\SplFileInfo::class);
+        $file->method('getFilename')->willReturn('invalid-file');
+        $file->method('isFile')->willReturn(false);
 
         // Assert
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Can not open the archive "unsupported.format"');
 
         // Act
         $this->factory->create($file);
@@ -128,31 +142,21 @@ final class ArchiveFactoryTest extends TestCase
         self::assertSame($mockArchive, $result);
     }
 
-    public function testCreateCollectsErrorsFromFailedMatchers(): void
+    public function testNullArchiveUsedAsLastResort(): void
     {
-        // Arrange
-        $file = $this->createFileInfoMock('test.zip');
-
-        // Add matchers that throw exceptions
+        // Arrange - create custom matcher that always returns null
         $this->factory->extend(
-            static function (): never {
-                throw new \RuntimeException('First matcher error');
-            },
+            static fn(\SplFileInfo $file) => null,
+            [],
         );
 
-        $this->factory->extend(
-            static function (): never {
-                throw new \RuntimeException('Second matcher error');
-            },
-        );
-
-        // Assert
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('First matcher error');
-        $this->expectExceptionMessage('Second matcher error');
+        $file = $this->createFileInfoMock('unknown-file-type');
 
         // Act
-        $this->factory->create($file);
+        $archive = $this->factory->create($file);
+
+        // Assert - should fall back to NullArchive
+        self::assertInstanceOf(NullArchive::class, $archive);
     }
 
     public static function setUpBeforeClass(): void
