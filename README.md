@@ -76,9 +76,7 @@ To download all the configured software, run `dload get` without arguments:
                         uri="roadrunner-server/roadrunner"
                         asset-pattern="/^roadrunner-.*/"
             />
-            <file pattern="/^(roadrunner|rr)(?:\.exe)?$/"
-                  rename="rr"
-            />
+            <binary name="rr" pattern="/^(roadrunner|rr)(?:\.exe)?$/"/>
         </software>
     </registry>
 </dload>

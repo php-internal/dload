@@ -15,7 +15,7 @@ use Internal\DLoad\Module\Common\Internal\Attribute\InputOption;
  */
 final class Destination
 {
-    /** @var string|null $path Target path for downloaded files */
+    /** @var non-empty-string|null $path Target path for downloaded files */
     #[InputOption('path')]
     public ?string $path = null;
 }

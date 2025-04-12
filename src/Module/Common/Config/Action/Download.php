@@ -28,6 +28,10 @@ final class Download
     #[XPath('@version')]
     public ?string $version = null;
 
+    /** @var non-empty-string|null $extractPath Custom path where to unpack downloaded asset */
+    #[XPath('@extract-path')]
+    public ?string $extractPath = null;
+
     /**
      * Creates a download action from a software identifier.
      *
