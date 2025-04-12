@@ -50,7 +50,6 @@ final class DLoad
         private readonly ArchiveFactory $archiveFactory,
         private readonly Destination $configDestination,
         private readonly OutputInterface $output,
-        private readonly StyleInterface $io,
         private readonly BinaryExistenceChecker $binaryChecker,
         private readonly OperatingSystem $os,
     ) {}
@@ -69,7 +68,7 @@ final class DLoad
     {
         // Find Software
         $software = $this->softwareCollection->findSoftware($action->software) ?? throw new \RuntimeException(
-            'Software not found.',
+            "Software `{$action->software}` not found in registry.",
         );
 
         // Check if binary already exists
