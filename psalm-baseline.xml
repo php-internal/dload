@@ -55,13 +55,15 @@
     <ArgumentTypeCoercion>
       <code><![CDATA[$files]]></code>
     </ArgumentTypeCoercion>
-    <PossiblyFalseArgument>
-      <code><![CDATA[$destinationPath]]></code>
-      <code><![CDATA[$destinationPath]]></code>
-    </PossiblyFalseArgument>
-    <PossiblyFalseOperand>
-      <code><![CDATA[$path]]></code>
-    </PossiblyFalseOperand>
+    <LessSpecificReturnStatement>
+      <code><![CDATA[$this->configDestination->path ?? $action->extractPath ?? (string) \getcwd()]]></code>
+    </LessSpecificReturnStatement>
+    <MoreSpecificReturnType>
+      <code><![CDATA[non-empty-string]]></code>
+    </MoreSpecificReturnType>
+    <PossiblyNullReference>
+      <code><![CDATA[getPathname]]></code>
+    </PossiblyNullReference>
   </file>
   <file src="src/Module/Archive/ArchiveFactory.php">
     <MixedPropertyTypeCoercion>
@@ -71,14 +73,42 @@
       <code><![CDATA[\array_unique(\array_merge($this->extensions, $extensions))]]></code>
     </PropertyTypeCoercion>
   </file>
+  <file src="src/Module/Archive/Internal/NullArchive.php">
+    <MoreSpecificReturnType>
+      <code><![CDATA[\Generator<non-empty-string, \SplFileInfo, \SplFileInfo|null, void>]]></code>
+    </MoreSpecificReturnType>
+  </file>
+  <file src="src/Module/Archive/Internal/PharArchive.php">
+    <PropertyNotSetInConstructor>
+      <code><![CDATA[PharArchive]]></code>
+    </PropertyNotSetInConstructor>
+  </file>
   <file src="src/Module/Archive/Internal/PharAwareArchive.php">
     <MoreSpecificReturnType>
       <code><![CDATA[\Generator]]></code>
     </MoreSpecificReturnType>
+    <PropertyNotSetInConstructor>
+      <code><![CDATA[$archive]]></code>
+    </PropertyNotSetInConstructor>
+  </file>
+  <file src="src/Module/Archive/Internal/TarPharArchive.php">
+    <PropertyNotSetInConstructor>
+      <code><![CDATA[TarPharArchive]]></code>
+    </PropertyNotSetInConstructor>
+  </file>
+  <file src="src/Module/Archive/Internal/ZipPharArchive.php">
+    <PropertyNotSetInConstructor>
+      <code><![CDATA[ZipPharArchive]]></code>
+    </PropertyNotSetInConstructor>
   </file>
   <file src="src/Module/Common/Config/Action/Download.php">
     <MissingConstructor>
       <code><![CDATA[$software]]></code>
+    </MissingConstructor>
+  </file>
+  <file src="src/Module/Common/Config/Embed/Binary.php">
+    <MissingConstructor>
+      <code><![CDATA[$name]]></code>
     </MissingConstructor>
   </file>
   <file src="src/Module/Common/Config/Embed/Repository.php">
@@ -94,8 +124,10 @@
   <file src="src/Module/Common/Internal/Injection/ConfigLoader.php">
     <MixedMethodCall>
       <code><![CDATA[new $attribute->class()]]></code>
+      <code><![CDATA[new $attribute->class()]]></code>
     </MixedMethodCall>
     <RedundantCondition>
+      <code><![CDATA[\assert($xml instanceof \SimpleXMLElement)]]></code>
       <code><![CDATA[\assert($xml instanceof \SimpleXMLElement)]]></code>
     </RedundantCondition>
   </file>
@@ -127,34 +159,30 @@
     </UndefinedMethod>
   </file>
   <file src="src/Module/Downloader/Downloader.php">
-    <ArgumentTypeCoercion>
-      <code><![CDATA[$dlNow]]></code>
-      <code><![CDATA[$dlSize]]></code>
-    </ArgumentTypeCoercion>
     <InternalMethod>
       <code><![CDATA[limit]]></code>
       <code><![CDATA[limit]]></code>
       <code><![CDATA[toArray]]></code>
       <code><![CDATA[toArray]]></code>
       <code><![CDATA[toArray]]></code>
+      <code><![CDATA[toArray]]></code>
+      <code><![CDATA[toArray]]></code>
+      <code><![CDATA[toArray]]></code>
+      <code><![CDATA[toArray]]></code>
     </InternalMethod>
     <InvalidNullableReturnType>
-      <code><![CDATA[AssetInterface]]></code>
       <code><![CDATA[ReleaseInterface]]></code>
     </InvalidNullableReturnType>
+    <InvalidReturnType>
+      <code><![CDATA[AssetInterface]]></code>
+    </InvalidReturnType>
     <LessSpecificReturnStatement>
       <code><![CDATA[$temp]]></code>
       <code><![CDATA[\sys_get_temp_dir()]]></code>
     </LessSpecificReturnStatement>
-    <MissingClosureReturnType>
-      <code><![CDATA[static fn(int $dlNow, int $dlSize, array $info) => ($context->onProgress)(]]></code>
-    </MissingClosureReturnType>
     <MoreSpecificReturnType>
       <code><![CDATA[non-empty-string]]></code>
     </MoreSpecificReturnType>
-    <TooManyArguments>
-      <code><![CDATA[download]]></code>
-    </TooManyArguments>
   </file>
   <file src="src/Module/Downloader/Internal/DownloadContext.php">
     <PropertyNotSetInConstructor>
