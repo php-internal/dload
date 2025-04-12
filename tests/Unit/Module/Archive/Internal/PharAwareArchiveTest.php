@@ -47,10 +47,10 @@ final class PharAwareArchiveTest extends TestCase
         return new class($this->fileInfo, $pharData) extends PharAwareArchive {
             private \PharData $testPharData;
 
-            public function __construct(\SplFileInfo $archive, \PharData $pharData)
+            public function __construct(\SplFileInfo $asset, \PharData $pharData)
             {
                 $this->testPharData = $pharData;
-                parent::__construct($archive);
+                parent::__construct($asset);
             }
 
             protected function open(\SplFileInfo $file): \PharData

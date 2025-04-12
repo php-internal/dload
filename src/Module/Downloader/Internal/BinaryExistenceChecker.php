@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Downloader\Internal;
 
+use Internal\DLoad\Module\Common\Config\Embed\Binary;
 use Internal\DLoad\Module\Common\OperatingSystem;
 
 /**
@@ -24,34 +25,33 @@ final class BinaryExistenceChecker
     /**
      * Checks if a binary exists at the specified destination path.
      *
-     * @param string $destinationPath Directory path where binary should exist
-     * @param string|null $binaryName Name of the binary executable to check
+     * @param non-empty-string $destinationPath Directory path where binary should exist
+     * @param Binary|null $binary Binary configuration to check
      * @return bool True if binary exists, false otherwise
      */
-    public function exists(string $destinationPath, ?string $binaryName): bool
+    public function exists(string $destinationPath, ?Binary $binary): bool
     {
-        if ($binaryName === null) {
+        if ($binary === null) {
             return false;
         }
 
-        $binaryPath = $this->buildBinaryPath($destinationPath, $binaryName);
-
+        $binaryPath = $this->buildBinaryPath($destinationPath, $binary);
         return $this->doesFileExist($binaryPath);
     }
 
     /**
      * Builds the full path to the binary, considering OS-specific extensions.
      *
-     * @param string $destinationPath Directory path
-     * @param string $binaryName Binary name
+     * @param non-empty-string $destinationPath Directory path
+     * @param Binary $binary Binary configuration
      * @return string Full path to the binary
      */
-    public function buildBinaryPath(string $destinationPath, string $binaryName): string
+    public function buildBinaryPath(string $destinationPath, Binary $binary): string
     {
-        $destination = \rtrim($destinationPath, '/\\');
+        $destination = \rtrim(\str_replace('\\', '/', $destinationPath), '/');
 
         // Unix-based systems
-        return "{$destination}/{$binaryName}{$this->os->getBinaryExtension()}";
+        return "{$destination}/{$binary->name}{$this->os->getBinaryExtension()}";
     }
 
     /**

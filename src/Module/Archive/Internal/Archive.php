@@ -33,12 +33,13 @@ abstract class Archive implements ArchiveInterface
     /**
      * Creates archive handler and validates the archive file
      *
-     * @param \SplFileInfo $archive Archive file
+     * @param \SplFileInfo $asset Archive file
      * @throws \InvalidArgumentException When archive is invalid
      */
-    public function __construct(\SplFileInfo $archive)
-    {
-        $this->assertArchiveValid($archive);
+    public function __construct(
+        protected \SplFileInfo $asset,
+    ) {
+        $this->assertArchiveValid($asset);
     }
 
     /**

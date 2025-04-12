@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Internal\DLoad\Module\Archive;
 
 use Closure as ArchiveMatcher;
+use Internal\DLoad\Module\Archive\Internal\NullArchive;
 use Internal\DLoad\Module\Archive\Internal\PharArchive;
 use Internal\DLoad\Module\Archive\Internal\TarPharArchive;
 use Internal\DLoad\Module\Archive\Internal\ZipPharArchive;
@@ -26,7 +27,7 @@ use Internal\DLoad\Module\Archive\Internal\ZipPharArchive;
  */
 final class ArchiveFactory
 {
-    /** @var list<non-empty-string> List of supported file extensions */
+    /** @var list<non-empty-string> List of supported file extensions without a leading dot */
     private array $extensions = [];
 
     /** @var array<ArchiveMatcher> List of archive type matchers */
@@ -85,6 +86,11 @@ final class ArchiveFactory
             }
         }
 
+        // If no archive handler matched, use NullArchive as fallback for readable files
+        if ($file->isFile() && $file->isReadable()) {
+            return new NullArchive($file);
+        }
+
         $error = \sprintf("Can not open the archive \"%s\":\n%s", $file->getFilename(), \implode(\PHP_EOL, $errors));
 
         throw new \InvalidArgumentException($error);
@@ -130,6 +136,6 @@ final class ArchiveFactory
     private function matcher(string $extension, \Closure $then): \Closure
     {
         return static fn(\SplFileInfo $info): ?Archive =>
-        \str_ends_with(\strtolower($info->getFilename()), '.' . $extension) ? $then($info) : null;
+            \str_ends_with(\strtolower($info->getFilename()), '.' . $extension) ? $then($info) : null;
     }
 }

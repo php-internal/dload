@@ -10,6 +10,7 @@ use Internal\DLoad\Module\Common\Internal\Attribute\InputArgument;
 use Internal\DLoad\Module\Common\Internal\Attribute\InputOption;
 use Internal\DLoad\Module\Common\Internal\Attribute\PhpIni;
 use Internal\DLoad\Module\Common\Internal\Attribute\XPath;
+use Internal\DLoad\Module\Common\Internal\Attribute\XPathEmbed;
 use Internal\DLoad\Module\Common\Internal\Attribute\XPathEmbedList;
 use Internal\DLoad\Service\Logger;
 
@@ -78,6 +79,7 @@ final class ConfigLoader
                 /** @var mixed $value */
                 $value = match (true) {
                     $attribute instanceof XPath => $this->getXPath($attribute),
+                    $attribute instanceof XPathEmbed => $this->getXPathEmbedded($attribute),
                     $attribute instanceof XPathEmbedList => $this->getXPathEmbeddedList($attribute),
                     $attribute instanceof Env => $this->env[$attribute->name] ?? null,
                     $attribute instanceof InputOption => $this->inputOptions[$attribute->name] ?? null,
@@ -136,6 +138,30 @@ final class ConfigLoader
         return \is_array($value) && \array_key_exists($attribute->key, $value)
             ? $value[$attribute->key]
             : null;
+    }
+
+    /**
+     * Gets a single object from XML using an XPath expression.
+     */
+    private function getXPathEmbedded(XPathEmbed $attribute): ?object
+    {
+        if ($this->xml === null) {
+            return null;
+        }
+
+        $value = $this->xml->xpath($attribute->path);
+        if (!\is_array($value) || empty($value)) {
+            return null;
+        }
+
+        $xml = $value[0];
+        \assert($xml instanceof \SimpleXMLElement);
+
+        // Instantiate
+        $item = new $attribute->class();
+
+        $this->withXml($xml)->hydrate($item);
+        return $item;
     }
 
     /**

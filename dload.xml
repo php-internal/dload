@@ -6,13 +6,22 @@
     <actions>
         <download software="rr" version="^2.12.0" />
         <download software="dolt" />
-        <download software="temporal" />
+        <download software="temporal" version-path="composer.json@require.temporal/sdk" />
+        <download software="frontend" extract-path="frontend"/>
     </actions>
     <registry overwrite="false">
-        <software name="RoadRunner" alias="rr" binary="rr"
+        <software name="RoadRunner" alias="rr"
                   homepage="https://roadrunner.dev"
                   description="High performant Application server">
             <repository type="github" uri="roadrunner-server/roadrunner" asset-pattern="/^roadrunner-.*/"/>
+            <binary name="rr" pattern="/^roadrunner-.*/" />
+        </software>
+        <software name="frontend" description="Buggregator Frontend files">
+            <repository type="github"
+                        uri="buggregator/frontend"
+                        asset-pattern="/^artifacts.*/"
+            />
+            <file pattern="/^.*$/"/>
         </software>
     </registry>
 </dload>

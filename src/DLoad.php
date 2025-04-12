@@ -19,7 +19,6 @@ use Internal\DLoad\Module\Downloader\TaskManager;
 use Internal\DLoad\Service\Logger;
 use React\Promise\PromiseInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Style\StyleInterface;
 
 use function React\Promise\resolve;
 
@@ -50,7 +49,6 @@ final class DLoad
         private readonly ArchiveFactory $archiveFactory,
         private readonly Destination $configDestination,
         private readonly OutputInterface $output,
-        private readonly StyleInterface $io,
         private readonly BinaryExistenceChecker $binaryChecker,
         private readonly OperatingSystem $os,
     ) {}
@@ -69,16 +67,15 @@ final class DLoad
     {
         // Find Software
         $software = $this->softwareCollection->findSoftware($action->software) ?? throw new \RuntimeException(
-            'Software not found.',
+            "Software `{$action->software}` not found in registry.",
         );
 
         // Check if binary already exists
-        $destinationPath = $this->configDestination->path ?? \getcwd();
+        $destinationPath = $this->getDestinationPath($action);
         if (!$force && $software->binary !== null && $this->binaryChecker->exists($destinationPath, $software->binary)) {
             $binaryPath = $this->binaryChecker->buildBinaryPath($destinationPath, $software->binary);
             $this->logger->info(
-                "Binary '{$software->binary}' already exists at '{$binaryPath}'. " .
-                "Skipping download. Use --force to override.",
+                "Binary {$binaryPath} already exists. Skipping download. Skipping download. Use --force to override.",
             );
 
             // Skip task creation entirely
@@ -90,7 +87,7 @@ final class DLoad
             $task = $this->prepareDownloadTask($software, $action);
 
             // Extract files
-            ($task->handler)()->then($this->prepareExtractTask($software));
+            ($task->handler)()->then($this->prepareExtractTask($software, $action));
         });
     }
 
@@ -133,11 +130,12 @@ final class DLoad
      * Creates a closure to handle extraction of downloaded files.
      *
      * @param Software $software Software package configuration
+     * @param DownloadConfig $action Download action configuration
      * @return \Closure(DownloadResult): void Function that extracts files from the downloaded archive
      */
-    private function prepareExtractTask(Software $software): \Closure
+    private function prepareExtractTask(Software $software, DownloadConfig $action): \Closure
     {
-        return function (DownloadResult $downloadResult) use ($software): void {
+        return function (DownloadResult $downloadResult) use ($software, $action): void {
             $fileInfo = $downloadResult->file;
             $archive = $this->archiveFactory->create($fileInfo);
             $extractor = $archive->extract();
@@ -146,26 +144,32 @@ final class DLoad
             // Create a copy of the files list with binary included if necessary
             $files = $this->filesToExtract($software);
 
+            if ($files !== []) {
+                // Create destination directory if it doesn't exist
+                $path = $this->getDestinationPath($action);
+                if (!\is_dir($path)) {
+                    $this->logger->info('Creating directory %s', $path);
+                    @\mkdir($path, 0755, true);
+                }
+            }
+
             while ($extractor->valid()) {
                 $file = $extractor->current();
                 \assert($file instanceof \SplFileInfo);
 
-                $to = $this->shouldBeExtracted($file, $files);
+                $to = $this->shouldBeExtracted($file, $files, $action);
 
-                if ($to === null || !$this->checkExisting($to)) {
-                    $extractor->next();
-                    continue;
-                }
-
+                $overwrite = \is_file($to->getPathname());
                 $extractor->send($to);
 
                 // Success
                 $path = $to->getRealPath() ?: $to->getPathname();
                 $this->output->writeln(
                     \sprintf(
-                        '%s (<comment>%s</comment>) has been installed into <info>%s</info>',
+                        '%s (<comment>%s</comment>) has been installed%s into <info>%s</info>',
                         $to->getFilename(),
                         $downloadResult->version,
+                        $overwrite ? ' (overwriting)' : '',
                         $path,
                     ),
                 );
@@ -176,34 +180,16 @@ final class DLoad
     }
 
     /**
-     * Checks if a file already exists and prompts for confirmation to overwrite.
-     *
-     * @param \SplFileInfo $bin Target file information
-     * @return bool True if the file should be extracted, false otherwise
-     */
-    private function checkExisting(\SplFileInfo $bin): bool
-    {
-        if (\is_file($bin->getPathname())) {
-            $this->io->warning('File already exists: ' . $bin->getPathname());
-            if (!$this->io->confirm('Do you want overwrite it?', false)) {
-                $this->io->note('Skipping ' . $bin->getFilename() . ' installation...');
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /**
      * Determines the target path for an extracted file based on file mapping configurations.
      *
      * @param \SplFileInfo $source Source file from the archive
      * @param list<File> $mapping File mapping configurations
+     * @param DownloadConfig $action Download action configuration
      * @return \SplFileInfo|null Target file path or null if file should not be extracted
      */
-    private function shouldBeExtracted(\SplFileInfo $source, array $mapping): ?\SplFileInfo
+    private function shouldBeExtracted(\SplFileInfo $source, array $mapping, DownloadConfig $action): ?\SplFileInfo
     {
-        $path = $this->configDestination->path ?? \getcwd();
+        $path = $this->getDestinationPath($action);
 
         foreach ($mapping as $conf) {
             if (\preg_match($conf->pattern, $source->getFilename())) {
@@ -221,37 +207,28 @@ final class DLoad
     }
 
     /**
+     * Gets the destination path for file extraction, prioritizing global destination path over custom extraction path.
+     *
+     * @param DownloadConfig $action Download action configuration
+     * @return non-empty-string Path where files should be extracted
+     */
+    private function getDestinationPath(DownloadConfig $action): string
+    {
+        return $this->configDestination->path ?? $action->extractPath ?? (string) \getcwd();
+    }
+
+    /**
      * @return File[]
      */
     private function filesToExtract(Software $software): array
     {
         $files = $software->files;
-
-        // If binary is specified and not already covered by file patterns, add it
-        if ($software->binary === null) {
-            return $files;
+        if ($software->binary !== null) {
+            $binary = new File();
+            $binary->pattern = $software->binary->pattern ?? "/{$software->binary->name}{$this->os->getBinaryExtension()}/";
+            $binary->rename = $software->binary->name;
+            $files[] = $binary;
         }
-
-        $binary = $software->binary . $this->os->getBinaryExtension();
-
-        // Check if binary is already covered by existing patterns
-        foreach ($files as $file) {
-            if (\preg_match(
-                $file->pattern,
-                $binary,
-            ) !== 1) {
-                continue;
-            }
-
-            if ($file->rename === null || $file->rename === $binary) {
-                return $files;
-            }
-        }
-
-        // If binary not covered, add a new pattern for it
-        $binaryFile = new File();
-        $binaryFile->pattern = '/^' . \preg_quote($binary, '/') . '$/';
-        $files[] = $binaryFile;
 
         return $files;
     }
