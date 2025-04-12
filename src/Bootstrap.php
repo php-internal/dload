@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Internal\DLoad;
 
+use Internal\DLoad\Module\Binary\BinaryProvider;
+use Internal\DLoad\Module\Binary\Internal\BinaryProviderImpl;
 use Internal\DLoad\Module\Common\Architecture;
 use Internal\DLoad\Module\Common\Internal\Injection\ConfigLoader;
 use Internal\DLoad\Module\Common\Internal\ObjectContainer;
@@ -99,6 +101,10 @@ final class Bootstrap
             RepositoryProvider::class,
             static fn(Container $container): RepositoryProvider => (new RepositoryProvider())
                 ->addRepositoryFactory($container->get(GithubRepositoryFactory::class)),
+        );
+        $this->container->bind(
+            BinaryProvider::class,
+            static fn(Container $c): BinaryProvider => $c->get(BinaryProviderImpl::class),
         );
 
         return $this;

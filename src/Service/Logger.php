@@ -89,7 +89,7 @@ final class Logger
      */
     public function error(string $message, string|int|float|bool ...$values): void
     {
-        $this->echo("\033[31m" . \sprintf($message, ...self::values($values)) . "\033[0m\n");
+        $this->echo("\033[31m" . \sprintf($message, ...self::values($values)) . "\033[0m\n", false);
     }
 
     /**

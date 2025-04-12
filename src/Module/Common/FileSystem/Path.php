@@ -23,10 +23,11 @@ final class Path implements \Stringable
     /**
      * Create a new path object
      */
-    public static function create(string $path = ''): self
+    public static function create(self|string $path = ''): self
     {
-        $norm = self::normalizePath($path);
-        return new self($norm, self::_isAbsolute($norm));
+        return $path instanceof self
+            ? $path
+            : new self($norm = self::normalizePath($path), self::_isAbsolute($norm));
     }
 
     /**

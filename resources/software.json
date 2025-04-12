@@ -4,7 +4,8 @@
         "alias": "rr",
         "binary": {
             "name": "rr",
-            "pattern": "/^(roadrunner|rr)(?:\\.exe)?$/"
+            "pattern": "/^(roadrunner|rr)(?:\\.exe)?$/",
+            "version-command": "--version"
         },
         "homepage": "https://roadrunner.dev",
         "description": "High-performance PHP application server, load-balancer and process manager written in Golang",
@@ -29,7 +30,8 @@
             }
         ],
         "binary": {
-            "name": "temporal"
+            "name": "temporal",
+            "version-command": "--version"
         }
     },
     {
@@ -45,7 +47,8 @@
             }
         ],
         "binary": {
-            "name": "dolt"
+            "name": "dolt",
+            "version-command": "--version"
         }
     },
     {
@@ -75,7 +78,8 @@
             }
         ],
         "binary": {
-            "name": "protoc"
+            "name": "protoc",
+            "version-command": "--version"
         }
     },
     {
@@ -108,7 +112,8 @@
         ],
         "binary": {
             "name": "ctx",
-            "pattern": "/^ctx-.*$/"
+            "pattern": "/^ctx-.*$/",
+            "version-command": "--version"
         }
     }
 ]
