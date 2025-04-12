@@ -162,45 +162,160 @@ final class Downloader
     /**
      * Processes a release to find suitable assets.
      *
-     * Filters assets based on architecture, operating system, and name pattern.
-     * Then sorts them giving priority to archive files supported by the archive service.
+     * If software has binary configuration, filters assets using all criteria at once.
+     * If no binary configuration exists, applies filters gradually to find the best matching asset.
      *
      * @param DownloadContext $context Download context information
      * @return \Closure(): AssetInterface Closure that returns the selected asset
      */
     private function processRelease(DownloadContext $context): \Closure
     {
-        return function () use ($context): AssetInterface {
-            // First filter assets by architecture, operating system, and name pattern
-            $assetsCollection = $context->release->getAssets()
-                ->whereArchitecture($this->architecture)
-                ->whereOperatingSystem($this->operatingSystem)
-                ->whereNameMatches($context->repoConfig->assetPattern);
+        return fn(): AssetInterface => $context->software->binary !== null
+            // Use strict filtering when binary configuration exists
+            ? $this->findAssetWithStrictFiltering($context)
+            // Use gradual filtering when no binary configuration exists
+            : $this->findAssetWithGradualFiltering($context);
+    }
 
-            /** @var AssetInterface[] $allAssets */
-            $allAssets = $assetsCollection->toArray();
-            $this->logger->debug('%d matching assets found.', \count($allAssets));
+    /**
+     * Finds an asset using strict filtering with all criteria applied at once.
+     *
+     * @param DownloadContext $context Download context information
+     * @return AssetInterface Selected asset
+     * @throws \RuntimeException If no suitable asset is found
+     */
+    private function findAssetWithStrictFiltering(DownloadContext $context): AssetInterface
+    {
+        // Apply all filters at once: OS, architecture, and name pattern
+        $assetsCollection = $context->release->getAssets()
+            ->whereOperatingSystem($this->operatingSystem)
+            ->whereArchitecture($this->architecture)
+            ->whereNameMatches($context->repoConfig->assetPattern);
 
-            $allAssets === [] and throw new \RuntimeException('No relevant assets found.');
+        /** @var AssetInterface[] $allAssets */
+        $allAssets = $assetsCollection->toArray();
+        $this->logger->debug('%d matching assets found.', \count($allAssets));
 
-            // Get list of supported archive extensions
-            $supportedExtensions = $this->archiveService->getSupportedExtensions();
+        $allAssets === [] and throw new \RuntimeException('No relevant assets found.');
 
-            // Sort assets: archives first, other files second
-            $sortedAssets = $this->sortAssetsByPriority($allAssets, $supportedExtensions);
+        // Sort assets by priority and try to process them
+        $sortedAssets = $this->sortAssetsByPriority($allAssets, $this->archiveService->getSupportedExtensions());
 
-            process_asset:
-            $sortedAssets === [] and throw new \RuntimeException('No relevant asset found.');
-            $context->asset = \array_shift($sortedAssets);
-            $this->logger->debug('Trying to load asset `%s`', $context->asset->getName());
+        return $this->tryProcessAssets($sortedAssets, $context);
+    }
+
+    /**
+     * Finds an asset using gradual filtering, trying different combinations of criteria.
+     *
+     * @param DownloadContext $context Download context information
+     * @return AssetInterface Selected asset
+     * @throws \RuntimeException If no suitable asset is found
+     */
+    private function findAssetWithGradualFiltering(DownloadContext $context): AssetInterface
+    {
+        $assetsCollection = $context->release->getAssets()
+            ->whereNameMatches($context->repoConfig->assetPattern);
+        $supportedExtensions = $this->archiveService->getSupportedExtensions();
+
+        if (\count($assetsCollection) === 0) {
+            // If we got here, no assets were found with any filter combination
+            throw new \RuntimeException('No relevant assets found.');
+        }
+
+        // Try #1: Filter by both OS and architecture (most specific)
+        $filteredAssets = $assetsCollection
+            ->whereOperatingSystem($this->operatingSystem)
+            ->whereArchitecture($this->architecture)
+            ->toArray();
+
+        if ($filteredAssets !== []) {
+            $this->logger->debug(
+                'Found %d assets matching OS %s and architecture %s.',
+                \count($filteredAssets),
+                $this->operatingSystem->value,
+                $this->architecture->value,
+            );
+            $sortedAssets = $this->sortAssetsByPriority($filteredAssets, $supportedExtensions);
             try {
-                await(coroutine($this->processAsset($context)));
-                return $context->asset;
-            } catch (\Throwable $e) {
-                $this->logger->exception($e);
-                goto process_asset;
+                return $this->tryProcessAssets($sortedAssets, $context);
+            } catch (\RuntimeException $e) {
+                $this->logger->debug('Failed to process assets with OS and architecture filtering: %s', $e->getMessage());
+                // Continue to next filter strategy
             }
-        };
+        }
+
+        // Try #2: Filter by OS only
+        $filteredAssets = $assetsCollection
+            ->whereOperatingSystem($this->operatingSystem)
+            ->toArray();
+
+        if ($filteredAssets !== []) {
+            $this->logger->debug(
+                'Found %d assets matching OS %s (any architecture).',
+                \count($filteredAssets),
+                $this->operatingSystem->value,
+            );
+            $sortedAssets = $this->sortAssetsByPriority($filteredAssets, $supportedExtensions);
+            try {
+                return $this->tryProcessAssets($sortedAssets, $context);
+            } catch (\RuntimeException $e) {
+                $this->logger->debug('Failed to process assets with OS-only filtering: %s', $e->getMessage());
+                // Continue to next filter strategy
+            }
+        }
+
+        // Try #3: Filter by architecture only
+        $filteredAssets = $assetsCollection
+            ->whereArchitecture($this->architecture)
+            ->toArray();
+
+        if ($filteredAssets !== []) {
+            $this->logger->debug(
+                'Found %d assets matching architecture %s (any OS).',
+                \count($filteredAssets),
+                $this->architecture->value,
+            );
+            $sortedAssets = $this->sortAssetsByPriority($filteredAssets, $supportedExtensions);
+            try {
+                return $this->tryProcessAssets($sortedAssets, $context);
+            } catch (\RuntimeException $e) {
+                $this->logger->debug('Failed to process assets with architecture-only filtering: %s', $e->getMessage());
+                // Continue to next filter strategy
+            }
+        }
+
+        // Try #4: Use name pattern only (least specific)
+        $filteredAssets = $assetsCollection->toArray();
+
+        $this->logger->debug(
+            'Found %d assets matching name pattern (any OS, any architecture).',
+            \count($filteredAssets),
+        );
+        $sortedAssets = $this->sortAssetsByPriority($filteredAssets, $supportedExtensions);
+        return $this->tryProcessAssets($sortedAssets, $context);
+    }
+
+    /**
+     * Tries to process assets from the provided list until one succeeds.
+     *
+     * @param AssetInterface[] $assets List of assets to try
+     * @param DownloadContext $context Download context information
+     * @return AssetInterface Successfully processed asset
+     * @throws \RuntimeException If no asset could be processed successfully
+     */
+    private function tryProcessAssets(array $assets, DownloadContext $context): AssetInterface
+    {
+        process_asset:
+        $assets === [] and throw new \RuntimeException('No relevant asset found.');
+        $context->asset = \array_shift($assets);
+        $this->logger->debug('Trying to load asset `%s`', $context->asset->getName());
+        try {
+            await(coroutine($this->processAsset($context)));
+            return $context->asset;
+        } catch (\Throwable $e) {
+            $this->logger->exception($e);
+            goto process_asset;
+        }
     }
 
     /**
