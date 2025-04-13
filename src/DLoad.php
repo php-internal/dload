@@ -77,26 +77,45 @@ final class DLoad
             // Check different constraints
             $binary = $this->binaryProvider->getBinary($destinationPath, $software->binary);
 
+            if ($binary === null) {
+                goto add_task;
+            }
+
+            \assert($binary !== null);
+            $version = $binary->getVersion();
+            if ($action->version === null) {
+                $this->logger->info(
+                    'Binary `%s` exists with version `%s`, but no version constraint specified. Skipping download.',
+                    $binary->getName(),
+                    $version ?? 'unknown',
+                );
+                $this->logger->info('Use flag `--force` to force download.');
+
+                // Skip task creation entirely
+                return;
+            }
+
             // Check if binary exists and satisfies version constraint
-            if ($binary !== null && ($version = $binary->getVersion()) !== null) {
-                if ($action->version !== null && $binary->satisfiesVersion($action->version)) {
-                    $this->logger->info(
-                        'Binary `%s` exists with version `%s`, satisfies constraint `%s`. Skipping download. Use `--force` to override.',
-                        $binary->getName(),
-                        (string) $binary->getVersion(),
-                        $action->version,
-                    );
+            if ($binary->satisfiesVersion($action->version)) {
+                $this->logger->info(
+                    'Binary `%s` exists with version `%s`, satisfies constraint `%s`. Skipping download.',
+                    $binary->getName(),
+                    (string) $binary->getVersion(),
+                    $action->version,
+                );
+                $this->logger->info('Use flag `--force` to force download.');
 
-                    // Skip task creation entirely
-                    return;
-                }
+                // Skip task creation entirely
+                return;
+            }
 
-                // Download a newer version only if version is specified
-                if ($version) {
-                    // todo
-                }
+            // Download a newer version only if version is specified
+            if ($version !== null) {
+                // todo
             }
         }
+
+        add_task:
 
         $this->taskManager->addTask(function () use ($software, $action): void {
             // Create a Download task
@@ -175,7 +194,11 @@ final class DLoad
 
                 $to = $this->shouldBeExtracted($file, $files, $action);
 
-                $overwrite = \is_file($to->getPathname());
+                if ($to === null) {
+                    $extractor->next();
+                    continue;
+                }
+
                 $extractor->send($to);
 
                 // Success
@@ -185,7 +208,7 @@ final class DLoad
                         '%s (<comment>%s</comment>) has been installed%s into <info>%s</info>',
                         $to->getFilename(),
                         $downloadResult->version,
-                        $overwrite ? ' (overwriting)' : '',
+                        $to->isFile() ? ' (overwriting)' : '',
                         $path,
                     ),
                 );

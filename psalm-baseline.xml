@@ -67,9 +67,6 @@
     <MoreSpecificReturnType>
       <code><![CDATA[non-empty-string]]></code>
     </MoreSpecificReturnType>
-    <PossiblyNullReference>
-      <code><![CDATA[getPathname]]></code>
-    </PossiblyNullReference>
   </file>
   <file src="src/Module/Archive/ArchiveFactory.php">
     <MixedPropertyTypeCoercion>
