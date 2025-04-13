@@ -13,6 +13,8 @@ use Internal\DLoad\Module\Common\FileSystem\Path;
  */
 final class BinaryInfo implements Binary
 {
+    private ?string $version = null;
+
     /**
      * @param non-empty-string $name Binary name
      * @param Path $path Path to binary
@@ -50,14 +52,20 @@ final class BinaryInfo implements Binary
      */
     public function getVersion(): ?string
     {
+        if ($this->version !== null) {
+            return $this->version === '' ? null : $this->version;
+        }
+
         if (!$this->exists() || $this->config->versionCommand === null) {
             return null;
         }
 
         try {
             $output = $this->executor->execute($this->path, $this->config->versionCommand);
-            return $this->versionResolver->resolveVersion($output);
+            $this->version = (string) $this->versionResolver->resolveVersion($output);
+            return $this->version === '' ? null : $this->version;
         } catch (\Throwable) {
+            $this->version = '';
             return null;
         }
     }

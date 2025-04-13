@@ -95,7 +95,8 @@
             }
         ],
         "binary": {
-            "name": "tigerbeetle"
+            "name": "tigerbeetle",
+            "version-command": "version"
         }
     },
     {
