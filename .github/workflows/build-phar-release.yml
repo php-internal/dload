@@ -47,13 +47,13 @@ jobs:
           composer-options: "--no-dev"
 
       - name: 🔍 Validate configuration for box-project/box
-        run: box info validate box.json.dist --ansi
+        run: box validate box.json.dist --ansi
 
       - name: 📦 Build PHAR
         run: box compile
 
       - name: 💥 Show info about dload.phar with box-project/box
-        run: box info info ${{ env.DLOAD_PHAR }} --ansi
+        run: box info ${{ env.DLOAD_PHAR }} --ansi
 
       - name: 🤔 Run dload.phar help command
         run: ${{ env.DLOAD_PHAR }} --help

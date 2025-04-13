@@ -6,6 +6,8 @@ namespace Internal\DLoad\Module\Binary\Internal;
 
 /**
  * Resolves version information from binary command output.
+ *
+ * @internal
  */
 final class VersionResolver
 {

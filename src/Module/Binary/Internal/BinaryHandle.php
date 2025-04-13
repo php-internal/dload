@@ -10,8 +10,10 @@ use Internal\DLoad\Module\Common\FileSystem\Path;
 
 /**
  * Internal implementation of Binary interface.
+ *
+ * @internal
  */
-final class BinaryInfo implements Binary
+final class BinaryHandle implements Binary
 {
     private ?string $version = null;
 

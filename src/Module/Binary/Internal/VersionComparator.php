@@ -6,6 +6,8 @@ namespace Internal\DLoad\Module\Binary\Internal;
 
 /**
  * Compares semantic versions and checks version constraints.
+ *
+ * @internal
  */
 final class VersionComparator
 {

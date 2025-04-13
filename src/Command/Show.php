@@ -87,8 +87,11 @@ final class Show extends Base
         $downloadedSoftwareIds = [];
 
         // BLOCK 1: Software configured in project
-        if (!empty($configSoftwareIds)) {
-            $output->writeln('<info>Configured software:</info>');
+        $output->writeln('<info>Configured software:</info>');
+        $configSoftwareIds === [] and $output
+            ->writeln('  <comment>No configured software found</comment>');
+
+        if ($configSoftwareIds !== []) {
             $foundConfigured = false;
 
             foreach ($collection as $software) {
@@ -124,6 +127,7 @@ final class Show extends Base
         }
 
         // BLOCK 2: Software downloaded but not configured
+        $output->writeln('');
         $output->writeln('<info>Downloaded software (not configured):</info>');
         $foundDownloaded = false;
 

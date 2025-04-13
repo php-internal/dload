@@ -12,6 +12,8 @@ use Internal\DLoad\Module\Common\OperatingSystem;
 
 /**
  * Provider implementation for binary instances.
+ *
+ * @internal
  */
 final class BinaryProviderImpl implements BinaryProvider
 {
@@ -28,7 +30,7 @@ final class BinaryProviderImpl implements BinaryProvider
         $binaryPath = $this->buildBinaryPath($destinationPath, $config);
 
         // Create binary instance
-        $binary = new BinaryInfo(
+        $binary = new BinaryHandle(
             name: $config->name,
             path: $binaryPath,
             config: $config,

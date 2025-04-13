@@ -9,6 +9,8 @@ use Internal\DLoad\Module\Common\FileSystem\Path;
 
 /**
  * Executes binary commands and captures their output.
+ *
+ * @internal
  */
 final class BinaryExecutor
 {
