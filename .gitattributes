@@ -9,6 +9,7 @@
 composer.lock          export-ignore
 composer-require-*     export-ignore
 Makefile               export-ignore
+Dockerfile             export-ignore
 infection.*            export-ignore
 tests                  export-ignore
 docs                   export-ignore
