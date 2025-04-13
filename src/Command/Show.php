@@ -12,6 +12,7 @@ use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
@@ -27,6 +28,12 @@ final class Show extends Base
             'software',
             InputArgument::OPTIONAL,
             'Software name to show detailed information about',
+        );
+        $this->addOption(
+            'all',
+            null,
+            InputOption::VALUE_NONE,
+            'Show all available software, not just those configured or downloaded',
         );
     }
 
@@ -54,16 +61,18 @@ final class Show extends Base
             return $this->showSoftwareDetails($softwareName, $collection, $binaryProvider, $actions, $output);
         }
 
-        return $this->listAllSoftware($collection, $binaryProvider, $actions, $output);
+        return $this->listAllSoftware($collection, $binaryProvider, $actions, $input, $output);
     }
 
     private function listAllSoftware(
         SoftwareCollection $collection,
         BinaryProvider $binaryProvider,
         ?Actions $actions,
+        InputInterface $input,
         OutputInterface $output,
     ): int {
-        $output->writeln('<info>Downloaded software:</info>');
+        $showAll = $input->getOption('all');
+        $destinationPath = \getcwd();
 
         $configSoftwareIds = [];
         if ($actions !== null) {
@@ -73,36 +82,116 @@ final class Show extends Base
             );
         }
 
-        $foundAny = false;
+        // Track downloaded software to avoid showing them twice
+        $downloadedSoftwareIds = [];
+
+        // BLOCK 1: Software configured in project
+        if (!empty($configSoftwareIds)) {
+            $output->writeln('<info>Configured software:</info>');
+            $foundConfigured = false;
+
+            foreach ($collection as $software) {
+                if ($software->binary === null) {
+                    continue;
+                }
+
+                if (!\in_array($software->getId(), $configSoftwareIds, true)) {
+                    continue;
+                }
+
+                $binary = $binaryProvider->getBinary($destinationPath, $software->binary);
+                if ($binary === null) {
+                    continue;
+                }
+
+                $foundConfigured = true;
+                $downloadedSoftwareIds[] = $software->getId();
+
+                $output->writeln(\sprintf(
+                    '  <info>%s</info> (%s) %s',
+                    $software->getId(),
+                    $binary->getVersion() ?? 'unknown',
+                    $binary->getPath(),
+                ));
+            }
+
+            if (!$foundConfigured) {
+                $output->writeln('  <comment>No configured software found</comment>');
+            }
+
+            $output->writeln('');
+        }
+
+        // BLOCK 2: Software downloaded but not configured
+        $output->writeln('<info>Downloaded software (not configured):</info>');
+        $foundDownloaded = false;
+
         foreach ($collection as $software) {
-            // Skip software without binaries
             if ($software->binary === null) {
                 continue;
             }
 
-            $destinationPath = \getcwd();
+            // Skip software already shown in configured block
+            if (\in_array($software->getId(), $downloadedSoftwareIds, true)) {
+                continue;
+            }
 
-            // Get binary instance if available
+            // Skip software in project config
+            if (\in_array($software->getId(), $configSoftwareIds, true)) {
+                continue;
+            }
+
             $binary = $binaryProvider->getBinary($destinationPath, $software->binary);
             if ($binary === null) {
                 continue;
             }
 
-            $foundAny = true;
-            $inConfig = \in_array($software->getId(), $configSoftwareIds, true);
+            $foundDownloaded = true;
+            $downloadedSoftwareIds[] = $software->getId();
 
-            // Format the output line
             $output->writeln(\sprintf(
-                '  <info>%s</info> (%s) %s%s',
+                '  <info>%s</info> (%s) %s',
                 $software->getId(),
                 $binary->getVersion() ?? 'unknown',
                 $binary->getPath(),
-                $inConfig ? ' <comment>[from config]</comment>' : '',
             ));
         }
 
-        if (!$foundAny) {
-            $output->writeln('  <comment>No downloaded software found</comment>');
+        if (!$foundDownloaded) {
+            $output->writeln('  <comment>No additional downloaded software found</comment>');
+        }
+
+        // BLOCK 3: Other available software (only shown with --all)
+        if ($showAll) {
+            $output->writeln('');
+            $output->writeln('<info>Other available software:</info>');
+            $foundOther = false;
+
+            foreach ($collection as $software) {
+                if ($software->binary === null) {
+                    continue;
+                }
+
+                // Skip software already shown in downloaded blocks
+                if (\in_array($software->getId(), $downloadedSoftwareIds, true)) {
+                    continue;
+                }
+
+                $foundOther = true;
+
+                $output->writeln(\sprintf(
+                    '  <info>%s</info> %s',
+                    $software->getId(),
+                    $software->description ? '- ' . $software->description : '',
+                ));
+            }
+
+            if (!$foundOther) {
+                $output->writeln('  <comment>No other software available</comment>');
+            }
+        } else {
+            $output->writeln('');
+            $output->writeln('<comment>Use --all flag to show all available software</comment>');
         }
 
         return Command::SUCCESS;
@@ -118,12 +207,12 @@ final class Show extends Base
         $software = $collection->findSoftware($softwareName);
 
         if ($software === null) {
-            $output->writeln(\sprintf('<error>Software "%s" not found in registry</error>', $softwareName));
+            $output->writeln(\sprintf('<e>Software "%s" not found in registry</e>', $softwareName));
             return Command::FAILURE;
         }
 
         if ($software->binary === null) {
-            $output->writeln(\sprintf('<error>Software "%s" does not have a binary</error>', $softwareName));
+            $output->writeln(\sprintf('<e>Software "%s" does not have a binary</e>', $softwareName));
             return Command::FAILURE;
         }
 
@@ -192,7 +281,7 @@ final class Show extends Base
     {
         $output->writeln('');
         if ($binary === null) {
-            $output->writeln('<error>Binary not exists</error>');
+            $output->writeln('<e>Binary not exists</e>');
             return;
         }
 

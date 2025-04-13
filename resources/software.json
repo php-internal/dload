@@ -100,7 +100,7 @@
         }
     },
     {
-        "name": "CTX ",
+        "name": "CTX",
         "alias": "ctx",
         "description": "Context generator and MCP server",
         "homepage": "https://docs.ctxgithub.com/",
@@ -114,6 +114,23 @@
         "binary": {
             "name": "ctx",
             "pattern": "/^ctx-.*$/",
+            "version-command": "--version"
+        }
+    },
+    {
+        "name": "Trap",
+        "alias": "trap",
+        "description": "A minimized version of the Buggregator Server that does not require Docker and is intended solely for local use.\n",
+        "homepage": "https://buggregator.dev/",
+        "repositories": [
+            {
+                "type": "github",
+                "uri": "buggregator/trap",
+                "asset-pattern": "/^trap-.*/"
+            }
+        ],
+        "binary": {
+            "name": "trap",
             "version-command": "--version"
         }
     }

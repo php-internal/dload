@@ -40,7 +40,7 @@ composer require internal/dload -W
 
 ## Command Line Usage
 
-DLoad offers two main commands:
+DLoad offers three main commands:
 
 ### List Available Software
 
@@ -53,6 +53,21 @@ This displays a list of all registered software packages with their IDs, names, 
 
 DLoad comes with a pre-configured list of popular tools and software packages ready for download.
 You can contribute to this list by submitting issues or pull requests to the DLoad repository.
+
+### Show Downloaded Software
+
+```bash
+# View all downloaded software
+./vendor/bin/dload show
+
+# Show detailed information about specific software
+./vendor/bin/dload show rr
+
+# Show all available software, including those not downloaded
+./vendor/bin/dload show --all
+```
+
+This command displays information about downloaded software.
 
 ### Download Software
 
