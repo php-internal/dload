@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.1.0-alpha (2025-04-13)
+
+## What's Changed
+* Fix PHAR building by @roxblnfk in https://github.com/php-internal/dload/pull/16
+* Maintenance by @roxblnfk in https://github.com/php-internal/dload/pull/18
+* Check binaries before downloading by @roxblnfk in https://github.com/php-internal/dload/pull/19
+* Load not archived binaries by @roxblnfk in https://github.com/php-internal/dload/pull/22
+* Fetch software versions by @roxblnfk in https://github.com/php-internal/dload/pull/23
+
+
+**Full Changelog**: https://github.com/php-internal/dload/compare/1.0.0-alpha...1.1.0-alpha
+
 ## 1.0.0-RC3 (2025-04-13)
 
 ## What's Changed
