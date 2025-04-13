@@ -110,16 +110,6 @@
       <code><![CDATA[$output]]></code>
     </MixedArgumentTypeCoercion>
   </file>
-  <file src="src/Module/Binary/Internal/VersionComparator.php">
-    <PossiblyNullArgument>
-      <code><![CDATA[$versionOnly]]></code>
-      <code><![CDATA[\preg_replace('/[-+].*$/', '', $constraint)]]></code>
-    </PossiblyNullArgument>
-    <RedundantCondition>
-      <code><![CDATA[!$hasPreB]]></code>
-      <code><![CDATA[$bIsNum]]></code>
-    </RedundantCondition>
-  </file>
   <file src="src/Module/Common/Config/Action/Download.php">
     <MissingConstructor>
       <code><![CDATA[$software]]></code>

@@ -21,7 +21,6 @@ final class BinaryProviderImpl implements BinaryProvider
         private readonly OperatingSystem $operatingSystem,
         private readonly BinaryExecutor $executor,
         private readonly VersionResolver $versionResolver,
-        private readonly VersionComparator $versionComparator,
     ) {}
 
     public function getBinary(Path|string $destinationPath, BinaryConfig $config): ?Binary
@@ -36,7 +35,6 @@ final class BinaryProviderImpl implements BinaryProvider
             config: $config,
             executor: $this->executor,
             versionResolver: $this->versionResolver,
-            versionComparator: $this->versionComparator,
         );
 
         // Return binary only if it exists

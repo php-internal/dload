@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Binary\Internal;
 
+use Composer\Semver\Semver;
 use Internal\DLoad\Module\Binary\Binary;
 use Internal\DLoad\Module\Common\Config\Embed\Binary as BinaryConfig;
 use Internal\DLoad\Module\Common\FileSystem\Path;
@@ -23,7 +24,6 @@ final class BinaryHandle implements Binary
      * @param BinaryConfig $config Original configuration
      * @param BinaryExecutor $executor Binary execution service
      * @param VersionResolver $versionResolver Version extraction service
-     * @param VersionComparator $versionComparator Version comparison service
      */
     public function __construct(
         private readonly string $name,
@@ -31,7 +31,6 @@ final class BinaryHandle implements Binary
         private readonly BinaryConfig $config,
         private readonly BinaryExecutor $executor,
         private readonly VersionResolver $versionResolver,
-        private readonly VersionComparator $versionComparator,
     ) {}
 
     public function getName(): string
@@ -77,7 +76,7 @@ final class BinaryHandle implements Binary
         $version = $this->getVersion();
         return $version === null
             ? null
-            : $this->versionComparator->satisfies($version, $versionConstraint);
+            : Semver::satisfies($version, $versionConstraint);
     }
 
     public function getSize(): ?int
