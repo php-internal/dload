@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.0.0-RC3 (2025-04-13)
+
+## What's Changed
+* Added software versions checker by @roxblnfk in https://github.com/php-internal/dload/pull/23
+  Added `dload show` command
+  Added a new software `trap`
+
+## 1.0.0-RC2 (2025-04-12)
+
+## What's Changed
+- Support loading not archived binaries
+- Binary config separated into embedded entity
+- Mon-binary files can be loaded without arch/os checks
+- Added param `extract-path` to download action
+
+## 1.0.0-RC1 (2025-04-07)
+
+## What's Changed
+* Fix PHAR building by @roxblnfk in https://github.com/php-internal/dload/pull/16
+* Make lazy loading of releases pages; maintenance by @roxblnfk in https://github.com/php-internal/dload/pull/18
+* Check binaries before downloading by @roxblnfk in https://github.com/php-internal/dload/pull/19
+
 ## 1.0.0-alpha (2024-07-20)
 
 ## What's Changed
