@@ -91,7 +91,7 @@ abstract class Base extends Command
      *
      * @return non-empty-string|null Path to the configuration file
      */
-    private function getConfigFile(InputInterface $input): ?string
+    protected function getConfigFile(InputInterface $input): ?string
     {
         /** @var string|null $config */
         $config = $input->getOption('config');

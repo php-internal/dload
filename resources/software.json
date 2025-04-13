@@ -4,7 +4,8 @@
         "alias": "rr",
         "binary": {
             "name": "rr",
-            "pattern": "/^(roadrunner|rr)(?:\\.exe)?$/"
+            "pattern": "/^(roadrunner|rr)(?:\\.exe)?$/",
+            "version-command": "--version"
         },
         "homepage": "https://roadrunner.dev",
         "description": "High-performance PHP application server, load-balancer and process manager written in Golang",
@@ -29,7 +30,8 @@
             }
         ],
         "binary": {
-            "name": "temporal"
+            "name": "temporal",
+            "version-command": "--version"
         }
     },
     {
@@ -45,7 +47,8 @@
             }
         ],
         "binary": {
-            "name": "dolt"
+            "name": "dolt",
+            "version-command": "--version"
         }
     },
     {
@@ -75,7 +78,8 @@
             }
         ],
         "binary": {
-            "name": "protoc"
+            "name": "protoc",
+            "version-command": "--version"
         }
     },
     {
@@ -91,11 +95,12 @@
             }
         ],
         "binary": {
-            "name": "tigerbeetle"
+            "name": "tigerbeetle",
+            "version-command": "version"
         }
     },
     {
-        "name": "CTX ",
+        "name": "CTX",
         "alias": "ctx",
         "description": "Context generator and MCP server",
         "homepage": "https://docs.ctxgithub.com/",
@@ -108,7 +113,25 @@
         ],
         "binary": {
             "name": "ctx",
-            "pattern": "/^ctx-.*$/"
+            "pattern": "/^ctx-.*$/",
+            "version-command": "--version"
+        }
+    },
+    {
+        "name": "Trap",
+        "alias": "trap",
+        "description": "A minimized version of the Buggregator Server that does not require Docker and is intended solely for local use.\n",
+        "homepage": "https://buggregator.dev/",
+        "repositories": [
+            {
+                "type": "github",
+                "uri": "buggregator/trap",
+                "asset-pattern": "/^trap-.*/"
+            }
+        ],
+        "binary": {
+            "name": "trap",
+            "version-command": "--version"
         }
     }
 ]

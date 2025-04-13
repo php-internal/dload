@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Internal\DLoad;
 
 use Internal\DLoad\Module\Archive\ArchiveFactory;
+use Internal\DLoad\Module\Binary\BinaryProvider;
 use Internal\DLoad\Module\Common\Config\Action\Download as DownloadConfig;
 use Internal\DLoad\Module\Common\Config\Embed\File;
 use Internal\DLoad\Module\Common\Config\Embed\Software;
 use Internal\DLoad\Module\Common\Input\Destination;
 use Internal\DLoad\Module\Common\OperatingSystem;
 use Internal\DLoad\Module\Downloader\Downloader;
-use Internal\DLoad\Module\Downloader\Internal\BinaryExistenceChecker;
 use Internal\DLoad\Module\Downloader\SoftwareCollection;
 use Internal\DLoad\Module\Downloader\Task\DownloadResult;
 use Internal\DLoad\Module\Downloader\Task\DownloadTask;
@@ -49,7 +49,7 @@ final class DLoad
         private readonly ArchiveFactory $archiveFactory,
         private readonly Destination $configDestination,
         private readonly OutputInterface $output,
-        private readonly BinaryExistenceChecker $binaryChecker,
+        private readonly BinaryProvider $binaryProvider,
         private readonly OperatingSystem $os,
     ) {}
 
@@ -57,7 +57,7 @@ final class DLoad
      * Adds a download task to the execution queue.
      *
      * Creates and schedules a task to download and extract a software package based on the provided action.
-     * Skips task creation if binary already exists and force flag is not set.
+     * Skips task creation if binary already exists with a satisfying version and force flag is not set.
      *
      * @param DownloadConfig $action Download configuration action
      * @param bool $force Whether to force download even if binary exists
@@ -70,16 +70,32 @@ final class DLoad
             "Software `{$action->software}` not found in registry.",
         );
 
-        // Check if binary already exists
+        // Check if binary already exists and satisfies version constraint
         $destinationPath = $this->getDestinationPath($action);
-        if (!$force && $software->binary !== null && $this->binaryChecker->exists($destinationPath, $software->binary)) {
-            $binaryPath = $this->binaryChecker->buildBinaryPath($destinationPath, $software->binary);
-            $this->logger->info(
-                "Binary {$binaryPath} already exists. Skipping download. Skipping download. Use --force to override.",
-            );
 
-            // Skip task creation entirely
-            return;
+        if (!$force && $software->binary !== null) {
+            // Check different constraints
+            $binary = $this->binaryProvider->getBinary($destinationPath, $software->binary);
+
+            // Check if binary exists and satisfies version constraint
+            if ($binary !== null && ($version = $binary->getVersion()) !== null) {
+                if ($action->version !== null && $binary->satisfiesVersion($action->version)) {
+                    $this->logger->info(
+                        'Binary `%s` exists with version `%s`, satisfies constraint `%s`. Skipping download. Use `--force` to override.',
+                        $binary->getName(),
+                        (string) $binary->getVersion(),
+                        $action->version,
+                    );
+
+                    // Skip task creation entirely
+                    return;
+                }
+
+                // Download a newer version only if version is specified
+                if ($version) {
+                    // todo
+                }
+            }
         }
 
         $this->taskManager->addTask(function () use ($software, $action): void {
