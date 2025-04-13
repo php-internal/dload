@@ -111,8 +111,9 @@ Create `dload.xml` in your project root:
 
 ```xml
 <?xml version="1.0"?>
-<dload
-    temp-dir="./runtime"
+<dload xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/php-internal/dload/refs/heads/1.x/dload.xsd"
+       temp-dir="./runtime"
 >
     <actions>
         <download software="rr" version="^2.12.0" />
@@ -166,7 +167,9 @@ Create your own software definitions:
 
 ```xml
 <?xml version="1.0"?>
-<dload>
+<dload xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/php-internal/dload/refs/heads/1.x/dload.xsd"
+>
     <registry overwrite="false">
         <!-- Binary software example -->
         <software name="RoadRunner" alias="rr"
@@ -283,7 +286,9 @@ steps:
 Configure once, use everywhere:
 
 ```xml
-<dload>
+<dload xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/php-internal/dload/refs/heads/1.x/dload.xsd"
+>
     <actions>
         <download software="rr" version="^2.12.0" />
         <download software="temporal" />
