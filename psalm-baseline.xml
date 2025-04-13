@@ -37,19 +37,25 @@
     <MoreSpecificReturnType>
       <code><![CDATA[list<DownloadConfig>]]></code>
     </MoreSpecificReturnType>
-    <PropertyNotSetInConstructor>
-      <code><![CDATA[Get]]></code>
-      <code><![CDATA[Get]]></code>
-    </PropertyNotSetInConstructor>
   </file>
   <file src="src/Command/ListSoftware.php">
-    <PropertyNotSetInConstructor>
-      <code><![CDATA[ListSoftware]]></code>
-      <code><![CDATA[ListSoftware]]></code>
-    </PropertyNotSetInConstructor>
     <RiskyTruthyFalsyComparison>
       <code><![CDATA[$software->homepage]]></code>
     </RiskyTruthyFalsyComparison>
+  </file>
+  <file src="src/Command/Show.php">
+    <InvalidArrayOffset>
+      <code><![CDATA[$units[$i]]]></code>
+    </InvalidArrayOffset>
+    <InvalidOperand>
+      <code><![CDATA[$bytes /= 1024]]></code>
+    </InvalidOperand>
+    <MixedArgument>
+      <code><![CDATA[$units[$i]]]></code>
+    </MixedArgument>
+    <PossiblyFalseArgument>
+      <code><![CDATA[$destinationPath]]></code>
+    </PossiblyFalseArgument>
   </file>
   <file src="src/DLoad.php">
     <ArgumentTypeCoercion>
@@ -100,6 +106,22 @@
     <PropertyNotSetInConstructor>
       <code><![CDATA[ZipPharArchive]]></code>
     </PropertyNotSetInConstructor>
+  </file>
+  <file src="src/Module/Binary/Internal/BinaryExecutor.php">
+    <MixedArgumentTypeCoercion>
+      <code><![CDATA[$output]]></code>
+      <code><![CDATA[$output]]></code>
+    </MixedArgumentTypeCoercion>
+  </file>
+  <file src="src/Module/Binary/Internal/VersionComparator.php">
+    <PossiblyNullArgument>
+      <code><![CDATA[$versionOnly]]></code>
+      <code><![CDATA[\preg_replace('/[-+].*$/', '', $constraint)]]></code>
+    </PossiblyNullArgument>
+    <RedundantCondition>
+      <code><![CDATA[!$hasPreB]]></code>
+      <code><![CDATA[$bIsNum]]></code>
+    </RedundantCondition>
   </file>
   <file src="src/Module/Common/Config/Action/Download.php">
     <MissingConstructor>

@@ -12,6 +12,11 @@
         <RedundantConditionGivenDocblockType errorLevel="suppress"/>
         <RedundantCastGivenDocblockType errorLevel="suppress"/>
         <MissingOverrideAttribute errorLevel="suppress"/>
+        <PropertyNotSetInConstructor>
+            <errorLevel type="suppress">
+                <directory name="src/Command"/>
+            </errorLevel>
+        </PropertyNotSetInConstructor>
     </issueHandlers>
     <projectFiles>
         <directory name="src"/>

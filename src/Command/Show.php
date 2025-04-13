@@ -7,6 +7,7 @@ namespace Internal\DLoad\Command;
 use Internal\DLoad\Module\Binary\Binary;
 use Internal\DLoad\Module\Binary\BinaryProvider;
 use Internal\DLoad\Module\Common\Config\Actions;
+use Internal\DLoad\Module\Common\FileSystem\Path;
 use Internal\DLoad\Module\Downloader\SoftwareCollection;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -47,7 +48,7 @@ final class Show extends Base
         // Get all software from collection
         $collection = $this->container->get(SoftwareCollection::class);
         $binaryProvider = $this->container->get(BinaryProvider::class);
-        $softwareName = $input->getArgument('software');
+        $softwareName = (string) $input->getArgument('software');
 
         // Get configuration if available
         $configFile = $this->getConfigFile($input);
@@ -57,7 +58,7 @@ final class Show extends Base
             $actions = $this->container->get(Actions::class);
         }
 
-        if ($softwareName !== null) {
+        if ($softwareName !== '') {
             return $this->showSoftwareDetails($softwareName, $collection, $binaryProvider, $actions, $output);
         }
 
@@ -71,8 +72,8 @@ final class Show extends Base
         InputInterface $input,
         OutputInterface $output,
     ): int {
-        $showAll = $input->getOption('all');
-        $destinationPath = \getcwd();
+        $showAll = (bool) $input->getOption('all');
+        $destinationPath = Path::create((string) \getcwd());
 
         $configSoftwareIds = [];
         if ($actions !== null) {
@@ -197,6 +198,9 @@ final class Show extends Base
         return Command::SUCCESS;
     }
 
+    /**
+     * @param non-empty-string $softwareName
+     */
     private function showSoftwareDetails(
         string $softwareName,
         SoftwareCollection $collection,
@@ -242,7 +246,7 @@ final class Show extends Base
             ->writeln(\sprintf('<info>Alias:</info> %s', $software->alias));
         $software->description and $output
             ->writeln(\sprintf('<info>Description:</info> %s', $software->description));
-        $software->homepage and $output
+        $software->homepage === null or $output
             ->writeln(\sprintf('<info>Homepage:</info> %s', $software->homepage));
 
         // Show project config information
@@ -292,9 +296,10 @@ final class Show extends Base
         $output->writeln(\sprintf('  <info>Version:</info> %s', $binary->getVersion() ?? 'unknown'));
         $output->writeln(\sprintf('  <info>Size:</info> %s', $this->formatSize($binary->getSize())));
 
-        $output->writeln(\sprintf(
+        $mtime = $binary->getMTime();
+        $mtime === null or $output->writeln(\sprintf(
             '  <info>Last modified:</info> %s',
-            $binary->getMTime()->format('Y-m-d H:i:s'),
+            $mtime->format('Y-m-d H:i:s'),
         ));
     }
 
