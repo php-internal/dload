@@ -219,12 +219,8 @@
       <code><![CDATA[$softwareArray]]></code>
     </MixedArgument>
     <MixedAssignment>
-      <code><![CDATA[$json]]></code>
       <code><![CDATA[$softwareArray]]></code>
     </MixedAssignment>
-    <PossiblyFalseArgument>
-      <code><![CDATA[\file_get_contents(Info::ROOT_DIR . '/resources/software.json')]]></code>
-    </PossiblyFalseArgument>
   </file>
   <file src="src/Module/Repository/Collection/CompositeRepository.php">
     <InvalidArgument>

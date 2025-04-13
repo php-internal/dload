@@ -87,14 +87,14 @@ final class SoftwareCollection implements \IteratorAggregate, \Countable
      */
     private function loadDefaultRegistry(): void
     {
-        $json = \json_decode(
-            \file_get_contents(Info::ROOT_DIR . '/resources/software.json'),
+        $json = (array) \json_decode(
+            (string) \file_get_contents(Info::ROOT_DIR . '/resources/software.json'),
             true,
             16,
             JSON_THROW_ON_ERROR,
         );
 
-        foreach ($json as $softwareArray) {
+        foreach ($json['software'] ?? [] as $softwareArray) {
             $software = Software::fromArray($softwareArray);
             $this->registry[$software->getId()] ??= $software;
         }

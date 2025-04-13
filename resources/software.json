@@ -1,137 +1,140 @@
-[
-    {
-        "name": "RoadRunner",
-        "alias": "rr",
-        "binary": {
-            "name": "rr",
-            "pattern": "/^(roadrunner|rr)(?:\\.exe)?$/",
-            "version-command": "--version"
+{
+    "$schema": "./software.schema.json",
+    "software": [
+        {
+            "name": "RoadRunner",
+            "alias": "rr",
+            "binary": {
+                "name": "rr",
+                "pattern": "/^(roadrunner|rr)(?:\\.exe)?$/",
+                "version-command": "--version"
+            },
+            "homepage": "https://roadrunner.dev",
+            "description": "High-performance PHP application server, load-balancer and process manager written in Golang",
+            "repositories": [
+                {
+                    "type": "github",
+                    "uri": "roadrunner-server/roadrunner",
+                    "asset-pattern": "/^roadrunner-.*/"
+                }
+            ]
         },
-        "homepage": "https://roadrunner.dev",
-        "description": "High-performance PHP application server, load-balancer and process manager written in Golang",
-        "repositories": [
-            {
-                "type": "github",
-                "uri": "roadrunner-server/roadrunner",
-                "asset-pattern": "/^roadrunner-.*/"
+        {
+            "name": "Temporal",
+            "alias": "temporal",
+            "description": "Temporal SDK",
+            "homepage": "https://temporal.io",
+            "repositories": [
+                {
+                    "type": "github",
+                    "uri": "temporalio/cli",
+                    "asset-pattern": "/^temporal_cli_.*/"
+                }
+            ],
+            "binary": {
+                "name": "temporal",
+                "version-command": "--version"
             }
-        ]
-    },
-    {
-        "name": "Temporal",
-        "alias": "temporal",
-        "description": "Temporal SDK",
-        "homepage": "https://temporal.io",
-        "repositories": [
-            {
-                "type": "github",
-                "uri": "temporalio/cli",
-                "asset-pattern": "/^temporal_cli_.*/"
+        },
+        {
+            "name": "Dolt",
+            "alias": "dolt",
+            "description": "Dolt is a SQL database that you can fork, clone, branch, merge, push and pull just like a git repository.",
+            "homepage": "https://www.dolthub.com",
+            "repositories": [
+                {
+                    "type": "github",
+                    "uri": "dolthub/dolt",
+                    "asset-pattern": "/^dolt-.*/"
+                }
+            ],
+            "binary": {
+                "name": "dolt",
+                "version-command": "--version"
             }
-        ],
-        "binary": {
-            "name": "temporal",
-            "version-command": "--version"
+        },
+        {
+            "name": "ProtoC PHP gRPC Plugin",
+            "alias": "protoc-gen-php-grpc",
+            "description": "Protobuf PHP gRPC generator plugin",
+            "repositories": [
+                {
+                    "type": "github",
+                    "uri": "roadrunner-server/roadrunner",
+                    "asset-pattern": "/^protoc-gen-php-grpc-.*/"
+                }
+            ],
+            "binary": {
+                "name": "protoc-gen-php-grpc"
+            }
+        },
+        {
+            "name": "Protobuf compiler",
+            "alias": "protoc",
+            "homepage": "https://protobuf.dev/",
+            "repositories": [
+                {
+                    "type": "github",
+                    "uri": "protocolbuffers/protobuf",
+                    "asset-pattern": "/^protoc-.*/"
+                }
+            ],
+            "binary": {
+                "name": "protoc",
+                "version-command": "--version"
+            }
+        },
+        {
+            "name": "TigerBeetle ",
+            "alias": "tigerbeetle",
+            "description": "TigerBeetle is a financial transactions database designed for mission critical safety and performance to power the next 30 years of OLTP.",
+            "homepage": "https://tigerbeetle.com/",
+            "repositories": [
+                {
+                    "type": "github",
+                    "uri": "tigerbeetle/tigerbeetle",
+                    "asset-pattern": "/^tigerbeetle-.*/"
+                }
+            ],
+            "binary": {
+                "name": "tigerbeetle",
+                "version-command": "version"
+            }
+        },
+        {
+            "name": "CTX",
+            "alias": "ctx",
+            "description": "Context generator and MCP server",
+            "homepage": "https://docs.ctxgithub.com/",
+            "repositories": [
+                {
+                    "type": "github",
+                    "uri": "context-hub/generator",
+                    "asset-pattern": "/^ctx-.*/"
+                }
+            ],
+            "binary": {
+                "name": "ctx",
+                "pattern": "/^ctx-.*$/",
+                "version-command": "--version"
+            }
+        },
+        {
+            "name": "Trap",
+            "alias": "trap",
+            "description": "A minimized version of the Buggregator Server that does not require Docker and is intended solely for local use.\n",
+            "homepage": "https://buggregator.dev/",
+            "repositories": [
+                {
+                    "type": "github",
+                    "uri": "buggregator/trap",
+                    "asset-pattern": "/^trap-.*/"
+                }
+            ],
+            "binary": {
+                "name": "trap",
+                "version-command": "--version"
+            }
         }
-    },
-    {
-        "name": "Dolt",
-        "alias": "dolt",
-        "description": "Dolt is a SQL database that you can fork, clone, branch, merge, push and pull just like a git repository.",
-        "homepage": "https://www.dolthub.com",
-        "repositories": [
-            {
-                "type": "github",
-                "uri": "dolthub/dolt",
-                "asset-pattern": "/^dolt-.*/"
-            }
-        ],
-        "binary": {
-            "name": "dolt",
-            "version-command": "--version"
-        }
-    },
-    {
-        "name": "ProtoC PHP gRPC Plugin",
-        "alias": "protoc-gen-php-grpc",
-        "description": "Protobuf PHP gRPC generator plugin",
-        "repositories": [
-            {
-                "type": "github",
-                "uri": "roadrunner-server/roadrunner",
-                "asset-pattern": "/^protoc-gen-php-grpc-.*/"
-            }
-        ],
-        "binary": {
-            "name": "protoc-gen-php-grpc"
-        }
-    },
-    {
-        "name": "Protobuf compiler",
-        "alias": "protoc",
-        "homepage": "https://protobuf.dev/",
-        "repositories": [
-            {
-                "type": "github",
-                "uri": "protocolbuffers/protobuf",
-                "asset-pattern": "/^protoc-.*/"
-            }
-        ],
-        "binary": {
-            "name": "protoc",
-            "version-command": "--version"
-        }
-    },
-    {
-        "name": "TigerBeetle ",
-        "alias": "tigerbeetle",
-        "description": "TigerBeetle is a financial transactions database designed for mission critical safety and performance to power the next 30 years of OLTP.",
-        "homepage": "https://tigerbeetle.com/",
-        "repositories": [
-            {
-                "type": "github",
-                "uri": "tigerbeetle/tigerbeetle",
-                "asset-pattern": "/^tigerbeetle-.*/"
-            }
-        ],
-        "binary": {
-            "name": "tigerbeetle",
-            "version-command": "version"
-        }
-    },
-    {
-        "name": "CTX",
-        "alias": "ctx",
-        "description": "Context generator and MCP server",
-        "homepage": "https://docs.ctxgithub.com/",
-        "repositories": [
-            {
-                "type": "github",
-                "uri": "context-hub/generator",
-                "asset-pattern": "/^ctx-.*/"
-            }
-        ],
-        "binary": {
-            "name": "ctx",
-            "pattern": "/^ctx-.*$/",
-            "version-command": "--version"
-        }
-    },
-    {
-        "name": "Trap",
-        "alias": "trap",
-        "description": "A minimized version of the Buggregator Server that does not require Docker and is intended solely for local use.\n",
-        "homepage": "https://buggregator.dev/",
-        "repositories": [
-            {
-                "type": "github",
-                "uri": "buggregator/trap",
-                "asset-pattern": "/^trap-.*/"
-            }
-        ],
-        "binary": {
-            "name": "trap",
-            "version-command": "--version"
-        }
-    }
-]
+    ]
+}
