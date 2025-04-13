@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.1 (2025-04-13)
+
+## What's Changed
+* Hotfixes by @roxblnfk in https://github.com/php-internal/dload/pull/28
+
+
+**Full Changelog**: https://github.com/php-internal/dload/compare/1.0.0...1.0.1
+
 ## 1.0.0-RC3 (2025-04-13)
 
 ## What's Changed
