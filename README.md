@@ -176,6 +176,7 @@ Add the following to your `composer.json`:
 ```
 
 This configuration:
+
 - Automatically downloads required binaries after `composer update`
 - Provides a custom command `composer get:binaries` to force download all binaries with detailed output
 

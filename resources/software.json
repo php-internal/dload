@@ -50,7 +50,7 @@
             ],
             "binary": {
                 "name": "dolt",
-                "version-command": "--version"
+                "version-command": "version"
             }
         },
         {
