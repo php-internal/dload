@@ -7,7 +7,7 @@
 on:  # yamllint disable-line rule:truthy
   push:
     branches:
-      - master
+      - 1.x
 
 name: 📦 Create release
 
@@ -16,12 +16,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 🎉 Create release
-        uses: googleapis/release-please-action@v4.1.1
+        uses: googleapis/release-please-action@v4
         id: release
         with:
           token: ${{ secrets.DLOAD_RELEASE_TOKEN }}
           config-file: .github/.release-please-config.json
           manifest-file: resources/version.json
-          target-branch: master
+          target-branch: 1.x
 
 ...

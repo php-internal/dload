@@ -5,10 +5,10 @@ name: 🧪 Unit testing
 on:  # yamllint disable-line rule:truthy
   pull_request:
     branches:
-      - master
+      - 1.x
   push:
     branches:
-      - master
+      - 1.x
 
 jobs:
   code-coverage:
