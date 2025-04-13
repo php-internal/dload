@@ -82,7 +82,6 @@ jobs:
           files: |
             ./dload-${{ env.VERSION }}-${{ matrix.platform.os }}-${{ matrix.platform.arch }}.tar.gz
 
-
   build-macos-arm64:
     runs-on: macos-14
     name: 📦 Build macOS ARM64
@@ -360,4 +359,3 @@ jobs:
           token: "${{ secrets.DLOAD_RELEASE_TOKEN }}"
           files: |
             ./dload-${{ env.VERSION }}-windows-amd64.tar.gz
-
