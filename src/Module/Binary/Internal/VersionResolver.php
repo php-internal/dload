@@ -14,7 +14,7 @@ final class VersionResolver
     /**
      * Pattern to extract semantic version (X.Y.Z) from text.
      */
-    private const VERSION_PATTERN = '/(?:version:?\s*)?(?:v(?:er(?:sion)?)?\.?\s*)?(\d+\.\d+\.\d+(?:[-+][\w\.]+)?)/i';
+    private const VERSION_PATTERN = '/(?:version:?\s*)?(?:v(?:er(?:sion)?)?\.?\s*)?(\d+\.\d+\.\d+(?:[-+][\w.]+)?)/i';
 
     /**
      * Resolves the version from binary command output.
@@ -41,13 +41,18 @@ final class VersionResolver
      */
     private function extractVersionWithFallbacks(string $output): ?string
     {
+        // Fallback pattern for partial semver (e.g., "2.0")
+        if (\preg_match('/version:?\s*(\d+\.\d+)/i', $output, $matches)) {
+            return $matches[1];
+        }
+
         // Fallback pattern for simple digits-only version (e.g., "2", "15")
         if (\preg_match('/version:?\s*(\d+)/i', $output, $matches)) {
             return $matches[1];
         }
 
-        // Fallback pattern for partial semver (e.g., "2.0")
-        if (\preg_match('/version:?\s*(\d+\.\d+)/i', $output, $matches)) {
+        // Fallback pattern for 'libprotoc 30.2'
+        if (\preg_match('/^[\w-]+\s+v?(\d+(?:\\.\d+){0,2})/i', $output, $matches)) {
             return $matches[1];
         }
 

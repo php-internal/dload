@@ -159,6 +159,27 @@ DLoad handles both binary executables and regular files:
 </software>
 ```
 
+### Automatic Binary Downloads with Composer Update
+
+Integrate DLoad with Composer to automatically download required binaries whenever dependencies are updated.
+This ensures your team always has the necessary tools without manual intervention.
+
+Add the following to your `composer.json`:
+
+```json
+{
+    "scripts": {
+        "post-update-cmd": "dload get --no-interaction -v",
+        "get:binaries": "dload get --no-interaction --force -vv"
+    }
+}
+```
+
+This configuration:
+
+- Automatically downloads required binaries after `composer update`
+- Provides a custom command `composer get:binaries` to force download all binaries with detailed output
+
 ## Custom Software Registry
 
 ### Defining Custom Software
