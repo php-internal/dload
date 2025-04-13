@@ -4,3 +4,4 @@ $schema: 'https://raw.githubusercontent.com/context-hub/generator/refs/heads/mai
 
 import:
   - path: ./prompts/cover-class-by-docs.yaml
+  - path: ./prompts/xml-json-schema-update.yaml

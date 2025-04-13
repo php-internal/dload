@@ -94,7 +94,7 @@ final class SoftwareCollection implements \IteratorAggregate, \Countable
             JSON_THROW_ON_ERROR,
         );
 
-        foreach ($json as $softwareArray) {
+        foreach ($json['software'] ?? [] as $softwareArray) {
             $software = Software::fromArray($softwareArray);
             $this->registry[$software->getId()] ??= $software;
         }

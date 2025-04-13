@@ -1,0 +1,16 @@
+---
+
+$schema: 'https://raw.githubusercontent.com/context-hub/generator/refs/heads/main/json-schema.json'
+
+prompts:
+  - id: xml-json-schema-update
+    description: Update XML and JSON schema for DLOAD config files
+    messages:
+      - role: user
+        content: |
+          Look at `dload.xml`. It's an example of a DLOAD XML config file.
+
+          1. Need to sync `dload.xsd` wit the `dload.xml` file and configs from `src/Module/Common/Config` folder.
+             Read all of them and update the `dload.xsd` file.
+          2. If there are any changes in the XML schema, update the `resources/software.schema.json` that
+             describes the `software` section of the DLOAD XML config file but for json format.

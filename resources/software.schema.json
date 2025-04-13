@@ -1,0 +1,112 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DLoad Software Collection",
+  "description": "Collection of software packages that can be downloaded through DLoad",
+  "type": "object",
+  "required": ["software"],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference"
+    },
+    "software": {
+      "type": "array",
+      "description": "List of software packages",
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "repositories"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Software package name"
+          },
+          "alias": {
+            "type": "string",
+            "description": "CLI command alias"
+          },
+          "description": {
+            "type": "string",
+            "description": "Short description of the software"
+          },
+          "homepage": {
+            "type": "string",
+            "description": "Official software homepage URL"
+          },
+          "binary": {
+            "type": "object",
+            "description": "Binary executable definition",
+            "required": [
+              "name"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Binary executable name"
+              },
+              "pattern": {
+                "type": "string",
+                "description": "Regular expression pattern to match binary file during extraction"
+              },
+              "version-command": {
+                "type": "string",
+                "description": "Command argument to check binary version (e.g. '--version')"
+              }
+            }
+          },
+          "repositories": {
+            "type": "array",
+            "description": "List of repositories where the software can be found",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": [
+                "type",
+                "uri"
+              ],
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "description": "Repository type identifier",
+                  "default": "github"
+                },
+                "uri": {
+                  "type": "string",
+                  "description": "Repository URI identifier"
+                },
+                "asset-pattern": {
+                  "type": "string",
+                  "description": "Regular expression pattern to match assets"
+                }
+              }
+            }
+          },
+          "files": {
+            "type": "array",
+            "description": "List of files to be extracted after download",
+            "items": {
+              "type": "object",
+              "properties": {
+                "pattern": {
+                  "type": "string",
+                  "description": "Regular expression pattern to match files",
+                  "default": "/^.*$/"
+                },
+                "rename": {
+                  "type": "string",
+                  "description": "Rename found file to this value with the same extension"
+                },
+                "extract-path": {
+                  "type": "string",
+                  "description": "Directory where to extract files"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
