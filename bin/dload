@@ -8,6 +8,9 @@ use Internal\DLoad\Info;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\CommandLoader\FactoryCommandLoader;
 
+// Set timeout to 0 to prevent script from timing out
+set_time_limit(0);
+
 (static function () {
     $cwd = \getcwd();
 
