@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.2 (2025-04-14)
+
+## What's Changed
+* Remove script time limit by @roxblnfk in https://github.com/php-internal/dload/pull/32
+
+
+**Full Changelog**: https://github.com/php-internal/dload/compare/1.0.1...1.0.2
+
 ## 1.0.1 (2025-04-13)
 
 ## What's Changed
