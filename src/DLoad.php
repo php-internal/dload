@@ -193,6 +193,11 @@ final class DLoad
                 \assert($file instanceof \SplFileInfo);
 
                 $to = $this->shouldBeExtracted($file, $files, $action);
+                $this->logger->debug(
+                    $to === null ? 'Skipping %s%s' : 'Extracting %s to %s',
+                    $file->getFilename(),
+                    (string) $to?->getPathname(),
+                );
 
                 if ($to === null) {
                     $extractor->next();
@@ -257,14 +262,15 @@ final class DLoad
     }
 
     /**
-     * @return File[]
+     * @return list<File>
      */
     private function filesToExtract(Software $software): array
     {
         $files = $software->files;
         if ($software->binary !== null) {
             $binary = new File();
-            $binary->pattern = $software->binary->pattern ?? "/{$software->binary->name}{$this->os->getBinaryExtension()}/";
+            $binary->pattern = $software->binary->pattern
+                ?? "/^{$software->binary->name}{$this->os->getBinaryExtension()}$/";
             $binary->rename = $software->binary->name;
             $files[] = $binary;
         }

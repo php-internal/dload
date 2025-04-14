@@ -67,7 +67,7 @@ final class Software
     #[XPathEmbedList('repository', Repository::class)]
     public array $repositories = [];
 
-    /** @var File[] $files List of files to be extracted after download */
+    /** @var list<File> $files List of files to be extracted after download */
     #[XPathEmbedList('file', File::class)]
     public array $files = [];
 
