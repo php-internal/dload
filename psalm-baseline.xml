@@ -58,9 +58,6 @@
     </PossiblyFalseArgument>
   </file>
   <file src="src/DLoad.php">
-    <ArgumentTypeCoercion>
-      <code><![CDATA[$files]]></code>
-    </ArgumentTypeCoercion>
     <LessSpecificReturnStatement>
       <code><![CDATA[$this->configDestination->path ?? $action->extractPath ?? (string) \getcwd()]]></code>
     </LessSpecificReturnStatement>

@@ -169,7 +169,7 @@ Add the following to your `composer.json`:
 ```json
 {
     "scripts": {
-        "post-update-cmd": "dload get --no-interaction -v",
+        "post-update-cmd": "dload get --no-interaction -v || echo can't dload binaries",
         "get:binaries": "dload get --no-interaction --force -vv"
     }
 }

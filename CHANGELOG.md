@@ -4,7 +4,9 @@
 
 ## What's Changed
 * Hotfixes by @roxblnfk in https://github.com/php-internal/dload/pull/28
-
+    - skip binary download if file exists and no version detected
+    - use Composer's version comparator in `Binary::satisfies()`
+    - fix version checker for `dolt `and `protoc`
 
 **Full Changelog**: https://github.com/php-internal/dload/compare/1.0.0...1.0.1
 
