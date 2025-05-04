@@ -61,7 +61,7 @@ enum Stability: string implements Factoriable
      */
     public static function parse(string $version): self
     {
-        $version = (string) \preg_replace('{#.+$}', '', $version);
+        $version = (string) \preg_replace('{#.+$}', '', \ltrim($version, 'v'));
 
         if (\preg_match('{^dev[-_.]}', $version) || \preg_match('{[-_.]dev$}', $version)) {
             return self::Dev;
@@ -69,7 +69,7 @@ enum Stability: string implements Factoriable
 
 
         $mods = \implode('|', \array_column(self::cases(), 'value')) . '|b|a|[a-z]';
-        $reg = "[._-]?(?:($mods)((?:[.-]?\d+)*+)?)?([.-]?dev)?";
+        $reg = "[._-]?(?:($mods)((?:[.-]?\d+)*+)?)?";
 
         \preg_match('{' . $reg . '(?:\+.*)?$}i', \strtolower($version), $match);
 
@@ -89,7 +89,7 @@ enum Stability: string implements Factoriable
         return match ($suffix) {
             'a' => self::Alpha,
             'b' => self::Beta,
-            default => self::Stable,
+            default => self::Dev,
         };
     }
 

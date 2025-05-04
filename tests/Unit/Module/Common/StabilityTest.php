@@ -17,6 +17,30 @@ final class StabilityTest extends TestCase
      */
     public static function provideVersionsAndExpectedStability(): \Generator
     {
+        // Composer cases
+        yield ['1', Stability::Stable, ''];
+        yield ['1.0', Stability::Stable, ''];
+        yield ['3.2.1', Stability::Stable, ''];
+        yield ['v3.2.1', Stability::Stable, ''];
+        yield ['v2.0.x-dev', Stability::Dev, ''];
+        yield ['v2.0.x-dev#abc123', Stability::Dev, ''];
+        yield ['v2.0.x-dev#trunk/@123', Stability::Dev, ''];
+        yield ['3.0-RC2', Stability::RC, ''];
+        yield ['dev-master', Stability::Dev, ''];
+        yield ['3.1.2-dev', Stability::Dev, ''];
+        yield ['dev-feature+issue-1', Stability::Dev, ''];
+        yield ['3.1.2-p1', Stability::Dev, 'Composer expects Stable here'];
+        yield ['3.1.2-pl2', Stability::Dev, 'Composer expects Stable here'];
+        yield ['3.1.2-patch', Stability::Dev, 'Composer expects Stable here'];
+        yield ['3.1.2-alpha5', Stability::Alpha, ''];
+        yield ['3.1.2-beta', Stability::Beta, ''];
+        yield ['2.0B1', Stability::Beta, ''];
+        yield ['1.2.0a1', Stability::Alpha, ''];
+        yield ['1.2_a1', Stability::Alpha, ''];
+        yield ['2.0.0rc1', Stability::RC, ''];
+        yield ['1.0.0-alpha11+cs-1.1.0', Stability::Alpha, ''];
+        yield ['1-2_dev', Stability::Dev, ''];
+
         // Dev versions with prefix
         yield 'dev prefix - main' => ['dev-main', Stability::Dev, 'Dev-prefixed version'];
         yield 'dev prefix - master' => ['dev-master', Stability::Dev, 'Dev-prefixed version'];
@@ -51,7 +75,7 @@ final class StabilityTest extends TestCase
         // Abbreviated stability indicators
         yield 'alpha abbreviated' => ['1.0.0a1', Stability::Alpha, 'Alpha abbreviated'];
         yield 'beta abbreviated' => ['1.0.0b2', Stability::Beta, 'Beta abbreviated'];
-        yield 'unknown abbreviated' => ['1.0.0x3', Stability::Stable, 'Unknown abbreviated (defaults to Stable)'];
+        yield 'unknown abbreviated' => ['1.0.0x3', Stability::Dev, 'Unknown abbreviated (defaults to Stable)'];
 
         // Different separators
         yield 'dash separator' => ['1.0.0-beta1', Stability::Beta, 'Version with dash separator'];
@@ -60,6 +84,8 @@ final class StabilityTest extends TestCase
 
         // Real cases
         yield 'real case 1' => ['v1.0.0-priority.0', Stability::Priority, 'Temporal priority version'];
+        yield 'real case 2' => ['v1.3.1-nexus-cancellation.0', Stability::Dev, 'Temporal priority version'];
+        yield 'real case 3' => ['v1.3.0', Stability::Stable, 'Stable version'];
     }
 
     /**
