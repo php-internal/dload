@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.0 (2025-05-04)
+
+## What's Changed
+* Add more stability markers by @roxblnfk in https://github.com/php-internal/dload/pull/37
+
+
+**Full Changelog**: https://github.com/php-internal/dload/compare/1.0.2...1.1.0
+
 ## 1.0.2 (2025-04-14)
 
 ## What's Changed
