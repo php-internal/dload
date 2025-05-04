@@ -204,16 +204,17 @@ final class DLoad
                     continue;
                 }
 
+                $isOverwriting = $to->isFile();
                 $extractor->send($to);
 
                 // Success
                 $path = $to->getRealPath() ?: $to->getPathname();
                 $this->output->writeln(
                     \sprintf(
-                        '%s (<comment>%s</comment>) has been installed%s into <info>%s</info>',
+                        '%s (<comment>%s</comment>) has been %sinstalled into <info>%s</info>',
                         $to->getFilename(),
                         $downloadResult->version,
-                        $to->isFile() ? ' (overwriting)' : '',
+                        $isOverwriting ? 're' : '',
                         $path,
                     ),
                 );

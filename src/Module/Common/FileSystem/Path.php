@@ -90,6 +90,35 @@ final class Path implements \Stringable
     }
 
     /**
+     * Return the parent directory path
+     */
+    public function parent(): self
+    {
+        $parts = \explode(self::DS, $this->path);
+
+        if (\count($parts) === 1) {
+            return match ($this->path) {
+                '.' => self::create('..'),
+                '..' => self::create('../..'),
+                default => self::create('.'),
+            };
+        }
+
+        if ($this->isAbsolute && \count($parts) === 2) {
+            // If the path is absolute and has only two parts, return the root
+            return self::create($parts[0] . self::DS);
+        }
+
+        if (!$this->isAbsolute && $parts[\array_key_last($parts)] === '..') {
+            return $this->join('..');
+        }
+
+        // Remove the last part of the path
+        \array_pop($parts);
+        return self::create(\implode(self::DS, $parts));
+    }
+
+    /**
      * Return whether this path is absolute
      */
     public function isAbsolute(): bool
