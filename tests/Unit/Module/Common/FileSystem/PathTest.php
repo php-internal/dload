@@ -25,6 +25,18 @@ final class PathTest extends TestCase
         yield 'double dot path' => ['..', false];
     }
 
+    public static function providePathsForParent(): \Generator
+    {
+        yield ['.', '..'];
+        yield ['..', '../..'];
+        yield ['path/to/..', '.'];
+        yield ['/home', '/.'];
+        yield ['C:/Users', 'C:/.'];
+        yield ['C:/.', 'C:/.'];
+        yield ['filename.txt', '.'];
+        yield ['some/path/file.txt', 'some/path'];
+    }
+
     public function testCreateReturnsPathInstance(): void
     {
         // Arrange & Act
@@ -272,18 +284,6 @@ final class PathTest extends TestCase
 
         // Assert
         self::assertSame('hidden', $extension);
-    }
-
-    public static function providePathsForParent(): \Generator
-    {
-        yield ['.', '..'];
-        yield ['..', '../..'];
-        yield ['path/to/..', '.'];
-        yield ['/home', '/.'];
-        yield ['C:/Users', 'C:/.'];
-        yield ['C:/.', 'C:/.'];
-        yield ['filename.txt', '.'];
-        yield ['some/path/file.txt', 'some/path'];
     }
 
     #[DataProvider('providePathsForParent')]

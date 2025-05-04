@@ -54,6 +54,46 @@ enum Stability: string implements Factoriable
     }
 
     /**
+     * Parses a version string to determine its stability level.
+     *
+     * @param string $version The version string to parse
+     * @return self The stability level of the version
+     */
+    public static function parse(string $version): self
+    {
+        $version = (string) \preg_replace('{#.+$}', '', $version);
+
+        if (\preg_match('{^dev[-_.]}', $version) || \preg_match('{[-_.]dev$}', $version)) {
+            return self::Dev;
+        }
+
+
+        $mods = \implode('|', \array_column(self::cases(), 'value')) . '|b|a|[a-z]';
+        $reg = "[._-]?(?:($mods)((?:[.-]?\d+)*+)?)?([.-]?dev)?";
+
+        \preg_match('{' . $reg . '(?:\+.*)?$}i', \strtolower($version), $match);
+
+        /** @var null|non-empty-string $suffix */
+        $suffix = $match[1] ?? null;
+
+        if ($suffix === null) {
+            return self::Stable;
+        }
+
+        foreach (self::cases() as $self) {
+            if (\strtolower($suffix) === \strtolower($self->value)) {
+                return $self;
+            }
+        }
+
+        return match ($suffix) {
+            'a' => self::Alpha,
+            'b' => self::Beta,
+            default => self::Stable,
+        };
+    }
+
+    /**
      * Get the numerical weight of this stability level
      * Higher numbers indicate more stable versions
      *
