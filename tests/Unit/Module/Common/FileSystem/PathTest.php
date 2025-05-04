@@ -274,6 +274,31 @@ final class PathTest extends TestCase
         self::assertSame('hidden', $extension);
     }
 
+    public static function providePathsForParent(): \Generator
+    {
+        yield ['.', '..'];
+        yield ['..', '../..'];
+        yield ['path/to/..', '.'];
+        yield ['/home', '/.'];
+        yield ['C:/Users', 'C:/.'];
+        yield ['C:/.', 'C:/.'];
+        yield ['filename.txt', '.'];
+        yield ['some/path/file.txt', 'some/path'];
+    }
+
+    #[DataProvider('providePathsForParent')]
+    public function testParent(string $inputPath, string $expectedParent): void
+    {
+        // Arrange
+        $path = Path::create($inputPath);
+
+        // Act
+        $parent = $path->parent();
+
+        // Assert
+        self::assertSame($expectedParent, (string) $parent);
+    }
+
     #[DataProvider('providePathsForAbsoluteDetection')]
     public function testIsAbsolute(string $pathString, bool $expected): void
     {
