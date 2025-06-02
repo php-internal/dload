@@ -93,7 +93,7 @@ final class StabilityTest extends TestCase
     public function testParseStability(string $version, Stability $expected, string $description): void
     {
         // Act
-        $stability = Stability::parse($version);
+        $stability = Stability::fromReleaseString($version);
 
         // Assert
         self::assertSame(

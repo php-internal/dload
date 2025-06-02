@@ -19,6 +19,17 @@ use Internal\DLoad\Service\Factoriable;
  *
  * // Getting the stability level weight (higher number means more stable)
  * $weight = $stability->getWeight();
+ *
+ * // Checking if a string is a valid stability
+ * $isValid = Stability::isValidStability('beta'); // true
+ *
+ * // Parsing stability from string with case normalization
+ * $stability = Stability::fromString('BETA'); // Stability::Beta
+ *
+ * // Comparing stability levels
+ * $beta = Stability::Beta;
+ * $stable = Stability::Stable;
+ * $meetRequirement = $stable->meetsMinimum($beta); // true
  * ```
  *
  * @internal
@@ -53,12 +64,41 @@ enum Stability: string implements Factoriable
     }
 
     /**
+     * Check if a string matches any stability enum value (case-insensitive).
+     */
+    public static function isValidStability(string $value): bool
+    {
+        return self::fromString($value) !== null;
+    }
+
+    /**
+     * Parse stability from string with case normalization.
+     */
+    public static function fromString(string $value): ?self
+    {
+        // Try exact match first
+        $stability = self::tryFrom($value);
+        if ($stability !== null) {
+            return $stability;
+        }
+
+        // Try case variations
+        foreach (self::cases() as $case) {
+            if (\strcasecmp($case->value, $value) === 0) {
+                return $case;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Parses a version string to determine its stability level.
      *
-     * @param string $version The version string to parse
+     * @param non-empty-string $version The version string to parse
      * @return self The stability level of the version
      */
-    public static function parse(string $version): self
+    public static function fromReleaseString(string $version): self
     {
         $version = (string) \preg_replace('{#.+$}', '', \ltrim($version, 'v'));
 
@@ -90,6 +130,15 @@ enum Stability: string implements Factoriable
             'b' => self::Beta,
             default => self::Dev,
         };
+    }
+
+    /**
+     * Compare stability levels for constraint matching.
+     * Returns true if this stability meets the minimum requirement.
+     */
+    public function meetsMinimum(self $minimum): bool
+    {
+        return $this->getWeight() >= $minimum->getWeight();
     }
 
     /**

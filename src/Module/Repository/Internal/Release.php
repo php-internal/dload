@@ -78,7 +78,7 @@ abstract class Release implements ReleaseInterface
      */
     private function parseStability(string $version): Stability
     {
-        return Stability::parse($version);
+        return Stability::fromReleaseString($version);
     }
 
     /**
