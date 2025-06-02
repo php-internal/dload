@@ -27,7 +27,6 @@ enum Stability: string implements Factoriable
 {
     case Stable = 'stable';       // Released version considered stable for production
     case RC = 'RC';               // Almost ready for stable release
-    case Priority = 'priority';   // High priority pre-release
     case Pre = 'pre';             // Close to final
     case Beta = 'beta';           // Feature complete but may have bugs
     case Preview = 'preview';     // Demonstrates functionality but incomplete
@@ -97,14 +96,12 @@ enum Stability: string implements Factoriable
      * Get the numerical weight of this stability level
      * Higher numbers indicate more stable versions
      *
-     * @return int<0, 10> The weight/priority of this stability level (0-9)
      */
     public function getWeight(): int
     {
         return match ($this) {
-            self::Stable => 10,
-            self::RC => 9,
-            self::Priority => 8,
+            self::Stable => 9,
+            self::RC => 8,
             self::Pre => 7,
             self::Beta => 6,
             self::Preview => 5,
