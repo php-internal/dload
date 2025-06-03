@@ -64,14 +64,6 @@ enum Stability: string implements Factoriable
     }
 
     /**
-     * Check if a string matches any stability enum value (case-insensitive).
-     */
-    public static function isValidStability(string $value): bool
-    {
-        return self::fromString($value) !== null;
-    }
-
-    /**
      * Parse stability from string with case normalization.
      */
     public static function fromString(string $value): ?self
@@ -90,46 +82,6 @@ enum Stability: string implements Factoriable
         }
 
         return null;
-    }
-
-    /**
-     * Parses a version string to determine its stability level.
-     *
-     * @param non-empty-string $version The version string to parse
-     * @return self The stability level of the version
-     */
-    public static function fromReleaseString(string $version, self $default = self::Dev): self
-    {
-        $version = (string) \preg_replace('{#.+$}', '', \ltrim($version, 'v'));
-
-        if (\preg_match('{^dev[-_.]}', $version) || \preg_match('{[-_.]dev$}', $version)) {
-            return self::Dev;
-        }
-
-
-        $mods = \implode('|', \array_column(self::cases(), 'value')) . '|b|a|[a-z]';
-        $reg = "[._-]?(?:($mods)((?:[.-]?\d+)*+)?)?";
-
-        \preg_match('{' . $reg . '(?:\+.*)?$}i', \strtolower($version), $match);
-
-        /** @var null|non-empty-string $suffix */
-        $suffix = $match[1] ?? null;
-
-        if ($suffix === null) {
-            return self::Stable;
-        }
-
-        foreach (self::cases() as $self) {
-            if (\strtolower($suffix) === \strtolower($self->value)) {
-                return $self;
-            }
-        }
-
-        return match ($suffix) {
-            'a' => self::Alpha,
-            'b' => self::Beta,
-            default => $default,
-        };
     }
 
     /**

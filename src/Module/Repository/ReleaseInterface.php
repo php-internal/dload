@@ -7,6 +7,7 @@ namespace Internal\DLoad\Module\Repository;
 use Internal\DLoad\Module\Common\Stability;
 use Internal\DLoad\Module\Common\VersionConstraint;
 use Internal\DLoad\Module\Repository\Collection\AssetsCollection;
+use Internal\DLoad\Module\Version\Version;
 
 /**
  * Represents a single release of software from a repository.
@@ -44,21 +45,9 @@ interface ReleaseInterface
     public function getName(): string;
 
     /**
-     * Returns internal release tag version.
-     *
-     * This version string may include prefixes or suffixes that aren't
-     * compatible with Composer's comparators.
-     *
-     * @return non-empty-string Raw version string (e.g. "v1.2.3-beta")
+     * Returns the version of this release.
      */
-    public function getVersion(): string;
-
-    /**
-     * Returns the stability level of this release.
-     *
-     * @return Stability Enum representing the stability level (Stable, RC, Beta, etc.)
-     */
-    public function getStability(): Stability;
+    public function getVersion(): Version;
 
     /**
      * Returns all assets associated with this release.
@@ -77,15 +66,4 @@ interface ReleaseInterface
      * @return bool True if the release satisfies the constraint
      */
     public function satisfies(string $constraint): bool;
-
-    /**
-     * Checks if this release satisfies the given version constraint DTO.
-     *
-     * Handles complex constraints including feature suffixes and stability requirements.
-     * This method provides enhanced constraint matching beyond basic Composer semver.
-     *
-     * @param VersionConstraint $constraint Parsed version constraint with suffix and stability info
-     * @return bool True if the release satisfies all constraint requirements
-     */
-    public function satisfiesConstraint(VersionConstraint $constraint): bool;
 }

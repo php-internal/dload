@@ -6,6 +6,7 @@ namespace Internal\DLoad\Tests\Unit\Module\Version;
 
 use Internal\DLoad\Module\Common\Stability;
 use Internal\DLoad\Module\Version\Constraint;
+use Internal\DLoad\Module\Version\Version;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -264,7 +265,7 @@ final class ConstraintTest extends TestCase
 
         yield 'feature suffix with special characters' => [
             '^2.12.0-feature@test',
-            'Invalid stability constraint: @test',
+            'Invalid stability level: @test',
             'Feature suffix with special characters',
         ];
 
@@ -277,22 +278,29 @@ final class ConstraintTest extends TestCase
         // Invalid stability
         yield 'invalid explicit stability' => [
             '^2.12.0@invalid',
-            'Invalid stability constraint: @invalid',
+            'Invalid stability level: @invalid',
             'Invalid explicit stability',
         ];
 
         yield 'empty stability' => [
             '^2.12.0@',
-            'Invalid stability constraint: @',
+            'Invalid stability level: @',
             'Empty explicit stability',
         ];
 
         // Multiple @ symbols
         yield 'multiple stability indicators' => [
             '^2.12.0@beta@alpha',
-            'Invalid stability constraint: @beta@alpha',
+            'Invalid stability level: @beta@alpha',
             'Multiple @ symbols in constraint',
         ];
+    }
+
+    public static function provideComparableConstraints()
+    {
+        yield ['^1.0-priority@dev', '1.3.1-priority.0', true];
+        yield ['^1.0-priority', '1.3.1-priority.0', false];
+        yield ['^1.0-priority@rc', '1.3.1-RC1-priority.0', true];
     }
 
     #[DataProvider('provideValidConstraints')]
@@ -357,5 +365,19 @@ final class ConstraintTest extends TestCase
 
         // Assert
         self::assertSame('^2.12.0-feature@beta', $result);
+    }
+
+    #[DataProvider('provideComparableConstraints')]
+    public function testIsSatisfiedBy(string $constraint, string $version, bool $expected): void
+    {
+        // Arrange
+        $constraintObj = Constraint::fromConstraintString($constraint);
+        $versionObj = Version::fromVersionString($version);
+
+        // Act
+        $result = $constraintObj->isSatisfiedBy($versionObj);
+
+        // Assert
+        self::assertSame($expected, $result, "Constraint: {$constraint}, Version: {$version}");
     }
 }

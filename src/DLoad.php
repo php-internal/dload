@@ -101,12 +101,13 @@ final class DLoad
             $versionConstraint = Constraint::fromConstraintString($action->version);
 
             // Check if binary exists and satisfies enhanced version constraint
-            if ($binary->satisfiesVersion($versionConstraint)) {
+            $binaryVersion = $binary->getVersion();
+            if ($binaryVersion !== null && $versionConstraint->isSatisfiedBy($binaryVersion)) {
                 $this->logger->info(
                     'Binary `%s` exists with version `%s`, satisfies constraint `%s`. Skipping download.',
                     $binary->getName(),
-                    (string) $binary->getVersionString(),
-                    $action->version,
+                    $binaryVersion->string,
+                    (string) $versionConstraint,
                 );
                 $this->logger->info('Use flag `--force` to force download.');
 
@@ -114,7 +115,7 @@ final class DLoad
                 return;
             }
 
-            // Download a newer version only if version is specified
+            // Download a newer version only if the version is specified
             if ($version !== null) {
                 // todo
             }

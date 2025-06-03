@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Internal\DLoad\Tests\Unit\Module\Repository\Internal\GitHub;
 
 use Internal\DLoad\Module\Repository\Internal\GitHub\GitHubRepository;
+use Internal\DLoad\Module\Repository\ReleaseInterface;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
@@ -70,13 +71,13 @@ final class GitHubRepositoryLazyLoadingTest extends TestCase
 
         // Filter to releases with version greater than v1.2.0
         // This should NOT load additional pages yet
-        $laterReleases = $releases->filter(static fn($release) => \version_compare($release->getVersion(), "v1.2.0", ">"));
+        $laterReleases = $releases->filter(static fn(ReleaseInterface $release) => \version_compare($release->getVersion()->string, "v1.2.0", ">"));
 
         // No additional pages should have been loaded after filter call
         $this->assertCount(1, $requestLog);
 
         // Add another filter - this should still not load additional pages
-        $laterReleases = $laterReleases->filter(static fn($release) => \str_contains($release->getVersion(), "v1."));
+        $laterReleases = $laterReleases->filter(static fn(ReleaseInterface $release) => \str_contains($release->getVersion()->string, "v1."));
 
         // Still no additional pages loaded
         $this->assertCount(1, $requestLog);
@@ -205,8 +206,8 @@ final class GitHubRepositoryLazyLoadingTest extends TestCase
 
         // Create a filtered collection with multiple filters
         $filteredReleases = $releases
-            ->filter(static fn($release) => \version_compare($release->getVersion(), "v2.0.0", ">=")) // v2.0.0 and above
-            ->filter(static fn($release) => !$release->getAssets()->empty()); // Only with assets
+            ->filter(static fn(ReleaseInterface $release) => \version_compare($release->getVersion()->string, "v2.0.0", ">=")) // v2.0.0 and above
+            ->filter(static fn(ReleaseInterface $release) => !$release->getAssets()->empty()); // Only with assets
 
         // Convert to array to execute the filters
         $result = $filteredReleases->toArray();

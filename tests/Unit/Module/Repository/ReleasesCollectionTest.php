@@ -74,7 +74,7 @@ final class ReleasesCollectionTest extends TestCase
         self::assertCount(3, $result, 'Should only include stable versions');
 
         foreach ($result as $release) {
-            self::assertSame(Stability::Stable, $release->getStability());
+            self::assertSame(Stability::Stable, $release->getVersion()->stability);
         }
     }
 
@@ -86,7 +86,7 @@ final class ReleasesCollectionTest extends TestCase
         // Assert
         $stabilities = [];
         foreach ($result as $release) {
-            $stabilities[] = $release->getStability();
+            $stabilities[] = $release->getVersion()->stability;
         }
 
         self::assertContains(Stability::Stable, $stabilities);

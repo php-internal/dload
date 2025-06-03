@@ -7,6 +7,7 @@ namespace Internal\DLoad\Module\Repository\Internal\GitHub;
 use Composer\Semver\VersionParser;
 use Internal\DLoad\Module\Repository\Collection\AssetsCollection;
 use Internal\DLoad\Module\Repository\Internal\Release;
+use Internal\DLoad\Module\Version\Version;
 use Internal\DLoad\Service\Destroyable;
 use Symfony\Contracts\HttpClient\Exception\ExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -27,13 +28,12 @@ final class GitHubRelease extends Release implements Destroyable
 {
     /**
      * @param non-empty-string $name
-     * @param non-empty-string $version
      */
     public function __construct(
         private HttpClientInterface $client,
         GitHubRepository $repository,
         string $name,
-        string $version,
+        Version $version,
     ) {
         parent::__construct($repository, $name, $version);
     }
@@ -49,7 +49,7 @@ final class GitHubRelease extends Release implements Destroyable
 
         $name = self::getTagName($data);
         $version = $data['tag_name'] ?? (string) $data['name'];
-        $result = new self($client, $repository, $name, $version);
+        $result = new self($client, $repository, $name, Version::fromVersionString($version));
 
         $result->assets = AssetsCollection::create(static function () use ($client, $result, $data): \Generator {
             /** @var GitHubAssetApiResponse $item */

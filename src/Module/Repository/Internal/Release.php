@@ -6,10 +6,10 @@ namespace Internal\DLoad\Module\Repository\Internal;
 
 use Composer\Semver\Semver;
 use Composer\Semver\VersionParser;
-use Internal\DLoad\Module\Common\Stability;
 use Internal\DLoad\Module\Repository\Collection\AssetsCollection;
 use Internal\DLoad\Module\Repository\ReleaseInterface;
 use Internal\DLoad\Module\Repository\Repository;
+use Internal\DLoad\Module\Version\Version;
 
 /**
  * @internal
@@ -24,23 +24,19 @@ abstract class Release implements ReleaseInterface
      */
     protected string $name;
 
-    protected Stability $stability;
     protected AssetsCollection $assets;
 
     /**
      * @param non-empty-string $name
-     * @param non-empty-string $version
      */
     public function __construct(
         protected Repository $repository,
         string $name,
-        protected string $version,
-        ?Stability $stability = null,
+        protected Version $version,
         iterable $assets = [],
     ) {
         $this->name = $this->simplifyReleaseName($name);
         $this->assets = AssetsCollection::create($assets);
-        $this->stability = $stability ?? $this->parseStability($version);
     }
 
     public function getRepository(): Repository
@@ -53,14 +49,9 @@ abstract class Release implements ReleaseInterface
         return $this->name;
     }
 
-    public function getVersion(): string
+    public function getVersion(): Version
     {
         return $this->version;
-    }
-
-    public function getStability(): Stability
-    {
-        return $this->stability;
     }
 
     public function getAssets(): AssetsCollection
@@ -71,14 +62,6 @@ abstract class Release implements ReleaseInterface
     public function satisfies(string $constraint): bool
     {
         return Semver::satisfies($this->getName(), $constraint);
-    }
-
-    /**
-     * @param non-empty-string $version
-     */
-    private function parseStability(string $version): Stability
-    {
-        return Stability::fromReleaseString($version);
     }
 
     /**

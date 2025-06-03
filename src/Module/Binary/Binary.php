@@ -41,14 +41,6 @@ interface Binary
     public function getVersion(): ?BinaryVersion;
 
     /**
-     * Checks if the binary version satisfies a constraint.
-     *
-     * @return bool|null True if the version satisfies the constraint,
-     *         false if it doesn't, null if the version is not available
-     */
-    public function satisfiesVersion(Constraint $versionConstraint): ?bool;
-
-    /**
      * Gets the size of the binary in bytes.
      *
      * @return int|null Size in bytes or null if the binary doesn't exist

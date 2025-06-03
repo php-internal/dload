@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Binary\Internal;
 
-use Composer\Semver\Semver;
 use Internal\DLoad\Module\Binary\Binary;
 use Internal\DLoad\Module\Binary\BinaryVersion;
 use Internal\DLoad\Module\Common\Config\Embed\Binary as BinaryConfig;
 use Internal\DLoad\Module\Common\FileSystem\Path;
-use Internal\DLoad\Module\Common\Stability;
 use Internal\DLoad\Module\Version\Constraint;
 
 /**
@@ -70,31 +68,6 @@ final class BinaryHandle implements Binary
     public function getVersionString(): ?string
     {
         return $this->getVersion()?->number;
-    }
-
-    public function satisfiesVersion(Constraint $versionConstraint): ?bool
-    {
-        $version = $this->getVersion();
-        $versionString = $version?->number;
-        if ($versionString === null) {
-            return null;
-        }
-
-        // Check if a version satisfies the base version constraint
-        if (Semver::satisfies($versionString, $versionConstraint->versionConstraint) === false) {
-            return false;
-        }
-
-        // Check if the binary version satisfies the feature suffix constraint
-        if ($versionConstraint->featureSuffix !== null) {
-            if (!\str_contains($versionString, $versionConstraint->featureSuffix)) {
-                return false;
-            }
-        }
-
-        // Check if the version satisfies the stability constraint
-        $stability = $version->stability ?? Stability::Stable;
-        return $stability->meetsMinimum($versionConstraint->minimumStability);
     }
 
     public function getSize(): ?int

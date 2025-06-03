@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Version;
 
+use Composer\Semver\Semver;
 use Internal\DLoad\Module\Common\Stability;
 
 /**
@@ -50,7 +51,7 @@ final class Constraint implements \Stringable
             [$origin, $stabilityPart] = \explode('@', $origin, 2);
 
             $stability = Stability::fromString($stabilityPart) ?? throw new \InvalidArgumentException(
-                "Invalid stability constraint: @{$stabilityPart}.",
+                "Invalid stability level: @{$stabilityPart}.",
             );
         }
 
@@ -116,6 +117,37 @@ final class Constraint implements \Stringable
     public static function fromConstraintString(string $constraint): self
     {
         return new self(\trim($constraint));
+    }
+
+    /**
+     * Checks if the given version satisfies this constraint.
+     *
+     * @param Version $version Version to check against this constraint
+     * @return null|bool True if the version satisfies the constraint, false if it does not,
+     *         null if the version is invalid or not applicable.
+     */
+    public function isSatisfiedBy(Version $version): ?bool
+    {
+        $number = $version->number;
+        if ($number === null) {
+            return false;
+        }
+
+        // Check if a version satisfies the base version constraint
+        if (Semver::satisfies($number, $this->versionConstraint) === false) {
+            return false;
+        }
+
+        // Check if the version satisfies the feature suffix constraint
+        if ($this->featureSuffix !== null) {
+            if (!\str_contains((string) $version->suffix, $this->featureSuffix)) {
+                return false;
+            }
+        }
+
+        // Check if the version satisfies the stability constraint
+        $stability = $version->stability ?? Stability::Stable;
+        return $stability->meetsMinimum($this->minimumStability);
     }
 
     /**

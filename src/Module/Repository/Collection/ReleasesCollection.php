@@ -103,7 +103,7 @@ final class ReleasesCollection extends Collection
      */
     public function stability(Stability $stability): self
     {
-        return $this->filter(static fn(ReleaseInterface $rel): bool => $rel->getStability() === $stability);
+        return $this->filter(static fn(ReleaseInterface $rel): bool => $rel->getVersion()->stability === $stability);
     }
 
     /**
@@ -116,7 +116,7 @@ final class ReleasesCollection extends Collection
     {
         $weight = $stability->getWeight();
         return $this->filter(
-            static fn(ReleaseInterface $release): bool => $release->getStability()->getWeight() >= $weight,
+            static fn(ReleaseInterface $release): bool => $release->getVersion()->stability->getWeight() >= $weight,
         );
     }
 
@@ -129,7 +129,7 @@ final class ReleasesCollection extends Collection
      */
     private function comparisonVersionString(ReleaseInterface $release): string
     {
-        $stability = $release->getStability();
+        $stability = $release->getVersion()->stability;
 
         return \ltrim(\str_replace(
             '-' . $stability->value,

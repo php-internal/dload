@@ -81,10 +81,16 @@ final class GitHubRepository implements Repository, Destroyable
                         return;
                     }
 
-                    yield \array_map(
-                        fn(array $releaseData): GitHubRelease => GitHubRelease::fromApiResponse($this, $this->client, $releaseData),
-                        $data,
-                    );
+                    $toYield = [];
+                    foreach ($data as $record) {
+                        try {
+                            $toYield[] = GitHubRelease::fromApiResponse($this, $this->client, $record);
+                        } catch (\Throwable) {
+                            // Skip invalid releases
+                            continue;
+                        }
+                    }
+                    yield $toYield;
 
                     // Check if there are more pages
                     $hasMorePages = $this->hasNextPage($response);
