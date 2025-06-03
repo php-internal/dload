@@ -149,9 +149,14 @@ The **version** attribute supports advanced constraints for targeting specific r
 You can use feature suffixes to target releases with custom tags like `^2.12.0-experimental` for experimental builds,
 or minimum-stability constraints to filter by release stability such as `^2.12.0@beta` for beta or more stable releases.
 
+**Feature Suffix Behavior**: When using feature suffix constraints (e.g., `^2.12.0-experimental`),
+the minimum stability is automatically set to `preview`, equivalent to writing `^2.12.0-experimental@preview`.
+This ensures that feature releases with preview stability or higher are included,
+while maintaining conservative defaults for production use.
+
 **Release Stability Parsing**: Regular releases without suffixes (e.g., `v2.1.0`) are treated as stable.
 However, releases with feature suffixes but no explicit stability marker (e.g., `v2.1.0-experimental`) are automatically parsed as `preview` stability,
-indicating they demonstrate functionality but are not production-ready and require explicit targeting.
+indicating they demonstrate functionality but are not production-ready.
 
 ### Handling Different File Types
 
@@ -161,7 +166,7 @@ DLoad handles both binary executables and regular files:
 <software name="my-app">
     <!-- Binary executable that depends on OS/architecture -->
     <binary name="app-cli" pattern="/^app-cli-.*/" />
-
+    
     <!-- Regular file that works on any system -->
     <file pattern="/^config.yml$/" />
 </software>
@@ -353,10 +358,10 @@ Target specific release types for different environments:
         <!-- Staging: beta releases for testing -->
         <download software="temporal" version="^1.20.0@beta" />
         
-        <!-- Development: experimental features -->
-        <download software="dev-tool" version="^1.0.0-experimental@dev" />
+        <!-- Development: experimental features (automatically sets minimum stability to preview) -->
+        <download software="dev-tool" version="^1.0.0-experimental" />
         
-        <!-- Feature branch testing -->
+        <!-- Feature branch testing with explicit stability -->
         <download software="app" version="^2.0.0-new-api@alpha" />
     </actions>
 </dload>

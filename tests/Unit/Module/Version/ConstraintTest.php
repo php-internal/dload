@@ -299,8 +299,10 @@ final class ConstraintTest extends TestCase
     public static function provideComparableConstraints()
     {
         yield ['^1.0-priority@dev', '1.3.1-priority.0', true];
-        yield ['^1.0-priority', '1.3.1-priority.0', false];
+        yield ['^1.0-priority', '1.3.1-priority.0', true];
         yield ['^1.0-priority@rc', '1.3.1-RC1-priority.0', true];
+        yield ['^1.0-priority@RC', '1.3.1-RC1-priority.0', true];
+        yield ['^1.0-priority@RC', '1.3.1-priority.0', false];
     }
 
     #[DataProvider('provideValidConstraints')]

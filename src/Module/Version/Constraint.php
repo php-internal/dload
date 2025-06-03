@@ -82,18 +82,19 @@ final class Constraint implements \Stringable
             }
         }
 
-        // Determine final stability (explicit takes precedence over implicit)
-        $stability ??= Stability::Stable;
-
         // Validate base version format for non-empty suffixes
         $suffix === '' and !\preg_match('/^[~^>=<]*\d+(\.\d+)*/', $version) and throw new \InvalidArgumentException(
             "Invalid base version format: {$version}.",
         );
+        $suffix === '' and $suffix = null;
+
+        // Determine final stability (explicit takes precedence over implicit)
+        $stability ??= $suffix === null ? Stability::Stable : Stability::Preview;
 
         $version === '' and throw new \InvalidArgumentException('Base version cannot be empty.');
 
         $this->versionConstraint = $version;
-        $this->featureSuffix = $suffix === '' ? null : $suffix;
+        $this->featureSuffix = $suffix;
         $this->minimumStability = $stability;
     }
 
