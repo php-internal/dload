@@ -98,7 +98,7 @@ enum Stability: string implements Factoriable
      * @param non-empty-string $version The version string to parse
      * @return self The stability level of the version
      */
-    public static function fromReleaseString(string $version): self
+    public static function fromReleaseString(string $version, self $default = self::Dev): self
     {
         $version = (string) \preg_replace('{#.+$}', '', \ltrim($version, 'v'));
 
@@ -128,7 +128,7 @@ enum Stability: string implements Factoriable
         return match ($suffix) {
             'a' => self::Alpha,
             'b' => self::Beta,
-            default => self::Dev,
+            default => $default,
         };
     }
 

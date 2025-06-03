@@ -128,7 +128,8 @@ final class VersionResolverTest extends TestCase
         $result = $this->versionResolver->resolveVersion($output);
 
         // Assert
-        self::assertSame($expectedVersion, $result);
+        self::assertSame($expectedVersion, $result->version);
+        self::assertSame($output, $result->origin);
     }
 
     /**
@@ -141,7 +142,8 @@ final class VersionResolverTest extends TestCase
         $result = $this->versionResolver->resolveVersion($output);
 
         // Assert
-        self::assertSame($expectedVersion, $result);
+        self::assertSame($expectedVersion, $result->version);
+        self::assertSame($output, $result->origin);
     }
 
     /**
@@ -156,7 +158,7 @@ final class VersionResolverTest extends TestCase
         $result = $this->versionResolver->resolveVersion($output);
 
         // Assert
-        self::assertNull($result);
+        self::assertNull($result->version);
     }
 
     protected function setUp(): void

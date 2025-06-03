@@ -8,6 +8,8 @@ use Composer\Semver\Semver;
 use Internal\DLoad\Module\Binary\Binary;
 use Internal\DLoad\Module\Common\Config\Embed\Binary as BinaryConfig;
 use Internal\DLoad\Module\Common\FileSystem\Path;
+use Internal\DLoad\Module\Common\Stability;
+use Internal\DLoad\Module\Common\VersionConstraint;
 
 /**
  * Internal implementation of Binary interface.
@@ -16,7 +18,7 @@ use Internal\DLoad\Module\Common\FileSystem\Path;
  */
 final class BinaryHandle implements Binary
 {
-    private ?string $version = null;
+    private ?VersionString $versionOutput = null;
 
     /**
      * @param non-empty-string $name Binary name
@@ -50,11 +52,12 @@ final class BinaryHandle implements Binary
 
     /**
      * @return non-empty-string|null
+     * @psalm-assert !null $this->versionOutput
      */
     public function getVersion(): ?string
     {
-        if ($this->version !== null) {
-            return $this->version === '' ? null : $this->version;
+        if ($this->versionOutput !== null) {
+            return $this->versionOutput->version;
         }
 
         if (!$this->exists() || $this->config->versionCommand === null) {
@@ -63,20 +66,37 @@ final class BinaryHandle implements Binary
 
         try {
             $output = $this->executor->execute($this->path, $this->config->versionCommand);
-            $this->version = (string) $this->versionResolver->resolveVersion($output);
-            return $this->version === '' ? null : $this->version;
+            $this->versionOutput = $this->versionResolver->resolveVersion($output);
         } catch (\Throwable) {
-            $this->version = '';
-            return null;
+            $this->versionOutput = VersionString::empty();
         }
+
+        return $this->versionOutput->version;
     }
 
-    public function satisfiesVersion(string $versionConstraint): ?bool
+    public function satisfiesVersion(VersionConstraint $versionConstraint): ?bool
     {
         $version = $this->getVersion();
-        return $version === null
-            ? null
-            : Semver::satisfies($version, $versionConstraint);
+        if ($version === null) {
+            return null;
+        }
+
+        // Check if a version satisfies the base version constraint
+        if (Semver::satisfies($version, $versionConstraint->versionConstraint) === false) {
+            return false;
+        }
+
+        // Check if version satisfies the feature suffix constraint
+        if ($versionConstraint->featureSuffix !== null) {
+            $suffix = $this->versionOutput->suffix;
+            if ($suffix === null || !\str_contains($suffix, $versionConstraint->featureSuffix)) {
+                return false;
+            }
+        }
+
+        // Check if version satisfies the stability constraint
+        $stability = $this->versionOutput->stability ?? Stability::Stable;
+        return $stability->meetsMinimum($versionConstraint->minimumStability);
     }
 
     public function getSize(): ?int
