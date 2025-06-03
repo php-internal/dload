@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Binary\Internal;
 
-use Composer\Semver\Semver;
 use Internal\DLoad\Module\Binary\Binary;
+use Internal\DLoad\Module\Binary\BinaryVersion;
 use Internal\DLoad\Module\Common\Config\Embed\Binary as BinaryConfig;
 use Internal\DLoad\Module\Common\FileSystem\Path;
 
@@ -16,21 +16,19 @@ use Internal\DLoad\Module\Common\FileSystem\Path;
  */
 final class BinaryHandle implements Binary
 {
-    private ?string $version = null;
+    private ?BinaryVersion $versionOutput = null;
 
     /**
      * @param non-empty-string $name Binary name
      * @param Path $path Path to binary
      * @param BinaryConfig $config Original configuration
      * @param BinaryExecutor $executor Binary execution service
-     * @param VersionResolver $versionResolver Version extraction service
      */
     public function __construct(
         private readonly string $name,
         private readonly Path $path,
         private readonly BinaryConfig $config,
         private readonly BinaryExecutor $executor,
-        private readonly VersionResolver $versionResolver,
     ) {}
 
     public function getName(): string
@@ -48,13 +46,10 @@ final class BinaryHandle implements Binary
         return $this->path->exists();
     }
 
-    /**
-     * @return non-empty-string|null
-     */
-    public function getVersion(): ?string
+    public function getVersion(): ?BinaryVersion
     {
-        if ($this->version !== null) {
-            return $this->version === '' ? null : $this->version;
+        if ($this->versionOutput !== null) {
+            return $this->versionOutput;
         }
 
         if (!$this->exists() || $this->config->versionCommand === null) {
@@ -63,20 +58,15 @@ final class BinaryHandle implements Binary
 
         try {
             $output = $this->executor->execute($this->path, $this->config->versionCommand);
-            $this->version = (string) $this->versionResolver->resolveVersion($output);
-            return $this->version === '' ? null : $this->version;
+            return $this->versionOutput = BinaryVersion::fromBinaryOutput($output);
         } catch (\Throwable) {
-            $this->version = '';
-            return null;
+            return $this->versionOutput = BinaryVersion::empty();
         }
     }
 
-    public function satisfiesVersion(string $versionConstraint): ?bool
+    public function getVersionString(): ?string
     {
-        $version = $this->getVersion();
-        return $version === null
-            ? null
-            : Semver::satisfies($version, $versionConstraint);
+        return $this->getVersion()?->number;
     }
 
     public function getSize(): ?int

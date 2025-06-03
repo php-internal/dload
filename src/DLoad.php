@@ -11,11 +11,13 @@ use Internal\DLoad\Module\Common\Config\Embed\File;
 use Internal\DLoad\Module\Common\Config\Embed\Software;
 use Internal\DLoad\Module\Common\Input\Destination;
 use Internal\DLoad\Module\Common\OperatingSystem;
+use Internal\DLoad\Module\Common\VersionConstraint;
 use Internal\DLoad\Module\Downloader\Downloader;
 use Internal\DLoad\Module\Downloader\SoftwareCollection;
 use Internal\DLoad\Module\Downloader\Task\DownloadResult;
 use Internal\DLoad\Module\Downloader\Task\DownloadTask;
 use Internal\DLoad\Module\Downloader\TaskManager;
+use Internal\DLoad\Module\Version\Constraint;
 use Internal\DLoad\Service\Logger;
 use React\Promise\PromiseInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -82,7 +84,7 @@ final class DLoad
             }
 
             \assert($binary !== null);
-            $version = $binary->getVersion();
+            $version = $binary->getVersionString();
             if ($action->version === null) {
                 $this->logger->info(
                     'Binary `%s` exists with version `%s`, but no version constraint specified. Skipping download.',
@@ -95,13 +97,17 @@ final class DLoad
                 return;
             }
 
-            // Check if binary exists and satisfies version constraint
-            if ($binary->satisfiesVersion($action->version)) {
+            // Create VersionConstraint DTO for enhanced constraint checking
+            $versionConstraint = Constraint::fromConstraintString($action->version);
+
+            // Check if binary exists and satisfies enhanced version constraint
+            $binaryVersion = $binary->getVersion();
+            if ($binaryVersion !== null && $versionConstraint->isSatisfiedBy($binaryVersion)) {
                 $this->logger->info(
                     'Binary `%s` exists with version `%s`, satisfies constraint `%s`. Skipping download.',
                     $binary->getName(),
-                    (string) $binary->getVersion(),
-                    $action->version,
+                    $binaryVersion->string,
+                    (string) $versionConstraint,
                 );
                 $this->logger->info('Use flag `--force` to force download.');
 
@@ -109,7 +115,7 @@ final class DLoad
                 return;
             }
 
-            // Download a newer version only if version is specified
+            // Download a newer version only if the version is specified
             if ($version !== null) {
                 // todo
             }

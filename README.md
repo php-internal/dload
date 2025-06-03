@@ -145,6 +145,19 @@ Each `<download>` action supports:
 - **version**: Target version using Composer versioning syntax (e.g., `^2.12.0`, `~1.0`, `1.2.3`)
 - **extract-path**: Directory where files will be extracted (useful for non-binary assets)
 
+The **version** attribute supports advanced constraints for targeting specific release types.
+You can use feature suffixes to target releases with custom tags like `^2.12.0-experimental` for experimental builds,
+or minimum-stability constraints to filter by release stability such as `^2.12.0@beta` for beta or more stable releases.
+
+**Feature Suffix Behavior**: When using feature suffix constraints (e.g., `^2.12.0-experimental`),
+the minimum stability is automatically set to `preview`, equivalent to writing `^2.12.0-experimental@preview`.
+This ensures that feature releases with preview stability or higher are included,
+while maintaining conservative defaults for production use.
+
+**Release Stability Parsing**: Regular releases without suffixes (e.g., `v2.1.0`) are treated as stable.
+However, releases with feature suffixes but no explicit stability marker (e.g., `v2.1.0-experimental`) are automatically parsed as `preview` stability,
+indicating they demonstrate functionality but are not production-ready.
+
 ### Handling Different File Types
 
 DLoad handles both binary executables and regular files:
@@ -328,6 +341,30 @@ Keep your frontend assets separate from your PHP repository:
     <repository type="github" uri="your-org/frontend-build" asset-pattern="/^dist.*/" />
     <file pattern="/^.*$/" extract-path="public/assets" />
 </software>
+```
+
+### Advanced Development Workflows
+
+Target specific release types for different environments:
+
+```xml
+<dload xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/php-internal/dload/refs/heads/1.x/dload.xsd"
+>
+    <actions>
+        <!-- Production: stable releases only -->
+        <download software="rr" version="^2.12.0@stable" />
+        
+        <!-- Staging: beta releases for testing -->
+        <download software="temporal" version="^1.20.0@beta" />
+        
+        <!-- Development: experimental features (automatically sets minimum stability to preview) -->
+        <download software="dev-tool" version="^1.0.0-experimental" />
+        
+        <!-- Feature branch testing with explicit stability -->
+        <download software="app" version="^2.0.0-new-api@alpha" />
+    </actions>
+</dload>
 ```
 
 ## Contributing

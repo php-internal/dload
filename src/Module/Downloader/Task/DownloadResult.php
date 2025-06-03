@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Downloader\Task;
 
+use Internal\DLoad\Module\Version\Version;
+
 /**
  * Represents the result of a successful download operation.
  *
@@ -15,10 +17,10 @@ final class DownloadResult
      * Creates a new download result.
      *
      * @param \SplFileInfo $file Downloaded file information
-     * @param non-empty-string $version Version of the downloaded software
+     * @param Version $version Version of the downloaded software
      */
     public function __construct(
         public readonly \SplFileInfo $file,
-        public readonly string $version,
+        public readonly Version $version,
     ) {}
 }

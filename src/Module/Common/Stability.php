@@ -19,6 +19,17 @@ use Internal\DLoad\Service\Factoriable;
  *
  * // Getting the stability level weight (higher number means more stable)
  * $weight = $stability->getWeight();
+ *
+ * // Checking if a string is a valid stability
+ * $isValid = Stability::isValidStability('beta'); // true
+ *
+ * // Parsing stability from string with case normalization
+ * $stability = Stability::fromString('BETA'); // Stability::Beta
+ *
+ * // Comparing stability levels
+ * $beta = Stability::Beta;
+ * $stable = Stability::Stable;
+ * $meetRequirement = $stable->meetsMinimum($beta); // true
  * ```
  *
  * @internal
@@ -27,7 +38,6 @@ enum Stability: string implements Factoriable
 {
     case Stable = 'stable';       // Released version considered stable for production
     case RC = 'RC';               // Almost ready for stable release
-    case Priority = 'priority';   // High priority pre-release
     case Pre = 'pre';             // Close to final
     case Beta = 'beta';           // Feature complete but may have bugs
     case Preview = 'preview';     // Demonstrates functionality but incomplete
@@ -54,57 +64,45 @@ enum Stability: string implements Factoriable
     }
 
     /**
-     * Parses a version string to determine its stability level.
-     *
-     * @param string $version The version string to parse
-     * @return self The stability level of the version
+     * Parse stability from string with case normalization.
      */
-    public static function parse(string $version): self
+    public static function fromString(string $value): ?self
     {
-        $version = (string) \preg_replace('{#.+$}', '', \ltrim($version, 'v'));
-
-        if (\preg_match('{^dev[-_.]}', $version) || \preg_match('{[-_.]dev$}', $version)) {
-            return self::Dev;
+        // Try exact match first
+        $stability = self::tryFrom($value);
+        if ($stability !== null) {
+            return $stability;
         }
 
-
-        $mods = \implode('|', \array_column(self::cases(), 'value')) . '|b|a|[a-z]';
-        $reg = "[._-]?(?:($mods)((?:[.-]?\d+)*+)?)?";
-
-        \preg_match('{' . $reg . '(?:\+.*)?$}i', \strtolower($version), $match);
-
-        /** @var null|non-empty-string $suffix */
-        $suffix = $match[1] ?? null;
-
-        if ($suffix === null) {
-            return self::Stable;
-        }
-
-        foreach (self::cases() as $self) {
-            if (\strtolower($suffix) === \strtolower($self->value)) {
-                return $self;
+        // Try case variations
+        foreach (self::cases() as $case) {
+            if (\strcasecmp($case->value, $value) === 0) {
+                return $case;
             }
         }
 
-        return match ($suffix) {
-            'a' => self::Alpha,
-            'b' => self::Beta,
-            default => self::Dev,
-        };
+        return null;
+    }
+
+    /**
+     * Compare stability levels for constraint matching.
+     * Returns true if this stability meets the minimum requirement.
+     */
+    public function meetsMinimum(self $minimum): bool
+    {
+        return $this->getWeight() >= $minimum->getWeight();
     }
 
     /**
      * Get the numerical weight of this stability level
      * Higher numbers indicate more stable versions
      *
-     * @return int<0, 10> The weight/priority of this stability level (0-9)
      */
     public function getWeight(): int
     {
         return match ($this) {
-            self::Stable => 10,
-            self::RC => 9,
-            self::Priority => 8,
+            self::Stable => 9,
+            self::RC => 8,
             self::Pre => 7,
             self::Beta => 6,
             self::Preview => 5,

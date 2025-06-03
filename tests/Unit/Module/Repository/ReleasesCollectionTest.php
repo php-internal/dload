@@ -9,6 +9,8 @@ use Internal\DLoad\Module\Common\OperatingSystem;
 use Internal\DLoad\Module\Common\Stability;
 use Internal\DLoad\Module\Repository\Collection\ReleasesCollection;
 use Internal\DLoad\Module\Repository\ReleaseInterface;
+use Internal\DLoad\Module\Version\Constraint;
+use Internal\DLoad\Module\Version\Version;
 use Internal\DLoad\Tests\Unit\Module\Repository\Stub\AssetStub;
 use Internal\DLoad\Tests\Unit\Module\Repository\Stub\ReleaseStub;
 use Internal\DLoad\Tests\Unit\Module\Repository\Stub\RepositoryStub;
@@ -28,7 +30,7 @@ final class ReleasesCollectionTest extends TestCase
     public function testSatisfiesFiltersReleasesByVersionConstraint(): void
     {
         // Act
-        $result = $this->collection->satisfies('^1.0.0');
+        $result = $this->collection->satisfies(Constraint::fromConstraintString('^1.0.0'));
 
         // Assert
         self::assertCount(2, $result, 'Should only include 1.0.0 and 1.5.0 versions');
@@ -46,7 +48,7 @@ final class ReleasesCollectionTest extends TestCase
     public function testNotSatisfiesFiltersOutReleasesByVersionConstraint(): void
     {
         // Act
-        $result = $this->collection->notSatisfies('^1.0.0');
+        $result = $this->collection->notSatisfies(Constraint::fromConstraintString('^1.0.0'));
 
         // Assert
         self::assertGreaterThan(0, $result->count());
@@ -74,7 +76,7 @@ final class ReleasesCollectionTest extends TestCase
         self::assertCount(3, $result, 'Should only include stable versions');
 
         foreach ($result as $release) {
-            self::assertSame(Stability::Stable, $release->getStability());
+            self::assertSame(Stability::Stable, $release->getVersion()->stability);
         }
     }
 
@@ -86,7 +88,7 @@ final class ReleasesCollectionTest extends TestCase
         // Assert
         $stabilities = [];
         foreach ($result as $release) {
-            $stabilities[] = $release->getStability();
+            $stabilities[] = $release->getVersion()->stability;
         }
 
         self::assertContains(Stability::Stable, $stabilities);
@@ -118,7 +120,7 @@ final class ReleasesCollectionTest extends TestCase
         // Act - Get stable releases that satisfy version constraint and sort them
         $result = $this->collection
             ->stable()
-            ->satisfies('^1.0.0')
+            ->satisfies(Constraint::fromConstraintString('^1.0.0'))
             ->sortByVersion();
 
         // Assert
@@ -162,43 +164,37 @@ final class ReleasesCollectionTest extends TestCase
             new ReleaseStub(
                 $this->repository,
                 '2.0.0',
-                'v2.0.0',
-                Stability::Stable,
+                Version::fromVersionString('v2.0.0'),
                 [],
             ),
             new ReleaseStub(
                 $this->repository,
                 '1.5.0',
-                'v1.5.0',
-                Stability::Stable,
+                Version::fromVersionString('v1.5.0'),
                 [],
             ),
             new ReleaseStub(
                 $this->repository,
                 '1.0.0',
-                'v1.0.0',
-                Stability::Stable,
+                Version::fromVersionString('v1.0.0'),
                 [],
             ),
             new ReleaseStub(
                 $this->repository,
                 '2.1.0-beta',
-                'v2.1.0-beta',
-                Stability::Beta,
+                Version::fromVersionString('v2.1.0-beta'),
                 [],
             ),
             new ReleaseStub(
                 $this->repository,
                 '2.1.0-alpha',
-                'v2.1.0-alpha',
-                Stability::Alpha,
+                Version::fromVersionString('v2.1.0-alpha'),
                 [],
             ),
             new ReleaseStub(
                 $this->repository,
                 '2.0.1-rc1',
-                'v2.0.1-rc1',
-                Stability::RC,
+                Version::fromVersionString('v2.0.1-rc1'),
                 [],
             ),
         ];

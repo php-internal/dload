@@ -2,18 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Module\Binary\Internal;
+namespace Internal\DLoad\Tests\Unit\Module\Binary;
 
-use Internal\DLoad\Module\Binary\Internal\VersionResolver;
+use Internal\DLoad\Module\Binary\BinaryVersion;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(VersionResolver::class)]
-final class VersionResolverTest extends TestCase
+#[CoversClass(BinaryVersion::class)]
+final class BinaryVersionTest extends TestCase
 {
-    private VersionResolver $versionResolver;
-
     /**
      * Provides test cases for semantic version extraction.
      */
@@ -23,37 +21,44 @@ final class VersionResolverTest extends TestCase
         yield 'simple semantic version' => [
             'App v1.2.3',
             '1.2.3',
+            null,
         ];
 
         yield 'version with v prefix' => [
             'Version: v2.5.1',
             '2.5.1',
+            null,
         ];
 
         yield 'version without v prefix' => [
             'Version: 3.7.12',
             '3.7.12',
+            null,
         ];
 
         // Common version output formats
         yield 'CLI help with version' => [
             "MyApp CLI Tool\nVersion: 4.1.9\nUsage: myapp [options]",
             '4.1.9',
+            null,
         ];
 
         yield 'verbose version output' => [
             "myapp version 2.0.10 (build 2023-04-15)\nCompiled with GCC 9.3.0",
             '2.0.10',
+            null,
         ];
 
         // Version with pre-release or build metadata
         yield 'semver with pre-release' => [
             'Version 1.0.0-alpha.1',
             '1.0.0-alpha.1',
+            '1.0.0',
         ];
 
         yield 'semver with build metadata' => [
             'App version 2.3.4+20230415',
+            '2.3.4+20230415',
             '2.3.4+20230415',
         ];
 
@@ -61,30 +66,35 @@ final class VersionResolverTest extends TestCase
         yield 'mixed case version string' => [
             'VERSION: 5.1.2',
             '5.1.2',
+            null,
         ];
 
         // Spacing variations
         yield 'no space after version label' => [
             'version:1.0.5',
             '1.0.5',
+            null,
         ];
 
         // RoadRunner
         yield 'roadrunner' => [
             'rr.exe version 2.12.3 (build time: 2023-02-16T13:08:35+0000, go1.20), OS: windows, arch: amd64',
             '2.12.3',
+            null,
         ];
 
         // Protoc
         yield 'protoc' => [
             'libprotoc 30.2',
             '30.2',
+            null,
         ];
 
         // Dolt
         yield 'dolt' => [
             'dolt version 1.51.1',
             '1.51.1',
+            null,
         ];
     }
 
@@ -122,26 +132,27 @@ final class VersionResolverTest extends TestCase
      * Tests that the resolver correctly extracts semantic versions.
      */
     #[DataProvider('provideSemanticVersionOutputs')]
-    public function testResolveVersionExtractsSemanticVersions(string $output, string $expectedVersion): void
+    public function testResolveVersionExtractsSemanticVersions(string $output, string $string, ?string $number): void
     {
         // Act
-        $result = $this->versionResolver->resolveVersion($output);
+        $result = BinaryVersion::fromBinaryOutput($output);
 
         // Assert
-        self::assertSame($expectedVersion, $result);
+        self::assertSame($string, $result->string);
+        self::assertSame($number ?? $string, $result->number);
     }
 
     /**
      * Tests that the resolver correctly extracts versions using fallback patterns.
      */
     #[DataProvider('provideFallbackVersionOutputs')]
-    public function testResolveVersionExtractsVersionsWithFallbacks(string $output, ?string $expectedVersion): void
+    public function testResolveVersionExtractsVersionsWithFallbacks(string $output, ?string $number): void
     {
         // Act
-        $result = $this->versionResolver->resolveVersion($output);
+        $result = BinaryVersion::fromBinaryOutput($output);
 
         // Assert
-        self::assertSame($expectedVersion, $result);
+        self::assertSame($number, $result->number);
     }
 
     /**
@@ -153,15 +164,9 @@ final class VersionResolverTest extends TestCase
         $output = 'This output contains no version information.';
 
         // Act
-        $result = $this->versionResolver->resolveVersion($output);
+        $result = BinaryVersion::fromBinaryOutput($output);
 
         // Assert
-        self::assertNull($result);
-    }
-
-    protected function setUp(): void
-    {
-        // Arrange
-        $this->versionResolver = new VersionResolver();
+        self::assertNull($result->number);
     }
 }

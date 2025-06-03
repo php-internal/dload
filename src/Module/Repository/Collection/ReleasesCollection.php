@@ -7,6 +7,7 @@ namespace Internal\DLoad\Module\Repository\Collection;
 use Internal\DLoad\Module\Common\Stability;
 use Internal\DLoad\Module\Repository\Internal\Collection;
 use Internal\DLoad\Module\Repository\ReleaseInterface;
+use Internal\DLoad\Module\Version\Constraint;
 
 /**
  * Collection of software releases with filtering and sorting capabilities.
@@ -35,10 +36,10 @@ final class ReleasesCollection extends Collection
     /**
      * Filters releases to those that satisfy the given version constraint.
      *
-     * @param non-empty-string $constraint Version constraint in Composer format
+     * @param Constraint $constraint Version constraint
      * @return $this New filtered collection
      */
-    public function satisfies(string $constraint): self
+    public function satisfies(Constraint $constraint): self
     {
         return $this->filter(static fn(ReleaseInterface $r): bool => $r->satisfies($constraint));
     }
@@ -46,10 +47,10 @@ final class ReleasesCollection extends Collection
     /**
      * Filters releases to those that do not satisfy the given version constraint.
      *
-     * @param non-empty-string $constraint Version constraint in Composer format
+     * @param Constraint $constraint Version constraint
      * @return $this New filtered collection
      */
-    public function notSatisfies(string $constraint): self
+    public function notSatisfies(Constraint $constraint): self
     {
         return $this->except(static fn(ReleaseInterface $r): bool => $r->satisfies($constraint));
     }
@@ -103,7 +104,7 @@ final class ReleasesCollection extends Collection
      */
     public function stability(Stability $stability): self
     {
-        return $this->filter(static fn(ReleaseInterface $rel): bool => $rel->getStability() === $stability);
+        return $this->filter(static fn(ReleaseInterface $rel): bool => $rel->getVersion()->stability === $stability);
     }
 
     /**
@@ -116,7 +117,7 @@ final class ReleasesCollection extends Collection
     {
         $weight = $stability->getWeight();
         return $this->filter(
-            static fn(ReleaseInterface $release): bool => $release->getStability()->getWeight() >= $weight,
+            static fn(ReleaseInterface $release): bool => $release->getVersion()->stability->getWeight() >= $weight,
         );
     }
 
@@ -129,12 +130,12 @@ final class ReleasesCollection extends Collection
      */
     private function comparisonVersionString(ReleaseInterface $release): string
     {
-        $stability = $release->getStability();
+        $stability = $release->getVersion()->stability;
 
         return \ltrim(\str_replace(
             '-' . $stability->value,
             '.' . $stability->getWeight() . '.',
-            $release->getVersion(),
+            $release->getVersion()->string,
         ), 'v');
     }
 }

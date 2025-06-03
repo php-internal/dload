@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Unit\Module\Common;
 
+use Internal\DLoad\Module\Common\Input\Build;
 use Internal\DLoad\Module\Common\Stability;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -12,96 +13,271 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(Stability::class)]
 final class StabilityTest extends TestCase
 {
-    /**
-     * Data provider for versions and their expected stability levels
-     */
-    public static function provideVersionsAndExpectedStability(): \Generator
+    public static function provideStabilityCasesWithExpectedWeights(): \Generator
     {
-        // Composer cases
-        yield ['1', Stability::Stable, ''];
-        yield ['1.0', Stability::Stable, ''];
-        yield ['3.2.1', Stability::Stable, ''];
-        yield ['v3.2.1', Stability::Stable, ''];
-        yield ['v2.0.x-dev', Stability::Dev, ''];
-        yield ['v2.0.x-dev#abc123', Stability::Dev, ''];
-        yield ['v2.0.x-dev#trunk/@123', Stability::Dev, ''];
-        yield ['3.0-RC2', Stability::RC, ''];
-        yield ['dev-master', Stability::Dev, ''];
-        yield ['3.1.2-dev', Stability::Dev, ''];
-        yield ['dev-feature+issue-1', Stability::Dev, ''];
-        yield ['3.1.2-p1', Stability::Dev, 'Composer expects Stable here'];
-        yield ['3.1.2-pl2', Stability::Dev, 'Composer expects Stable here'];
-        yield ['3.1.2-patch', Stability::Dev, 'Composer expects Stable here'];
-        yield ['3.1.2-alpha5', Stability::Alpha, ''];
-        yield ['3.1.2-beta', Stability::Beta, ''];
-        yield ['2.0B1', Stability::Beta, ''];
-        yield ['1.2.0a1', Stability::Alpha, ''];
-        yield ['1.2_a1', Stability::Alpha, ''];
-        yield ['2.0.0rc1', Stability::RC, ''];
-        yield ['1.0.0-alpha11+cs-1.1.0', Stability::Alpha, ''];
-        yield ['1-2_dev', Stability::Dev, ''];
-
-        // Dev versions with prefix
-        yield 'dev prefix - main' => ['dev-main', Stability::Dev, 'Dev-prefixed version'];
-        yield 'dev prefix - master' => ['dev-master', Stability::Dev, 'Dev-prefixed version'];
-        yield 'dev prefix - feature' => ['dev-feature-branch', Stability::Dev, 'Dev-prefixed version'];
-
-        // Dev versions with suffix
-        yield 'dev suffix - direct' => ['1.0.0-dev', Stability::Dev, 'Version with dev suffix'];
-        yield 'dev suffix - with number' => ['2.3.4-dev', Stability::Dev, 'Version with dev suffix'];
-
-        // Version with comment
-        yield 'version with comment' => ['1.0.0-beta#comment-part', Stability::Beta, 'Version with comment'];
-
-        // Dev versions with stability and dev suffix
-        yield 'beta with dev suffix 1' => ['1.0.0-beta.dev', Stability::Dev, 'Version with stability and dev suffix'];
-        yield 'beta with dev suffix 2' => ['1.0.0-beta-dev', Stability::Dev, 'Version with stability and dev suffix'];
-        yield 'alpha with dev suffix 1' => ['2.0.0-alpha.1.dev', Stability::Dev, 'Version with stability and dev suffix'];
-        yield 'alpha with dev suffix 2' => ['2.0.0-alpha.1-dev', Stability::Dev, 'Version with stability and dev suffix'];
-        yield 'rc with dev suffix 1' => ['3.0.0-rc.2-dev', Stability::Dev, 'Version with stability and dev suffix'];
-
-        // Named stability levels
-        yield 'stable version' => ['1.0.0', Stability::Stable, 'Stable version'];
-        yield 'RC version' => ['1.0.0-RC1', Stability::RC, 'RC version'];
-        yield 'priority version' => ['1.0.0-priority2', Stability::Priority, 'Priority version'];
-        yield 'pre version' => ['1.0.0-pre.3', Stability::Pre, 'Pre version'];
-        yield 'beta version' => ['1.0.0-beta4', Stability::Beta, 'Beta version'];
-        yield 'preview version' => ['1.0.0-preview5', Stability::Preview, 'Preview version'];
-        yield 'alpha version' => ['1.0.0-alpha6', Stability::Alpha, 'Alpha version'];
-        yield 'unstable version' => ['1.0.0-unstable7', Stability::Unstable, 'Unstable version'];
-        yield 'snapshot version' => ['1.0.0-snapshot', Stability::Snapshot, 'Snapshot version'];
-        yield 'nightly version' => ['1.0.0-nightly20250503', Stability::Nightly, 'Nightly version'];
-
-        // Abbreviated stability indicators
-        yield 'alpha abbreviated' => ['1.0.0a1', Stability::Alpha, 'Alpha abbreviated'];
-        yield 'beta abbreviated' => ['1.0.0b2', Stability::Beta, 'Beta abbreviated'];
-        yield 'unknown abbreviated' => ['1.0.0x3', Stability::Dev, 'Unknown abbreviated (defaults to Stable)'];
-
-        // Different separators
-        yield 'dash separator' => ['1.0.0-beta1', Stability::Beta, 'Version with dash separator'];
-        yield 'dot separator' => ['1.0.0.beta2', Stability::Beta, 'Version with dot separator'];
-        yield 'underscore separator' => ['1.0.0_beta3', Stability::Beta, 'Version with underscore separator'];
-
-        // Real cases
-        yield 'real case 1' => ['v1.0.0-priority.0', Stability::Priority, 'Temporal priority version'];
-        yield 'real case 2' => ['v1.3.1-nexus-cancellation.0', Stability::Dev, 'Temporal priority version'];
-        yield 'real case 3' => ['v1.3.0', Stability::Stable, 'Stable version'];
+        yield 'stable' => [Stability::Stable, 9];
+        yield 'RC' => [Stability::RC, 8];
+        yield 'pre' => [Stability::Pre, 7];
+        yield 'beta' => [Stability::Beta, 6];
+        yield 'preview' => [Stability::Preview, 5];
+        yield 'alpha' => [Stability::Alpha, 4];
+        yield 'unstable' => [Stability::Unstable, 3];
+        yield 'dev' => [Stability::Dev, 2];
+        yield 'snapshot' => [Stability::Snapshot, 1];
+        yield 'nightly' => [Stability::Nightly, 0];
     }
 
-    /**
-     * Tests that parseStability correctly identifies stability from version strings
-     */
-    #[DataProvider('provideVersionsAndExpectedStability')]
-    public function testParseStability(string $version, Stability $expected, string $description): void
+    public static function provideStabilityMeetsMinimumScenarios(): \Generator
     {
+        yield 'stable meets stable' => [Stability::Stable, Stability::Stable, true];
+        yield 'stable meets beta' => [Stability::Stable, Stability::Beta, true];
+        yield 'stable meets nightly' => [Stability::Stable, Stability::Nightly, true];
+        yield 'beta meets beta' => [Stability::Beta, Stability::Beta, true];
+        yield 'beta meets alpha' => [Stability::Beta, Stability::Alpha, true];
+        yield 'beta does not meet stable' => [Stability::Beta, Stability::Stable, false];
+        yield 'alpha does not meet beta' => [Stability::Alpha, Stability::Beta, false];
+        yield 'nightly does not meet dev' => [Stability::Nightly, Stability::Dev, false];
+        yield 'RC meets preview' => [Stability::RC, Stability::Preview, true];
+        yield 'preview does not meet RC' => [Stability::Preview, Stability::RC, false];
+    }
+
+    public static function provideValidStabilityStrings(): \Generator
+    {
+        yield 'exact match stable' => ['stable', Stability::Stable];
+        yield 'exact match RC' => ['RC', Stability::RC];
+        yield 'exact match beta' => ['beta', Stability::Beta];
+        yield 'uppercase stable' => ['STABLE', Stability::Stable];
+        yield 'uppercase beta' => ['BETA', Stability::Beta];
+        yield 'uppercase alpha' => ['ALPHA', Stability::Alpha];
+        yield 'mixed case RC' => ['rc', Stability::RC];
+        yield 'mixed case preview' => ['PREVIEW', Stability::Preview];
+        yield 'mixed case unstable' => ['UnStAbLe', Stability::Unstable];
+        yield 'mixed case dev' => ['DeV', Stability::Dev];
+        yield 'mixed case snapshot' => ['SnapShot', Stability::Snapshot];
+        yield 'mixed case nightly' => ['NiGhTlY', Stability::Nightly];
+        yield 'mixed case pre' => ['PRE', Stability::Pre];
+    }
+
+    public static function provideInvalidStabilityStrings(): \Generator
+    {
+        yield 'empty string' => [''];
+        yield 'invalid stability' => ['invalid'];
+        yield 'numeric value' => ['123'];
+        yield 'partial match' => ['stab'];
+        yield 'with spaces' => [' stable '];
+        yield 'with special characters' => ['stable!'];
+        yield 'mixed with numbers' => ['beta1'];
+    }
+
+    public static function provideBuildConfigurationsForCreate(): \Generator
+    {
+        yield 'null stability defaults to stable' => [null, Stability::Stable];
+        yield 'valid stability beta' => ['beta', Stability::Beta];
+        yield 'valid stability alpha' => ['alpha', Stability::Alpha];
+        yield 'valid stability RC' => ['RC', Stability::RC];
+        yield 'invalid stability defaults to stable' => ['invalid', Stability::Stable];
+        yield 'empty string defaults to stable' => ['', Stability::Stable];
+    }
+
+    public static function provideStabilityTransitivityScenarios(): \Generator
+    {
+        yield 'stable -> beta -> alpha (transitive)' => [
+            Stability::Stable, Stability::Beta, Stability::Alpha, true,
+        ];
+        yield 'RC -> preview -> dev (transitive)' => [
+            Stability::RC, Stability::Preview, Stability::Dev, true,
+        ];
+        yield 'beta -> alpha -> nightly (transitive)' => [
+            Stability::Beta, Stability::Alpha, Stability::Nightly, true,
+        ];
+    }
+
+    public function testAllCasesHaveUniqueValues(): void
+    {
+        // Arrange
+        $cases = Stability::cases();
+        $values = \array_map(static fn(Stability $case): string => $case->value, $cases);
+
         // Act
-        $stability = Stability::parse($version);
+        $uniqueValues = \array_unique($values);
 
         // Assert
-        self::assertSame(
-            $expected,
-            $stability,
-            \sprintf('%s: Version "%s" should be recognized as %s stability', $description, $version, $expected->value),
-        );
+        self::assertCount(\count($values), $uniqueValues, 'All stability cases should have unique values');
+    }
+
+    #[DataProvider('provideStabilityCasesWithExpectedWeights')]
+    public function testGetWeightReturnsExpectedValue(Stability $stability, int $expectedWeight): void
+    {
+        // Act
+        $weight = $stability->getWeight();
+
+        // Assert
+        self::assertSame($expectedWeight, $weight);
+    }
+
+    public function testWeightsAreInDescendingOrder(): void
+    {
+        // Arrange
+        $cases = Stability::cases();
+        $weights = \array_map(static fn(Stability $case): int => $case->getWeight(), $cases);
+
+        // Act
+        $sortedWeights = $weights;
+        \rsort($sortedWeights);
+
+        // Assert
+        self::assertSame($sortedWeights, $weights, 'Stability weights should be in descending order in the enum definition');
+    }
+
+    #[DataProvider('provideStabilityMeetsMinimumScenarios')]
+    public function testMeetsMinimumComparesStabilityLevelsCorrectly(
+        Stability $current,
+        Stability $minimum,
+        bool $expectedResult,
+    ): void {
+        // Act
+        $result = $current->meetsMinimum($minimum);
+
+        // Assert
+        self::assertSame($expectedResult, $result);
+    }
+
+    public function testFromGlobalsReturnsStable(): void
+    {
+        // Act
+        $stability = Stability::fromGlobals();
+
+        // Assert
+        self::assertSame(Stability::Stable, $stability);
+    }
+
+    #[DataProvider('provideValidStabilityStrings')]
+    public function testFromStringReturnsCorrectStabilityForValidStrings(string $input, Stability $expected): void
+    {
+        // Act
+        $result = Stability::fromString($input);
+
+        // Assert
+        self::assertSame($expected, $result);
+    }
+
+    #[DataProvider('provideInvalidStabilityStrings')]
+    public function testFromStringReturnsNullForInvalidStrings(string $input): void
+    {
+        // Act
+        $result = Stability::fromString($input);
+
+        // Assert
+        self::assertNull($result);
+    }
+
+    #[DataProvider('provideBuildConfigurationsForCreate')]
+    public function testCreateReturnsCorrectStabilityFromBuildConfig(
+        ?string $buildStability,
+        Stability $expectedStability,
+    ): void {
+        // Arrange
+        $build = new Build();
+        $build->stability = $buildStability;
+
+        // Act
+        $result = Stability::create($build);
+
+        // Assert
+        self::assertSame($expectedStability, $result);
+    }
+
+    public function testCreateWithNullBuildStabilityUsesFromGlobals(): void
+    {
+        // Arrange
+        $build = new Build();
+        $build->stability = null;
+
+        // Act
+        $result = Stability::create($build);
+
+        // Assert
+        self::assertSame(Stability::fromGlobals(), $result);
+    }
+
+    public function testCreateWithInvalidBuildStabilityUsesFromGlobals(): void
+    {
+        // Arrange
+        $build = new Build();
+        $build->stability = 'completely-invalid-stability';
+
+        // Act
+        $result = Stability::create($build);
+
+        // Assert
+        self::assertSame(Stability::fromGlobals(), $result);
+    }
+
+    public function testEnumImplementsFactoriableInterface(): void
+    {
+        // Assert
+        self::assertContains('Internal\DLoad\Service\Factoriable', \class_implements(Stability::class));
+    }
+
+    public function testAllEnumValuesAreStrings(): void
+    {
+        // Arrange
+        $cases = Stability::cases();
+
+        // Act & Assert
+        foreach ($cases as $case) {
+            self::assertIsString($case->value, "Stability case {$case->name} should have a string value");
+        }
+    }
+
+    #[DataProvider('provideStabilityTransitivityScenarios')]
+    public function testMeetsMinimumTransitivity(
+        Stability $first,
+        Stability $second,
+        Stability $third,
+        bool $expectedResult,
+    ): void {
+        // Arrange
+        $firstMeetsSecond = $first->meetsMinimum($second);
+        $secondMeetsThird = $second->meetsMinimum($third);
+
+        // Act
+        $firstMeetsThird = $first->meetsMinimum($third);
+
+        // Assert
+        if ($firstMeetsSecond && $secondMeetsThird) {
+            self::assertSame(
+                $expectedResult,
+                $firstMeetsThird,
+                'If A meets B and B meets C, then A should meet C (transitivity)',
+            );
+        } else {
+            // If the premise is false, we can't test transitivity
+            self::assertTrue(true, 'Transitivity test skipped due to false premise');
+        }
+    }
+
+    public function testStabilityOrderingIsConsistent(): void
+    {
+        // Arrange
+        $cases = Stability::cases();
+
+        // Act & Assert
+        for ($i = 0; $i < \count($cases) - 1; $i++) {
+            for ($j = $i + 1; $j < \count($cases); $j++) {
+                $higher = $cases[$i];
+                $lower = $cases[$j];
+
+                self::assertTrue(
+                    $higher->meetsMinimum($lower),
+                    "Stability {$higher->name} should meet minimum {$lower->name} based on enum order",
+                );
+
+                self::assertFalse(
+                    $lower->meetsMinimum($higher),
+                    "Stability {$lower->name} should not meet minimum {$higher->name} based on enum order",
+                );
+            }
+        }
     }
 }

@@ -30,17 +30,14 @@ interface Binary
      *
      * @return non-empty-string|null Version string or null if not available
      */
-    public function getVersion(): ?string;
+    public function getVersionString(): ?string;
 
     /**
-     * Checks if the binary version satisfies a constraint.
+     * Gets the binary version as a DTO with stability and feature suffix.
      *
-     * @param non-empty-string $versionConstraint Version constraint (e.g., "^1.2.3")
-     *
-     * @return bool|null True if the version satisfies the constraint,
-     *         false if it doesn't, null if the version is not available
+     * @return null|BinaryVersion Returns null if the file doesn't exist or no idea how to extract the version.
      */
-    public function satisfiesVersion(string $versionConstraint): ?bool;
+    public function getVersion(): ?BinaryVersion;
 
     /**
      * Gets the size of the binary in bytes.
