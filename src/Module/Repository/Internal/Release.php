@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Repository\Internal;
 
-use Composer\Semver\Semver;
 use Composer\Semver\VersionParser;
 use Internal\DLoad\Module\Repository\Collection\AssetsCollection;
 use Internal\DLoad\Module\Repository\ReleaseInterface;

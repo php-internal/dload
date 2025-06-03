@@ -6,7 +6,6 @@ namespace Internal\DLoad\Tests\Unit\Module\Repository;
 
 use Internal\DLoad\Module\Common\Architecture;
 use Internal\DLoad\Module\Common\OperatingSystem;
-use Internal\DLoad\Module\Common\Stability;
 use Internal\DLoad\Module\Repository\Collection\AssetsCollection;
 use Internal\DLoad\Module\Version\Version;
 use Internal\DLoad\Tests\Unit\Module\Repository\Stub\AssetStub;

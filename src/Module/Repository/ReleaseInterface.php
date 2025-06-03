@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Internal\DLoad\Module\Repository;
 
 use Internal\DLoad\Module\Common\Stability;
-use Internal\DLoad\Module\Common\VersionConstraint;
 use Internal\DLoad\Module\Repository\Collection\AssetsCollection;
 use Internal\DLoad\Module\Version\Constraint;
 use Internal\DLoad\Module\Version\Version;

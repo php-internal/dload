@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Internal\DLoad\Module\Binary;
 
 use Internal\DLoad\Module\Common\FileSystem\Path;
-use Internal\DLoad\Module\Version\Constraint;
 
 /**
  * Represents a binary executable with operations for version checking.

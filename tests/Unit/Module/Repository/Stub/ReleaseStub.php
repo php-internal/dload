@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Unit\Module\Repository\Stub;
 
-use Composer\Semver\Semver;
-use Internal\DLoad\Module\Common\Stability;
 use Internal\DLoad\Module\Repository\AssetInterface;
 use Internal\DLoad\Module\Repository\Collection\AssetsCollection;
 use Internal\DLoad\Module\Repository\ReleaseInterface;

@@ -26,11 +26,13 @@ final class Constraint implements \Stringable
 {
     /** @var non-empty-string $versionConstraint Base version constraint (e.g. "^2.12.0") */
     public readonly string $versionConstraint;
+
     /**
      * @var non-empty-string|null $featureSuffix Optional feature suffix (e.g. "feature", "my-feature")
      *      If null, no feature suffix is specified.
      */
     public readonly ?string $featureSuffix;
+
     /** @var Stability $minimumStability Minimum stability level for this constraint */
     public readonly Stability $minimumStability;
 
