@@ -2,52 +2,42 @@
 
 declare(strict_types=1);
 
-namespace Internal\DLoad\Module\Binary\Internal;
+namespace Internal\DLoad\Module\Binary;
 
-use Internal\DLoad\Module\Binary\Version;
-use Internal\DLoad\Module\Common\Stability;
+use Internal\DLoad\Module\Version\Version;
 
 /**
- * Resolves version information from binary command output.
+ * Represents a binary version parsed from command output.
  *
  * @internal
  */
-final class VersionResolver
+final class BinaryVersion extends Version
 {
     /**
      * Pattern to extract semantic version (X.Y.Z) from text.
      */
-    private const VERSION_PATTERN = '/(?:version:?\s*)?(?:v(?:er(?:sion)?)?\.?\s*)?(\d+\.\d+\.\d+(?:[-+][\w.]+)?)/i';
+    private const OUTPUT_VERSION_PATTERN = '/(?:version:?\s*)?(?:v(?:er(?:sion)?)?\.?\s*)?' . parent::VERSION_SEMVER_PATTERN . '/i';
 
     /**
      * Resolves the version from binary command output.
      *
      * @param non-empty-string $output Output from binary execution
-     * @return Version Extracted version
+     * @return BinaryVersion Extracted version
      */
-    public function resolveVersion(string $output): Version
+    public static function fromBinaryOutput(string $output): static
     {
         // Try to extract version using semantic version pattern
-        $version = \preg_match(self::VERSION_PATTERN, $output, $matches)
-            ? $matches[1]
-            : $this->extractVersionWithFallbacks($output);
+        $version = \preg_match(self::OUTPUT_VERSION_PATTERN, $output, $matches)
+            ? $matches[1] . $matches[2]
+            : self::extractVersionWithFallbacks($output);
 
-        // Cut the suffix if it exists
-        $suffix = null;
-        if ($version !== null and false !== $pos = \strpos($output, $version)) {
-            $suffix = \trim(\substr($output, $pos + \strlen($version)));
-            $suffix = $suffix === '' ? null : $suffix;
+        if ($version === null) {
+            return self::empty();
         }
 
         \assert($version !== '');
 
-        // Try fallback patterns if standard pattern fails
-        return new Version(
-            origin: $output,
-            version: $version,
-            postfix: $suffix,
-            stability: Stability::fromReleaseString($version, Stability::Stable),
-        );
+        return self::fromVersionString($version);
     }
 
     /**
@@ -56,7 +46,7 @@ final class VersionResolver
      * @param string $output Output from binary execution
      * @return non-empty-string|null Extracted version or null if no version found
      */
-    private function extractVersionWithFallbacks(string $output): ?string
+    private static function extractVersionWithFallbacks(string $output): ?string
     {
         // Fallback pattern for partial semver (e.g., "2.0")
         if (\preg_match('/version:?\s*(\d+\.\d+)/i', $output, $matches)) {

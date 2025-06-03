@@ -6,7 +6,7 @@ namespace Internal\DLoad\Module\Binary\Internal;
 
 use Composer\Semver\Semver;
 use Internal\DLoad\Module\Binary\Binary;
-use Internal\DLoad\Module\Binary\Version;
+use Internal\DLoad\Module\Binary\BinaryVersion;
 use Internal\DLoad\Module\Common\Config\Embed\Binary as BinaryConfig;
 use Internal\DLoad\Module\Common\FileSystem\Path;
 use Internal\DLoad\Module\Common\Stability;
@@ -19,21 +19,19 @@ use Internal\DLoad\Module\Version\Constraint;
  */
 final class BinaryHandle implements Binary
 {
-    private ?Version $versionOutput = null;
+    private ?BinaryVersion $versionOutput = null;
 
     /**
      * @param non-empty-string $name Binary name
      * @param Path $path Path to binary
      * @param BinaryConfig $config Original configuration
      * @param BinaryExecutor $executor Binary execution service
-     * @param VersionResolver $versionResolver Version extraction service
      */
     public function __construct(
         private readonly string $name,
         private readonly Path $path,
         private readonly BinaryConfig $config,
         private readonly BinaryExecutor $executor,
-        private readonly VersionResolver $versionResolver,
     ) {}
 
     public function getName(): string
@@ -51,7 +49,7 @@ final class BinaryHandle implements Binary
         return $this->path->exists();
     }
 
-    public function getVersion(): ?Version
+    public function getVersion(): ?BinaryVersion
     {
         if ($this->versionOutput !== null) {
             return $this->versionOutput;
@@ -63,21 +61,21 @@ final class BinaryHandle implements Binary
 
         try {
             $output = $this->executor->execute($this->path, $this->config->versionCommand);
-            return $this->versionOutput = $this->versionResolver->resolveVersion($output);
+            return $this->versionOutput = BinaryVersion::fromBinaryOutput($output);
         } catch (\Throwable) {
-            return $this->versionOutput = Version::empty();
+            return $this->versionOutput = BinaryVersion::empty();
         }
     }
 
     public function getVersionString(): ?string
     {
-        return $this->getVersion()?->version;
+        return $this->getVersion()?->number;
     }
 
     public function satisfiesVersion(Constraint $versionConstraint): ?bool
     {
         $version = $this->getVersion();
-        $versionString = $version?->version;
+        $versionString = $version?->number;
         if ($versionString === null) {
             return null;
         }
