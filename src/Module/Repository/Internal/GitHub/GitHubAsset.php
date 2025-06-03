@@ -18,7 +18,7 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
  * }
  *
  * @internal
- * @psalm-internal Internal\DLoad\Module\Repository\GitHub
+ * @psalm-internal Internal\DLoad\Module\Repository\Internal\GitHub
  */
 final class GitHubAsset extends Asset implements Destroyable
 {

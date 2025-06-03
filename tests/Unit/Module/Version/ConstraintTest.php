@@ -296,7 +296,7 @@ final class ConstraintTest extends TestCase
         ];
     }
 
-    public static function provideComparableConstraints()
+    public static function provideComparableConstraints(): \Generator
     {
         yield ['^1.0-priority@dev', '1.3.1-priority.0', true];
         yield ['^1.0-priority', '1.3.1-priority.0', true];

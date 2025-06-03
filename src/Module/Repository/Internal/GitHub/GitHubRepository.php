@@ -17,7 +17,7 @@ use Symfony\Contracts\HttpClient\ResponseInterface;
 /**
  * @psalm-import-type GitHubReleaseApiResponse from GitHubRelease
  * @internal
- * @psalm-internal Internal\DLoad\Module\Repository\GitHub
+ * @psalm-internal Internal\DLoad\Module\Repository\Internal\GitHub
  */
 final class GitHubRepository implements Repository, Destroyable
 {
