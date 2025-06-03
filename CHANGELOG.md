@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.0 (2025-06-03)
+
+## What's Changed
+* Enhanced Version Constraints by @roxblnfk in https://github.com/php-internal/dload/pull/41
+
+
+**Full Changelog**: https://github.com/php-internal/dload/compare/1.1.0...1.2.0
+
 ## 1.1.0 (2025-05-04)
 
 ## What's Changed
