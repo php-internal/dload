@@ -28,7 +28,7 @@ final class BinaryVersion extends Version
     {
         // Try to extract version using semantic version pattern
         $version = \preg_match(self::OUTPUT_VERSION_PATTERN, $output, $matches)
-            ? $matches[1] . $matches[2]
+            ? $matches[1] . ($matches[2] ?? '')
             : self::extractVersionWithFallbacks($output);
 
         if ($version === null) {

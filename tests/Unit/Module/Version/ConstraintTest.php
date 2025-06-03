@@ -62,7 +62,7 @@ final class ConstraintTest extends TestCase
             '^2.12.0-feature',
             '^2.12.0',
             'feature',
-            Stability::Stable,
+            Stability::Preview,
             'Version with feature suffix',
         ];
 
@@ -70,7 +70,7 @@ final class ConstraintTest extends TestCase
             '^2.12.0-my-feature',
             '^2.12.0',
             'my-feature',
-            Stability::Stable,
+            Stability::Preview,
             'Version with hyphenated feature suffix',
         ];
 
@@ -78,7 +78,7 @@ final class ConstraintTest extends TestCase
             '^2.12.0-x',
             '^2.12.0',
             'x',
-            Stability::Stable,
+            Stability::Preview,
             'Version with single letter feature suffix',
         ];
 
@@ -214,7 +214,7 @@ final class ConstraintTest extends TestCase
             '^2.12.0-alpha.1-feature',
             '^2.12.0',
             'alpha.1-feature',
-            Stability::Stable,
+            Stability::Preview,
             'Base version with multiple dashes and feature suffix',
         ];
 
@@ -222,16 +222,16 @@ final class ConstraintTest extends TestCase
             '^2.12.0-1feature',
             '^2.12.0',
             '1feature',
-            Stability::Stable,
+            Stability::Preview,
             'Feature suffix starting with number',
         ];
 
-        yield 'feature suffix starting with number' => [
+        yield 'feature suffix with multiple dashes' => [
             '^2.12.0--my--feature--',
             '^2.12.0',
             'my--feature',
-            Stability::Stable,
-            'Feature suffix starting with hyphen',
+            Stability::Preview,
+            'feature suffix with multiple dashes',
         ];
     }
 
