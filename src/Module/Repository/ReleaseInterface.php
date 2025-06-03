@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Internal\DLoad\Module\Repository;
 
 use Internal\DLoad\Module\Common\Stability;
+use Internal\DLoad\Module\Common\VersionConstraint;
 use Internal\DLoad\Module\Repository\Collection\AssetsCollection;
 
 /**
@@ -76,4 +77,15 @@ interface ReleaseInterface
      * @return bool True if the release satisfies the constraint
      */
     public function satisfies(string $constraint): bool;
+
+    /**
+     * Checks if this release satisfies the given version constraint DTO.
+     *
+     * Handles complex constraints including feature suffixes and stability requirements.
+     * This method provides enhanced constraint matching beyond basic Composer semver.
+     *
+     * @param VersionConstraint $constraint Parsed version constraint with suffix and stability info
+     * @return bool True if the release satisfies all constraint requirements
+     */
+    public function satisfiesConstraint(VersionConstraint $constraint): bool;
 }

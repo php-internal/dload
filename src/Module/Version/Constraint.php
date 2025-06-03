@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Internal\DLoad\Module\Common;
+namespace Internal\DLoad\Module\Version;
+
+use Internal\DLoad\Module\Common\Stability;
 
 /**
  * Version constraint DTO for parsing and handling complex version requirements.
@@ -19,7 +21,7 @@ namespace Internal\DLoad\Module\Common;
  *
  * @internal
  */
-final class VersionConstraint implements \Stringable
+final class Constraint implements \Stringable
 {
     /** @var non-empty-string $versionConstraint Base version constraint (e.g. "^2.12.0") */
     public readonly string $versionConstraint;

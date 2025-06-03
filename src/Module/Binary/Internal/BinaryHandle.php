@@ -10,7 +10,7 @@ use Internal\DLoad\Module\Binary\Version;
 use Internal\DLoad\Module\Common\Config\Embed\Binary as BinaryConfig;
 use Internal\DLoad\Module\Common\FileSystem\Path;
 use Internal\DLoad\Module\Common\Stability;
-use Internal\DLoad\Module\Common\VersionConstraint;
+use Internal\DLoad\Module\Version\Constraint;
 
 /**
  * Internal implementation of Binary interface.
@@ -74,7 +74,7 @@ final class BinaryHandle implements Binary
         return $this->getVersion()?->version;
     }
 
-    public function satisfiesVersion(VersionConstraint $versionConstraint): ?bool
+    public function satisfiesVersion(Constraint $versionConstraint): ?bool
     {
         $version = $this->getVersion();
         $versionString = $version?->version;

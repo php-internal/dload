@@ -17,6 +17,7 @@ use Internal\DLoad\Module\Downloader\SoftwareCollection;
 use Internal\DLoad\Module\Downloader\Task\DownloadResult;
 use Internal\DLoad\Module\Downloader\Task\DownloadTask;
 use Internal\DLoad\Module\Downloader\TaskManager;
+use Internal\DLoad\Module\Version\Constraint;
 use Internal\DLoad\Service\Logger;
 use React\Promise\PromiseInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -97,7 +98,7 @@ final class DLoad
             }
 
             // Create VersionConstraint DTO for enhanced constraint checking
-            $versionConstraint = VersionConstraint::fromConstraintString($action->version);
+            $versionConstraint = Constraint::fromConstraintString($action->version);
 
             // Check if binary exists and satisfies enhanced version constraint
             if ($binary->satisfiesVersion($versionConstraint)) {

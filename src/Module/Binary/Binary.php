@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Internal\DLoad\Module\Binary;
 
 use Internal\DLoad\Module\Common\FileSystem\Path;
-use Internal\DLoad\Module\Common\VersionConstraint;
+use Internal\DLoad\Module\Version\Constraint;
 
 /**
  * Represents a binary executable with operations for version checking.
@@ -46,7 +46,7 @@ interface Binary
      * @return bool|null True if the version satisfies the constraint,
      *         false if it doesn't, null if the version is not available
      */
-    public function satisfiesVersion(VersionConstraint $versionConstraint): ?bool;
+    public function satisfiesVersion(Constraint $versionConstraint): ?bool;
 
     /**
      * Gets the size of the binary in bytes.

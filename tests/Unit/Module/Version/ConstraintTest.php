@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Internal\DLoad\Tests\Unit\Module\Common;
+namespace Internal\DLoad\Tests\Unit\Module\Version;
 
 use Internal\DLoad\Module\Common\Stability;
-use Internal\DLoad\Module\Common\VersionConstraint;
+use Internal\DLoad\Module\Version\Constraint;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(VersionConstraint::class)]
-final class VersionConstraintTest extends TestCase
+#[CoversClass(Constraint::class)]
+final class ConstraintTest extends TestCase
 {
     public static function provideValidConstraints(): \Generator
     {
@@ -304,7 +304,7 @@ final class VersionConstraintTest extends TestCase
         string $description,
     ): void {
         // Act
-        $result = VersionConstraint::fromConstraintString($constraint);
+        $result = Constraint::fromConstraintString($constraint);
 
         // Assert
         self::assertSame($expectedBaseVersion, $result->versionConstraint, "Base version for: {$description}");
@@ -323,13 +323,13 @@ final class VersionConstraintTest extends TestCase
         $this->expectExceptionMessage($expectedExceptionMessage);
 
         // Act
-        VersionConstraint::fromConstraintString($constraint);
+        Constraint::fromConstraintString($constraint);
     }
 
     public function testGetBaseConstraint(): void
     {
         // Arrange
-        $constraint = VersionConstraint::fromConstraintString('^2.12.0', 'feature', Stability::Beta);
+        $constraint = Constraint::fromConstraintString('^2.12.0', 'feature', Stability::Beta);
 
         // Assert
         self::assertSame('^2.12.0', $constraint->versionConstraint);
@@ -338,7 +338,7 @@ final class VersionConstraintTest extends TestCase
     public function testToStringWithBaseVersionOnly(): void
     {
         // Arrange
-        $constraint = VersionConstraint::fromConstraintString('^2.12.0', null, Stability::Stable);
+        $constraint = Constraint::fromConstraintString('^2.12.0', null, Stability::Stable);
 
         // Act
         $result = (string) $constraint;
@@ -350,7 +350,7 @@ final class VersionConstraintTest extends TestCase
     public function testToStringWithFeatureSuffixAndCustomStability(): void
     {
         // Arrange
-        $constraint = VersionConstraint::fromConstraintString('^2.12.0-feature@beta');
+        $constraint = Constraint::fromConstraintString('^2.12.0-feature@beta');
 
         // Act
         $result = (string) $constraint;
