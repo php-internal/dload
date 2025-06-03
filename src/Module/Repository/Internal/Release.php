@@ -9,6 +9,7 @@ use Composer\Semver\VersionParser;
 use Internal\DLoad\Module\Repository\Collection\AssetsCollection;
 use Internal\DLoad\Module\Repository\ReleaseInterface;
 use Internal\DLoad\Module\Repository\Repository;
+use Internal\DLoad\Module\Version\Constraint;
 use Internal\DLoad\Module\Version\Version;
 
 /**
@@ -59,9 +60,9 @@ abstract class Release implements ReleaseInterface
         return $this->assets;
     }
 
-    public function satisfies(string $constraint): bool
+    public function satisfies(Constraint $constraint): bool
     {
-        return Semver::satisfies($this->getName(), $constraint);
+        return $constraint->isSatisfiedBy($this->version);
     }
 
     /**

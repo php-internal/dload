@@ -7,6 +7,7 @@ namespace Internal\DLoad\Module\Repository;
 use Internal\DLoad\Module\Common\Stability;
 use Internal\DLoad\Module\Common\VersionConstraint;
 use Internal\DLoad\Module\Repository\Collection\AssetsCollection;
+use Internal\DLoad\Module\Version\Constraint;
 use Internal\DLoad\Module\Version\Version;
 
 /**
@@ -62,8 +63,8 @@ interface ReleaseInterface
      * Uses Composer's version comparison logic to determine if this release
      * satisfies the specified constraint.
      *
-     * @param string $constraint Version constraint in Composer format (e.g. "^1.0", ">2.5")
+     * @param Constraint $constraint Version constraint
      * @return bool True if the release satisfies the constraint
      */
-    public function satisfies(string $constraint): bool;
+    public function satisfies(Constraint $constraint): bool;
 }

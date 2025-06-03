@@ -10,6 +10,8 @@ use Internal\DLoad\Module\Repository\AssetInterface;
 use Internal\DLoad\Module\Repository\Collection\AssetsCollection;
 use Internal\DLoad\Module\Repository\ReleaseInterface;
 use Internal\DLoad\Module\Repository\Repository;
+use Internal\DLoad\Module\Version\Constraint;
+use Internal\DLoad\Module\Version\Version;
 
 /**
  * Test stub implementation of ReleaseInterface for unit tests.
@@ -18,14 +20,12 @@ final class ReleaseStub implements ReleaseInterface
 {
     /**
      * @param non-empty-string $name Formatted version (e.g. "1.2.3")
-     * @param non-empty-string $version Raw version (e.g. "v1.2.3-beta")
      * @param array<AssetInterface> $assets
      */
     public function __construct(
         private readonly RepositoryStub $repository,
         private readonly string $name,
-        private readonly string $version,
-        private readonly Stability $stability,
+        private readonly Version $version,
         private array $assets = [],
     ) {}
 
@@ -39,14 +39,9 @@ final class ReleaseStub implements ReleaseInterface
         return $this->name;
     }
 
-    public function getVersion(): string
+    public function getVersion(): Version
     {
         return $this->version;
-    }
-
-    public function getStability(): Stability
-    {
-        return $this->stability;
     }
 
     public function getAssets(): AssetsCollection
@@ -62,9 +57,8 @@ final class ReleaseStub implements ReleaseInterface
         $this->assets = $assets;
     }
 
-    public function satisfies(string $constraint): bool
+    public function satisfies(Constraint $constraint): bool
     {
-        // Using Composer's semver for consistent version comparison
-        return Semver::satisfies($this->name, $constraint);
+        return $constraint->isSatisfiedBy($this->version);
     }
 }

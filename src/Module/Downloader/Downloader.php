@@ -18,6 +18,7 @@ use Internal\DLoad\Module\Repository\AssetInterface;
 use Internal\DLoad\Module\Repository\ReleaseInterface;
 use Internal\DLoad\Module\Repository\Repository;
 use Internal\DLoad\Module\Repository\RepositoryProvider;
+use Internal\DLoad\Module\Version\Constraint;
 use Internal\DLoad\Service\Destroyable;
 use Internal\DLoad\Service\Logger;
 use React\Promise\PromiseInterface;
@@ -128,12 +129,17 @@ final class Downloader
                 $repository->getName(),
             );
 
-            $releasesCollection = $repository->getReleases()
-                ->minimumStability($this->stability);
 
-            // Filter by version if specified
-            $context->actionConfig->version === null or $releasesCollection = $releasesCollection
-                ->satisfies($context->actionConfig->version);
+            if ($context->actionConfig->version !== null) {
+                $constraint = Constraint::fromConstraintString($context->actionConfig->version);
+                // Filter by version if specified
+                $releasesCollection = $repository->getReleases()
+                    ->minimumStability($constraint->minimumStability)
+                    ->satisfies($constraint);
+            } else {
+                $releasesCollection = $repository->getReleases()
+                    ->minimumStability($this->stability);
+            }
 
             /** @var ReleaseInterface[] $releases */
             $releases = $releasesCollection->limit(10)->sortByVersion()->toArray();
