@@ -149,6 +149,10 @@ The **version** attribute supports advanced constraints for targeting specific r
 You can use feature suffixes to target releases with custom tags like `^2.12.0-experimental` for experimental builds,
 or minimum-stability constraints to filter by release stability such as `^2.12.0@beta` for beta or more stable releases.
 
+**Release Stability Parsing**: Regular releases without suffixes (e.g., `v2.1.0`) are treated as stable.
+However, releases with feature suffixes but no explicit stability marker (e.g., `v2.1.0-experimental`) are automatically parsed as `preview` stability,
+indicating they demonstrate functionality but are not production-ready and require explicit targeting.
+
 ### Handling Different File Types
 
 DLoad handles both binary executables and regular files:
@@ -157,7 +161,7 @@ DLoad handles both binary executables and regular files:
 <software name="my-app">
     <!-- Binary executable that depends on OS/architecture -->
     <binary name="app-cli" pattern="/^app-cli-.*/" />
-    
+
     <!-- Regular file that works on any system -->
     <file pattern="/^config.yml$/" />
 </software>

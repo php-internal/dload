@@ -8,6 +8,7 @@ use Internal\DLoad\Module\Common\Architecture;
 use Internal\DLoad\Module\Common\OperatingSystem;
 use Internal\DLoad\Module\Common\Stability;
 use Internal\DLoad\Module\Repository\Collection\AssetsCollection;
+use Internal\DLoad\Module\Version\Version;
 use Internal\DLoad\Tests\Unit\Module\Repository\Stub\AssetStub;
 use Internal\DLoad\Tests\Unit\Module\Repository\Stub\ReleaseStub;
 use Internal\DLoad\Tests\Unit\Module\Repository\Stub\RepositoryStub;
@@ -170,8 +171,7 @@ final class AssetsCollectionTest extends TestCase
         $this->release = new ReleaseStub(
             $this->repository,
             '1.2.3',
-            'v1.2.3',
-            Stability::Stable,
+            Version::fromVersionString('v1.2.3'),
             [],
         );
 

@@ -58,7 +58,7 @@ class Version implements \Stringable
         $suffix = \trim($suffix, '-_.+');
         $suffix === '' and $suffix = null;
 
-        $stability ??= ($suffix === null ? Stability::Stable : Stability::Dev);
+        $stability ??= ($suffix === null ? Stability::Stable : Stability::Preview);
 
         $hash = $parts[3] ?? null;
         $hash === '' and $hash = null;

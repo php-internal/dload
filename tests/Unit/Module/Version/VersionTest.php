@@ -42,7 +42,7 @@ final class VersionTest extends TestCase
         // Partial semantic versions (fallback pattern)
         yield 'two-part version' => ['1.2', '1.2', '1.2', null, Stability::Stable];
         yield 'single digit version' => ['5', '5', '5', null, Stability::Stable];
-        yield 'version with suffix but no recognized stability' => ['1.2.3-custom', '1.2.3-custom', '1.2.3', 'custom', Stability::Dev];
+        yield 'version with suffix but no recognized stability' => ['1.2.3-custom', '1.2.3-custom', '1.2.3', 'custom', Stability::Preview];
 
         // Case insensitive stability
         yield 'version with uppercase stability' => ['1.2.3-BETA', '1.2.3-BETA', '1.2.3', null, Stability::Beta];
@@ -79,9 +79,9 @@ final class VersionTest extends TestCase
         yield ['v2.0.x-dev#abc123', Stability::Dev, ''];
         yield ['3.0-RC2', Stability::RC, ''];
         yield ['3.1.2-dev', Stability::Dev, ''];
-        yield ['3.1.2-p1', Stability::Dev, 'Composer expects Stable here'];
-        yield ['3.1.2-pl2', Stability::Dev, 'Composer expects Stable here'];
-        yield ['3.1.2-patch', Stability::Dev, 'Composer expects Stable here'];
+        yield ['3.1.2-p1', Stability::Preview, 'Composer expects Stable here'];
+        yield ['3.1.2-pl2', Stability::Preview, 'Composer expects Stable here'];
+        yield ['3.1.2-patch', Stability::Preview, 'Composer expects Stable here'];
         yield ['3.1.2-alpha5', Stability::Alpha, ''];
         yield ['3.1.2-beta', Stability::Beta, ''];
         yield ['2.0B1', Stability::Beta, ''];
@@ -115,7 +115,7 @@ final class VersionTest extends TestCase
         // Abbreviated stability indicators
         yield 'alpha abbreviated' => ['1.0.0a1', Stability::Alpha, 'Alpha abbreviated'];
         yield 'beta abbreviated' => ['1.0.0b2', Stability::Beta, 'Beta abbreviated'];
-        yield 'unknown abbreviated' => ['1.0.0x3', Stability::Dev, 'Unknown abbreviated (defaults to Stable)'];
+        yield 'unknown abbreviated' => ['1.0.0x3', Stability::Preview, 'Unknown abbreviated (defaults to Stable)'];
 
         // Different separators
         yield 'dash separator' => ['1.0.0-beta1', Stability::Beta, 'Version with dash separator'];
@@ -123,7 +123,7 @@ final class VersionTest extends TestCase
         yield 'underscore separator' => ['1.0.0_beta3', Stability::Beta, 'Version with underscore separator'];
 
         // Real cases
-        yield 'real case 2' => ['v1.3.1-nexus-cancellation.0', Stability::Dev, 'Temporal cancellation version'];
+        yield 'real case 2' => ['v1.3.1-nexus-cancellation.0', Stability::Preview, 'Temporal cancellation version'];
         yield 'real case 3' => ['v1.3.0', Stability::Stable, 'Stable version'];
     }
 
