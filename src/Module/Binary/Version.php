@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Internal\DLoad\Module\Binary\Internal;
+namespace Internal\DLoad\Module\Binary;
 
 use Internal\DLoad\Module\Common\Stability;
 
@@ -11,17 +11,17 @@ use Internal\DLoad\Module\Common\Stability;
  *
  * @internal
  */
-class VersionString
+class Version
 {
     /**
      * @param string $origin Source of the version string (e.g. binary name)
-     * @param null|non-empty-string $version Parsed version string
-     * @param null|non-empty-string $suffix Optional feature suffix or stability
+     * @param null|non-empty-string $version Parsed version string with suffix and stability
+     * @param null|non-empty-string $postfix  Other information after the version
      */
     public function __construct(
         public readonly string $origin,
         public readonly ?string $version = null,
-        public readonly ?string $suffix = null,
+        public readonly ?string $postfix = null,
         public readonly ?Stability $stability = null,
     ) {}
 

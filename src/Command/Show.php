@@ -114,7 +114,7 @@ final class Show extends Base
                 $output->writeln(\sprintf(
                     '  <info>%s</info> (%s) %s',
                     $software->getId(),
-                    $binary->getVersion() ?? 'unknown',
+                    $binary->getVersionString() ?? 'unknown',
                     $binary->getPath(),
                 ));
             }
@@ -157,7 +157,7 @@ final class Show extends Base
             $output->writeln(\sprintf(
                 '  <info>%s</info> (%s) %s',
                 $software->getId(),
-                $binary->getVersion() ?? 'unknown',
+                $binary->getVersionString() ?? 'unknown',
                 $binary->getPath(),
             ));
         }
@@ -297,7 +297,7 @@ final class Show extends Base
 
         $output->writeln('<info>Binary information:</info>');
         $output->writeln(\sprintf('  <info>Full path:</info> %s', $binaryPath->absolute()));
-        $output->writeln(\sprintf('  <info>Version:</info> %s', $binary->getVersion() ?? 'unknown'));
+        $output->writeln(\sprintf('  <info>Version:</info> %s', $binary->getVersionString() ?? 'unknown'));
         $output->writeln(\sprintf('  <info>Size:</info> %s', $this->formatSize($binary->getSize())));
 
         $mtime = $binary->getMTime();

@@ -82,7 +82,7 @@ final class StabilityTest extends TestCase
         yield 'underscore separator' => ['1.0.0_beta3', Stability::Beta, 'Version with underscore separator'];
 
         // Real cases
-        yield 'real case 2' => ['v1.3.1-nexus-cancellation.0', Stability::Dev, 'Temporal priority version'];
+        yield 'real case 2' => ['v1.3.1-nexus-cancellation.0', Stability::Dev, 'Temporal cancellation version'];
         yield 'real case 3' => ['v1.3.0', Stability::Stable, 'Stable version'];
     }
 

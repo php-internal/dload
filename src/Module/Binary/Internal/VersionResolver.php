@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Binary\Internal;
 
+use Internal\DLoad\Module\Binary\Version;
 use Internal\DLoad\Module\Common\Stability;
 
 /**
@@ -22,9 +23,9 @@ final class VersionResolver
      * Resolves the version from binary command output.
      *
      * @param non-empty-string $output Output from binary execution
-     * @return VersionString Extracted version
+     * @return Version Extracted version
      */
-    public function resolveVersion(string $output): VersionString
+    public function resolveVersion(string $output): Version
     {
         // Try to extract version using semantic version pattern
         $version = \preg_match(self::VERSION_PATTERN, $output, $matches)
@@ -41,11 +42,11 @@ final class VersionResolver
         \assert($version !== '');
 
         // Try fallback patterns if standard pattern fails
-        return new VersionString(
+        return new Version(
             origin: $output,
             version: $version,
-            suffix: $suffix,
-            stability: Stability::fromReleaseString($output, Stability::Stable),
+            postfix: $suffix,
+            stability: Stability::fromReleaseString($version, Stability::Stable),
         );
     }
 

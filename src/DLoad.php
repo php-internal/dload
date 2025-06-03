@@ -11,6 +11,7 @@ use Internal\DLoad\Module\Common\Config\Embed\File;
 use Internal\DLoad\Module\Common\Config\Embed\Software;
 use Internal\DLoad\Module\Common\Input\Destination;
 use Internal\DLoad\Module\Common\OperatingSystem;
+use Internal\DLoad\Module\Common\VersionConstraint;
 use Internal\DLoad\Module\Downloader\Downloader;
 use Internal\DLoad\Module\Downloader\SoftwareCollection;
 use Internal\DLoad\Module\Downloader\Task\DownloadResult;
@@ -82,7 +83,7 @@ final class DLoad
             }
 
             \assert($binary !== null);
-            $version = $binary->getVersion();
+            $version = $binary->getVersionString();
             if ($action->version === null) {
                 $this->logger->info(
                     'Binary `%s` exists with version `%s`, but no version constraint specified. Skipping download.',
@@ -95,12 +96,15 @@ final class DLoad
                 return;
             }
 
-            // Check if binary exists and satisfies version constraint
-            if ($binary->satisfiesVersion($action->version)) {
+            // Create VersionConstraint DTO for enhanced constraint checking
+            $versionConstraint = VersionConstraint::fromConstraintString($action->version);
+
+            // Check if binary exists and satisfies enhanced version constraint
+            if ($binary->satisfiesVersion($versionConstraint)) {
                 $this->logger->info(
                     'Binary `%s` exists with version `%s`, satisfies constraint `%s`. Skipping download.',
                     $binary->getName(),
-                    (string) $binary->getVersion(),
+                    (string) $binary->getVersionString(),
                     $action->version,
                 );
                 $this->logger->info('Use flag `--force` to force download.');

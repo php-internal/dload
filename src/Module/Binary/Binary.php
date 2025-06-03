@@ -31,7 +31,14 @@ interface Binary
      *
      * @return non-empty-string|null Version string or null if not available
      */
-    public function getVersion(): ?string;
+    public function getVersionString(): ?string;
+
+    /**
+     * Gets the binary version as a DTO with stability and feature suffix.
+     *
+     * @return null|Version Returns null if the file doesn't exist or no idea how to extract the version.
+     */
+    public function getVersion(): ?Version;
 
     /**
      * Checks if the binary version satisfies a constraint.
