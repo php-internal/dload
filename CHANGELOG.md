@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.2 (2025-06-12)
+
+## What's Changed
+* Remove deprecated E_STRICT constant by @roxblnfk in https://github.com/php-internal/dload/pull/45
+
+
+**Full Changelog**: https://github.com/php-internal/dload/compare/1.2.1...1.2.2
+
 ## 1.2.1 (2025-06-12)
 
 ## What's Changed
