@@ -146,9 +146,10 @@ final class Downloader
 
             $this->logger->debug('%d releases found.', \count($releases));
 
-            process_release:
             // Try without limit
             $releases === [] and $releases = $releasesCollection->limit(0)->toArray();
+
+            process_release:
             $releases === [] and throw new \RuntimeException('No relevant release found.');
             $context->release = \array_shift($releases);
 

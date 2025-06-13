@@ -18,6 +18,7 @@ use Internal\DLoad\Module\Downloader\Task\DownloadResult;
 use Internal\DLoad\Module\Downloader\Task\DownloadTask;
 use Internal\DLoad\Module\Downloader\TaskManager;
 use Internal\DLoad\Module\Version\Constraint;
+use Internal\DLoad\Module\Version\Version;
 use Internal\DLoad\Service\Logger;
 use React\Promise\PromiseInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -160,7 +161,7 @@ final class DLoad
                 static fn(): PromiseInterface => resolve(
                     new DownloadResult(
                         new \SplFileInfo(Info::ROOT_DIR . '/resources/mock/roadrunner-2024.1.5-windows-amd64.zip'),
-                        '2024.1.5',
+                        Version::fromVersionString('2024.1.5'),
                     ),
                 ),
             )
