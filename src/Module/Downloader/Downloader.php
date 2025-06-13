@@ -412,14 +412,15 @@ final class Downloader
     private function getTempDirectory(): string
     {
         $temp = $this->config->tmpDir;
-        if ($temp !== null) {
+        if ($temp === null) {
+            return \sys_get_temp_dir();
+        }
+
+        \file_exists($temp) or \mkdir($temp, recursive: true);
         (\is_dir($temp) && \is_writable($temp)) or throw new \LogicException(
             \sprintf('Directory "%s" is not writeable.', $temp),
         );
 
         return $temp;
-    }
-
-        return \sys_get_temp_dir();
     }
 }
