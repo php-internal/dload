@@ -11,6 +11,7 @@ use Internal\DLoad\Module\Common\Config\Downloader as DownloaderConfig;
 use Internal\DLoad\Module\Common\Config\Embed\Software;
 use Internal\DLoad\Module\Common\OperatingSystem;
 use Internal\DLoad\Module\Common\Stability;
+use Internal\DLoad\Module\Downloader\Exception\NotFound;
 use Internal\DLoad\Module\Downloader\Internal\DownloadContext;
 use Internal\DLoad\Module\Downloader\Task\DownloadResult;
 use Internal\DLoad\Module\Downloader\Task\DownloadTask;
@@ -82,7 +83,7 @@ final class Downloader
             return coroutine(function () use ($repositories, $context) {
                 // Try every repo to load software.
                 start:
-                $repositories === [] and throw new \RuntimeException('No relevant repository found.');
+                $repositories === [] and throw new NotFound('No relevant repository found.');
                 $context->repoConfig = \array_shift($repositories);
                 $repository = $this->repositoryProvider->getByConfig($context->repoConfig);
 
@@ -95,9 +96,13 @@ final class Downloader
                         file: $context->file,
                         version: $context->release->getVersion(),
                     );
-                } catch (\Throwable $e) {
-                    $this->logger->exception($e);
+                } catch (NotFound $e) {
+                    $this->logger->debug($e->getMessage());
                     goto start;
+                } catch (\Throwable $e) {
+                    $this->logger->error($e->getMessage());
+                    $this->logger->exception($e);
+                    throw $e;
                 } finally {
                     $repository instanceof Destroyable and $repository->destroy();
                 }
@@ -129,7 +134,6 @@ final class Downloader
                 $repository->getName(),
             );
 
-
             if ($context->actionConfig->version !== null) {
                 $constraint = Constraint::fromConstraintString($context->actionConfig->version);
                 // Filter by version if specified
@@ -146,10 +150,11 @@ final class Downloader
 
             $this->logger->debug('%d releases found.', \count($releases));
 
-            process_release:
             // Try without limit
             $releases === [] and $releases = $releasesCollection->limit(0)->toArray();
-            $releases === [] and throw new \RuntimeException('No relevant release found.');
+
+            process_release:
+            $releases === [] and throw new NotFound('No relevant release found.');
             $context->release = \array_shift($releases);
 
             $this->logger->info('Loading release `%s`', $context->release->getName());
@@ -157,8 +162,8 @@ final class Downloader
             try {
                 await(coroutine($this->processRelease($context)));
                 return $context->release;
-            } catch (\Throwable $e) {
-                $this->logger->error('%s', $e->getMessage());
+            } catch (NotFound $e) {
+                $this->logger->debug($e->getMessage());
                 $this->logger->exception($e);
                 goto process_release;
             }
@@ -188,7 +193,7 @@ final class Downloader
      *
      * @param DownloadContext $context Download context information
      * @return AssetInterface Selected asset
-     * @throws \RuntimeException If no suitable asset is found
+     * @throws NotFound If no suitable asset is found
      */
     private function findAssetWithStrictFiltering(DownloadContext $context): AssetInterface
     {
@@ -202,7 +207,7 @@ final class Downloader
         $allAssets = $assetsCollection->toArray();
         $this->logger->debug('%d matching assets found.', \count($allAssets));
 
-        $allAssets === [] and throw new \RuntimeException('No relevant assets found.');
+        $allAssets === [] and throw new NotFound('No relevant assets found.');
 
         // Sort assets by priority and try to process them
         $sortedAssets = $this->sortAssetsByPriority($allAssets, $this->archiveService->getSupportedExtensions());
@@ -215,7 +220,7 @@ final class Downloader
      *
      * @param DownloadContext $context Download context information
      * @return AssetInterface Selected asset
-     * @throws \RuntimeException If no suitable asset is found
+     * @throws NotFound If no suitable asset is found
      */
     private function findAssetWithGradualFiltering(DownloadContext $context): AssetInterface
     {
@@ -225,7 +230,7 @@ final class Downloader
 
         if (\count($assetsCollection) === 0) {
             // If we got here, no assets were found with any filter combination
-            throw new \RuntimeException('No relevant assets found.');
+            throw new NotFound('No relevant assets found.');
         }
 
         // Try #1: Filter by both OS and architecture (most specific)
@@ -244,7 +249,7 @@ final class Downloader
             $sortedAssets = $this->sortAssetsByPriority($filteredAssets, $supportedExtensions);
             try {
                 return $this->tryProcessAssets($sortedAssets, $context);
-            } catch (\RuntimeException $e) {
+            } catch (NotFound $e) {
                 $this->logger->debug('Failed to process assets with OS and architecture filtering: %s', $e->getMessage());
                 // Continue to next filter strategy
             }
@@ -307,12 +312,12 @@ final class Downloader
      * @param AssetInterface[] $assets List of assets to try
      * @param DownloadContext $context Download context information
      * @return AssetInterface Successfully processed asset
-     * @throws \RuntimeException If no asset could be processed successfully
+     * @throws NotFound If no asset could be processed successfully
      */
     private function tryProcessAssets(array $assets, DownloadContext $context): AssetInterface
     {
         process_asset:
-        $assets === [] and throw new \RuntimeException('No relevant asset found.');
+        $assets === [] and throw new NotFound('No relevant asset found.');
         $context->asset = \array_shift($assets);
         $this->logger->debug('Trying to load asset `%s`', $context->asset->getName());
         try {
@@ -407,14 +412,15 @@ final class Downloader
     private function getTempDirectory(): string
     {
         $temp = $this->config->tmpDir;
-        if ($temp !== null) {
-            (\is_dir($temp) && \is_writable($temp)) or throw new \LogicException(
-                \sprintf('Directory "%s" is not writeable.', $temp),
-            );
-
-            return $temp;
+        if ($temp === null) {
+            return \sys_get_temp_dir();
         }
 
-        return \sys_get_temp_dir();
+        \file_exists($temp) or \mkdir($temp, recursive: true);
+        (\is_dir($temp) && \is_writable($temp)) or throw new \LogicException(
+            \sprintf('Directory "%s" is not writeable.', $temp),
+        );
+
+        return $temp;
     }
 }
