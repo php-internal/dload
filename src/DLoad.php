@@ -9,9 +9,9 @@ use Internal\DLoad\Module\Binary\BinaryProvider;
 use Internal\DLoad\Module\Common\Config\Action\Download as DownloadConfig;
 use Internal\DLoad\Module\Common\Config\Embed\File;
 use Internal\DLoad\Module\Common\Config\Embed\Software;
+use Internal\DLoad\Module\Common\FileSystem\Path;
 use Internal\DLoad\Module\Common\Input\Destination;
 use Internal\DLoad\Module\Common\OperatingSystem;
-use Internal\DLoad\Module\Common\VersionConstraint;
 use Internal\DLoad\Module\Downloader\Downloader;
 use Internal\DLoad\Module\Downloader\SoftwareCollection;
 use Internal\DLoad\Module\Downloader\Task\DownloadResult;
@@ -179,21 +179,35 @@ final class DLoad
     {
         return function (DownloadResult $downloadResult) use ($software, $action): void {
             $fileInfo = $downloadResult->file;
-            $archive = $this->archiveFactory->create($fileInfo);
-            $extractor = $archive->extract();
-            $this->logger->info('Extracting %s', $fileInfo->getFilename());
 
             // Create a copy of the files list with binary included if necessary
             $files = $this->filesToExtract($software);
 
-            if ($files !== []) {
-                // Create destination directory if it doesn't exist
-                $path = $this->getDestinationPath($action);
-                if (!\is_dir($path)) {
-                    $this->logger->info('Creating directory %s', $path);
-                    @\mkdir($path, 0755, true);
-                }
+            // Create destination directory if it doesn't exist
+            $path = $this->getDestinationPath($action);
+            if (!\is_dir((string) $path)) {
+                $this->logger->info('Creating directory %s', (string) $path);
+                @\mkdir((string) $path, 0755, true);
             }
+
+            // If no extraction rules are defined, do not extract anything
+            // and just copy the file to the destination
+            if ($files === []) {
+                $this->logger->debug(
+                    'No files to extract for `%s`, copying the downloaded file to the destination.',
+                    $fileInfo->getFilename(),
+                );
+
+                \copy(
+                    $fileInfo->getRealPath() ?: $fileInfo->getPathname(),
+                    (string) $path->join($fileInfo->getFilename()),
+                );
+                return;
+            }
+
+            $archive = $this->archiveFactory->create($fileInfo);
+            $extractor = $archive->extract();
+            $this->logger->info('Extracting %s', $fileInfo->getFilename());
 
             while ($extractor->valid()) {
                 $file = $extractor->current();
@@ -251,7 +265,7 @@ final class DLoad
                     default => $conf->rename . '.' . $source->getExtension(),
                 };
 
-                return new \SplFileInfo($path . DIRECTORY_SEPARATOR . $newName);
+                return new \SplFileInfo((string) $path->join($newName));
             }
         }
 
@@ -262,11 +276,10 @@ final class DLoad
      * Gets the destination path for file extraction, prioritizing global destination path over custom extraction path.
      *
      * @param DownloadConfig $action Download action configuration
-     * @return non-empty-string Path where files should be extracted
      */
-    private function getDestinationPath(DownloadConfig $action): string
+    private function getDestinationPath(DownloadConfig $action): Path
     {
-        return $this->configDestination->path ?? $action->extractPath ?? (string) \getcwd();
+        return Path::create($this->configDestination->path ?? $action->extractPath ?? (string) \getcwd());
     }
 
     /**
