@@ -183,7 +183,7 @@ final class DLoad
             $fileInfo = $downloadResult->file;
 
             // Create a copy of the files list with binary included if necessary
-            $files = $this->filesToExtract($software);
+            $files = $this->filesToExtract($software, $action);
 
             // Create destination directory if it doesn't exist
             $path = $this->getDestinationPath($action);
@@ -287,8 +287,13 @@ final class DLoad
     /**
      * @return list<File>
      */
-    private function filesToExtract(Software $software): array
+    private function filesToExtract(Software $software, DownloadConfig $action): array
     {
+        // Don't extract files for Phar actions
+        if ($action->type === Type::Phar) {
+            return [];
+        }
+
         $files = $software->files;
         if ($software->binary !== null) {
             $binary = new File();

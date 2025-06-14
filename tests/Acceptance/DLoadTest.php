@@ -8,6 +8,7 @@ use Internal\DLoad\Bootstrap;
 use Internal\DLoad\DLoad;
 use Internal\DLoad\Module\Common\Config\Action\Download as DownloadConfig;
 use Internal\DLoad\Module\Common\Config\Action\Type;
+use Internal\DLoad\Module\Common\OperatingSystem;
 use Internal\DLoad\Service\Logger;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
@@ -37,7 +38,7 @@ final class DLoadTest extends TestCase
         // Arrange
         $downloadConfig = new DownloadConfig();
         $downloadConfig->software = 'trap';
-        $downloadConfig->version = '^1.13';
+        $downloadConfig->version = '1.13.16';
         $downloadConfig->type = Type::Phar;
         $downloadConfig->extractPath = $this->destinationDir;
 
@@ -45,11 +46,38 @@ final class DLoadTest extends TestCase
         $this->dload->addTask($downloadConfig);
         $this->dload->run();
 
-        // Assert - Check that trap.phar was downloaded and extracted
+        // Assert - Check that trap.phar was downloaded
         $expectedPharPath = $this->destinationDir . DIRECTORY_SEPARATOR . 'trap.phar';
         self::assertFileExists($expectedPharPath, 'Trap PHAR should be downloaded to destination directory');
 
-        // Verify the file is a valid PHAR
+        // Verify the file is not empty
+        self::assertGreaterThan(1024, \filesize($expectedPharPath), 'Downloaded PHAR should have substantial size');
+
+        // Verify file permissions (should be executable)
+        if (PHP_OS_FAMILY !== 'Windows') {
+            self::assertTrue(\is_executable($expectedPharPath), 'PHAR file should be executable');
+        }
+    }
+
+    public function testDownloadsTrapBinary(): void
+    {
+        // Arrange
+        $downloadConfig = new DownloadConfig();
+        $downloadConfig->software = 'trap';
+        $downloadConfig->version = '1.13.16';
+        $downloadConfig->type = Type::Binary;
+        $downloadConfig->extractPath = $this->destinationDir;
+
+        // Act
+        $this->dload->addTask($downloadConfig);
+        $this->dload->run();
+
+        // Assert - Check that Trap binary was downloaded and extracted
+        $os = OperatingSystem::fromGlobals();
+        $expectedPharPath = $this->destinationDir . DIRECTORY_SEPARATOR . 'trap' . $os->getBinaryExtension();
+        self::assertFileExists($expectedPharPath, 'Trap PHAR should be downloaded to destination directory');
+
+        // Verify the file is not empty
         self::assertGreaterThan(1024, \filesize($expectedPharPath), 'Downloaded PHAR should have substantial size');
 
         // Verify file permissions (should be executable)
@@ -102,7 +130,7 @@ final class DLoadTest extends TestCase
                 <registry overwrite="false">
                     <software name="trap">
                         <repository type="github" uri="buggregator/trap"
-                            asset-pattern="/^trap\..+$/"
+                            asset-pattern="/^trap.+$/"
                         />
                         <binary name="trap" version-command="--version" />
                     </software>

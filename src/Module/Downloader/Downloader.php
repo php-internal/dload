@@ -186,11 +186,14 @@ final class Downloader
      */
     private function processRelease(DownloadContext $context): \Closure
     {
-        return fn(): AssetInterface => $context->software->binary !== null
+        return fn(): AssetInterface => match (true) {
+            // Phar assets usually don't depend on OS or architecture, so we can use gradual filtering
+            $context->actionConfig->type === Type::Phar => $this->findAssetWithGradualFiltering($context),
             // Use strict filtering when binary configuration exists
-            ? $this->findAssetWithStrictFiltering($context)
+            $context->software->binary !== null => $this->findAssetWithStrictFiltering($context),
             // Use gradual filtering when no binary configuration exists
-            : $this->findAssetWithGradualFiltering($context);
+            default => $this->findAssetWithGradualFiltering($context),
+        };
     }
 
     /**
