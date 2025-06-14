@@ -49,6 +49,11 @@
                                             <xs:documentation>Custom path where to unpack downloaded asset</xs:documentation>
                                         </xs:annotation>
                                     </xs:attribute>
+                                    <xs:attribute name="format" type="xs:string">
+                                        <xs:annotation>
+                                            <xs:documentation>Preferred file format for download (e.g., "phar", "tar.gz", "zip"). When specified, only assets matching this format will be considered during download.</xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
                                 </xs:complexType>
                             </xs:element>
                         </xs:sequence>

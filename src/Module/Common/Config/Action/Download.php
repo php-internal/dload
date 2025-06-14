@@ -32,6 +32,10 @@ final class Download
     #[XPath('@extract-path')]
     public ?string $extractPath = null;
 
+    /** @var non-empty-string|null $format Preferred file format for download (e.g., "phar", "tar.gz", "zip") */
+    #[XPath('@format')]
+    public ?string $format = null;
+
     /**
      * Creates a download action from a software identifier.
      *
