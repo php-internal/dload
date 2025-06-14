@@ -82,8 +82,7 @@
         "refactor": "rector process --config=rector.php",
         "refactor:ci": "rector process --config=rector.php --dry-run --ansi",
         "test": [
-            "@putenv XDEBUG_MODE=coverage",
-            "phpunit --color=always"
+            "phpunit --color=always --no-coverage"
         ],
         "test:unit": [
             "@putenv XDEBUG_MODE=coverage",

@@ -61,6 +61,7 @@ composer require internal/dload -W
 ```
 
 3. **Integrate with Composer** (optional):
+
    ```json
    {
        "scripts": {
@@ -258,16 +259,19 @@ Use Composer-style version constraints:
 ### Software Elements
 
 #### Repository Configuration
+
 - **type**: Currently supports "github"
 - **uri**: Repository path (e.g., "username/repo")
 - **asset-pattern**: Regex pattern to match release assets
 
 #### Binary Elements
+
 - **name**: Binary name for reference
 - **pattern**: Regex pattern to match binary in assets
 - Automatically handles OS/architecture filtering
 
-#### File Elements  
+#### File Elements
+
 - **pattern**: Regex pattern to match files
 - **extract-path**: Optional extraction directory
 - Works on any system (no OS/architecture filtering)
@@ -340,7 +344,7 @@ Add to CI/CD environment variables for automated downloads.
 ## Contributing
 
 Contributions welcome! Submit Pull Requests to:
+
 - Add new software to the predefined registry
 - Improve DLoad functionality  
 - Enhance documentation
-
