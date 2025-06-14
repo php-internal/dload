@@ -6,12 +6,14 @@
          cacheResultFile="runtime/phpunit/result.cache"
          failOnWarning="true"
          failOnRisky="true"
-         executionOrder="random"
          stderr="true"
          beStrictAboutOutputDuringTests="true"
          displayDetailsOnTestsThatTriggerWarnings="true"
 >
     <testsuites>
+        <testsuite name="Acceptance">
+            <directory>tests/Acceptance</directory>
+        </testsuite>
         <testsuite name="Unit">
             <directory>tests/Unit</directory>
         </testsuite>

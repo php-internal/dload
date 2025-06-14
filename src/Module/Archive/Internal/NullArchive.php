@@ -49,10 +49,7 @@ final class NullArchive extends Archive
             $sourcePath = $this->file->getRealPath() ?: $this->file->getPathname();
             $destPath = $fileTo->getRealPath() ?: $fileTo->getPathname();
 
-            \copy(
-                $sourcePath,
-                $destPath,
-            );
+            \copy($sourcePath, $destPath);
         }
     }
 }

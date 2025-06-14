@@ -6,7 +6,9 @@ namespace Internal\DLoad\Module\Downloader;
 
 use Internal\DLoad\Module\Archive\ArchiveFactory;
 use Internal\DLoad\Module\Common\Architecture;
+use Internal\DLoad\Module\Common\Config\Action\Download;
 use Internal\DLoad\Module\Common\Config\Action\Download as DownloadConfig;
+use Internal\DLoad\Module\Common\Config\Action\Type;
 use Internal\DLoad\Module\Common\Config\Downloader as DownloaderConfig;
 use Internal\DLoad\Module\Common\Config\Embed\Software;
 use Internal\DLoad\Module\Common\FileSystem\Path;
@@ -17,6 +19,7 @@ use Internal\DLoad\Module\Downloader\Internal\DownloadContext;
 use Internal\DLoad\Module\Downloader\Task\DownloadResult;
 use Internal\DLoad\Module\Downloader\Task\DownloadTask;
 use Internal\DLoad\Module\Repository\AssetInterface;
+use Internal\DLoad\Module\Repository\Collection\AssetsCollection;
 use Internal\DLoad\Module\Repository\ReleaseInterface;
 use Internal\DLoad\Module\Repository\Repository;
 use Internal\DLoad\Module\Repository\RepositoryProvider;
@@ -183,11 +186,14 @@ final class Downloader
      */
     private function processRelease(DownloadContext $context): \Closure
     {
-        return fn(): AssetInterface => $context->software->binary !== null
+        return fn(): AssetInterface => match (true) {
+            // Phar assets usually don't depend on OS or architecture, so we can use gradual filtering
+            $context->actionConfig->type === Type::Phar => $this->findAssetWithGradualFiltering($context),
             // Use strict filtering when binary configuration exists
-            ? $this->findAssetWithStrictFiltering($context)
+            $context->software->binary !== null => $this->findAssetWithStrictFiltering($context),
             // Use gradual filtering when no binary configuration exists
-            : $this->findAssetWithGradualFiltering($context);
+            default => $this->findAssetWithGradualFiltering($context),
+        };
     }
 
     /**
@@ -206,7 +212,7 @@ final class Downloader
             ->whereNameMatches($context->repoConfig->assetPattern);
 
         /** @var AssetInterface[] $allAssets */
-        $allAssets = $assetsCollection->toArray();
+        $allAssets = $this->addFormatFilter($assetsCollection, $context->actionConfig)->toArray();
         $this->logger->debug('%d matching assets found.', \count($allAssets));
 
         $allAssets === [] and throw new NotFound('No relevant assets found.');
@@ -228,12 +234,12 @@ final class Downloader
     {
         $assetsCollection = $context->release->getAssets()
             ->whereNameMatches($context->repoConfig->assetPattern);
+
+        $assetsCollection = $this->addFormatFilter($assetsCollection, $context->actionConfig);
         $supportedExtensions = $this->archiveService->getSupportedExtensions();
 
-        if (\count($assetsCollection) === 0) {
-            // If we got here, no assets were found with any filter combination
-            throw new NotFound('No relevant assets found.');
-        }
+        // If we got here, no assets were found with any filter combination
+        \count($assetsCollection) === 0 and throw new NotFound('No relevant assets found.');
 
         // Try #1: Filter by both OS and architecture (most specific)
         $filteredAssets = $assetsCollection
@@ -420,5 +426,21 @@ final class Downloader
         );
 
         return $temp;
+    }
+
+    /**
+     * Adds format filter to the assets collection if specified in action options.
+     *
+     * @param AssetsCollection $collection Collection of assets to filter
+     * @param Download $actionOptions Download action options
+     * @return AssetsCollection Filtered collection
+     */
+    private function addFormatFilter(AssetsCollection $collection, Download $actionOptions): AssetsCollection
+    {
+        return match ($actionOptions->type) {
+            Type::Phar => $collection->whereFileExtensions(['phar']),
+            Type::Archive => $collection->whereFileExtensions($this->archiveService->getSupportedExtensions()),
+            default => $collection,
+        };
     }
 }
