@@ -7,6 +7,7 @@ namespace Internal\DLoad;
 use Internal\DLoad\Module\Archive\ArchiveFactory;
 use Internal\DLoad\Module\Binary\BinaryProvider;
 use Internal\DLoad\Module\Common\Config\Action\Download as DownloadConfig;
+use Internal\DLoad\Module\Common\Config\Action\Type;
 use Internal\DLoad\Module\Common\Config\Embed\File;
 use Internal\DLoad\Module\Common\Config\Embed\Software;
 use Internal\DLoad\Module\Common\FileSystem\Path;
@@ -75,8 +76,9 @@ final class DLoad
 
         // Check if binary already exists and satisfies version constraint
         $destinationPath = $this->getDestinationPath($action);
+        $type = $action->type;
 
-        if (!$force && $software->binary !== null) {
+        if (!$force && ($type === null || $type === Type::Binary) && $software->binary !== null) {
             // Check different constraints
             $binary = $this->binaryProvider->getBinary($destinationPath, $software->binary);
 

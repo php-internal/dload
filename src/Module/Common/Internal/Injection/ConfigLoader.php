@@ -114,6 +114,14 @@ final class ConfigLoader
                         },
                         default => $value,
                     },
+                    \enum_exists($type->getName()) => (static function (mixed $value) use ($type): ?\BackedEnum {
+                        /** @var class-string<\BackedEnum> $class */
+                        $class = $type->getName();
+                        // Get Enum values type
+                        $cases = (new \ReflectionEnum($class))->getCases();
+                        $value = \is_int($cases[0]->getBackingValue()) ? (int) $value : (string) $value;
+                        return $class::from($value);
+                    })($value),
                     default => $value,
                 };
 

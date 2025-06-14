@@ -32,9 +32,9 @@ final class Download
     #[XPath('@extract-path')]
     public ?string $extractPath = null;
 
-    /** @var non-empty-string|null $type Download type determining processing behavior (binary, archive, phar) */
+    /** @var Type|null $type Download type determining processing behavior (binary, archive, phar) */
     #[XPath('@type')]
-    public ?string $type = null;
+    public ?Type $type = null;
 
     /**
      * Creates a download action from a software identifier.

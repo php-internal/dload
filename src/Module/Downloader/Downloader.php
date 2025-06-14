@@ -7,7 +7,6 @@ namespace Internal\DLoad\Module\Downloader;
 use Internal\DLoad\Module\Archive\ArchiveFactory;
 use Internal\DLoad\Module\Common\Architecture;
 use Internal\DLoad\Module\Common\Config\Action\Download;
-use Internal\DLoad\Module\Common\Config\Action\Download;
 use Internal\DLoad\Module\Common\Config\Action\Download as DownloadConfig;
 use Internal\DLoad\Module\Common\Config\Action\Type;
 use Internal\DLoad\Module\Common\Config\Downloader as DownloaderConfig;
@@ -435,9 +434,9 @@ final class Downloader
      */
     private function addFormatFilter(AssetsCollection $collection, Download $actionOptions): AssetsCollection
     {
-        $actionType = Type::tryFrom($actionOptions->type);
-        return match ($actionType) {
+        return match ($actionOptions->type) {
             Type::Phar => $collection->whereFileExtensions(['phar']),
+            Type::Archive => $collection->whereFileExtensions($this->archiveService->getSupportedExtensions()),
             default => $collection,
         };
     }

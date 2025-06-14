@@ -7,6 +7,7 @@ namespace Internal\DLoad\Tests\Acceptance;
 use Internal\DLoad\Bootstrap;
 use Internal\DLoad\DLoad;
 use Internal\DLoad\Module\Common\Config\Action\Download as DownloadConfig;
+use Internal\DLoad\Module\Common\Config\Action\Type;
 use Internal\DLoad\Service\Logger;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
@@ -37,7 +38,7 @@ final class DLoadTest extends TestCase
         $downloadConfig = new DownloadConfig();
         $downloadConfig->software = 'trap';
         $downloadConfig->version = '^1.13';
-        $downloadConfig->type = 'phar';
+        $downloadConfig->type = Type::Phar;
         $downloadConfig->extractPath = $this->destinationDir;
 
         // Act
@@ -103,6 +104,7 @@ final class DLoadTest extends TestCase
                         <repository type="github" uri="buggregator/trap"
                             asset-pattern="/^trap\..+$/"
                         />
+                        <binary name="trap" version-command="--version" />
                     </software>
                 </registry>
             </dload>
