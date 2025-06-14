@@ -88,7 +88,6 @@ jobs:
         with:
           php-version: ${{ matrix.php-version }}
           ini-values: error_reporting=E_ALL
-          coverage: xdebug
 
       - name: 🛠️ Setup problem matchers
         run: |
