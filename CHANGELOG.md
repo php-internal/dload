@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.2.3 (2025-06-14)
+
+## What's Changed
+* Downloader hotfixes by @roxblnfk in https://github.com/php-internal/dload/pull/48
+* Downloader refactoring by @roxblnfk in https://github.com/php-internal/dload/pull/50
+
+
+**Full Changelog**: https://github.com/php-internal/dload/compare/1.2.2...1.2.3
+
 ## 1.2.2 (2025-06-12)
 
 ## What's Changed
