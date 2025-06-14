@@ -95,6 +95,23 @@ final class AssetsCollection extends Collection
     }
 
     /**
+     * Filters assets to include only those matching the specified format.
+     *
+     * @param non-empty-string $format Required format (e.g., "phar", "tar.gz", "zip")
+     * @return self New filtered collection
+     */
+    public function whereFormat(string $format): self
+    {
+        return $this->filter(
+            static function (AssetInterface $asset) use ($format): bool {
+                $assetName = \strtolower($asset->getName());
+                $normalizedFormat = \strtolower($format);
+                return \str_ends_with($assetName, '.' . $normalizedFormat);
+            },
+        );
+    }
+
+    /**
      * Filters assets to include only those with names matching the given regex pattern.
      *
      * @param non-empty-string $pattern Regular expression pattern

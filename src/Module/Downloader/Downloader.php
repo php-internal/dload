@@ -205,6 +205,11 @@ final class Downloader
             ->whereArchitecture($this->architecture)
             ->whereNameMatches($context->repoConfig->assetPattern);
 
+        // Apply format filter if specified
+        if ($context->actionConfig->format !== null) {
+            $assetsCollection = $assetsCollection->whereFormat($context->actionConfig->format);
+        }
+
         /** @var AssetInterface[] $allAssets */
         $allAssets = $assetsCollection->toArray();
         $this->logger->debug('%d matching assets found.', \count($allAssets));
@@ -228,6 +233,12 @@ final class Downloader
     {
         $assetsCollection = $context->release->getAssets()
             ->whereNameMatches($context->repoConfig->assetPattern);
+        
+        // Apply format filter if specified
+        if ($context->actionConfig->format !== null) {
+            $assetsCollection = $assetsCollection->whereFormat($context->actionConfig->format);
+        }
+
         $supportedExtensions = $this->archiveService->getSupportedExtensions();
 
         if (\count($assetsCollection) === 0) {
