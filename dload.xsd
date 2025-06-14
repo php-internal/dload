@@ -1,166 +1,176 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
-  <!-- Root element -->
-  <xs:element name="dload">
-    <xs:annotation>
-      <xs:documentation>DLoad configuration for downloading and managing binary artifacts</xs:documentation>
-    </xs:annotation>
-    <xs:complexType>
-      <xs:sequence>
-        <!-- Actions container -->
-        <xs:element name="actions" minOccurs="0" maxOccurs="1">
-          <xs:annotation>
-            <xs:documentation>Container for download actions</xs:documentation>
-          </xs:annotation>
-          <xs:complexType>
-            <xs:sequence>
-              <xs:element name="download" minOccurs="0" maxOccurs="unbounded">
-                <xs:annotation>
-                  <xs:documentation>Defines a software package to download</xs:documentation>
-                </xs:annotation>
-                <xs:complexType>
-                  <xs:attribute name="software" type="xs:string" use="required">
-                    <xs:annotation>
-                      <xs:documentation>Software identifier to download</xs:documentation>
-                    </xs:annotation>
-                  </xs:attribute>
-                  <xs:attribute name="version" type="xs:string">
-                    <xs:annotation>
-                      <xs:documentation>Version constraint (composer-style)</xs:documentation>
-                    </xs:annotation>
-                  </xs:attribute>
-                  <xs:attribute name="version-path" type="xs:string">
-                    <xs:annotation>
-                      <xs:documentation>Path to extract version from (e.g. composer.json@require.package/name)</xs:documentation>
-                    </xs:annotation>
-                  </xs:attribute>
-                  <xs:attribute name="extract-path" type="xs:string">
-                    <xs:annotation>
-                      <xs:documentation>Custom path where to unpack downloaded asset</xs:documentation>
-                    </xs:annotation>
-                  </xs:attribute>
-                </xs:complexType>
-              </xs:element>
-            </xs:sequence>
-          </xs:complexType>
-        </xs:element>
-        
-        <!-- Registry container -->
-        <xs:element name="registry" minOccurs="0" maxOccurs="1">
-          <xs:annotation>
-            <xs:documentation>Custom software registry configuration</xs:documentation>
-          </xs:annotation>
-          <xs:complexType>
-            <xs:sequence>
-              <xs:element name="software" minOccurs="0" maxOccurs="unbounded">
-                <xs:annotation>
-                  <xs:documentation>Software configuration entity</xs:documentation>
-                </xs:annotation>
-                <xs:complexType>
-                  <xs:sequence>
-                    <xs:element name="repository" minOccurs="0" maxOccurs="unbounded">
-                      <xs:annotation>
-                        <xs:documentation>Repository configuration</xs:documentation>
-                      </xs:annotation>
-                      <xs:complexType>
-                        <xs:attribute name="type" type="xs:string" default="github">
-                          <xs:annotation>
-                            <xs:documentation>Repository type identifier</xs:documentation>
-                          </xs:annotation>
-                        </xs:attribute>
-                        <xs:attribute name="uri" type="xs:string" use="required">
-                          <xs:annotation>
-                            <xs:documentation>Repository URI identifier</xs:documentation>
-                          </xs:annotation>
-                        </xs:attribute>
-                        <xs:attribute name="asset-pattern" type="xs:string" default="/^.*$/">
-                          <xs:annotation>
-                            <xs:documentation>Regular expression pattern to match assets</xs:documentation>
-                          </xs:annotation>
-                        </xs:attribute>
-                      </xs:complexType>
-                    </xs:element>
-                    <xs:element name="binary" minOccurs="0" maxOccurs="unbounded">
-                      <xs:annotation>
-                        <xs:documentation>Binary configuration</xs:documentation>
-                      </xs:annotation>
-                      <xs:complexType>
-                        <xs:attribute name="name" type="xs:string" use="required">
-                          <xs:annotation>
-                            <xs:documentation>Binary executable name</xs:documentation>
-                          </xs:annotation>
-                        </xs:attribute>
-                        <xs:attribute name="pattern" type="xs:string">
-                          <xs:annotation>
-                            <xs:documentation>Regular expression pattern to match binary file during extraction</xs:documentation>
-                          </xs:annotation>
-                        </xs:attribute>
-                        <xs:attribute name="version-command" type="xs:string">
-                          <xs:annotation>
-                            <xs:documentation>Command argument to check binary version (e.g. "--version")</xs:documentation>
-                          </xs:annotation>
-                        </xs:attribute>
-                      </xs:complexType>
-                    </xs:element>
-                    <xs:element name="file" minOccurs="0" maxOccurs="unbounded">
-                      <xs:annotation>
-                        <xs:documentation>File configuration</xs:documentation>
-                      </xs:annotation>
-                      <xs:complexType>
-                        <xs:attribute name="pattern" type="xs:string" default="/^.*$/">
-                          <xs:annotation>
-                            <xs:documentation>Regular expression pattern to match files</xs:documentation>
-                          </xs:annotation>
-                        </xs:attribute>
-                        <xs:attribute name="rename" type="xs:string">
-                          <xs:annotation>
-                            <xs:documentation>Rename found file to this value with the same extension</xs:documentation>
-                          </xs:annotation>
-                        </xs:attribute>
-                        <xs:attribute name="extract-path" type="xs:string">
-                          <xs:annotation>
-                            <xs:documentation>Directory where to extract files</xs:documentation>
-                          </xs:annotation>
-                        </xs:attribute>
-                      </xs:complexType>
-                    </xs:element>
-                  </xs:sequence>
-                  <xs:attribute name="name" type="xs:string" use="required">
-                    <xs:annotation>
-                      <xs:documentation>Software package name</xs:documentation>
-                    </xs:annotation>
-                  </xs:attribute>
-                  <xs:attribute name="alias" type="xs:string">
-                    <xs:annotation>
-                      <xs:documentation>CLI command alias</xs:documentation>
-                    </xs:annotation>
-                  </xs:attribute>
-                  <xs:attribute name="homepage" type="xs:string">
-                    <xs:annotation>
-                      <xs:documentation>Official software homepage URL</xs:documentation>
-                    </xs:annotation>
-                  </xs:attribute>
-                  <xs:attribute name="description" type="xs:string">
-                    <xs:annotation>
-                      <xs:documentation>Short description of the software</xs:documentation>
-                    </xs:annotation>
-                  </xs:attribute>
-                </xs:complexType>
-              </xs:element>
-            </xs:sequence>
-            <xs:attribute name="overwrite" type="xs:boolean" default="false">
-              <xs:annotation>
-                <xs:documentation>Replace the built-in software collection with custom ones</xs:documentation>
-              </xs:annotation>
-            </xs:attribute>
-          </xs:complexType>
-        </xs:element>
-      </xs:sequence>
-      <xs:attribute name="temp-dir" type="xs:string">
+    <!-- Root element -->
+    <xs:element name="dload">
         <xs:annotation>
-          <xs:documentation>Temporary directory for downloads</xs:documentation>
+            <xs:documentation>DLoad configuration for downloading and managing binary artifacts</xs:documentation>
         </xs:annotation>
-      </xs:attribute>
-    </xs:complexType>
-  </xs:element>
+        <xs:complexType>
+            <xs:sequence>
+                <!-- Actions container -->
+                <xs:element name="actions" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>Container for download actions</xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="download" minOccurs="0" maxOccurs="unbounded">
+                                <xs:annotation>
+                                    <xs:documentation>Defines a software package to download</xs:documentation>
+                                </xs:annotation>
+                                <xs:complexType>
+                                    <xs:attribute name="software" type="xs:string" use="required">
+                                        <xs:annotation>
+                                            <xs:documentation>Software identifier to download</xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
+                                    <xs:attribute name="version" type="xs:string">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                Version constraint using Composer-style syntax with optional feature suffixes
+                                                and stability requirements. If not specified, latest stable version is used.
+
+                                                Examples:
+                                                • "^2.12.0" - Caret constraint
+                                                • "~1.0.0" - Tilde constraint
+                                                • "^2.12.0-feature" - With feature suffix
+                                                • "^2.12.0@beta" - With explicit stability
+                                                • "^2.12.0-hotfix@rc" - Combined feature and stability
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
+                                    <xs:attribute name="version-path" type="xs:string">
+                                        <xs:annotation>
+                                            <xs:documentation>Path to extract version from (e.g. composer.json@require.package/name)</xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
+                                    <xs:attribute name="extract-path" type="xs:string">
+                                        <xs:annotation>
+                                            <xs:documentation>Custom path where to unpack downloaded asset</xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
+                                </xs:complexType>
+                            </xs:element>
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+
+                <!-- Registry container -->
+                <xs:element name="registry" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>Custom software registry configuration</xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="software" minOccurs="0" maxOccurs="unbounded">
+                                <xs:annotation>
+                                    <xs:documentation>Software configuration entity</xs:documentation>
+                                </xs:annotation>
+                                <xs:complexType>
+                                    <xs:sequence>
+                                        <xs:element name="repository" minOccurs="0" maxOccurs="unbounded">
+                                            <xs:annotation>
+                                                <xs:documentation>Repository configuration</xs:documentation>
+                                            </xs:annotation>
+                                            <xs:complexType>
+                                                <xs:attribute name="type" type="xs:string" default="github">
+                                                    <xs:annotation>
+                                                        <xs:documentation>Repository type identifier</xs:documentation>
+                                                    </xs:annotation>
+                                                </xs:attribute>
+                                                <xs:attribute name="uri" type="xs:string" use="required">
+                                                    <xs:annotation>
+                                                        <xs:documentation>Repository URI identifier</xs:documentation>
+                                                    </xs:annotation>
+                                                </xs:attribute>
+                                                <xs:attribute name="asset-pattern" type="xs:string" default="/^.*$/">
+                                                    <xs:annotation>
+                                                        <xs:documentation>Regular expression pattern to match assets</xs:documentation>
+                                                    </xs:annotation>
+                                                </xs:attribute>
+                                            </xs:complexType>
+                                        </xs:element>
+                                        <xs:element name="binary" minOccurs="0" maxOccurs="unbounded">
+                                            <xs:annotation>
+                                                <xs:documentation>Binary configuration</xs:documentation>
+                                            </xs:annotation>
+                                            <xs:complexType>
+                                                <xs:attribute name="name" type="xs:string" use="required">
+                                                    <xs:annotation>
+                                                        <xs:documentation>Binary executable name</xs:documentation>
+                                                    </xs:annotation>
+                                                </xs:attribute>
+                                                <xs:attribute name="pattern" type="xs:string">
+                                                    <xs:annotation>
+                                                        <xs:documentation>Regular expression pattern to match binary file during extraction</xs:documentation>
+                                                    </xs:annotation>
+                                                </xs:attribute>
+                                                <xs:attribute name="version-command" type="xs:string">
+                                                    <xs:annotation>
+                                                        <xs:documentation>Command argument to check binary version (e.g. "--version")</xs:documentation>
+                                                    </xs:annotation>
+                                                </xs:attribute>
+                                            </xs:complexType>
+                                        </xs:element>
+                                        <xs:element name="file" minOccurs="0" maxOccurs="unbounded">
+                                            <xs:annotation>
+                                                <xs:documentation>File configuration</xs:documentation>
+                                            </xs:annotation>
+                                            <xs:complexType>
+                                                <xs:attribute name="pattern" type="xs:string" default="/^.*$/">
+                                                    <xs:annotation>
+                                                        <xs:documentation>Regular expression pattern to match files</xs:documentation>
+                                                    </xs:annotation>
+                                                </xs:attribute>
+                                                <xs:attribute name="rename" type="xs:string">
+                                                    <xs:annotation>
+                                                        <xs:documentation>Rename found file to this value with the same extension</xs:documentation>
+                                                    </xs:annotation>
+                                                </xs:attribute>
+                                                <xs:attribute name="extract-path" type="xs:string">
+                                                    <xs:annotation>
+                                                        <xs:documentation>Directory where to extract files</xs:documentation>
+                                                    </xs:annotation>
+                                                </xs:attribute>
+                                            </xs:complexType>
+                                        </xs:element>
+                                    </xs:sequence>
+                                    <xs:attribute name="name" type="xs:string" use="required">
+                                        <xs:annotation>
+                                            <xs:documentation>Software package name</xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
+                                    <xs:attribute name="alias" type="xs:string">
+                                        <xs:annotation>
+                                            <xs:documentation>CLI command alias</xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
+                                    <xs:attribute name="homepage" type="xs:string">
+                                        <xs:annotation>
+                                            <xs:documentation>Official software homepage URL</xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
+                                    <xs:attribute name="description" type="xs:string">
+                                        <xs:annotation>
+                                            <xs:documentation>Short description of the software</xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
+                                </xs:complexType>
+                            </xs:element>
+                        </xs:sequence>
+                        <xs:attribute name="overwrite" type="xs:boolean" default="false">
+                            <xs:annotation>
+                                <xs:documentation>Replace the built-in software collection with custom ones</xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+            </xs:sequence>
+            <xs:attribute name="temp-dir" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Temporary directory for downloads</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
 </xs:schema>
