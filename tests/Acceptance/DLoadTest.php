@@ -37,7 +37,7 @@ final class DLoadTest extends TestCase
         $downloadConfig = new DownloadConfig();
         $downloadConfig->software = 'trap';
         $downloadConfig->version = '^1.13';
-        $downloadConfig->format = 'phar';
+        $downloadConfig->type = 'phar';
         $downloadConfig->extractPath = $this->destinationDir;
 
         // Act

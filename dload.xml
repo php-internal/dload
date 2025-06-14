@@ -26,8 +26,5 @@
             />
             <file pattern="/^.*$/"/>
         </software>
-        <software name="trap">
-            <repository type="github" uri="buggregator/trap" />
-        </software>
     </registry>
 </dload>

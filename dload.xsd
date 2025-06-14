@@ -49,10 +49,17 @@
                                             <xs:documentation>Custom path where to unpack downloaded asset</xs:documentation>
                                         </xs:annotation>
                                     </xs:attribute>
-                                    <xs:attribute name="format" type="xs:string">
+                                    <xs:attribute name="type">
                                         <xs:annotation>
-                                            <xs:documentation>Preferred file format for download (e.g., "phar", "tar.gz", "zip"). When specified, only assets matching this format will be considered during download.</xs:documentation>
+                                            <xs:documentation>Download type determining how the asset is processed: binary (executable from archive), phar (PHP archive, no extraction), archive (extract all contents)</xs:documentation>
                                         </xs:annotation>
+                                        <xs:simpleType>
+                                            <xs:restriction base="xs:string">
+                                                <xs:enumeration value="binary"/>
+                                                <xs:enumeration value="archive"/>
+                                                <xs:enumeration value="phar"/>
+                                            </xs:restriction>
+                                        </xs:simpleType>
                                     </xs:attribute>
                                 </xs:complexType>
                             </xs:element>
