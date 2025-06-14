@@ -77,6 +77,7 @@ final class Downloader
             software: $software,
             onProgress: $onProgress,
             actionConfig: $actionConfig,
+            tempDir: $this->getTempDirectory(),
         );
 
         $repositories = $software->repositories;
@@ -372,7 +373,7 @@ final class Downloader
     {
         return function () use ($context): \SplFileObject {
             // Create a file
-            $temp = $this->getTempDirectory()->join($context->asset->getName());
+            $temp = $context->tempDir->join($context->asset->getName());
             $file = new \SplFileObject((string) $temp, 'wb+');
 
             $this->logger->info('Downloading into %s', (string) $temp);
