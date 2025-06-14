@@ -9,6 +9,7 @@ use Internal\DLoad\Module\Common\Architecture;
 use Internal\DLoad\Module\Common\Config\Action\Download as DownloadConfig;
 use Internal\DLoad\Module\Common\Config\Downloader as DownloaderConfig;
 use Internal\DLoad\Module\Common\Config\Embed\Software;
+use Internal\DLoad\Module\Common\FileSystem\Path;
 use Internal\DLoad\Module\Common\OperatingSystem;
 use Internal\DLoad\Module\Common\Stability;
 use Internal\DLoad\Module\Downloader\Exception\NotFound;
@@ -76,6 +77,7 @@ final class Downloader
             software: $software,
             onProgress: $onProgress,
             actionConfig: $actionConfig,
+            tempDir: $this->getTempDirectory(),
         );
 
         $repositories = $software->repositories;
@@ -371,10 +373,10 @@ final class Downloader
     {
         return function () use ($context): \SplFileObject {
             // Create a file
-            $temp = $this->getTempDirectory() . DIRECTORY_SEPARATOR . $context->asset->getName();
-            $file = new \SplFileObject($temp, 'wb+');
+            $temp = $context->tempDir->join($context->asset->getName());
+            $file = new \SplFileObject((string) $temp, 'wb+');
 
-            $this->logger->info('Downloading into %s', $temp);
+            $this->logger->info('Downloading into %s', (string) $temp);
 
             await(coroutine(
                 (static function () use ($context, $file): void {
@@ -406,18 +408,14 @@ final class Downloader
      *
      * Uses the configured directory if available and writable, otherwise defaults to system temp directory.
      *
-     * @return non-empty-string Path to temporary directory
      * @throws \LogicException When configured directory is not writable
      */
-    private function getTempDirectory(): string
+    private function getTempDirectory(): Path
     {
-        $temp = $this->config->tmpDir;
-        if ($temp === null) {
-            return \sys_get_temp_dir();
-        }
+        $temp = Path::create($this->config->tmpDir ?? \sys_get_temp_dir());
 
-        \file_exists($temp) or \mkdir($temp, recursive: true);
-        (\is_dir($temp) && \is_writable($temp)) or throw new \LogicException(
+        $temp->exists() or \mkdir((string) $temp, recursive: true);
+        $temp->isDir() && $temp->isWriteable() or throw new \LogicException(
             \sprintf('Directory "%s" is not writeable.', $temp),
         );
 

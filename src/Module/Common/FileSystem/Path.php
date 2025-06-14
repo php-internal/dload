@@ -158,6 +158,14 @@ final class Path implements \Stringable
     }
 
     /**
+     * @return bool True if the path exists and is writable.
+     */
+    public function isWriteable(): bool
+    {
+        return $this->exists() && \is_writable($this->path);
+    }
+
+    /**
      * Check if the path is a file.
      * True as the result doesn't mean that the file exists.
      */

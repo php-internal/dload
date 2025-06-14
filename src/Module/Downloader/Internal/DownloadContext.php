@@ -7,6 +7,7 @@ namespace Internal\DLoad\Module\Downloader\Internal;
 use Internal\DLoad\Module\Common\Config\Action\Download as DownloadConfig;
 use Internal\DLoad\Module\Common\Config\Embed\Repository;
 use Internal\DLoad\Module\Common\Config\Embed\Software;
+use Internal\DLoad\Module\Common\FileSystem\Path;
 use Internal\DLoad\Module\Downloader\Progress;
 use Internal\DLoad\Module\Repository\AssetInterface;
 use Internal\DLoad\Module\Repository\ReleaseInterface;
@@ -40,10 +41,12 @@ final class DownloadContext
      * @param \Closure(Progress): mixed $onProgress Callback to report progress.
      *        Exception thrown in this callback will stop and revert the task.
      * @param DownloadConfig $actionConfig Download action configuration
+     * @param Path $tempDir Temporary directory for downloads
      */
     public function __construct(
         public readonly Software $software,
         public readonly \Closure $onProgress,
         public readonly DownloadConfig $actionConfig,
+        public readonly Path $tempDir,
     ) {}
 }
