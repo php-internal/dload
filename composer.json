@@ -93,6 +93,10 @@
             "@putenv XDEBUG_MODE=coverage",
             "phpunit --color=always --testsuite=Arch"
         ],
+        "test:acc": [
+            "@putenv XDEBUG_MODE=coverage",
+            "phpunit --color=always --testsuite=Acceptance"
+        ],
         "test:cc": [
             "@putenv XDEBUG_MODE=coverage",
             "phpunit --coverage-clover=runtime/phpunit/logs/clover.xml --color=always"
