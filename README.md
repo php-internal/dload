@@ -42,33 +42,33 @@ composer require internal/dload -W
 
 1. **Initialize your project configuration**:
 
-```xml
-<?xml version="1.0"?>
-<dload xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xsi:noNamespaceSchemaLocation="vendor/internal/dload/dload.xsd"
->
-   <actions>
-       <download software="rr" version="^2025.1.0"/>
-       <download software="temporal" version="^1.3"/>
-   </actions>
-</dload>
-```
+    ```xml
+    <?xml version="1.0"?>
+    <dload xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:noNamespaceSchemaLocation="vendor/internal/dload/dload.xsd"
+    >
+       <actions>
+           <download software="rr" version="^2025.1.0"/>
+           <download software="temporal" version="^1.3"/>
+       </actions>
+    </dload>
+    ```
 
 2. **Download configured software**:
 
-```bash
-./vendor/bin/dload get
-```
+    ```bash
+    ./vendor/bin/dload get
+    ```
 
 3. **Integrate with Composer** (optional):
 
-   ```json
-   {
-       "scripts": {
-           "post-update-cmd": "dload get --no-interaction -v || echo can't dload binaries"
-       }
-   }
-   ```
+    ```json
+    {
+        "scripts": {
+            "post-update-cmd": "dload get --no-interaction -v || echo can't dload binaries"
+        }
+    }
+    ```
 
 ## Command Line Usage
 

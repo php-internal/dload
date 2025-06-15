@@ -37,6 +37,12 @@ final class File
     public string $pattern = '/^.*$/';
 
     /**
+     * @var int|null $chmod Optional file permissions to set after extraction
+     *      If null, no permissions will be changed.
+     */
+    public ?int $chmod = null;
+
+    /**
      * Creates a File configuration from an array.
      *
      * @param FileArray $fileArray Configuration array

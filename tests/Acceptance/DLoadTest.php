@@ -8,6 +8,7 @@ use Internal\DLoad\Bootstrap;
 use Internal\DLoad\DLoad;
 use Internal\DLoad\Module\Common\Config\Action\Download as DownloadConfig;
 use Internal\DLoad\Module\Common\Config\Action\Type;
+use Internal\DLoad\Module\Common\FileSystem\Path;
 use Internal\DLoad\Module\Common\OperatingSystem;
 use Internal\DLoad\Service\Logger;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -28,9 +29,9 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 #[CoversClass(DLoad::class)]
 final class DLoadTest extends TestCase
 {
-    private string $testRuntimeDir;
-    private string $tempDir;
-    private string $destinationDir;
+    private Path $testRuntimeDir;
+    private Path $tempDir;
+    private Path $destinationDir;
     private DLoad $dload;
 
     public function testDownloadsTrapPharSuccessfully(): void
@@ -40,14 +41,14 @@ final class DLoadTest extends TestCase
         $downloadConfig->software = 'trap';
         $downloadConfig->version = '1.13.16';
         $downloadConfig->type = Type::Phar;
-        $downloadConfig->extractPath = $this->destinationDir;
+        $downloadConfig->extractPath = (string) $this->destinationDir;
 
         // Act
         $this->dload->addTask($downloadConfig);
         $this->dload->run();
 
         // Assert - Check that trap.phar was downloaded
-        $expectedPharPath = $this->destinationDir . DIRECTORY_SEPARATOR . 'trap.phar';
+        $expectedPharPath = (string) $this->destinationDir->join('trap.phar');
         self::assertFileExists($expectedPharPath, 'Trap PHAR should be downloaded to destination directory');
 
         // Verify the file is not empty
@@ -66,7 +67,7 @@ final class DLoadTest extends TestCase
         $downloadConfig->software = 'trap';
         $downloadConfig->version = '1.13.16';
         $downloadConfig->type = Type::Binary;
-        $downloadConfig->extractPath = $this->destinationDir;
+        $downloadConfig->extractPath = (string) $this->destinationDir;
 
         // Act
         $this->dload->addTask($downloadConfig);
@@ -74,24 +75,21 @@ final class DLoadTest extends TestCase
 
         // Assert - Check that Trap binary was downloaded and extracted
         $os = OperatingSystem::fromGlobals();
-        $expectedPharPath = $this->destinationDir . DIRECTORY_SEPARATOR . 'trap' . $os->getBinaryExtension();
-        self::assertFileExists($expectedPharPath, 'Trap PHAR should be downloaded to destination directory');
+        $expectedPharPath = (string) $this->destinationDir->join('trap' . $os->getBinaryExtension());
+        self::assertFileExists($expectedPharPath, 'Trap binary should be downloaded to destination directory');
 
         // Verify the file is not empty
-        self::assertGreaterThan(1024, \filesize($expectedPharPath), 'Downloaded PHAR should have substantial size');
+        self::assertGreaterThan(1024, \filesize($expectedPharPath), 'Downloaded binary should have substantial size');
 
-        // Verify file permissions (should be executable)
-        if (PHP_OS_FAMILY !== 'Windows') {
-            self::assertTrue(\is_executable($expectedPharPath), 'PHAR file should be executable');
-        }
+        self::assertTrue(\is_executable($expectedPharPath), 'Binary file should be executable');
     }
 
     protected function setUp(): void
     {
         // Set up test directory structure
-        $projectRoot = \dirname(__DIR__, 2);
-        $this->testRuntimeDir = $projectRoot . '/runtime/tests/acceptance';
-        $this->tempDir = $this->testRuntimeDir . '/temp';
+        $projectRoot = Path::create(\dirname(__DIR__, 2));
+        $this->testRuntimeDir = $projectRoot->join('runtime', 'tests', 'acceptance');
+        $this->tempDir = $this->testRuntimeDir->join('temp');
         $this->destinationDir = $this->testRuntimeDir;
 
         // Initialize DLoad through Bootstrap
@@ -114,7 +112,7 @@ final class DLoadTest extends TestCase
     protected function tearDown(): void
     {
         // Clean up test directories
-        if (\is_dir($this->testRuntimeDir)) {
+        if ($this->testRuntimeDir->isDir()) {
             $this->removeDirectory($this->testRuntimeDir);
         }
     }
@@ -140,26 +138,27 @@ final class DLoadTest extends TestCase
 
     }
 
-    private function removeDirectory(string $dir): void
+    private function removeDirectory(Path $dir): void
     {
-        if (!\is_dir($dir)) {
+        if (!$dir->isDir()) {
             return;
         }
 
-        $files = \scandir($dir);
+        $files = \scandir((string) $dir);
+        \assert($files !== false);
         foreach ($files as $file) {
             if ($file === '.' || $file === '..') {
                 continue;
             }
 
-            $path = $dir . DIRECTORY_SEPARATOR . $file;
-            if (\is_dir($path)) {
+            $path = $dir->join($file);
+            if ($path->isDir()) {
                 $this->removeDirectory($path);
             } else {
-                \unlink($path);
+                \unlink((string) $path);
             }
         }
 
-        \rmdir($dir);
+        \rmdir((string) $dir);
     }
 }

@@ -199,11 +199,10 @@ final class DLoad
                     'No files to extract for `%s`, copying the downloaded file to the destination.',
                     $fileInfo->getFilename(),
                 );
+                $toFile = (string) $path->join($fileInfo->getFilename());
+                \copy($fileInfo->getRealPath() ?: $fileInfo->getPathname(), $toFile);
 
-                \copy(
-                    $fileInfo->getRealPath() ?: $fileInfo->getPathname(),
-                    (string) $path->join($fileInfo->getFilename()),
-                );
+                $action->type === Type::Phar and \chmod($toFile, 0o755);
                 return;
             }
 
@@ -215,7 +214,7 @@ final class DLoad
                 $file = $extractor->current();
                 \assert($file instanceof \SplFileInfo);
 
-                $to = $this->shouldBeExtracted($file, $files, $action);
+                [$to, $rule] = $this->shouldBeExtracted($file, $files, $action);
                 $this->logger->debug(
                     $to === null ? 'Skipping %s%s' : 'Extracting %s to %s',
                     $file->getFilename(),
@@ -242,7 +241,8 @@ final class DLoad
                     ),
                 );
 
-                $to->isExecutable() or @\chmod($path, 0755);
+                \assert($rule !== null);
+                $rule->chmod === null or @\chmod($path, $rule->chmod);
             }
         };
     }
@@ -253,9 +253,11 @@ final class DLoad
      * @param \SplFileInfo $source Source file from the archive
      * @param list<File> $mapping File mapping configurations
      * @param DownloadConfig $action Download action configuration
-     * @return \SplFileInfo|null Target file path or null if file should not be extracted
+     * @return array{\SplFileInfo|null, null|File} Array containing:
+     *         - Target file path or null if file should not be extracted
+     *         - File configuration that matched the source file, or null if no match found
      */
-    private function shouldBeExtracted(\SplFileInfo $source, array $mapping, DownloadConfig $action): ?\SplFileInfo
+    private function shouldBeExtracted(\SplFileInfo $source, array $mapping, DownloadConfig $action): array
     {
         $path = $this->getDestinationPath($action);
 
@@ -267,11 +269,11 @@ final class DLoad
                     default => $conf->rename . '.' . $source->getExtension(),
                 };
 
-                return new \SplFileInfo((string) $path->join($newName));
+                return [new \SplFileInfo((string) $path->join($newName)), $conf];
             }
         }
 
-        return null;
+        return [null, null];
     }
 
     /**
@@ -300,6 +302,7 @@ final class DLoad
             $binary->pattern = $software->binary->pattern
                 ?? "/^{$software->binary->name}{$this->os->getBinaryExtension()}$/";
             $binary->rename = $software->binary->name;
+            $binary->chmod = 0o755; // Default permissions for binaries
             $files[] = $binary;
         }
 
