@@ -4,7 +4,7 @@
 
 </div>
 
-<p align="center">Download artifacts easily</p>
+<p align="center">Descarga artefactos fácilmente</p>
 
 <div align="center">
 
@@ -18,20 +18,20 @@
 
 <br />
 
-DLoad simplifies downloading and managing binary artifacts for your projects. Perfect for development environments that require specific tools like RoadRunner, Temporal, or custom binaries.
+DLoad simplifica la descarga y gestión de artefactos binarios para tus proyectos. Perfecto para entornos de desarrollo que requieren herramientas específicas como RoadRunner, Temporal o binarios personalizados.
 
-## Why DLoad?
+## ¿Por qué DLoad?
 
-DLoad solves a common problem in PHP projects: how to distribute and install necessary binary tools and assets alongside your PHP code.
-With DLoad, you can:
+DLoad resuelve un problema común en proyectos PHP: cómo distribuir e instalar herramientas y recursos binarios necesarios junto con tu código PHP.
+Con DLoad, puedes:
 
-- Automatically download required tools during project initialization
-- Ensure all team members use the same versions of tools
-- Simplify onboarding by automating environment setup
-- Manage cross-platform compatibility without manual configuration
-- Keep binaries and assets separate from your version control
+- Descargar automáticamente las herramientas requeridas durante la inicialización del proyecto
+- Asegurar que todos los miembros del equipo usen las mismas versiones de las herramientas
+- Simplificar la incorporación automatizando la configuración del entorno
+- Gestionar la compatibilidad multiplataforma sin configuración manual
+- Mantener los binarios y recursos separados del control de versiones
 
-## Installation
+## Instalación
 
 ```bash
 composer require internal/dload -W
@@ -42,9 +42,9 @@ composer require internal/dload -W
 [![License](https://img.shields.io/packagist/l/internal/dload.svg?style=flat-square)](LICENSE.md)
 [![Total DLoads](https://img.shields.io/packagist/dt/internal/dload.svg?style=flat-square)](https://packagist.org/packages/internal/dload/stats)
 
-## Quick Start
+## Inicio rápido
 
-1. **Initialize your project configuration**:
+1. **Inicializa la configuración de tu proyecto**:
 
     ```xml
     <?xml version="1.0"?>
@@ -58,13 +58,13 @@ composer require internal/dload -W
     </dload>
     ```
 
-2. **Download configured software**:
+2. **Descarga el software configurado**:
 
     ```bash
     ./vendor/bin/dload get
     ```
 
-3. **Integrate with Composer** (optional):
+3. **Integra con Composer** (opcional):
 
     ```json
     {
@@ -74,53 +74,53 @@ composer require internal/dload -W
     }
     ```
 
-## Command Line Usage
+## Uso desde la línea de comandos
 
-### Download Software
+### Descargar software
 
 ```bash
-# Download from configuration file
+# Descargar desde el archivo de configuración
 ./vendor/bin/dload get
 
-# Download specific packages
+# Descargar paquetes específicos
 ./vendor/bin/dload get rr temporal
 
-# Download with options
+# Descargar con opciones
 ./vendor/bin/dload get rr --stability=beta --force
 ```
 
-#### Download Options
+#### Opciones de descarga
 
-| Option | Description | Default |
-|--------|-------------|---------|
-| `--path` | Directory to store binaries | Current directory |
-| `--arch` | Target architecture (amd64, arm64) | System architecture |
-| `--os` | Target OS (linux, darwin, windows) | Current OS |
-| `--stability` | Release stability (stable, beta) | stable |
-| `--config` | Path to configuration file | ./dload.xml |
-| `--force`, `-f` | Force download even if binary exists | false |
+| Opción    | Descripción                                 | Predeterminado         |
+|-----------|---------------------------------------------|-----------------------|
+| `--path`  | Directorio para guardar los binarios        | Directorio actual     |
+| `--arch`  | Arquitectura objetivo (amd64, arm64)        | Arquitectura del sistema |
+| `--os`    | SO objetivo (linux, darwin, windows)        | SO actual             |
+| `--stability` | Estabilidad de la versión (stable, beta) | stable                |
+| `--config`| Ruta al archivo de configuración            | ./dload.xml           |
+| `--force`, `-f` | Forzar descarga aunque exista binario | false                 |
 
-### View Software
+### Ver software
 
 ```bash
-# List available software packages
+# Listar paquetes de software disponibles
 ./vendor/bin/dload software
 
-# Show downloaded software
+# Mostrar software descargado
 ./vendor/bin/dload show
 
-# Show specific software details
+# Mostrar detalles de un software específico
 ./vendor/bin/dload show rr
 
-# Show all software (downloaded and available)
+# Mostrar cada el software (descargado y disponible)
 ./vendor/bin/dload show --all
 ```
 
-## Configuration Guide
+## Guía de configuración
 
-### Basic Configuration
+### Configuración básica
 
-Create `dload.xml` in your project root:
+Crea `dload.xml` en la raíz de tu proyecto:
 
 ```xml
 <?xml version="1.0"?>
@@ -135,11 +135,11 @@ Create `dload.xml` in your project root:
 </dload>
 ```
 
-### Download Types
+### Tipos de descarga
 
-DLoad supports three download types that determine how assets are processed:
+DLoad soporta tres tipos de descarga que determinan cómo se procesan los recursos:
 
-#### Type Attribute
+#### Atributo type
 
 ```xml
 <!-- Explicit type specification -->
@@ -152,13 +152,13 @@ DLoad supports three download types that determine how assets are processed:
 <download software="frontend" />     <!-- Smart processing based on software config -->
 ```
 
-#### Default Behavior (No Type Specified)
+#### Comportamiento predeterminado (sin tipo especificado)
 
-When `type` is not specified, DLoad automatically uses all available handlers:
+Cuando no se especifica `type`, DLoad usa automáticamente todos los manejadores disponibles:
 
-- **Binary processing**: If software has `<binary>` section, performs binary presence and version checking
-- **Files processing**: If software has `<file>` section and asset is downloaded, processes files during unpacking
-- **Simple download**: If no sections exist, downloads asset without unpacking
+- **Procesamiento binario**: Si el software tiene sección `<binary>`, verifica presencia y versión
+- **Procesamiento de archivos**: Si tiene sección `<file>` y se descarga el recurso, procesa archivos al descomprimir
+- **Descarga simple**: Si no existen secciones, descarga el recurso sin descomprimir
 
 ```xml
 <!-- registry list -->
@@ -172,87 +172,87 @@ When `type` is not specified, DLoad automatically uses all available handlers:
 <download software="complex-tool" />
 ```
 
-#### Explicit Type Behaviors
+#### Comportamientos Explícitos de Tipo
 
-| Type      | Behavior                                                     | Use Case                       |
-|-----------|--------------------------------------------------------------|--------------------------------|
-| `binary`  | Binary checking, version validation, executable permissions  | CLI tools, executables         |
-| `phar`    | Downloads `.phar` files as executables **without unpacking** | PHP tools like Psalm, PHPStan  |
-| `archive` | **Forces unpacking even for .phar files**                    | When you need archive contents |
+| Tipo      | Comportamiento                                                    | Caso de uso                               |
+|:----------|:------------------------------------------------------------------|:------------------------------------------|
+| `binary`  | Verificación binaria, validación de versión, permisos ejecutables | Herramientas CLI, ejecutables             |
+| `phar`    | Descarga archivos `.phar` como ejecutables **sin desempaquetar**  | Herramientas PHP como Psalm, PHPStan      |
+| `archive` | **Fuerza el desempaquetado incluso para archivos .phar**          | Cuando necesitas el contenido del archivo |
 
 > [!NOTE]
-> Use `type="phar"` for PHP tools that should remain as `.phar` files.
-> Using `type="archive"` will unpack even `.phar` archives.
+> Usa `type="phar"` para herramientas PHP que deben permanecer como archivos `.phar`.
+> Usar `type="archive"` desempaquetará incluso archivos `.phar`.
 
 ### Version Constraints
 
-Use Composer-style version constraints:
+Usa restricciones de versión estilo Composer:
 
 ```xml
 <actions>
-    <!-- Exact version -->
+    <!-- Versión exacta -->
     <download software="rr" version="2.12.3" />
-    
-    <!-- Range constraints -->
+
+    <!-- Restricciones de rango -->
     <download software="temporal" version="^1.20.0" />
     <download software="dolt" version="~0.50.0" />
-    
-    <!-- Stability constraints -->
+
+    <!-- Restricciones de estabilidad -->
     <download software="tool" version="^1.0.0@beta" />
-    
-    <!-- Feature releases (automatically sets preview stability) -->
+
+    <!-- Lanzamientos de características (asigna automáticamente estabilidad preview) -->
     <download software="experimental" version="^1.0.0-experimental" />
 </actions>
 ```
 
-### Advanced Configuration Options
+### Opciones Avanzadas de Configuración
 
 ```xml
 <dload temp-dir="./runtime">
     <actions>
-        <!-- Different extraction paths -->
+        <!-- Diferentes rutas de extracción -->
         <download software="frontend" extract-path="public/assets" />
         <download software="config" extract-path="config" />
-        
-        <!-- Target different environments -->
+
+        <!-- Objetivo diferentes entornos -->
         <download software="prod-tool" version="^2.0.0@stable" />
         <download software="dev-tool" version="^2.0.0@beta" />
     </actions>
 </dload>
 ```
 
-## Custom Software Registry
+## Registro Personalizado de Software
 
-### Defining Software
+### Definiendo Software
 
 ```xml
 <dload>
     <registry overwrite="false">
-        <!-- Binary executable -->
-        <software name="RoadRunner" alias="rr" 
+        <!-- Ejecutable binario -->
+        <software name="RoadRunner" alias="rr"
                   homepage="https://roadrunner.dev"
-                  description="High performance Application server">
+                  description="Servidor de aplicaciones de alto rendimiento">
             <repository type="github" uri="roadrunner-server/roadrunner" asset-pattern="/^roadrunner-.*/" />
             <binary name="rr" pattern="/^roadrunner-.*/" />
         </software>
 
-        <!-- Archive with files -->
-        <software name="frontend" description="Frontend assets">
+        <!-- Archivo con recursos -->
+        <software name="frontend" description="Recursos del frontend">
             <repository type="github" uri="my-org/frontend" asset-pattern="/^artifacts.*/" />
             <file pattern="/^.*\.js$/" />
             <file pattern="/^.*\.css$/" />
         </software>
 
-        <!-- Mixed: binaries + files -->
-        <software name="development-suite" description="Complete development tools">
+        <!-- Mixto: binarios + archivos -->
+        <software name="development-suite" description="Herramientas completas de desarrollo">
             <repository type="github" uri="my-org/dev-tools" />
             <binary name="cli-tool" pattern="/^cli-tool.*/" />
             <file pattern="/^config\.yml$/" extract-path="config" />
             <file pattern="/^templates\/.*/" extract-path="templates" />
         </software>
 
-        <!-- PHAR tools -->
-        <software name="psalm" description="Static analysis tool">
+        <!-- Herramientas PHAR -->
+        <software name="psalm" description="Herramienta de análisis estático">
             <repository type="github" uri="vimeo/psalm" />
             <binary name="psalm.phar" pattern="/^psalm\.phar$/" />
         </software>
@@ -260,69 +260,76 @@ Use Composer-style version constraints:
 </dload>
 ```
 
-### Software Elements
+### Elementos de Software
 
-#### Repository Configuration
+#### Configuración de Repositorio
 
-- **type**: Currently supports "github"
-- **uri**: Repository path (e.g., "username/repo")
-- **asset-pattern**: Regex pattern to match release assets
+- **type**: Actualmente soporta "github"
+- **uri**: Ruta del repositorio (ejemplo: "usuario/repositorio")
+- **asset-pattern**: Patrón regex para coincidir con los recursos de los releases
 
-#### Binary Elements
 
-- **name**: Binary name for reference
-- **pattern**: Regex pattern to match binary in assets
-- Automatically handles OS/architecture filtering
+#### Elementos Binarios
 
-#### File Elements
+- **name**: Nombre del binario para referencia
+- **pattern**: Patrón regex para coincidir con el binario en los recursos
+- Maneja automáticamente el filtrado por SO/arquitectura
 
-- **pattern**: Regex pattern to match files
-- **extract-path**: Optional extraction directory
-- Works on any system (no OS/architecture filtering)
 
-## Use Cases
+#### Elementos de Archivo
 
-### Development Environment Setup
+- **pattern**: Patrón regex para coincidir con archivos
+- **extract-path**: Directorio de extracción opcional
+- Funciona en cualquier sistema (sin filtrado por SO/arquitectura)
+
+
+## Casos de Uso
+
+### Configuración de Entorno de Desarrollo
 
 ```bash
-# One-time setup for new developers
+# Configuración única para nuevos desarrolladores
 composer install
 ./vendor/bin/dload get
 ```
 
-### CI/CD Integration
+
+### Integración CI/CD
 
 ```yaml
 # GitHub Actions
-- name: Download tools
+- name: Descargar herramientas
   run: GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} ./vendor/bin/dload get
 ```
 
-### Cross-Platform Teams
 
-Each developer gets the correct binaries for their system:
+### Equipos Multiplataforma
+
+Cada desarrollador obtiene los binarios correctos para su sistema:
 
 ```xml
 <actions>
-    <download software="rr" />        <!-- Linux binary for Linux, Windows .exe for Windows -->
-    <download software="temporal" />   <!-- macOS binary for macOS, etc. -->
+    <download software="rr" />        <!-- Binario Linux para Linux, .exe para Windows -->
+    <download software="temporal" />   <!-- Binario macOS para macOS, etc. -->
 </actions>
 ```
 
-### PHAR Tools Management
+
+### Gestión de Herramientas PHAR
 
 ```xml
 <actions>
-    <!-- Download as executable .phar files -->
+    <!-- Descargar como archivos ejecutables .phar -->
     <download software="psalm" type="phar" />
     <download software="phpstan" type="phar" />
     
-    <!-- Extract contents instead -->
-    <download software="psalm" type="archive" />  <!-- Unpacks psalm.phar -->
+    <!-- Extraer contenido en su lugar -->
+    <download software="psalm" type="archive" />  <!-- Desempaqueta psalm.phar -->
 </actions>
 ```
 
-### Frontend Asset Distribution
+
+### Distribución de Recursos Frontend
 
 ```xml
 <software name="ui-kit">
@@ -335,20 +342,21 @@ Each developer gets the correct binaries for their system:
 </actions>
 ```
 
-## GitHub API Rate Limits
 
-Use a personal access token to avoid rate limits:
+## Límite de Peticiones a la API de GitHub
+
+Usa un token de acceso personal para evitar límites de peticiones:
 
 ```bash
-GITHUB_TOKEN=your_token_here ./vendor/bin/dload get
+GITHUB_TOKEN=tu_token_aquí ./vendor/bin/dload get
 ```
 
-Add to CI/CD environment variables for automated downloads.
+Agrégalo a las variables de entorno de tu CI/CD para descargas automatizadas.
 
-## Contributing
+## Contribuir
 
-Contributions welcome! Submit Pull Requests to:
+¡Contribuciones bienvenidas! Envía Pull Requests para:
 
-- Add new software to the predefined registry
-- Improve DLoad functionality  
-- Enhance documentation and translate this [on other languages](docs/guidelines/how-to-use-llm-for-translate-docs.md)
+- Agregar nuevo software al registro predefinido
+- Mejorar la funcionalidad de DLoad
+- Mejorar la documentación y traducirla [a otros idiomas](docs/guidelines/how-to-use-llm-for-translate-docs.md)
