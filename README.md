@@ -38,57 +38,54 @@ composer require internal/dload -W
 [![License](https://img.shields.io/packagist/l/internal/dload.svg?style=flat-square)](LICENSE.md)
 [![Total DLoads](https://img.shields.io/packagist/dt/internal/dload.svg?style=flat-square)](https://packagist.org/packages/internal/dload/stats)
 
+## Quick Start
+
+1. **Initialize your project configuration**:
+
+    ```xml
+    <?xml version="1.0"?>
+    <dload xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:noNamespaceSchemaLocation="vendor/internal/dload/dload.xsd"
+    >
+       <actions>
+           <download software="rr" version="^2025.1.0"/>
+           <download software="temporal" version="^1.3"/>
+       </actions>
+    </dload>
+    ```
+
+2. **Download configured software**:
+
+    ```bash
+    ./vendor/bin/dload get
+    ```
+
+3. **Integrate with Composer** (optional):
+
+    ```json
+    {
+        "scripts": {
+            "post-update-cmd": "dload get --no-interaction -v || echo can't dload binaries"
+        }
+    }
+    ```
+
 ## Command Line Usage
-
-DLoad offers three main commands:
-
-### List Available Software
-
-```bash
-# View all available software packages
-./vendor/bin/dload software
-```
-
-This displays a list of all registered software packages with their IDs, names, repository information, and descriptions.
-
-DLoad comes with a pre-configured list of popular tools and software packages ready for download.
-You can contribute to this list by submitting issues or pull requests to the DLoad repository.
-
-### Show Downloaded Software
-
-```bash
-# View all downloaded software
-./vendor/bin/dload show
-
-# Show detailed information about specific software
-./vendor/bin/dload show rr
-
-# Show all available software, including those not downloaded
-./vendor/bin/dload show --all
-```
-
-This command displays information about downloaded software.
 
 ### Download Software
 
 ```bash
-# Basic usage
-./vendor/bin/dload get rr
-
-# Download multiple packages
-./vendor/bin/dload get rr dolt temporal
-
-# Download with specific stability
-./vendor/bin/dload get rr --stability=beta
-
-# Use configuration from file (without specifying software)
+# Download from configuration file
 ./vendor/bin/dload get
 
-# Force download even if binary exists
-./vendor/bin/dload get rr --force
+# Download specific packages
+./vendor/bin/dload get rr temporal
+
+# Download with options
+./vendor/bin/dload get rr --stability=beta --force
 ```
 
-#### Download Command Options
+#### Download Options
 
 | Option | Description | Default |
 |--------|-------------|---------|
@@ -99,13 +96,25 @@ This command displays information about downloaded software.
 | `--config` | Path to configuration file | ./dload.xml |
 | `--force`, `-f` | Force download even if binary exists | false |
 
-## Project Configuration
+### View Software
 
-### Setting Up Your Project
+```bash
+# List available software packages
+./vendor/bin/dload software
 
-The `dload.xml` file in your project root is essential for automation. It defines the tools and assets required by your project, allowing for automatic initialization of development environments.
+# Show downloaded software
+./vendor/bin/dload show
 
-When a new developer joins your project, they can simply run `dload get` to download all necessary binaries and assets without manual configuration.
+# Show specific software details
+./vendor/bin/dload show rr
+
+# Show all software (downloaded and available)
+./vendor/bin/dload show --all
+```
+
+## Configuration Guide
+
+### Basic Configuration
 
 Create `dload.xml` in your project root:
 
@@ -113,261 +122,229 @@ Create `dload.xml` in your project root:
 <?xml version="1.0"?>
 <dload xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/php-internal/dload/refs/heads/1.x/dload.xsd"
-       temp-dir="./runtime"
->
+       temp-dir="./runtime">
     <actions>
-        <download software="rr" version="^2.12.0" />
-        <download software="dolt" />
+        <download software="rr" version="^2025.1" />
         <download software="temporal" />
-        <download software="frontend" extract-path="frontend"/>
+        <download software="frontend" extract-path="frontend" />
     </actions>
 </dload>
 ```
 
-Then run:
+### Download Types
 
-```bash
-./vendor/bin/dload get
-```
+DLoad supports three download types that determine how assets are processed:
 
-### Configuration Options
-
-The `dload.xml` file supports several options:
-
-- **temp-dir**: Directory for temporary files during download (default: system temp dir)
-- **actions**: List of download actions to perform
-
-#### Download Action Options
-
-Each `<download>` action supports:
-
-- **software**: Name or alias of the software to download (required)
-- **version**: Target version using Composer versioning syntax (e.g., `^2.12.0`, `~1.0`, `1.2.3`)
-- **extract-path**: Directory where files will be extracted (useful for non-binary assets)
-
-The **version** attribute supports advanced constraints for targeting specific release types.
-You can use feature suffixes to target releases with custom tags like `^2.12.0-experimental` for experimental builds,
-or minimum-stability constraints to filter by release stability such as `^2.12.0@beta` for beta or more stable releases.
-
-**Feature Suffix Behavior**: When using feature suffix constraints (e.g., `^2.12.0-experimental`),
-the minimum stability is automatically set to `preview`, equivalent to writing `^2.12.0-experimental@preview`.
-This ensures that feature releases with preview stability or higher are included,
-while maintaining conservative defaults for production use.
-
-**Release Stability Parsing**: Regular releases without suffixes (e.g., `v2.1.0`) are treated as stable.
-However, releases with feature suffixes but no explicit stability marker (e.g., `v2.1.0-experimental`) are automatically parsed as `preview` stability,
-indicating they demonstrate functionality but are not production-ready.
-
-### Handling Different File Types
-
-DLoad handles both binary executables and regular files:
+#### Type Attribute
 
 ```xml
-<software name="my-app">
-    <!-- Binary executable that depends on OS/architecture -->
-    <binary name="app-cli" pattern="/^app-cli-.*/" />
-    
-    <!-- Regular file that works on any system -->
-    <file pattern="/^config.yml$/" />
+<!-- Explicit type specification -->
+<download software="psalm" type="phar" />        <!-- Download .phar without unpacking -->
+<download software="frontend" type="archive" />  <!-- Force archive extraction -->
+<download software="rr" type="binary" />         <!-- Binary-specific processing -->
+
+<!-- Automatic type handling (recommended) -->
+<download software="rr" />           <!-- Uses all available handlers -->
+<download software="frontend" />     <!-- Smart processing based on software config -->
+```
+
+#### Default Behavior (No Type Specified)
+
+When `type` is not specified, DLoad automatically uses all available handlers:
+
+- **Binary processing**: If software has `<binary>` section, performs binary presence and version checking
+- **Files processing**: If software has `<file>` section and asset is downloaded, processes files during unpacking
+- **Simple download**: If no sections exist, downloads asset without unpacking
+
+```xml
+<!-- registry list -->
+<software name="complex-tool">
+    <binary name="tool" pattern="/^tool-.*/" />
+    <file pattern="/^config\..*/" extract-path="config" />
 </software>
+
+<!-- actions list -->
+<!-- Uses both binary and files processing -->
+<download software="complex-tool" />
 ```
 
-### Automatic Binary Downloads with Composer Update
+#### Explicit Type Behaviors
 
-Integrate DLoad with Composer to automatically download required binaries whenever dependencies are updated.
-This ensures your team always has the necessary tools without manual intervention.
+| Type      | Behavior                                                     | Use Case                       |
+|-----------|--------------------------------------------------------------|--------------------------------|
+| `binary`  | Binary checking, version validation, executable permissions  | CLI tools, executables         |
+| `phar`    | Downloads `.phar` files as executables **without unpacking** | PHP tools like Psalm, PHPStan  |
+| `archive` | **Forces unpacking even for .phar files**                    | When you need archive contents |
 
-Add the following to your `composer.json`:
+> [!NOTE]
+> Use `type="phar"` for PHP tools that should remain as `.phar` files.
+> Using `type="archive"` will unpack even `.phar` archives.
 
-```json
-{
-    "scripts": {
-        "post-update-cmd": "dload get --no-interaction -v || echo can't dload binaries",
-        "get:binaries": "dload get --no-interaction --force -vv"
-    }
-}
+### Version Constraints
+
+Use Composer-style version constraints:
+
+```xml
+<actions>
+    <!-- Exact version -->
+    <download software="rr" version="2.12.3" />
+    
+    <!-- Range constraints -->
+    <download software="temporal" version="^1.20.0" />
+    <download software="dolt" version="~0.50.0" />
+    
+    <!-- Stability constraints -->
+    <download software="tool" version="^1.0.0@beta" />
+    
+    <!-- Feature releases (automatically sets preview stability) -->
+    <download software="experimental" version="^1.0.0-experimental" />
+</actions>
 ```
 
-This configuration:
+### Advanced Configuration Options
 
-- Automatically downloads required binaries after `composer update`
-- Provides a custom command `composer get:binaries` to force download all binaries with detailed output
+```xml
+<dload temp-dir="./runtime">
+    <actions>
+        <!-- Different extraction paths -->
+        <download software="frontend" extract-path="public/assets" />
+        <download software="config" extract-path="config" />
+        
+        <!-- Target different environments -->
+        <download software="prod-tool" version="^2.0.0@stable" />
+        <download software="dev-tool" version="^2.0.0@beta" />
+    </actions>
+</dload>
+```
 
 ## Custom Software Registry
 
-### Defining Custom Software
-
-Create your own software definitions:
+### Defining Software
 
 ```xml
-<?xml version="1.0"?>
-<dload xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/php-internal/dload/refs/heads/1.x/dload.xsd"
->
+<dload>
     <registry overwrite="false">
-        <!-- Binary software example -->
-        <software name="RoadRunner" alias="rr"
+        <!-- Binary executable -->
+        <software name="RoadRunner" alias="rr" 
                   homepage="https://roadrunner.dev"
-                  description="High performant Application server">
+                  description="High performance Application server">
             <repository type="github" uri="roadrunner-server/roadrunner" asset-pattern="/^roadrunner-.*/" />
             <binary name="rr" pattern="/^roadrunner-.*/" />
         </software>
 
-        <!-- Non-binary files example -->
+        <!-- Archive with files -->
         <software name="frontend" description="Frontend assets">
-            <repository type="github"
-                        uri="my-org/frontend"
-                        asset-pattern="/^artifacts.*/"
-            />
+            <repository type="github" uri="my-org/frontend" asset-pattern="/^artifacts.*/" />
             <file pattern="/^.*\.js$/" />
             <file pattern="/^.*\.css$/" />
         </software>
 
-        <!-- Software with mixed file types -->
-        <software name="my-tool" description="Complete tool suite">
-            <repository type="github" uri="my-org/tool" />
-            <!-- Binary executables -->
-            <binary name="tool-cli" pattern="/^tool-cli.*/" />
-            <binary name="tool-worker" pattern="/^worker.*/" />
-            <!-- Configuration files -->
+        <!-- Mixed: binaries + files -->
+        <software name="development-suite" description="Complete development tools">
+            <repository type="github" uri="my-org/dev-tools" />
+            <binary name="cli-tool" pattern="/^cli-tool.*/" />
             <file pattern="/^config\.yml$/" extract-path="config" />
             <file pattern="/^templates\/.*/" extract-path="templates" />
+        </software>
+
+        <!-- PHAR tools -->
+        <software name="psalm" description="Static analysis tool">
+            <repository type="github" uri="vimeo/psalm" />
+            <binary name="psalm.phar" pattern="/^psalm\.phar$/" />
         </software>
     </registry>
 </dload>
 ```
 
-### Software Configuration Options
+### Software Elements
 
-Each `<software>` entry supports:
-
-- **name**: Display name (required)
-- **alias**: Short name for command line usage
-- **description**: Brief description
-- **homepage**: Website URL
-
-#### Repository Options
-
-The `<repository>` element configures where to download from:
+#### Repository Configuration
 
 - **type**: Currently supports "github"
 - **uri**: Repository path (e.g., "username/repo")
 - **asset-pattern**: Regex pattern to match release assets
 
-#### Binary Options
+#### Binary Elements
 
-The `<binary>` element defines executable files:
+- **name**: Binary name for reference
+- **pattern**: Regex pattern to match binary in assets
+- Automatically handles OS/architecture filtering
 
-- **name**: Binary name that will be referenced
-- **pattern**: Regex pattern to match the binary in release assets
-
-Binary files are OS and architecture specific. DLoad will automatically download the correct version for your system.
-
-#### File Options
-
-The `<file>` element defines non-binary files:
+#### File Elements
 
 - **pattern**: Regex pattern to match files
-- **extract-path**: Optional subdirectory where files will be extracted
+- **extract-path**: Optional extraction directory
+- Works on any system (no OS/architecture filtering)
 
-File assets don't have OS/architecture restrictions and work on any system.
+## Use Cases
+
+### Development Environment Setup
+
+```bash
+# One-time setup for new developers
+composer install
+./vendor/bin/dload get
+```
+
+### CI/CD Integration
+
+```yaml
+# GitHub Actions
+- name: Download tools
+  run: GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} ./vendor/bin/dload get
+```
+
+### Cross-Platform Teams
+
+Each developer gets the correct binaries for their system:
+
+```xml
+<actions>
+    <download software="rr" />        <!-- Linux binary for Linux, Windows .exe for Windows -->
+    <download software="temporal" />   <!-- macOS binary for macOS, etc. -->
+</actions>
+```
+
+### PHAR Tools Management
+
+```xml
+<actions>
+    <!-- Download as executable .phar files -->
+    <download software="psalm" type="phar" />
+    <download software="phpstan" type="phar" />
+    
+    <!-- Extract contents instead -->
+    <download software="psalm" type="archive" />  <!-- Unpacks psalm.phar -->
+</actions>
+```
+
+### Frontend Asset Distribution
+
+```xml
+<software name="ui-kit">
+    <repository type="github" uri="company/ui-components" />
+    <file pattern="/^dist\/.*/" extract-path="public/components" />
+</software>
+
+<actions>
+    <download software="ui-kit" type="archive" />
+</actions>
+```
 
 ## GitHub API Rate Limits
 
-To avoid GitHub API rate limits, use a personal access token:
+Use a personal access token to avoid rate limits:
 
 ```bash
 GITHUB_TOKEN=your_token_here ./vendor/bin/dload get
 ```
 
-You can add this to your CI/CD pipeline environment variables for automated downloads.
-
-## Use Cases
-
-### Local Development Environment Setup
-
-Automatically download required tools when setting up a development environment:
-
-```bash
-# Initialize project with all required tools
-composer install
-./vendor/bin/dload get
-```
-
-### CI/CD Pipeline Integration
-
-In your GitHub Actions workflow:
-
-```yaml
-steps:
-  - uses: actions/checkout@v2
-
-  - name: Setup PHP
-    uses: shivammathur/setup-php@v2
-    with:
-      php-version: '8.1'
-
-  - name: Install dependencies
-    run: composer install
-
-  - name: Download binary tools
-    run: |
-      GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} ./vendor/bin/dload get
-```
-
-### Cross-Platform Development Team
-
-Configure once, use everywhere:
-
-```xml
-<dload xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/php-internal/dload/refs/heads/1.x/dload.xsd"
->
-    <actions>
-        <download software="rr" version="^2.12.0" />
-        <download software="temporal" />
-    </actions>
-</dload>
-```
-
-Each team member runs `./vendor/bin/dload get` and gets the correct binaries for their system (Windows, macOS, or Linux).
-
-### Distributed Frontend Assets
-
-Keep your frontend assets separate from your PHP repository:
-
-```xml
-<software name="frontend-bundle">
-    <repository type="github" uri="your-org/frontend-build" asset-pattern="/^dist.*/" />
-    <file pattern="/^.*$/" extract-path="public/assets" />
-</software>
-```
-
-### Advanced Development Workflows
-
-Target specific release types for different environments:
-
-```xml
-<dload xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/php-internal/dload/refs/heads/1.x/dload.xsd"
->
-    <actions>
-        <!-- Production: stable releases only -->
-        <download software="rr" version="^2.12.0@stable" />
-        
-        <!-- Staging: beta releases for testing -->
-        <download software="temporal" version="^1.20.0@beta" />
-        
-        <!-- Development: experimental features (automatically sets minimum stability to preview) -->
-        <download software="dev-tool" version="^1.0.0-experimental" />
-        
-        <!-- Feature branch testing with explicit stability -->
-        <download software="app" version="^2.0.0-new-api@alpha" />
-    </actions>
-</dload>
-```
+Add to CI/CD environment variables for automated downloads.
 
 ## Contributing
 
-Contributions are welcome!
-Feel free to submit a Pull Request to add new software to the predefined list or improve the functionality of DLoad.
+Contributions welcome! Submit Pull Requests to:
+
+- Add new software to the predefined registry
+- Improve DLoad functionality  
+- Enhance documentation

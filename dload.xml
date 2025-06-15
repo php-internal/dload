@@ -10,6 +10,7 @@
         <download software="dolt" />
         <download software="temporal" version-path="composer.json@require.temporal/sdk" />
         <download software="frontend" extract-path="frontend"/>
+        <download software="trap" format="phar" version="^1.1" />
     </actions>
     <registry overwrite="false">
         <software name="RoadRunner" alias="rr"

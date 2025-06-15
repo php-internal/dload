@@ -114,6 +114,37 @@ final class ConfigLoader
                         },
                         default => $value,
                     },
+                    \enum_exists($type->getName()) => (static function (mixed $value) use ($type): \UnitEnum {
+                        /** @var class-string<\BackedEnum> $class */
+                        $class = $type->getName();
+
+                        // Get Enum values type
+                        $cases = (new \ReflectionEnum($class))->getCases();
+
+                        // If the value is stringable, convert it to string first
+                        $value = (string) $value;
+
+                        // Convert value to the backing type
+                        if ($cases[0] instanceof \ReflectionEnumBackedCase) {
+                            // Find case by backing value
+                            \is_int($cases[0]->getBackingValue()) and $value = (int) $value;
+                            return $class::from($value);
+                        }
+
+                        // Find case by name
+                        $value = \strtolower($value);
+                        foreach ($cases as $case) {
+                            if (\strtolower($case->getName()) === $value) {
+                                return $case->getValue();
+                            }
+                        }
+
+                        throw new \ValueError(\sprintf(
+                            'Invalid enum value `%s` for enum `%s`.',
+                            $value,
+                            $class,
+                        ));
+                    })($value),
                     default => $value,
                 };
 

@@ -7,11 +7,12 @@ namespace Internal\DLoad;
 use Internal\DLoad\Module\Archive\ArchiveFactory;
 use Internal\DLoad\Module\Binary\BinaryProvider;
 use Internal\DLoad\Module\Common\Config\Action\Download as DownloadConfig;
+use Internal\DLoad\Module\Common\Config\Action\Type;
 use Internal\DLoad\Module\Common\Config\Embed\File;
 use Internal\DLoad\Module\Common\Config\Embed\Software;
+use Internal\DLoad\Module\Common\FileSystem\Path;
 use Internal\DLoad\Module\Common\Input\Destination;
 use Internal\DLoad\Module\Common\OperatingSystem;
-use Internal\DLoad\Module\Common\VersionConstraint;
 use Internal\DLoad\Module\Downloader\Downloader;
 use Internal\DLoad\Module\Downloader\SoftwareCollection;
 use Internal\DLoad\Module\Downloader\Task\DownloadResult;
@@ -75,8 +76,9 @@ final class DLoad
 
         // Check if binary already exists and satisfies version constraint
         $destinationPath = $this->getDestinationPath($action);
+        $type = $action->type;
 
-        if (!$force && $software->binary !== null) {
+        if (!$force && ($type === null || $type === Type::Binary) && $software->binary !== null) {
             // Check different constraints
             $binary = $this->binaryProvider->getBinary($destinationPath, $software->binary);
 
@@ -179,27 +181,40 @@ final class DLoad
     {
         return function (DownloadResult $downloadResult) use ($software, $action): void {
             $fileInfo = $downloadResult->file;
+
+            // Create a copy of the files list with binary included if necessary
+            $files = $this->filesToExtract($software, $action);
+
+            // Create destination directory if it doesn't exist
+            $path = $this->getDestinationPath($action);
+            if (!\is_dir((string) $path)) {
+                $this->logger->info('Creating directory %s', (string) $path);
+                @\mkdir((string) $path, 0755, true);
+            }
+
+            // If no extraction rules are defined, do not extract anything
+            // and just copy the file to the destination
+            if ($files === []) {
+                $this->logger->debug(
+                    'No files to extract for `%s`, copying the downloaded file to the destination.',
+                    $fileInfo->getFilename(),
+                );
+                $toFile = (string) $path->join($fileInfo->getFilename());
+                \copy($fileInfo->getRealPath() ?: $fileInfo->getPathname(), $toFile);
+
+                $action->type === Type::Phar and \chmod($toFile, 0o755);
+                return;
+            }
+
             $archive = $this->archiveFactory->create($fileInfo);
             $extractor = $archive->extract();
             $this->logger->info('Extracting %s', $fileInfo->getFilename());
-
-            // Create a copy of the files list with binary included if necessary
-            $files = $this->filesToExtract($software);
-
-            if ($files !== []) {
-                // Create destination directory if it doesn't exist
-                $path = $this->getDestinationPath($action);
-                if (!\is_dir($path)) {
-                    $this->logger->info('Creating directory %s', $path);
-                    @\mkdir($path, 0755, true);
-                }
-            }
 
             while ($extractor->valid()) {
                 $file = $extractor->current();
                 \assert($file instanceof \SplFileInfo);
 
-                $to = $this->shouldBeExtracted($file, $files, $action);
+                [$to, $rule] = $this->shouldBeExtracted($file, $files, $action);
                 $this->logger->debug(
                     $to === null ? 'Skipping %s%s' : 'Extracting %s to %s',
                     $file->getFilename(),
@@ -226,7 +241,8 @@ final class DLoad
                     ),
                 );
 
-                $to->isExecutable() or @\chmod($path, 0755);
+                \assert($rule !== null);
+                $rule->chmod === null or @\chmod($path, $rule->chmod);
             }
         };
     }
@@ -237,9 +253,11 @@ final class DLoad
      * @param \SplFileInfo $source Source file from the archive
      * @param list<File> $mapping File mapping configurations
      * @param DownloadConfig $action Download action configuration
-     * @return \SplFileInfo|null Target file path or null if file should not be extracted
+     * @return array{\SplFileInfo|null, null|File} Array containing:
+     *         - Target file path or null if file should not be extracted
+     *         - File configuration that matched the source file, or null if no match found
      */
-    private function shouldBeExtracted(\SplFileInfo $source, array $mapping, DownloadConfig $action): ?\SplFileInfo
+    private function shouldBeExtracted(\SplFileInfo $source, array $mapping, DownloadConfig $action): array
     {
         $path = $this->getDestinationPath($action);
 
@@ -251,35 +269,40 @@ final class DLoad
                     default => $conf->rename . '.' . $source->getExtension(),
                 };
 
-                return new \SplFileInfo($path . DIRECTORY_SEPARATOR . $newName);
+                return [new \SplFileInfo((string) $path->join($newName)), $conf];
             }
         }
 
-        return null;
+        return [null, null];
     }
 
     /**
      * Gets the destination path for file extraction, prioritizing global destination path over custom extraction path.
      *
      * @param DownloadConfig $action Download action configuration
-     * @return non-empty-string Path where files should be extracted
      */
-    private function getDestinationPath(DownloadConfig $action): string
+    private function getDestinationPath(DownloadConfig $action): Path
     {
-        return $this->configDestination->path ?? $action->extractPath ?? (string) \getcwd();
+        return Path::create($this->configDestination->path ?? $action->extractPath ?? (string) \getcwd());
     }
 
     /**
      * @return list<File>
      */
-    private function filesToExtract(Software $software): array
+    private function filesToExtract(Software $software, DownloadConfig $action): array
     {
+        // Don't extract files for Phar actions
+        if ($action->type === Type::Phar) {
+            return [];
+        }
+
         $files = $software->files;
         if ($software->binary !== null) {
             $binary = new File();
             $binary->pattern = $software->binary->pattern
                 ?? "/^{$software->binary->name}{$this->os->getBinaryExtension()}$/";
             $binary->rename = $software->binary->name;
+            $binary->chmod = 0o755; // Default permissions for binaries
             $files[] = $binary;
         }
 

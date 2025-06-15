@@ -67,7 +67,7 @@ jobs:
       cancel-in-progress: true
       group: testing-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ matrix.php-version }}-${{ matrix.dependencies }}
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         os:
           - ubuntu-latest
@@ -75,6 +75,7 @@ jobs:
           - '8.1'
           - '8.2'
           - '8.3'
+          - '8.4'
         dependencies:
           - lowest
           - locked
@@ -88,7 +89,6 @@ jobs:
         with:
           php-version: ${{ matrix.php-version }}
           ini-values: error_reporting=E_ALL
-          coverage: xdebug
 
       - name: 🛠️ Setup problem matchers
         run: |
