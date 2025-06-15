@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3.0 (2025-06-15)
+
+## What's Changed
+* Add ability to load `phar` archives by @roxblnfk in https://github.com/php-internal/dload/pull/52
+
+
+**Full Changelog**: https://github.com/php-internal/dload/compare/1.2.3...1.3.0
+
 ## 1.2.3 (2025-06-14)
 
 ## What's Changed
