@@ -4,7 +4,7 @@
 
 </div>
 
-<p align="center">Download artifacts easily</p>
+<p align="center">Легко скачивайте артефакты</p>
 
 <div align="center">
 
