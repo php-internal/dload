@@ -49,10 +49,11 @@ Once your translation is ready, you can contribute it to the project using the *
 ### 📝 How to Use the Pattern
 
 1. **File Naming Convention**
+    - Use ISO 639-1 in {lang_code} placeholder
     - Rename your translated file following this format:
-
+    
 ```
-your-doc-name-{lang_code_w3c}.md
+your-doc-name-{lang_code}.md
 ```
 
         - Example:
