@@ -95,7 +95,7 @@ CONTRIBUTING-de.md
 **Example Prompt:**
 
 ```
-Translate this markdown file from English to {TARGET_LANGUAGE}
+Translate this markdown file from English to Chinese
 xml and html ignore for translate
 i need a single message with all md file content
 ```
