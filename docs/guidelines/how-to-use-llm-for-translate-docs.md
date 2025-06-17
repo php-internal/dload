@@ -87,8 +87,8 @@ CONTRIBUTING-de.md
 
 - Use clear and specific prompts to minimize errors.
 - Always double-check technical content, as LLMs may mistranslate code or markup.
-- Consider using frameworks like MAPS (Multi-Aspect Prompting and Selection) for complex translations, which guide the LLM through keywords, topics, and relevant examples to improve accuracy and reduce errors[^5].
-- Remember: Human review is essential for catching subtle mistakes and ensuring the translation meets your quality standards[^5].
+- Consider using frameworks like MAPS (Multi-Aspect Prompting and Selection) for complex translations, which guide the LLM through keywords, topics, and relevant examples to improve accuracy and reduce errors.
+- Remember: Human review is essential for catching subtle mistakes and ensuring the translation meets your quality standards.
 
 ---
 
