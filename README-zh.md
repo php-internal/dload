@@ -32,7 +32,6 @@ DLoad 解决了 PHP 项目中的一个常见问题：如何将必要的二进制
 - 无需手动配置即可管理跨平台兼容性
 - 将二进制文件和资源与版本控制分离
 
-
 ## 安装
 
 ```bash
@@ -76,7 +75,6 @@ composer require internal/dload -W
     }
     ```
 
-
 ## 命令行用法
 
 ### 下载软件
@@ -118,7 +116,6 @@ composer require internal/dload -W
 # 显示所有软件（已下载和可用）
 ./vendor/bin/dload show --all
 ```
-
 
 ## 配置指南
 
@@ -225,7 +222,6 @@ DLoad 支持三种下载类型，用于决定资源的处理方式：
 </dload>
 ```
 
-
 ## 自定义软件注册表
 
 ### 定义软件
@@ -285,7 +281,6 @@ DLoad 支持三种下载类型，用于决定资源的处理方式：
 - **extract-path**：可选，解压目录
 - 适用于所有系统（不区分操作系统/架构）
 
-
 ## 使用场景
 
 ### 开发环境搭建
@@ -340,7 +335,6 @@ composer install
     <download software="ui-kit" type="archive" />
 </actions>
 ```
-
 
 ## GitHub API 速率限制
 

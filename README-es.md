@@ -281,7 +281,6 @@ Usa restricciones de versión estilo Composer:
 - **extract-path**: Directorio de extracción opcional
 - Funciona en cualquier sistema (sin filtrado por SO/arquitectura)
 
-
 ## Casos de uso
 
 ### Configuración de entorno de desarrollo
@@ -336,7 +335,6 @@ Cada desarrollador obtiene los binarios correctos para su sistema:
     <download software="ui-kit" type="archive" />
 </actions>
 ```
-
 
 ## Límites de peticiones a la API de GitHub
 
