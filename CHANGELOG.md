@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.3.1 (2025-06-18)
+
+## What's Changed
+* Add readme translations by @DimaTiunov in https://github.com/php-internal/dload/pull/55
+
+## New Contributors
+* @DimaTiunov made their first contribution in https://github.com/php-internal/dload/pull/55
+
+**Full Changelog**: https://github.com/php-internal/dload/compare/1.3.0...1.3.1
+
 ## 1.3.0 (2025-06-15)
 
 ## What's Changed
