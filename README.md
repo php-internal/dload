@@ -16,6 +16,11 @@
 
 DLoad simplifies downloading and managing binary artifacts for your projects. Perfect for development environments that require specific tools like RoadRunner, Temporal, or custom binaries.
 
+[![English readme](https://img.shields.io/badge/README-English%20%F0%9F%87%BA%F0%9F%87%B8-moccasin?style=flat-square)](README.md)
+[![Chinese readme](https://img.shields.io/badge/README-%E4%B8%AD%E6%96%87%20%F0%9F%87%A8%F0%9F%87%B3-moccasin?style=flat-square)](README-zh.md)
+[![Russian readme](https://img.shields.io/badge/README-Русский%20%F0%9F%87%B7%F0%9F%87%BA-moccasin?style=flat-square)](README-ru.md)
+[![Spanish readme](https://img.shields.io/badge/README-Español%20%F0%9F%87%AA%F0%9F%87%B8-moccasin?style=flat-square)](README-es.md)
+
 ## Why DLoad?
 
 DLoad solves a common problem in PHP projects: how to distribute and install necessary binary tools and assets alongside your PHP code.
@@ -347,4 +352,4 @@ Contributions welcome! Submit Pull Requests to:
 
 - Add new software to the predefined registry
 - Improve DLoad functionality  
-- Enhance documentation
+- Enhance documentation and translate this [on other languages](docs/guidelines/how-to-translate-readme-docs.md)
