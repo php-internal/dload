@@ -9,16 +9,17 @@
 <div align="center">
 
 [![Support](https://img.shields.io/static/v1?style=flat-square&label=Support&message=%E2%9D%A4&logo=GitHub&color=%23fe0086)](https://patreon.com/roxblnfk)
-[![Chinese readme](https://camo.githubusercontent.com/e9dee61c90a40244e7f37bf6a2599f4d047703887c5f0a5d11461e7dcbc4a01c/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f524541444d452d2545342542382541442545362539362538372532302546302539462538372541382546302539462538372542332d6d6f63636173696e3f7374796c653d666c61742d737175617265)](README-zh.md)
-[![English readme](https://camo.githubusercontent.com/b314871e659ba22c274756c3be9e9df0d7216fe55c6d4a8099e6412efadab525/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f524541444d452d456e676c6973682532302546302539462538372542412546302539462538372542382d6d6f63636173696e3f7374796c653d666c61742d737175617265)](README.md)
-[![Русский readme](https://camo.githubusercontent.com/4738967b86b85dc692816380ff7e688cebaa2269d8520d6526de2762dd5b322a/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f524541444d452d2544302541302544312538332544312538312544312538312544302542412544302542382544302542392532302546302539462538372542372546302539462538372542412d6d6f63636173696e3f7374796c653d666c61742d737175617265)](README-ru.md)
-[![Español readme](https://camo.githubusercontent.com/92ce47b3489ae195ec65fd1f94576d3c9e5899672ff55ea475d83ae4afa2102e/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f524541444d452d457370612543332542316f6c2532302546302539462538372541412546302539462538372542382d6d6f63636173696e3f7374796c653d666c61742d737175617265)](README-es.md)
 
 </div>
 
 <br />
 
 DLoad 简化了你项目中二进制构建产物的下载和管理。非常适合需要特定工具（如 RoadRunner、Temporal 或自定义二进制文件）的开发环境。
+
+[![English readme](https://img.shields.io/badge/README-English%20%F0%9F%87%BA%F0%9F%87%B8-moccasin?style=flat-square)](README.md)
+[![Chinese readme](https://img.shields.io/badge/README-%E4%B8%AD%E6%96%87%20%F0%9F%87%A8%F0%9F%87%B3-moccasin?style=flat-square)](README-zh.md)
+[![Russian readme](https://img.shields.io/badge/README-Русский%20%F0%9F%87%B7%F0%9F%87%BA-moccasin?style=flat-square)](README-ru.md)
+[![Spanish readme](https://img.shields.io/badge/README-Español%20%F0%9F%87%AA%F0%9F%87%B8-moccasin?style=flat-square)](README-es.md)
 
 ## 为什么选择 DLoad？
 
@@ -47,33 +48,33 @@ composer require internal/dload -W
 
 1. **初始化你的项目配置**：
 
-```xml
-<?xml version="1.0"?>
-<dload xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xsi:noNamespaceSchemaLocation="vendor/internal/dload/dload.xsd"
->
-   <actions>
-       <download software="rr" version="^2025.1.0"/>
-       <download software="temporal" version="^1.3"/>
-   </actions>
-</dload>
-```
+    ```xml
+    <?xml version="1.0"?>
+    <dload xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:noNamespaceSchemaLocation="vendor/internal/dload/dload.xsd"
+    >
+       <actions>
+           <download software="rr" version="^2025.1.0"/>
+           <download software="temporal" version="^1.3"/>
+       </actions>
+    </dload>
+    ```
 
 2. **下载配置的软件**：
 
-```bash
-./vendor/bin/dload get
-```
+    ```bash
+    ./vendor/bin/dload get
+    ```
 
 3. **与 Composer 集成**（可选）：
 
-```json
-{
-    "scripts": {
-        "post-update-cmd": "dload get --no-interaction -v || echo can't dload binaries"
+    ```json
+    {
+        "scripts": {
+            "post-update-cmd": "dload get --no-interaction -v || echo can't dload binaries"
+        }
     }
-}
-```
+    ```
 
 
 ## 命令行用法
@@ -90,7 +91,6 @@ composer require internal/dload -W
 # 使用选项下载
 ./vendor/bin/dload get rr --stability=beta --force
 ```
-
 
 #### 下载选项
 
@@ -139,7 +139,6 @@ composer require internal/dload -W
 </dload>
 ```
 
-
 ### 下载类型
 
 DLoad 支持三种下载类型，用于决定资源的处理方式：
@@ -156,7 +155,6 @@ DLoad 支持三种下载类型，用于决定资源的处理方式：
 <download software="rr" />           <!-- 使用所有可用处理器 -->
 <download software="frontend" />     <!-- 根据软件配置智能处理 -->
 ```
-
 
 #### 默认行为（未指定 type）
 
@@ -178,7 +176,6 @@ DLoad 支持三种下载类型，用于决定资源的处理方式：
 <download software="complex-tool" />
 ```
 
-
 #### 明确类型行为
 
 | 类型 | 行为 | 使用场景 |
@@ -193,22 +190,23 @@ DLoad 支持三种下载类型，用于决定资源的处理方式：
 
 ### 版本约束
 
-使用 Composer 风格的版本约束：... ```xml
+使用 Composer 风格的版本约束：
+
+```xml
 <actions>
-<!-- 精确版本 -->
-<download software="rr" version="2.12.3" />
+    <!-- 精确版本 -->
+    <download software="rr" version="2.12.3" />
 
     <!-- 范围约束 -->
     <download software="temporal" version="^1.20.0" />
     <download software="dolt" version="~0.50.0" />
-    
+
     <!-- 稳定性约束 -->
     <download software="tool" version="^1.0.0@beta" />
-    
+
     <!-- 特性发布（自动设置为 preview 稳定性） -->
     <download software="experimental" version="^1.0.0-experimental" />
-    </actions>
-
+</actions>
 ```
 
 ### 高级配置选项
@@ -219,7 +217,7 @@ DLoad 支持三种下载类型，用于决定资源的处理方式：
         <!-- 不同的解压路径 -->
         <download software="frontend" extract-path="public/assets" />
         <download software="config" extract-path="config" />
-        
+
         <!-- 目标不同环境 -->
         <download software="prod-tool" version="^2.0.0@stable" />
         <download software="dev-tool" version="^2.0.0@beta" />
@@ -267,7 +265,6 @@ DLoad 支持三种下载类型，用于决定资源的处理方式：
 </dload>
 ```
 
-
 ### 软件元素
 
 #### 仓库配置
@@ -276,13 +273,11 @@ DLoad 支持三种下载类型，用于决定资源的处理方式：
 - **uri**：仓库路径（如 "username/repo"）
 - **asset-pattern**：用于匹配发布资源的正则表达式
 
-
 #### Binary 元素
 
 - **name**：二进制名称，用于引用
 - **pattern**：匹配资源中二进制文件的正则表达式
 - 自动处理操作系统/架构过滤
-
 
 #### File 元素
 
@@ -301,7 +296,6 @@ composer install
 ./vendor/bin/dload get
 ```
 
-
 ### CI/CD 集成
 
 ```yaml
@@ -309,7 +303,6 @@ composer install
 - name: 下载工具
   run: GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} ./vendor/bin/dload get
 ```
-
 
 ### 跨平台团队
 
@@ -322,7 +315,6 @@ composer install
 </actions>
 ```
 
-
 ### PHAR 工具管理
 
 ```xml
@@ -330,12 +322,11 @@ composer install
     <!-- 以可执行 .phar 文件下载 -->
     <download software="psalm" type="phar" />
     <download software="phpstan" type="phar" />
-    
+
     <!-- 也可以解包内容 -->
     <download software="psalm" type="archive" />  <!-- 解包 psalm.phar -->
 </actions>
 ```
-
 
 ### 前端资源分发
 
@@ -367,4 +358,4 @@ GITHUB_TOKEN=your_token_here ./vendor/bin/dload get
 
 - 向预定义注册表添加新软件
 - 改进 DLoad 功能
-- 改進文檔 [並將其翻譯成其他語言](docs/guidelines/how-to-use-llm-for-translate-docs.md)
+- 改进文档并[翻译成其他语言](docs/guidelines/how-to-translate-readme-docs.md)

@@ -9,16 +9,17 @@
 <div align="center">
 
 [![Support](https://img.shields.io/static/v1?style=flat-square&label=Support&message=%E2%9D%A4&logo=GitHub&color=%23fe0086)](https://patreon.com/roxblnfk)
-[![Chinese readme](https://camo.githubusercontent.com/e9dee61c90a40244e7f37bf6a2599f4d047703887c5f0a5d11461e7dcbc4a01c/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f524541444d452d2545342542382541442545362539362538372532302546302539462538372541382546302539462538372542332d6d6f63636173696e3f7374796c653d666c61742d737175617265)](README-zh.md)
-[![English readme](https://camo.githubusercontent.com/b314871e659ba22c274756c3be9e9df0d7216fe55c6d4a8099e6412efadab525/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f524541444d452d456e676c6973682532302546302539462538372542412546302539462538372542382d6d6f63636173696e3f7374796c653d666c61742d737175617265)](README.md)
-[![Русский readme](https://camo.githubusercontent.com/4738967b86b85dc692816380ff7e688cebaa2269d8520d6526de2762dd5b322a/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f524541444d452d2544302541302544312538332544312538312544312538312544302542412544302542382544302542392532302546302539462538372542372546302539462538372542412d6d6f63636173696e3f7374796c653d666c61742d737175617265)](README-ru.md)
-[![Español readme](https://camo.githubusercontent.com/92ce47b3489ae195ec65fd1f94576d3c9e5899672ff55ea475d83ae4afa2102e/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f524541444d452d457370612543332542316f6c2532302546302539462538372541412546302539462538372542382d6d6f63636173696e3f7374796c653d666c61742d737175617265)](README-es.md)
 
 </div>
 
 <br />
 
 DLoad simplifica la descarga y gestión de artefactos binarios para tus proyectos. Perfecto para entornos de desarrollo que requieren herramientas específicas como RoadRunner, Temporal o binarios personalizados.
+
+[![English readme](https://img.shields.io/badge/README-English%20%F0%9F%87%BA%F0%9F%87%B8-moccasin?style=flat-square)](README.md)
+[![Chinese readme](https://img.shields.io/badge/README-%E4%B8%AD%E6%96%87%20%F0%9F%87%A8%F0%9F%87%B3-moccasin?style=flat-square)](README-zh.md)
+[![Russian readme](https://img.shields.io/badge/README-Русский%20%F0%9F%87%B7%F0%9F%87%BA-moccasin?style=flat-square)](README-ru.md)
+[![Spanish readme](https://img.shields.io/badge/README-Español%20%F0%9F%87%AA%F0%9F%87%B8-moccasin?style=flat-square)](README-es.md)
 
 ## ¿Por qué DLoad?
 
@@ -142,14 +143,14 @@ DLoad soporta tres tipos de descarga que determinan cómo se procesan los recurs
 #### Atributo type
 
 ```xml
-<!-- Explicit type specification -->
-<download software="psalm" type="phar" />        <!-- Download .phar without unpacking -->
-<download software="frontend" type="archive" />  <!-- Force archive extraction -->
-<download software="rr" type="binary" />         <!-- Binary-specific processing -->
+<!-- Especificación explícita de tipo -->
+<download software="psalm" type="phar" />        <!-- Descarga .phar sin desempaquetar -->
+<download software="frontend" type="archive" />  <!-- Fuerza extracción de archivo -->
+<download software="rr" type="binary" />         <!-- Procesamiento específico de binarios -->
 
-<!-- Automatic type handling (recommended) -->
-<download software="rr" />           <!-- Uses all available handlers -->
-<download software="frontend" />     <!-- Smart processing based on software config -->
+<!-- Manejo automático de tipos (recomendado) -->
+<download software="rr" />           <!-- Usa todos los manejadores disponibles -->
+<download software="frontend" />     <!-- Procesamiento inteligente basado en configuración del software -->
 ```
 
 #### Comportamiento predeterminado (sin tipo especificado)
@@ -161,18 +162,18 @@ Cuando no se especifica `type`, DLoad usa automáticamente todos los manejadores
 - **Descarga simple**: Si no existen secciones, descarga el recurso sin descomprimir
 
 ```xml
-<!-- registry list -->
+<!-- lista de registro -->
 <software name="complex-tool">
     <binary name="tool" pattern="/^tool-.*/" />
     <file pattern="/^config\..*/" extract-path="config" />
 </software>
 
-<!-- actions list -->
-<!-- Uses both binary and files processing -->
+<!-- lista de acciones -->
+<!-- Usa tanto procesamiento binario como de archivos -->
 <download software="complex-tool" />
 ```
 
-#### Comportamientos Explícitos de Tipo
+#### Comportamientos explícitos de tipo
 
 | Tipo      | Comportamiento                                                    | Caso de uso                               |
 |:----------|:------------------------------------------------------------------|:------------------------------------------|
@@ -184,7 +185,7 @@ Cuando no se especifica `type`, DLoad usa automáticamente todos los manejadores
 > Usa `type="phar"` para herramientas PHP que deben permanecer como archivos `.phar`.
 > Usar `type="archive"` desempaquetará incluso archivos `.phar`.
 
-### Version Constraints
+### Restricciones de versión
 
 Usa restricciones de versión estilo Composer:
 
@@ -205,7 +206,7 @@ Usa restricciones de versión estilo Composer:
 </actions>
 ```
 
-### Opciones Avanzadas de Configuración
+### Opciones avanzadas de configuración
 
 ```xml
 <dload temp-dir="./runtime">
@@ -214,16 +215,16 @@ Usa restricciones de versión estilo Composer:
         <download software="frontend" extract-path="public/assets" />
         <download software="config" extract-path="config" />
 
-        <!-- Objetivo diferentes entornos -->
+        <!-- Diferentes entornos objetivo -->
         <download software="prod-tool" version="^2.0.0@stable" />
         <download software="dev-tool" version="^2.0.0@beta" />
     </actions>
 </dload>
 ```
 
-## Registro Personalizado de Software
+## Registro personalizado de software
 
-### Definiendo Software
+### Definiendo software
 
 ```xml
 <dload>
@@ -260,39 +261,36 @@ Usa restricciones de versión estilo Composer:
 </dload>
 ```
 
-### Elementos de Software
+### Elementos de software
 
-#### Configuración de Repositorio
+#### Configuración de repositorio
 
 - **type**: Actualmente soporta "github"
 - **uri**: Ruta del repositorio (ejemplo: "usuario/repositorio")
 - **asset-pattern**: Patrón regex para coincidir con los recursos de los releases
 
-
-#### Elementos Binarios
+#### Elementos binarios
 
 - **name**: Nombre del binario para referencia
 - **pattern**: Patrón regex para coincidir con el binario en los recursos
 - Maneja automáticamente el filtrado por SO/arquitectura
 
-
-#### Elementos de Archivo
+#### Elementos de archivo
 
 - **pattern**: Patrón regex para coincidir con archivos
 - **extract-path**: Directorio de extracción opcional
 - Funciona en cualquier sistema (sin filtrado por SO/arquitectura)
 
 
-## Casos de Uso
+## Casos de uso
 
-### Configuración de Entorno de Desarrollo
+### Configuración de entorno de desarrollo
 
 ```bash
 # Configuración única para nuevos desarrolladores
 composer install
 ./vendor/bin/dload get
 ```
-
 
 ### Integración CI/CD
 
@@ -302,8 +300,7 @@ composer install
   run: GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} ./vendor/bin/dload get
 ```
 
-
-### Equipos Multiplataforma
+### Equipos multiplataforma
 
 Cada desarrollador obtiene los binarios correctos para su sistema:
 
@@ -314,8 +311,7 @@ Cada desarrollador obtiene los binarios correctos para su sistema:
 </actions>
 ```
 
-
-### Gestión de Herramientas PHAR
+### Gestión de herramientas PHAR
 
 ```xml
 <actions>
@@ -328,8 +324,7 @@ Cada desarrollador obtiene los binarios correctos para su sistema:
 </actions>
 ```
 
-
-### Distribución de Recursos Frontend
+### Distribución de recursos frontend
 
 ```xml
 <software name="ui-kit">
@@ -343,7 +338,7 @@ Cada desarrollador obtiene los binarios correctos para su sistema:
 ```
 
 
-## Límite de Peticiones a la API de GitHub
+## Límites de peticiones a la API de GitHub
 
 Usa un token de acceso personal para evitar límites de peticiones:
 
@@ -359,4 +354,4 @@ Agrégalo a las variables de entorno de tu CI/CD para descargas automatizadas.
 
 - Agregar nuevo software al registro predefinido
 - Mejorar la funcionalidad de DLoad
-- Mejorar la documentación y traducirla [a otros idiomas](docs/guidelines/how-to-use-llm-for-translate-docs.md)
+- Mejorar la documentación y traducirla [a otros idiomas](docs/guidelines/how-to-translate-readme-docs.md)

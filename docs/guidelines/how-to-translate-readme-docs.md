@@ -26,6 +26,8 @@ I need a single message with all the md file content.
 - Pay special attention to:
     - XML, HTML, and code blocks: Ensure these are not translated or altered.
     - Command examples and their arguments: Verify technical accuracy and formatting.
+    - Technical terminology consistency throughout the document.
+    - Cultural adaptations that make sense in target language context.
 
 **Step 5: Finalize and Save the Translated Document 💾**
 
