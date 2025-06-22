@@ -181,68 +181,77 @@ final class DLoad
     {
         return function (DownloadResult $downloadResult) use ($software, $action): void {
             $fileInfo = $downloadResult->file;
+            $tempFilePath = $fileInfo->getRealPath() ?: $fileInfo->getPathname();
 
-            // Create a copy of the files list with binary included if necessary
-            $files = $this->filesToExtract($software, $action);
+            try {
+                // Create a copy of the files list with binary included if necessary
+                $files = $this->filesToExtract($software, $action);
 
-            // Create destination directory if it doesn't exist
-            $path = $this->getDestinationPath($action);
-            if (!\is_dir((string) $path)) {
-                $this->logger->info('Creating directory %s', (string) $path);
-                @\mkdir((string) $path, 0755, true);
-            }
-
-            // If no extraction rules are defined, do not extract anything
-            // and just copy the file to the destination
-            if ($files === []) {
-                $this->logger->debug(
-                    'No files to extract for `%s`, copying the downloaded file to the destination.',
-                    $fileInfo->getFilename(),
-                );
-                $toFile = (string) $path->join($fileInfo->getFilename());
-                \copy($fileInfo->getRealPath() ?: $fileInfo->getPathname(), $toFile);
-
-                $action->type === Type::Phar and \chmod($toFile, 0o755);
-                return;
-            }
-
-            $archive = $this->archiveFactory->create($fileInfo);
-            $extractor = $archive->extract();
-            $this->logger->info('Extracting %s', $fileInfo->getFilename());
-
-            while ($extractor->valid()) {
-                $file = $extractor->current();
-                \assert($file instanceof \SplFileInfo);
-
-                [$to, $rule] = $this->shouldBeExtracted($file, $files, $action);
-                $this->logger->debug(
-                    $to === null ? 'Skipping %s%s' : 'Extracting %s to %s',
-                    $file->getFilename(),
-                    (string) $to?->getPathname(),
-                );
-
-                if ($to === null) {
-                    $extractor->next();
-                    continue;
+                // Create destination directory if it doesn't exist
+                $path = $this->getDestinationPath($action);
+                if (!\is_dir((string) $path)) {
+                    $this->logger->info('Creating directory %s', (string) $path);
+                    @\mkdir((string) $path, 0755, true);
                 }
 
-                $isOverwriting = $to->isFile();
-                $extractor->send($to);
+                // If no extraction rules are defined, do not extract anything
+                // and just copy the file to the destination
+                if ($files === []) {
+                    $this->logger->debug(
+                        'No files to extract for `%s`, copying the downloaded file to the destination.',
+                        $fileInfo->getFilename(),
+                    );
+                    $toFile = (string) $path->join($fileInfo->getFilename());
+                    \copy($tempFilePath, $toFile);
 
-                // Success
-                $path = $to->getRealPath() ?: $to->getPathname();
-                $this->output->writeln(
-                    \sprintf(
-                        '%s (<comment>%s</comment>) has been %sinstalled into <info>%s</info>',
-                        $to->getFilename(),
-                        $downloadResult->version,
-                        $isOverwriting ? 're' : '',
-                        $path,
-                    ),
-                );
+                    $action->type === Type::Phar and \chmod($toFile, 0o755);
+                    return;
+                }
 
-                \assert($rule !== null);
-                $rule->chmod === null or @\chmod($path, $rule->chmod);
+                $archive = $this->archiveFactory->create($fileInfo);
+                $extractor = $archive->extract();
+                $this->logger->info('Extracting %s', $fileInfo->getFilename());
+
+                while ($extractor->valid()) {
+                    $file = $extractor->current();
+                    \assert($file instanceof \SplFileInfo);
+
+                    [$to, $rule] = $this->shouldBeExtracted($file, $files, $action);
+                    $this->logger->debug(
+                        $to === null ? 'Skipping %s%s' : 'Extracting %s to %s',
+                        $file->getFilename(),
+                        (string) $to?->getPathname(),
+                    );
+
+                    if ($to === null) {
+                        $extractor->next();
+                        continue;
+                    }
+
+                    $isOverwriting = $to->isFile();
+                    $extractor->send($to);
+
+                    // Success
+                    $path = $to->getRealPath() ?: $to->getPathname();
+                    $this->output->writeln(
+                        \sprintf(
+                            '%s (<comment>%s</comment>) has been %sinstalled into <info>%s</info>',
+                            $to->getFilename(),
+                            $downloadResult->version,
+                            $isOverwriting ? 're' : '',
+                            $path,
+                        ),
+                    );
+
+                    \assert($rule !== null);
+                    $rule->chmod === null or @\chmod($path, $rule->chmod);
+                }
+            } finally {
+                // Cleanup: Delete the temporary downloaded file
+                if (!$this->useMock && \file_exists($tempFilePath)) {
+                    $this->logger->debug('Cleaning up temporary file: %s', $tempFilePath);
+                    @\unlink($tempFilePath);
+                }
             }
         };
     }
