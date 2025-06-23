@@ -5,6 +5,7 @@ This document provides guidelines for creating new console commands for the DLoa
 ## Command Structure
 
 All commands must follow this structure:
+
 - Extend the `Base` class
 - Use the `#[AsCommand]` attribute
 - Implement the required methods

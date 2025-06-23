@@ -155,6 +155,7 @@ composer require internal/dload -W
 ```
 
 这将：
+
 - 指导您选择软件包
 - 显示可用软件及其描述和仓库
 - 生成格式正确的 `dload.xml` 文件并进行模式验证

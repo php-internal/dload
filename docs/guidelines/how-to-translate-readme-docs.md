@@ -24,10 +24,10 @@ I need a single message with all the md file content.
 - After translation, carefully review the output for any invalid or awkward translations.
 - Manually correct any errors you find.
 - Pay special attention to:
-    - XML, HTML, and code blocks: Ensure these are not translated or altered.
-    - Command examples and their arguments: Verify technical accuracy and formatting.
-    - Technical terminology consistency throughout the document.
-    - Cultural adaptations that make sense in target language context.
+  - XML, HTML, and code blocks: Ensure these are not translated or altered.
+  - Command examples and their arguments: Verify technical accuracy and formatting.
+  - Technical terminology consistency throughout the document.
+  - Cultural adaptations that make sense in target language context.
 
 **Step 5: Finalize and Save the Translated Document 💾**
 
@@ -53,7 +53,7 @@ Once your translation is ready, you can contribute it to the project using the *
 1. **File Naming Convention**
     - Use ISO 639-1 in {lang_code} placeholder
     - Rename your translated file following this format:
-    
+
 ```
 your-doc-name-{lang_code}.md
 ```
@@ -84,6 +84,7 @@ If you translated `CONTRIBUTING.md` into German, name it:
 ```
 CONTRIBUTING-de.md
 ```
+
 ---
 
 ### Tips for High-Quality LLM Translation 🚀
@@ -102,7 +103,6 @@ Translate this markdown file from English to Chinese
 xml and html ignore for translate
 i need a single message with all md file content
 ```
-
 
 ---
 

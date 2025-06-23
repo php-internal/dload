@@ -155,6 +155,7 @@ La forma más fácil de crear un archivo de configuración es usando el comando 
 ```
 
 Esto:
+
 - Te guiará a través de la selección de paquetes de software
 - Mostrará software disponible con descripciones y repositorios
 - Generará un archivo `dload.xml` correctamente formateado con validación de esquema

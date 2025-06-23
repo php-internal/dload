@@ -50,7 +50,7 @@ composer require internal/dload -W
     ```bash
     composer require internal/dload -W
     ```
-   
+
 Alternatively, you can download the latest release from [GitHub releases](https://github.com/php-internal/dload/releases).
 
 2. **Create your configuration file interactively**:
@@ -158,6 +158,7 @@ The easiest way to create a configuration file is using the interactive `init` c
 ```
 
 This will:
+
 - Guide you through selecting software packages
 - Show available software with descriptions and repositories
 - Generate a properly formatted `dload.xml` file with schema validation
