@@ -115,7 +115,7 @@
             ],
             "binary": {
                 "name": "ctx",
-                "pattern": "/^ctx-.*$/",
+                "pattern": "/^ctx.*$/",
                 "version-command": "--version"
             }
         },
@@ -128,7 +128,7 @@
                 {
                     "type": "github",
                     "uri": "buggregator/trap",
-                    "asset-pattern": "/^trap-.*/"
+                    "asset-pattern": "/^trap.*/"
                 }
             ],
             "binary": {
