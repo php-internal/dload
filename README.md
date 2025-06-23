@@ -84,7 +84,7 @@ Alternatively, you can download the latest release from [GitHub releases](https:
     ```json
     {
         "scripts": {
-            "post-update-cmd": "dload get --no-interaction -v || echo can't dload binaries"
+            "post-update-cmd": "dload get --no-interaction -v || \"echo can't dload binaries\""
         }
     }
     ```
