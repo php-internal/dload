@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Config;
 
-use Internal\DLoad\Module\Common\Config\Action\Download as DownloadConfig;
+use Internal\DLoad\Module\Config\Schema\Action\Download as DownloadConfig;
 
 /**
  * Builder for creating DLoad XML configuration files.

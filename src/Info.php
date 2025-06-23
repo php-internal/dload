@@ -16,9 +16,6 @@ final class Info
     /** @var non-empty-string Application name */
     public const NAME = 'DLoad';
 
-    /** @var string CLI logo color code */
-    public const LOGO_CLI_COLOR = '';
-
     /** @var non-empty-string Absolute path to the root directory */
     public const ROOT_DIR = __DIR__ . '/..';
 

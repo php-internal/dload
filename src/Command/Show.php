@@ -6,8 +6,8 @@ namespace Internal\DLoad\Command;
 
 use Internal\DLoad\Module\Binary\Binary;
 use Internal\DLoad\Module\Binary\BinaryProvider;
-use Internal\DLoad\Module\Common\Config\Actions;
 use Internal\DLoad\Module\Common\FileSystem\Path;
+use Internal\DLoad\Module\Config\Schema\Actions;
 use Internal\DLoad\Module\Downloader\SoftwareCollection;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;

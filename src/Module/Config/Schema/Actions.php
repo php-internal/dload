@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Internal\DLoad\Module\Common\Config;
+namespace Internal\DLoad\Module\Config\Schema;
 
-use Internal\DLoad\Module\Common\Config\Action\Download;
 use Internal\DLoad\Module\Common\Internal\Attribute\XPathEmbedList;
+use Internal\DLoad\Module\Config\Schema\Action\Download;
 
 /**
  * Configuration actions container.

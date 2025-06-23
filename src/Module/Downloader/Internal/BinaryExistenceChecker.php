@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Downloader\Internal;
 
-use Internal\DLoad\Module\Common\Config\Embed\Binary;
 use Internal\DLoad\Module\Common\OperatingSystem;
+use Internal\DLoad\Module\Config\Schema\Embed\Binary;
 
 /**
  * Checks for existence of binary executables at specified paths.

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Command;
 
-use Internal\DLoad\Module\Common\Config\Action\Download as DownloadConfig;
-use Internal\DLoad\Module\Common\Config\Embed\Software;
 use Internal\DLoad\Module\Common\FileSystem\Path;
+use Internal\DLoad\Module\Config\Schema\Action\Download as DownloadConfig;
+use Internal\DLoad\Module\Config\Schema\Embed\Software;
 use Internal\DLoad\Module\Config\ConfigBuilder;
 use Internal\DLoad\Module\Downloader\SoftwareCollection;
 use Symfony\Component\Console\Attribute\AsCommand;
