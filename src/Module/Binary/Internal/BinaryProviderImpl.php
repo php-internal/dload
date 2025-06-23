@@ -6,9 +6,9 @@ namespace Internal\DLoad\Module\Binary\Internal;
 
 use Internal\DLoad\Module\Binary\Binary;
 use Internal\DLoad\Module\Binary\BinaryProvider;
-use Internal\DLoad\Module\Common\Config\Embed\Binary as BinaryConfig;
 use Internal\DLoad\Module\Common\FileSystem\Path;
 use Internal\DLoad\Module\Common\OperatingSystem;
+use Internal\DLoad\Module\Config\Schema\Embed\Binary as BinaryConfig;
 
 /**
  * Provider implementation for binary instances.

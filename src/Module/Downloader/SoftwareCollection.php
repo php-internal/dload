@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Internal\DLoad\Module\Downloader;
 
 use Internal\DLoad\Info;
-use Internal\DLoad\Module\Common\Config\CustomSoftwareRegistry;
-use Internal\DLoad\Module\Common\Config\Embed\Software;
+use Internal\DLoad\Module\Config\Schema\CustomSoftwareRegistry;
+use Internal\DLoad\Module\Config\Schema\Embed\Software;
 use IteratorAggregate;
 
 /**

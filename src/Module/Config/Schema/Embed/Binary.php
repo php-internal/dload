@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Internal\DLoad\Module\Common\Config\Embed;
+namespace Internal\DLoad\Module\Config\Schema\Embed;
 
 use Internal\DLoad\Module\Common\Internal\Attribute\XPath;
 

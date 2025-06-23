@@ -6,10 +6,10 @@ namespace Internal\DLoad\Command;
 
 use Internal\DLoad\DLoad;
 use Internal\DLoad\Module\Common\Architecture;
-use Internal\DLoad\Module\Common\Config\Action\Download as DownloadConfig;
-use Internal\DLoad\Module\Common\Config\Actions;
 use Internal\DLoad\Module\Common\OperatingSystem;
 use Internal\DLoad\Module\Common\Stability;
+use Internal\DLoad\Module\Config\Schema\Action\Download as DownloadConfig;
+use Internal\DLoad\Module\Config\Schema\Actions;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;

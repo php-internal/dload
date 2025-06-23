@@ -49,6 +49,7 @@ use Symfony\Component\Console\CommandLoader\FactoryCommandLoader;
             Command\Get::getDefaultName() => static fn() => new Command\Get(),
             Command\ListSoftware::getDefaultName() => static fn() => new Command\ListSoftware(),
             Command\Show::getDefaultName() => static fn() => new Command\Show(),
+            Command\Init::getDefaultName() => static fn() => new Command\Init(),
         ]),
     );
     $application->setDefaultCommand(Command\Get::getDefaultName(), false);

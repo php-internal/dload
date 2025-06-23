@@ -45,13 +45,27 @@ composer require internal/dload -W
 
 ## Quick Start
 
-1. **Initialize your project configuration**:
+1. **Install DLoad via Composer**:
+
+    ```bash
+    composer require internal/dload -W
+    ```
+
+Alternatively, you can download the latest release from [GitHub releases](https://github.com/php-internal/dload/releases).
+
+2. **Create your configuration file interactively**:
+
+    ```bash
+    ./vendor/bin/dload init
+    ```
+
+    This command will guide you through selecting software packages and create a `dload.xml` configuration file. You can also create it manually:
 
     ```xml
     <?xml version="1.0"?>
     <dload xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-           xsi:noNamespaceSchemaLocation="vendor/internal/dload/dload.xsd"
-    >
+           xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/php-internal/dload/refs/heads/1.x/dload.xsd"
+   >
        <actions>
            <download software="rr" version="^2025.1.0"/>
            <download software="temporal" version="^1.3"/>
@@ -59,23 +73,39 @@ composer require internal/dload -W
     </dload>
     ```
 
-2. **Download configured software**:
+3. **Download configured software**:
 
     ```bash
     ./vendor/bin/dload get
     ```
 
-3. **Integrate with Composer** (optional):
+4. **Integrate with Composer** (optional):
 
     ```json
     {
         "scripts": {
-            "post-update-cmd": "dload get --no-interaction -v || echo can't dload binaries"
+            "post-update-cmd": "dload get --no-interaction -v || \"echo can't dload binaries\""
         }
     }
     ```
 
 ## Command Line Usage
+
+### Initialize Configuration
+
+```bash
+# Create configuration file interactively
+./vendor/bin/dload init
+
+# Create configuration in specific location
+./vendor/bin/dload init --config=./custom-dload.xml
+
+# Create minimal configuration without prompts
+./vendor/bin/dload init --no-interaction
+
+# Overwrite existing configuration without confirmation
+./vendor/bin/dload init --overwrite
+```
 
 ### Download Software
 
@@ -119,7 +149,22 @@ composer require internal/dload -W
 
 ## Configuration Guide
 
-### Basic Configuration
+### Interactive Configuration
+
+The easiest way to create a configuration file is using the interactive `init` command:
+
+```bash
+./vendor/bin/dload init
+```
+
+This will:
+
+- Guide you through selecting software packages
+- Show available software with descriptions and repositories
+- Generate a properly formatted `dload.xml` file with schema validation
+- Handle existing configuration files gracefully
+
+### Manual Configuration
 
 Create `dload.xml` in your project root:
 
@@ -288,6 +333,17 @@ Use Composer-style version constraints:
 ```bash
 # One-time setup for new developers
 composer install
+./vendor/bin/dload init  # First time only
+./vendor/bin/dload get
+```
+
+### New Project Setup
+
+```bash
+# Start a new project with DLoad
+composer init
+composer require internal/dload -W
+./vendor/bin/dload init
 ./vendor/bin/dload get
 ```
 

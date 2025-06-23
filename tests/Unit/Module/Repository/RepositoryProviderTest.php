@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Unit\Module\Repository;
 
-use Internal\DLoad\Module\Common\Config\Embed\Repository as RepositoryConfig;
+use Internal\DLoad\Module\Config\Schema\Embed\Repository as RepositoryConfig;
 use Internal\DLoad\Module\Repository\Repository;
 use Internal\DLoad\Module\Repository\RepositoryFactory;
 use Internal\DLoad\Module\Repository\RepositoryProvider;

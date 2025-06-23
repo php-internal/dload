@@ -6,13 +6,13 @@ namespace Internal\DLoad;
 
 use Internal\DLoad\Module\Archive\ArchiveFactory;
 use Internal\DLoad\Module\Binary\BinaryProvider;
-use Internal\DLoad\Module\Common\Config\Action\Download as DownloadConfig;
-use Internal\DLoad\Module\Common\Config\Action\Type;
-use Internal\DLoad\Module\Common\Config\Embed\File;
-use Internal\DLoad\Module\Common\Config\Embed\Software;
 use Internal\DLoad\Module\Common\FileSystem\Path;
 use Internal\DLoad\Module\Common\Input\Destination;
 use Internal\DLoad\Module\Common\OperatingSystem;
+use Internal\DLoad\Module\Config\Schema\Action\Download as DownloadConfig;
+use Internal\DLoad\Module\Config\Schema\Action\Type;
+use Internal\DLoad\Module\Config\Schema\Embed\File;
+use Internal\DLoad\Module\Config\Schema\Embed\Software;
 use Internal\DLoad\Module\Downloader\Downloader;
 use Internal\DLoad\Module\Downloader\SoftwareCollection;
 use Internal\DLoad\Module\Downloader\Task\DownloadResult;

@@ -14,6 +14,7 @@ This document outlines key practices for generating high-quality PHP code using 
 - Use union types and nullable types
 - Apply return type declarations consistently
 - Use null coalescing operators (`??`, `??=`) instead of ternary checks
+
   ```php
   // Preferred
   $username = $request->username ?? 'guest';
@@ -21,7 +22,9 @@ This document outlines key practices for generating high-quality PHP code using 
   // Avoid
   $username = isset($request->username) ? $request->username : 'guest';
   ```
+
 - Use throw expressions with null coalescing for concise error handling
+
   ```php
   // Preferred
   $user = $orm->get('user') ?? throw new NotFoundException();
@@ -32,7 +35,9 @@ This document outlines key practices for generating high-quality PHP code using 
       throw new NotFoundException();
   }
   ```
+
 - Prefer attributes over PHPDoc annotations whenever possible
+
   ```php
   // Preferred - Using attributes
   #[AsController]
@@ -71,6 +76,7 @@ This document outlines key practices for generating high-quality PHP code using 
 - Favor composition over inheritance
 - Use strict typing (`declare(strict_types=1);`)
 - Declare classes as `final` by default, only omit when inheritance is actually needed
+
   ```php
   // Preferred - Final by default
   final class UserRepository 
@@ -84,8 +90,10 @@ This document outlines key practices for generating high-quality PHP code using 
       // ...
   }
   ```
+
 - Prefer early returns to reduce nesting and improve readability
 - Merge similar conditionals with the same action
+
   ```php
   // Preferred: Merged conditionals
   public function processUser(?User $user): bool
@@ -113,7 +121,9 @@ This document outlines key practices for generating high-quality PHP code using 
       return true;
   }
   ```
+
 - Use logical operators for compact conditional execution
+
   ```php
   // Preferred
   $condition and doSomething();
@@ -129,7 +139,9 @@ This document outlines key practices for generating high-quality PHP code using 
   // Avoid
   !$skipAction and doAction();
   ```
+
 - Prefer ternary operator for simple conditional assignments and returns
+
   ```php
   // Preferred
   return $condition
@@ -148,6 +160,7 @@ This document outlines key practices for generating high-quality PHP code using 
 
 - Use enums instead of class constants for representing a fixed set of related values
 - Use CamelCase for enum case names as per PER-2 standard
+
   ```php
   // Preferred - Using an enum with CamelCase cases
   enum Status
@@ -169,6 +182,7 @@ This document outlines key practices for generating high-quality PHP code using 
   ```
 
 - Use backed enums when you need primitive values (strings/integers) for cases
+
   ```php
   enum Status: string
   {
@@ -184,6 +198,7 @@ This document outlines key practices for generating high-quality PHP code using 
   ```
 
 - Add methods to enums to encapsulate related behavior
+
   ```php
   enum PaymentStatus: string
   {
@@ -221,6 +236,7 @@ This document outlines key practices for generating high-quality PHP code using 
   ```
 
 - Implement interfaces with enums to enforce contracts
+
   ```php
   interface ColorInterface
   {
@@ -245,6 +261,7 @@ This document outlines key practices for generating high-quality PHP code using 
   ```
 
 - Use static methods for converting from and to enum cases
+
   ```php
   enum Status: string
   {
@@ -265,6 +282,7 @@ This document outlines key practices for generating high-quality PHP code using 
   ```
 
 - Use enums in type declarations
+
   ```php
   function processOrder(Order $order, Status $status): void
   {
@@ -281,6 +299,7 @@ This document outlines key practices for generating high-quality PHP code using 
 
 - Prefer immutable objects and value objects where appropriate
 - Use readonly properties for immutable class properties
+
   ```php
   final class UserId
   {
@@ -289,7 +308,9 @@ This document outlines key practices for generating high-quality PHP code using 
       ) {}
   }
   ```
+
 - Use the `with` prefix for methods that return new instances with modified values
+
   ```php
   final class User
   {
@@ -329,6 +350,7 @@ This document outlines key practices for generating high-quality PHP code using 
 ### 5. Dependency Injection and IoC
 
 - Favor constructor injection for dependencies
+
   ```php
   final class UserService
   {
@@ -338,6 +360,7 @@ This document outlines key practices for generating high-quality PHP code using 
       ) {}
   }
   ```
+
 - Define interfaces for services to allow for different implementations
 - Avoid service locators and static method calls for dependencies
 - Use dependency injection containers for wiring services together
@@ -346,6 +369,7 @@ This document outlines key practices for generating high-quality PHP code using 
 ### 6. Type System and Generics
 
 - Use extended type annotations in PHPDoc for more precise type definitions
+
   ```php
   /**
    * @param non-empty-string $id The user ID
@@ -357,7 +381,9 @@ This document outlines key practices for generating high-quality PHP code using 
       // ...
   }
   ```
+
 - Leverage generics in collections and repositories
+
   ```php
   /**
    * @template T of object
@@ -378,7 +404,9 @@ This document outlines key practices for generating high-quality PHP code using 
       public function save(object $entity): void;
   }
   ```
+
 - Use precise numeric range types when applicable
+
   ```php
   /**
    * @param int<0, max> $limit
@@ -410,6 +438,7 @@ This document outlines key practices for generating high-quality PHP code using 
 - Use `$value === null` instead of `is_null($value)` for null checks
 - Use strict equality (`===`) instead of loose equality (`==`)
 - Use `isset()` only for checking if variables or properties are defined, not for null comparison
+
   ```php
   // Correct use of isset()
   if (isset($data['key'])) {  // Checks if array key exists and not null
@@ -421,7 +450,9 @@ This document outlines key practices for generating high-quality PHP code using 
       // Instead use $definedVariable !== null
   }
   ```
+
 - Use null coalescing operator for default values
+
   ```php
   // Preferred
   $config = $options['config'] ?? [];

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Internal\DLoad\Module\Common\Config;
+namespace Internal\DLoad\Module\Config\Schema;
 
 use Internal\DLoad\Module\Common\Internal\Attribute\XPath;
 use Internal\DLoad\Module\Common\Internal\Attribute\XPathEmbedList;
@@ -19,8 +19,8 @@ final class CustomSoftwareRegistry
     public bool $overwrite = false;
 
     /**
-     * @var Embed\Software[] $software Custom software definitions from the configuration
+     * @var \Internal\DLoad\Module\Config\Schema\Embed\Software[] $software Custom software definitions from the configuration
      */
-    #[XPathEmbedList('/dload/registry/software', Embed\Software::class)]
+    #[XPathEmbedList('/dload/registry/software', \Internal\DLoad\Module\Config\Schema\Embed\Software::class)]
     public array $software = [];
 }

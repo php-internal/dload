@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Repository;
 
-use Internal\DLoad\Module\Common\Config\Embed\Repository as RepositoryConfig;
+use Internal\DLoad\Module\Config\Schema\Embed\Repository as RepositoryConfig;
 
 /**
  * Factory service for creating repository instances from configuration.

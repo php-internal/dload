@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Binary;
 
-use Internal\DLoad\Module\Common\Config\Embed\Binary as BinaryConfig;
 use Internal\DLoad\Module\Common\FileSystem\Path;
+use Internal\DLoad\Module\Config\Schema\Embed\Binary as BinaryConfig;
 
 /**
  * Provider for obtaining binary instances.

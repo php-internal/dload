@@ -27,6 +27,7 @@ Test: tests/Unit/ExternalContext/LocalExternalContextSourceTest.php
 Modules located in `src/Module` are treated as independent units with their own test structure:
 
 - Each module should have its own test directory with the following structure:
+
   ```
   tests/Unit/Module/{ModuleName}/
   ├── Stub/ (Contains stubs for the module's dependencies)

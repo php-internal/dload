@@ -6,10 +6,10 @@ namespace Internal\DLoad\Tests\Acceptance;
 
 use Internal\DLoad\Bootstrap;
 use Internal\DLoad\DLoad;
-use Internal\DLoad\Module\Common\Config\Action\Download as DownloadConfig;
-use Internal\DLoad\Module\Common\Config\Action\Type;
 use Internal\DLoad\Module\Common\FileSystem\Path;
 use Internal\DLoad\Module\Common\OperatingSystem;
+use Internal\DLoad\Module\Config\Schema\Action\Download as DownloadConfig;
+use Internal\DLoad\Module\Config\Schema\Action\Type;
 use Internal\DLoad\Service\Logger;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
