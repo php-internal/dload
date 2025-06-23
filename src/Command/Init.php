@@ -11,6 +11,7 @@ use Internal\DLoad\Module\Config\ConfigBuilder;
 use Internal\DLoad\Module\Downloader\SoftwareCollection;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Helper\QuestionHelper;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -150,6 +151,7 @@ final class Init extends Base
             false,
         );
 
+        /** @var QuestionHelper $helper */
         $helper = $this->getHelper('question');
 
         return !$helper->ask($input, $style, $question);
