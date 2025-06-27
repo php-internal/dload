@@ -76,7 +76,7 @@ final class ObjectContainer implements Container, ContainerInterface
 
         // Detect related types
         // Configs
-        if (\str_starts_with($class, 'Internal\\DLoad\\Module\\Common\\Config\\')) {
+        if (\str_starts_with($class, 'Internal\\DLoad\\Module\\Config\\Schema\\')) {
             // Hydrate config
             /** @var ConfigLoader $configLoader */
             $configLoader = $this->get(ConfigLoader::class);
