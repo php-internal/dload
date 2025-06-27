@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.4.1 (2025-06-27)
+
+## What's Changed
+* fix config injection path in Container by @roxblnfk in https://github.com/php-internal/dload/pull/61
+
+
+**Full Changelog**: https://github.com/php-internal/dload/compare/1.4.0...1.4.1
+
 ## 1.4.0 (2025-06-23)
 
 ## What's Changed
