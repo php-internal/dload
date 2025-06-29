@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Repository\Internal\GitHub;
 
+use Internal\DLoad\Module\HttpClient\Factory as HttpFactory;
 use Internal\DLoad\Module\Repository\Collection\ReleasesCollection;
 use Internal\DLoad\Module\Repository\Internal\Paginator;
 use Internal\DLoad\Module\Repository\Repository;
 use Internal\DLoad\Service\Destroyable;
-use Symfony\Component\HttpClient\HttpClient;
-use Symfony\Contracts\HttpClient\Exception\ExceptionInterface;
-use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
-use Symfony\Contracts\HttpClient\HttpClientInterface;
-use Symfony\Contracts\HttpClient\ResponseInterface;
+use Psr\Http\Client\ClientExceptionInterface;
+use Psr\Http\Client\ClientInterface;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\UriInterface;
 
 /**
  * @psalm-import-type GitHubReleaseApiResponse from GitHubRelease
@@ -23,7 +23,6 @@ final class GitHubRepository implements Repository, Destroyable
 {
     private const URL_RELEASES = 'https://api.github.com/repos/%s/releases';
 
-    private HttpClientInterface $client;
     private ?ReleasesCollection $releases = null;
 
     /**
@@ -44,17 +43,18 @@ final class GitHubRepository implements Repository, Destroyable
      * @param non-empty-string $org
      * @param non-empty-string $repo
      */
-    public function __construct(string $org, string $repo, ?HttpClientInterface $client = null)
-    {
+    public function __construct(
+        string $org,
+        string $repo,
+        private readonly HttpFactory $httpFactory,
+        private readonly ClientInterface $client,
+    ) {
         $this->name = $org . '/' . $repo;
-        $this->client = $client ?? HttpClient::create();
     }
 
     /**
      * Returns a lazily loaded collection of repository releases.
      * Pages are loaded only when needed during iteration or filtering.
-     *
-     * @throws ExceptionInterface
      */
     public function getReleases(): ReleasesCollection
     {
@@ -74,7 +74,7 @@ final class GitHubRepository implements Repository, Destroyable
                     $response = $this->releasesRequest(++$page);
 
                     /** @psalm-var array<array-key, array{name: string|null, tag_name: string|null, assets: array}> $data */
-                    $data = $response->toArray();
+                    $data = \json_decode($response->getBody()->__toString(), true);
 
                     // If empty response, no more pages
                     if ($data === []) {
@@ -84,7 +84,7 @@ final class GitHubRepository implements Repository, Destroyable
                     $toYield = [];
                     foreach ($data as $record) {
                         try {
-                            $toYield[] = GitHubRelease::fromApiResponse($this, $this->client, $record);
+                            $toYield[] = GitHubRelease::fromApiResponse($this, $this->httpFactory, $this->client, $record);
                         } catch (\Throwable) {
                             // Skip invalid releases
                             continue;
@@ -94,7 +94,7 @@ final class GitHubRepository implements Repository, Destroyable
 
                     // Check if there are more pages
                     $hasMorePages = $this->hasNextPage($response);
-                } catch (ExceptionInterface) {
+                } catch (ClientExceptionInterface) {
                     return;
                 }
             } while ($hasMorePages);
@@ -120,46 +120,37 @@ final class GitHubRepository implements Repository, Destroyable
             static fn(object $release) => $release instanceof Destroyable and $release->destroy(),
         );
 
-        unset($this->releases, $this->client);
+        unset($this->releases);
     }
 
     /**
-     * @throws TransportExceptionInterface
-     * @see HttpClientInterface::request()
+     * @throws ClientExceptionInterface
      */
-    protected function request(string $method, string $uri, array $options = []): ResponseInterface
+    protected function request(string $method, UriInterface $uri, array $headers = []): ResponseInterface
     {
-        // Merge headers with defaults
-        $options['headers'] = \array_merge($this->headers, (array) ($options['headers'] ?? []));
+        $request = $this->httpFactory->request($method, $uri, $headers + $this->headers);
 
-        return $this->client->request($method, $uri, $options);
+        return $this->client->sendRequest($request);
     }
 
     /**
      * @param positive-int $page
-     * @throws TransportExceptionInterface
+     * @throws ClientExceptionInterface
      */
     private function releasesRequest(int $page): ResponseInterface
     {
-        return $this->request('GET', $this->uri(self::URL_RELEASES), [
-            'query' => [
-                'page' => $page,
-            ],
-        ]);
+        return $this->request('GET', $this->uri(self::URL_RELEASES, ['page' => $page]));
     }
 
     /**
      * @param non-empty-string $pattern
-     * @return non-empty-string
      */
-    private function uri(string $pattern): string
+    private function uri(string $pattern, array $query = []): UriInterface
     {
-        return \sprintf($pattern, $this->getName());
+        $path = \sprintf($pattern, $this->getName());
+        return $this->httpFactory->uri($path, $query);
     }
 
-    /**
-     * @throws ExceptionInterface
-     */
     private function hasNextPage(ResponseInterface $response): bool
     {
         $headers = $response->getHeaders();

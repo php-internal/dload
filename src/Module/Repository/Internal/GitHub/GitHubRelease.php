@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Internal\DLoad\Module\Repository\Internal\GitHub;
 
 use Composer\Semver\VersionParser;
+use Internal\DLoad\Module\HttpClient\Factory as HttpFactory;
+use Internal\DLoad\Module\HttpClient\Method;
 use Internal\DLoad\Module\Repository\Collection\AssetsCollection;
 use Internal\DLoad\Module\Repository\Internal\Release;
 use Internal\DLoad\Module\Version\Version;
 use Internal\DLoad\Service\Destroyable;
-use Symfony\Contracts\HttpClient\Exception\ExceptionInterface;
-use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Psr\Http\Client\ClientExceptionInterface;
+use Psr\Http\Client\ClientInterface;
 
 /**
  * @psalm-import-type GitHubAssetApiResponse from GitHubAsset
@@ -30,7 +32,8 @@ final class GitHubRelease extends Release implements Destroyable
      * @param non-empty-string $name
      */
     public function __construct(
-        private HttpClientInterface $client,
+        private readonly HttpFactory $httpFactory,
+        private ClientInterface $client,
         GitHubRepository $repository,
         string $name,
         Version $version,
@@ -41,37 +44,43 @@ final class GitHubRelease extends Release implements Destroyable
     /**
      * @param GitHubReleaseApiResponse $data
      */
-    public static function fromApiResponse(GitHubRepository $repository, HttpClientInterface $client, array $data): self
-    {
+    public static function fromApiResponse(
+        GitHubRepository $repository,
+        HttpFactory $httpFactory,
+        ClientInterface $client,
+        array $data,
+    ): self {
         isset($data['tag_name']) || isset($data['name']) or throw new \InvalidArgumentException(
             'Passed array must contain "tag_name" value of type string.',
         );
 
         $name = self::getTagName($data);
         $version = $data['tag_name'] ?? (string) $data['name'];
-        $result = new self($client, $repository, $name, Version::fromVersionString($version));
+        $result = new self($httpFactory, $client, $repository, $name, Version::fromVersionString($version));
 
-        $result->assets = AssetsCollection::create(static function () use ($client, $result, $data): \Generator {
+        $result->assets = AssetsCollection::create(static function () use ($client, $result, $data, $httpFactory): \Generator {
             /** @var GitHubAssetApiResponse $item */
             foreach ($data['assets'] ?? [] as $item) {
-                yield GitHubAsset::fromApiResponse($client, $result, $item);
+                yield GitHubAsset::fromApiResponse($httpFactory, $client, $result, $item);
             }
         });
         return $result;
     }
 
     /**
-     * @return non-empty-string
-     * @throws ExceptionInterface
+     * @throws ClientExceptionInterface
      */
     public function getConfig(): string
     {
-        $config = \vsprintf('https://raw.githubusercontent.com/%s/%s/.rr.yaml', [
-            $this->getRepository()->getName(),
-            $this->getVersion(),
-        ]);
+        $request = $this->httpFactory->request(
+            Method::Get,
+            \vsprintf('https://raw.githubusercontent.com/%s/%s/.rr.yaml', [
+                $this->getRepository()->getName(),
+                $this->getVersion(),
+            ]),
+        );
 
-        return $this->client->request('GET', $config)->getContent();
+        return $this->client->sendRequest($request)->getBody()->__toString();
     }
 
     public function destroy(): void
@@ -96,10 +105,10 @@ final class GitHubRelease extends Release implements Destroyable
 
         try {
             return $parser->normalize($data['tag_name']);
-        } catch (\Throwable $e) {
+        } catch (\Throwable) {
             try {
                 return $parser->normalize((string) $data['name']);
-            } catch (\Throwable $e) {
+            } catch (\Throwable) {
                 return 'dev-' . $data['tag_name'];
             }
         }
