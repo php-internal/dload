@@ -24,7 +24,7 @@ final class GitHubRelease extends Release implements Destroyable
     /**
      * @param non-empty-string $name
      */
-    public function __construct(
+    private function __construct(
         private readonly RepositoryApi $api,
         GitHubRepository $repository,
         string $name,

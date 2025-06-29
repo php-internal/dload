@@ -24,7 +24,7 @@ final class GitHubAsset extends Asset implements Destroyable
      * @param non-empty-string $name
      * @param non-empty-string $uri
      */
-    public function __construct(
+    private function __construct(
         private readonly RepositoryApi $api,
         GitHubRelease $release,
         string $name,

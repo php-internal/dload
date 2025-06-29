@@ -29,7 +29,7 @@ final class RepositoryApi
     /**
      * @var non-empty-string
      */
-    private readonly string $repositoryPath;
+    public readonly string $repositoryPath;
 
     /**
      * @param non-empty-string $owner
@@ -42,19 +42,6 @@ final class RepositoryApi
         string $repo,
     ) {
         $this->repositoryPath = $owner . '/' . $repo;
-    }
-
-    /**
-     * @return non-empty-string
-     */
-    public function getRepositoryPath(): string
-    {
-        return $this->repositoryPath;
-    }
-
-    public function getHttpFactory(): HttpFactory
-    {
-        return $this->httpFactory;
     }
 
     /**
