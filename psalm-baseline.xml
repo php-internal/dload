@@ -227,6 +227,11 @@
       <code><![CDATA[$softwareArray]]></code>
     </MixedAssignment>
   </file>
+  <file src="src/Module/HttpClient/Internal/NyholmFactoryImpl.php">
+    <ClassMustBeFinal>
+      <code><![CDATA[NyholmFactoryImpl]]></code>
+    </ClassMustBeFinal>
+  </file>
   <file src="src/Module/Repository/Collection/CompositeRepository.php">
     <InvalidArgument>
       <code><![CDATA[function () {
@@ -299,9 +304,48 @@
       <code><![CDATA[new static(new CachedGenerator($items))]]></code>
     </UnsafeGenericInstantiation>
   </file>
+  <file src="src/Module/Repository/Internal/GitHub/Api/Client.php">
+    <InvalidArgument>
+      <code><![CDATA[$decoded]]></code>
+    </InvalidArgument>
+    <RedundantCondition>
+      <code><![CDATA[\is_array($decoded)
+                && \count($decoded) === 2
+                && \is_string($decoded[0])
+                && \is_string($decoded[1])]]></code>
+    </RedundantCondition>
+  </file>
+  <file src="src/Module/Repository/Internal/GitHub/Api/RepositoryApi.php">
+    <ArgumentTypeCoercion>
+      <code><![CDATA[$uri]]></code>
+    </ArgumentTypeCoercion>
+  </file>
+  <file src="src/Module/Repository/Internal/GitHub/Api/Response/AssetInfo.php">
+    <ArgumentTypeCoercion>
+      <code><![CDATA[$data['browser_download_url']]]></code>
+      <code><![CDATA[$data['content_type']]]></code>
+      <code><![CDATA[$data['name']]]></code>
+      <code><![CDATA[$data['size']]]></code>
+    </ArgumentTypeCoercion>
+  </file>
+  <file src="src/Module/Repository/Internal/GitHub/Api/Response/ReleaseInfo.php">
+    <ArgumentTypeCoercion>
+      <code><![CDATA[$data['name'] ?? $data['tag_name']]]></code>
+      <code><![CDATA[$data['tag_name']]]></code>
+    </ArgumentTypeCoercion>
+  </file>
+  <file src="src/Module/Repository/Internal/GitHub/Api/Response/RepositoryInfo.php">
+    <ArgumentTypeCoercion>
+      <code><![CDATA[$data['full_name']]]></code>
+      <code><![CDATA[$data['html_url']]]></code>
+      <code><![CDATA[$data['name']]]></code>
+    </ArgumentTypeCoercion>
+  </file>
   <file src="src/Module/Repository/Internal/GitHub/Factory.php">
     <ArgumentTypeCoercion>
       <code><![CDATA[$org]]></code>
+      <code><![CDATA[$org]]></code>
+      <code><![CDATA[$repo]]></code>
       <code><![CDATA[$repo]]></code>
     </ArgumentTypeCoercion>
     <PossiblyFalseArgument>
@@ -310,13 +354,10 @@
     <PossiblyUndefinedArrayOffset>
       <code><![CDATA[$org]]></code>
     </PossiblyUndefinedArrayOffset>
-    <RiskyTruthyFalsyComparison>
-      <code><![CDATA[$this->config->token]]></code>
-    </RiskyTruthyFalsyComparison>
   </file>
   <file src="src/Module/Repository/Internal/GitHub/GitHubAsset.php">
     <LessSpecificImplementedReturnType>
-      <code><![CDATA[\Traversable]]></code>
+      <code><![CDATA[\Generator<int, string, mixed, void>]]></code>
     </LessSpecificImplementedReturnType>
   </file>
   <file src="src/Module/Repository/Internal/GitHub/GitHubRelease.php">
@@ -330,47 +371,18 @@
         ]]]></code>
     </ImplicitToStringCast>
     <InvalidArgument>
-      <code><![CDATA[$data]]></code>
-      <code><![CDATA[static function () use ($client, $result, $data): \Generator {
-            /** @var GitHubAssetApiResponse $item */
-            foreach ($data['assets'] ?? [] as $item) {
-                yield GitHubAsset::fromApiResponse($client, $result, $item);
+      <code><![CDATA[static function () use ($api, $result, $dto): \Generator {
+            foreach ($dto->assets as $assetDTO) {
+                yield GitHubAsset::fromDTO($api, $result, $assetDTO);
             }
         }]]></code>
     </InvalidArgument>
-    <InvalidArrayOffset>
-      <code><![CDATA[$data['tag_name']]]></code>
-      <code><![CDATA[$data['tag_name']]]></code>
-    </InvalidArrayOffset>
-    <LessSpecificReturnStatement>
-      <code><![CDATA[$this->client->request('GET', $config)->getContent()]]></code>
-    </LessSpecificReturnStatement>
-    <MixedArgument>
-      <code><![CDATA[$version]]></code>
-    </MixedArgument>
-    <MixedAssignment>
-      <code><![CDATA[$version]]></code>
-    </MixedAssignment>
-    <MoreSpecificReturnType>
-      <code><![CDATA[non-empty-string]]></code>
-    </MoreSpecificReturnType>
-    <PossiblyNullArgument>
-      <code><![CDATA[$data['tag_name']]]></code>
-    </PossiblyNullArgument>
-    <PossiblyNullOperand>
-      <code><![CDATA[$data['tag_name']]]></code>
-    </PossiblyNullOperand>
     <RedundantCondition>
       <code><![CDATA[$this->assets === null]]></code>
     </RedundantCondition>
     <TypeDoesNotContainNull>
       <code><![CDATA[$this->assets === null]]></code>
     </TypeDoesNotContainNull>
-  </file>
-  <file src="src/Module/Repository/Internal/GitHub/GitHubRepository.php">
-    <MixedArgumentTypeCoercion>
-      <code><![CDATA[$record]]></code>
-    </MixedArgumentTypeCoercion>
   </file>
   <file src="src/Module/Repository/Internal/Paginator.php">
     <PossiblyNullPropertyAssignmentValue>
