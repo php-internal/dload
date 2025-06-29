@@ -6,18 +6,14 @@ namespace Internal\DLoad\Module\Repository\Internal\GitHub;
 
 use Internal\DLoad\Module\Common\Architecture;
 use Internal\DLoad\Module\Common\OperatingSystem;
-use Internal\DLoad\Module\HttpClient\Factory as HttpFactory;
-use Internal\DLoad\Module\HttpClient\Method;
 use Internal\DLoad\Module\Repository\Internal\Asset;
+use Internal\DLoad\Module\Repository\Internal\GitHub\Api\Response\AssetInfo;
+use Internal\DLoad\Module\Repository\Internal\GitHub\Api\RepositoryApi;
 use Internal\DLoad\Service\Destroyable;
-use Psr\Http\Client\ClientInterface;
 use Psr\Http\Client\ClientExceptionInterface;
 
 /**
- * @psalm-type GitHubAssetApiResponse = array{
- *      name: non-empty-string,
- *      browser_download_url: non-empty-string
- * }
+ * GitHub Asset class representing a downloadable asset from a GitHub release.
  *
  * @internal
  * @psalm-internal Internal\DLoad\Module\Repository\Internal\GitHub
@@ -29,8 +25,7 @@ final class GitHubAsset extends Asset implements Destroyable
      * @param non-empty-string $uri
      */
     public function __construct(
-        private readonly HttpFactory $httpFactory,
-        private ClientInterface $client,
+        private readonly RepositoryApi $api,
         GitHubRelease $release,
         string $name,
         string $uri,
@@ -44,26 +39,12 @@ final class GitHubAsset extends Asset implements Destroyable
         );
     }
 
-    /**
-     * @param GitHubAssetApiResponse $data
-     */
-    public static function fromApiResponse(
-        HttpFactory $httpFactory,
-        ClientInterface $client,
+    public static function fromDTO(
+        RepositoryApi $api,
         GitHubRelease $release,
-        array $data,
+        AssetInfo $dto,
     ): self {
-        // Validate name
-        \is_string($data['name'] ?? null) or throw new \InvalidArgumentException(
-            'Passed array must contain "name" value of type string.',
-        );
-
-        // Validate uri
-        \is_string($data['browser_download_url'] ?? null) or throw new \InvalidArgumentException(
-            'Passed array must contain "browser_download_url" key of type string.',
-        );
-
-        return new self($httpFactory, $client, $release, $data['name'], $data['browser_download_url']);
+        return new self($api, $release, $dto->name, $dto->downloadUrl);
     }
 
     /**
@@ -77,8 +58,7 @@ final class GitHubAsset extends Asset implements Destroyable
      */
     public function download(?\Closure $progress = null): \Generator
     {
-        $request = $this->httpFactory->request(Method::Get, $this->getUri());
-        $response = $this->client->sendRequest($request);
+        $response = $this->api->request('GET', $this->getUri());
 
         $body = $response->getBody();
         $size = $body->getSize();
@@ -94,6 +74,6 @@ final class GitHubAsset extends Asset implements Destroyable
 
     public function destroy(): void
     {
-        unset($this->release, $this->client);
+        unset($this->release);
     }
 }

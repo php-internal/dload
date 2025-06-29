@@ -4,25 +4,19 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Repository\Internal\GitHub;
 
-use Internal\DLoad\Module\HttpClient\Factory as HttpFactory;
 use Internal\DLoad\Module\Repository\Collection\ReleasesCollection;
-use Internal\DLoad\Module\Repository\Internal\Paginator;
+use Internal\DLoad\Module\Repository\Internal\GitHub\Api\RepositoryApi;
 use Internal\DLoad\Module\Repository\Repository;
 use Internal\DLoad\Service\Destroyable;
-use Psr\Http\Client\ClientExceptionInterface;
-use Psr\Http\Client\ClientInterface;
-use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\UriInterface;
 
 /**
- * @psalm-import-type GitHubReleaseApiResponse from GitHubRelease
+ * GitHub Repository class representing a GitHub repository.
+ *
  * @internal
  * @psalm-internal Internal\DLoad\Module\Repository\Internal\GitHub
  */
 final class GitHubRepository implements Repository, Destroyable
 {
-    private const URL_RELEASES = 'https://api.github.com/repos/%s/releases';
-
     private ?ReleasesCollection $releases = null;
 
     /**
@@ -30,24 +24,16 @@ final class GitHubRepository implements Repository, Destroyable
      *
      * @var non-empty-string
      */
-    private string $name;
-
-    /**
-     * @var array<non-empty-string, non-empty-string>
-     */
-    private array $headers = [
-        'accept' => 'application/vnd.github.v3+json',
-    ];
+    private readonly string $name;
 
     /**
      * @param non-empty-string $org
      * @param non-empty-string $repo
      */
     public function __construct(
+        private readonly RepositoryApi $api,
         string $org,
         string $repo,
-        private readonly HttpFactory $httpFactory,
-        private readonly ClientInterface $client,
     ) {
         $this->name = $org . '/' . $repo;
     }
@@ -71,20 +57,13 @@ final class GitHubRepository implements Repository, Destroyable
                     // to avoid first eager loading because of generator
                     yield [];
 
-                    $response = $this->releasesRequest(++$page);
-
-                    /** @psalm-var array<array-key, array{name: string|null, tag_name: string|null, assets: array}> $data */
-                    $data = \json_decode($response->getBody()->__toString(), true);
-
-                    // If empty response, no more pages
-                    if ($data === []) {
-                        return;
-                    }
+                    $paginator = $this->api->getReleases(++$page);
+                    $releases = $paginator->getPageItems();
 
                     $toYield = [];
-                    foreach ($data as $record) {
+                    foreach ($releases as $releaseDTO) {
                         try {
-                            $toYield[] = GitHubRelease::fromApiResponse($this, $this->httpFactory, $this->client, $record);
+                            $toYield[] = GitHubRelease::fromDTO($this->api, $this, $releaseDTO);
                         } catch (\Throwable) {
                             // Skip invalid releases
                             continue;
@@ -92,16 +71,16 @@ final class GitHubRepository implements Repository, Destroyable
                     }
                     yield $toYield;
 
-                    // Check if there are more pages
-                    $hasMorePages = $this->hasNextPage($response);
-                } catch (ClientExceptionInterface) {
+                    // Check if there are more pages by getting next page
+                    $hasMorePages = $paginator->getNextPage() !== null;
+                } catch (\Throwable) {
                     return;
                 }
             } while ($hasMorePages);
         };
 
         // Create paginator
-        $paginator = Paginator::createFromGenerator($pageLoader(), null);
+        $paginator = \Internal\DLoad\Module\Repository\Internal\Paginator::createFromGenerator($pageLoader(), null);
 
         // Create a collection with the paginator
         $this->releases = ReleasesCollection::create($paginator);
@@ -121,45 +100,5 @@ final class GitHubRepository implements Repository, Destroyable
         );
 
         unset($this->releases);
-    }
-
-    /**
-     * @throws ClientExceptionInterface
-     */
-    protected function request(string $method, UriInterface $uri, array $headers = []): ResponseInterface
-    {
-        $request = $this->httpFactory->request($method, $uri, $headers + $this->headers);
-
-        return $this->client->sendRequest($request);
-    }
-
-    /**
-     * @param positive-int $page
-     * @throws ClientExceptionInterface
-     */
-    private function releasesRequest(int $page): ResponseInterface
-    {
-        return $this->request('GET', $this->uri(self::URL_RELEASES, ['page' => $page]));
-    }
-
-    /**
-     * @param non-empty-string $pattern
-     */
-    private function uri(string $pattern, array $query = []): UriInterface
-    {
-        $path = \sprintf($pattern, $this->getName());
-        return $this->httpFactory->uri($path, $query);
-    }
-
-    private function hasNextPage(ResponseInterface $response): bool
-    {
-        $headers = $response->getHeaders();
-        $link = $headers['link'] ?? [];
-
-        if (! isset($link[0])) {
-            return false;
-        }
-
-        return \str_contains($link[0], 'rel="next"');
     }
 }
