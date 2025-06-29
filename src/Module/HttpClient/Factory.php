@@ -4,12 +4,9 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\HttpClient;
 
-use Nyholm\Psr7\Request;
-use Nyholm\Psr7\Uri;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\UriInterface;
-use Symfony\Component\HttpClient\Psr18Client;
 
 /**
  * Factory class for creating HTTP client components.
@@ -19,7 +16,7 @@ use Symfony\Component\HttpClient\Psr18Client;
  *
  * @internal
  */
-class Factory
+interface Factory
 {
     /**
      * Creates a URI with the specified path and query parameters.
@@ -28,14 +25,7 @@ class Factory
      * @param array $query Associative array of query parameters.
      * @return UriInterface The constructed URI.
      */
-    public function uri(string $path, array $query = []): UriInterface
-    {
-        // Build URI with path and query parameters
-        $queryString = \http_build_query($query, '', '&', \PHP_QUERY_RFC3986);
-        $uri = \sprintf('%s?%s', $path, $queryString);
-
-        return new Uri($uri);
-    }
+    public function uri(string $path, array $query = []): UriInterface;
 
     /**
      * Creates a new HTTP request with the specified method, URI, and headers.
@@ -49,17 +39,12 @@ class Factory
         string|Method $method,
         string|UriInterface $uri,
         array $headers = [],
-    ): RequestInterface {
-        return new Request(Method::fromString($method)->value, $uri, $headers);
-    }
+    ): RequestInterface;
 
     /**
      * Creates a new PSR-18 HTTP client instance.
      *
      * @return ClientInterface The PSR-18 compliant HTTP client.
      */
-    public function client(): ClientInterface
-    {
-        return new Psr18Client();
-    }
+    public function client(): ClientInterface;
 }
