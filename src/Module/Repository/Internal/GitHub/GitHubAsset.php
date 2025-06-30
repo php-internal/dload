@@ -6,16 +6,15 @@ namespace Internal\DLoad\Module\Repository\Internal\GitHub;
 
 use Internal\DLoad\Module\Common\Architecture;
 use Internal\DLoad\Module\Common\OperatingSystem;
+use Internal\DLoad\Module\HttpClient\Method;
 use Internal\DLoad\Module\Repository\Internal\Asset;
+use Internal\DLoad\Module\Repository\Internal\GitHub\Api\Response\AssetInfo;
+use Internal\DLoad\Module\Repository\Internal\GitHub\Api\RepositoryApi;
 use Internal\DLoad\Service\Destroyable;
-use Symfony\Contracts\HttpClient\Exception\ExceptionInterface;
-use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Psr\Http\Client\ClientExceptionInterface;
 
 /**
- * @psalm-type GitHubAssetApiResponse = array{
- *      name: non-empty-string,
- *      browser_download_url: non-empty-string
- * }
+ * GitHub Asset class representing a downloadable asset from a GitHub release.
  *
  * @internal
  * @psalm-internal Internal\DLoad\Module\Repository\Internal\GitHub
@@ -26,8 +25,8 @@ final class GitHubAsset extends Asset implements Destroyable
      * @param non-empty-string $name
      * @param non-empty-string $uri
      */
-    public function __construct(
-        private HttpClientInterface $client,
+    private function __construct(
+        private readonly RepositoryApi $api,
         GitHubRelease $release,
         string $name,
         string $uri,
@@ -41,45 +40,41 @@ final class GitHubAsset extends Asset implements Destroyable
         );
     }
 
-    /**
-     * @param GitHubAssetApiResponse $data
-     */
-    public static function fromApiResponse(HttpClientInterface $client, GitHubRelease $release, array $data): self
-    {
-        // Validate name
-        \is_string($data['name'] ?? null) or throw new \InvalidArgumentException(
-            'Passed array must contain "name" value of type string.',
-        );
-
-        // Validate uri
-        \is_string($data['browser_download_url'] ?? null) or throw new \InvalidArgumentException(
-            'Passed array must contain "browser_download_url" key of type string.',
-        );
-
-        return new self($client, $release, $data['name'], $data['browser_download_url']);
+    public static function fromDTO(
+        RepositoryApi $api,
+        GitHubRelease $release,
+        AssetInfo $dto,
+    ): self {
+        return new self($api, $release, $dto->name, $dto->downloadUrl);
     }
 
     /**
-     * @param null|\Closure(int $dlNow, int $dlSize, array $info): mixed $progress
+     * @param null|\Closure(int $dlNow, int|null $dlSize, array $info): mixed $progress
      *        throwing any exceptions MUST abort the request;
      *        it MUST be called on DNS resolution, on arrival of headers and on completion;
      *        it SHOULD be called on upload/download of data and at least 1/s
      *
-     * @throws ExceptionInterface
+     * @return \Generator<int, string, mixed, void>
+     * @throws ClientExceptionInterface
      */
-    public function download(?\Closure $progress = null): \Traversable
+    public function download(?\Closure $progress = null): \Generator
     {
-        $response = $this->client->request('GET', $this->getUri(), [
-            'on_progress' => $progress,
-        ]);
+        $response = $this->api->request(Method::Get, $this->getUri());
 
-        foreach ($this->client->stream($response) as $chunk) {
-            yield $chunk->getContent();
+        $body = $response->getBody();
+        $size = $body->getSize();
+        $loaded = 0;
+
+        while (!$body->eof()) {
+            $chunk = $body->read(8192);
+            $loaded += \strlen($chunk);
+            $progress === null or $progress($loaded, $size, []);
+            yield $chunk;
         }
     }
 
     public function destroy(): void
     {
-        unset($this->release, $this->client);
+        unset($this->release);
     }
 }
