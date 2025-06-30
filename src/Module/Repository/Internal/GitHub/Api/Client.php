@@ -6,6 +6,7 @@ namespace Internal\DLoad\Module\Repository\Internal\GitHub\Api;
 
 use Internal\DLoad\Module\Config\Schema\GitHub;
 use Internal\DLoad\Module\HttpClient\Factory as HttpFactory;
+use Internal\DLoad\Module\HttpClient\Method;
 use Internal\DLoad\Module\Repository\Internal\GitHub\Exception\GitHubRateLimitException;
 use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Client\ClientInterface;
@@ -41,12 +42,12 @@ final class Client
     }
 
     /**
-     * @param non-empty-string $method
+     * @param Method|non-empty-string $method
      * @param array<string, string> $headers
      * @throws GitHubRateLimitException
      * @throws ClientExceptionInterface
      */
-    public function request(string $method, UriInterface $uri, array $headers = []): ResponseInterface
+    public function request(Method|string $method, string|UriInterface $uri, array $headers = []): ResponseInterface
     {
         $request = $this->httpFactory->request($method, $uri, $headers + $this->defaultHeaders);
 

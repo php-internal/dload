@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Internal\DLoad\Module\Repository\Internal\GitHub\Api;
 
 use Internal\DLoad\Module\HttpClient\Factory as HttpFactory;
+use Internal\DLoad\Module\HttpClient\Method;
 use Internal\DLoad\Module\Repository\Internal\GitHub\Api\Response\ReleaseInfo;
 use Internal\DLoad\Module\Repository\Internal\GitHub\Api\Response\RepositoryInfo;
 use Internal\DLoad\Module\Repository\Internal\GitHub\Exception\GitHubRateLimitException;
@@ -45,17 +46,13 @@ final class RepositoryApi
     }
 
     /**
-     * @param non-empty-string $method
+     * @param Method|non-empty-string $method
      * @param array<string, string> $headers
      * @throws GitHubRateLimitException
      * @throws ClientExceptionInterface
      */
-    public function request(string $method, string|UriInterface $uri, array $headers = []): ResponseInterface
+    public function request(Method|string $method, string|UriInterface $uri, array $headers = []): ResponseInterface
     {
-        if (\is_string($uri)) {
-            $uri = $this->httpFactory->uri($uri);
-        }
-
         return $this->client->request($method, $uri, $headers);
     }
 
@@ -65,10 +62,7 @@ final class RepositoryApi
      */
     public function getRepository(): RepositoryInfo
     {
-        $response = $this->client->request(
-            'GET',
-            $this->httpFactory->uri(\sprintf(self::URL_REPOSITORY, $this->repositoryPath)),
-        );
+        $response = $this->request(Method::Get, \sprintf(self::URL_REPOSITORY, $this->repositoryPath));
 
         /** @var array{
          *     name: string,
@@ -150,8 +144,8 @@ final class RepositoryApi
      */
     private function releasesRequest(int $page): ResponseInterface
     {
-        return $this->client->request(
-            'GET',
+        return $this->request(
+            Method::Get,
             $this->httpFactory->uri(
                 \sprintf(self::URL_RELEASES, $this->repositoryPath),
                 ['page' => $page],

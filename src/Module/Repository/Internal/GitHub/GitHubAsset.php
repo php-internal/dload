@@ -6,6 +6,7 @@ namespace Internal\DLoad\Module\Repository\Internal\GitHub;
 
 use Internal\DLoad\Module\Common\Architecture;
 use Internal\DLoad\Module\Common\OperatingSystem;
+use Internal\DLoad\Module\HttpClient\Method;
 use Internal\DLoad\Module\Repository\Internal\Asset;
 use Internal\DLoad\Module\Repository\Internal\GitHub\Api\Response\AssetInfo;
 use Internal\DLoad\Module\Repository\Internal\GitHub\Api\RepositoryApi;
@@ -58,7 +59,7 @@ final class GitHubAsset extends Asset implements Destroyable
      */
     public function download(?\Closure $progress = null): \Generator
     {
-        $response = $this->api->request('GET', $this->getUri());
+        $response = $this->api->request(Method::Get, $this->getUri());
 
         $body = $response->getBody();
         $size = $body->getSize();
