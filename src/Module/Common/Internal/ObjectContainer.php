@@ -89,10 +89,21 @@ final class ObjectContainer implements Container, ContainerInterface
     /**
      * @template T
      * @param class-string<T> $id Service identifier
-     * @param null|array|\Closure(Container): T $binding Factory function or constructor arguments
+     * @param null|class-string<T>|array<string, mixed>|\Closure(Container): T $binding
      */
-    public function bind(string $id, \Closure|array|null $binding = null): void
+    public function bind(string $id, \Closure|string|array|null $binding = null): void
     {
+        if (\is_string($binding)) {
+            \class_exists($binding) or throw new \InvalidArgumentException(
+                "Class `$binding` does not exist.",
+            );
+
+            /** @var class-string<T> $binding */
+            $binding = \is_a($binding, Factoriable::class, true)
+                ? fn(): object => $this->injector->invoke([$binding, 'create'])
+                : fn(): object => $this->injector->make($binding);
+        }
+
         if ($binding !== null) {
             $this->factory[$id] = $binding;
             return;

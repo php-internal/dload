@@ -104,14 +104,8 @@ final class Bootstrap
             static fn(Container $container): RepositoryProvider => (new RepositoryProvider())
                 ->addRepositoryFactory($container->get(GithubRepositoryFactory::class)),
         );
-        $this->container->bind(
-            BinaryProvider::class,
-            static fn(Container $c): BinaryProvider => $c->get(BinaryProviderImpl::class),
-        );
-        $this->container->bind(
-            Factory::class,
-            static fn(Container $c): Factory => $c->get(NyholmFactoryImpl::class),
-        );
+        $this->container->bind(BinaryProvider::class, BinaryProviderImpl::class);
+        $this->container->bind(Factory::class, NyholmFactoryImpl::class);
 
         return $this;
     }
