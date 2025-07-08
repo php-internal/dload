@@ -23,6 +23,7 @@ use Internal\DLoad\Module\Repository\Collection\AssetsCollection;
 use Internal\DLoad\Module\Repository\ReleaseInterface;
 use Internal\DLoad\Module\Repository\Repository;
 use Internal\DLoad\Module\Repository\RepositoryProvider;
+use Internal\DLoad\Module\Task\Progress;
 use Internal\DLoad\Module\Version\Constraint;
 use Internal\DLoad\Service\Destroyable;
 use Internal\DLoad\Service\Logger;

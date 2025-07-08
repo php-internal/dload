@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Internal\DLoad\Module\Downloader;
+namespace Internal\DLoad\Module\Task;
 
 use Internal\DLoad\Service\Logger;
 
@@ -27,7 +27,7 @@ use Internal\DLoad\Service\Logger;
  * $taskManager->await();
  * ```
  */
-final class TaskManager
+final class Manager
 {
     /** @var array<\Fiber> Active fiber tasks */
     private array $tasks = [];

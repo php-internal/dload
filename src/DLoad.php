@@ -17,7 +17,7 @@ use Internal\DLoad\Module\Downloader\Downloader;
 use Internal\DLoad\Module\Downloader\SoftwareCollection;
 use Internal\DLoad\Module\Downloader\Task\DownloadResult;
 use Internal\DLoad\Module\Downloader\Task\DownloadTask;
-use Internal\DLoad\Module\Downloader\TaskManager;
+use Internal\DLoad\Module\Task\Manager;
 use Internal\DLoad\Module\Version\Constraint;
 use Internal\DLoad\Module\Version\Version;
 use Internal\DLoad\Service\Logger;
@@ -47,7 +47,7 @@ final class DLoad
 
     public function __construct(
         private readonly Logger $logger,
-        private readonly TaskManager $taskManager,
+        private readonly Manager $taskManager,
         private readonly SoftwareCollection $softwareCollection,
         private readonly Downloader $downloader,
         private readonly ArchiveFactory $archiveFactory,

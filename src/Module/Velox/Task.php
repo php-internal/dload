@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Internal\DLoad\Module\Velox;
 
 use Internal\DLoad\Module\Config\Schema\Action\Velox as VeloxAction;
-use Internal\DLoad\Module\Downloader\Progress;
+use Internal\DLoad\Module\Task\Progress;
 use React\Promise\PromiseInterface;
 
 /**

@@ -43,4 +43,8 @@ final class Velox
     /** @var list<Plugin> $plugins List of plugins to include in build */
     #[XPathEmbedList('plugin', Plugin::class)]
     public array $plugins = [];
+
+    /** @var non-empty-string|null $binaryPath Path to the RoadRunner binary to build */
+    #[XPath('@binary-path')]
+    public ?string $binaryPath = null;
 }

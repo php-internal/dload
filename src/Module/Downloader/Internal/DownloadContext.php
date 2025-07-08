@@ -8,9 +8,9 @@ use Internal\DLoad\Module\Common\FileSystem\Path;
 use Internal\DLoad\Module\Config\Schema\Action\Download as DownloadConfig;
 use Internal\DLoad\Module\Config\Schema\Embed\Repository;
 use Internal\DLoad\Module\Config\Schema\Embed\Software;
-use Internal\DLoad\Module\Downloader\Progress;
 use Internal\DLoad\Module\Repository\AssetInterface;
 use Internal\DLoad\Module\Repository\ReleaseInterface;
+use Internal\DLoad\Module\Task\Progress;
 
 /**
  * Context object for download operations.
