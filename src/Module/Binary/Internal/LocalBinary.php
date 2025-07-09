@@ -14,7 +14,7 @@ use Internal\DLoad\Module\Config\Schema\Embed\Binary as BinaryConfig;
  *
  * @internal
  */
-final class BinaryHandle implements Binary
+final class LocalBinary implements Binary
 {
     private ?BinaryVersion $versionOutput = null;
 

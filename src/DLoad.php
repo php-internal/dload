@@ -80,7 +80,7 @@ final class DLoad
 
         if (!$force && ($type === null || $type === Type::Binary) && $software->binary !== null) {
             // Check different constraints
-            $binary = $this->binaryProvider->getBinary($destinationPath, $software->binary);
+            $binary = $this->binaryProvider->getLocalBinary($destinationPath, $software->binary, $software->name);
 
             if ($binary === null) {
                 goto add_task;
