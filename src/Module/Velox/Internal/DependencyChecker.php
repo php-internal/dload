@@ -57,6 +57,18 @@ final class DependencyChecker
             dependencyName: self::GOLANG_BINARY_NAME,
         );
 
+        # Check Go version
+        if (!$this->checkBinaryVersion($binary, $this->config->golangVersion)) {
+            throw new DependencyException(
+                \sprintf(
+                    'Go binary version `%s` does not satisfy the required constraint `%s`',
+                    (string) $binary->getVersion(),
+                    (string) $this->config->golangVersion,
+                ),
+                dependencyName: self::GOLANG_BINARY_NAME,
+            );
+        }
+
         $this->logger->debug('Found Go binary: %s', (string) $binary->getPath());
 
         return $binary;
@@ -78,7 +90,7 @@ final class DependencyChecker
 
         # Check Velox globally
         $binary = $this->binaryProvider->getGlobalBinary($binaryConfig, 'Velox');
-        if ($binary !== null && $this->checkVeloxVersion($binary)) {
+        if ($binary !== null && $this->checkBinaryVersion($binary, $this->config->veloxVersion)) {
             $this->logger->debug('Found global Velox binary: %s', (string) $binary->getPath());
             return $binary;
         }
@@ -89,7 +101,7 @@ final class DependencyChecker
             $binaryConfig,
             'Velox',
         );
-        if ($binary !== null && $this->checkVeloxVersion($binary)) {
+        if ($binary !== null && $this->checkBinaryVersion($binary, $this->config->veloxVersion)) {
             $this->logger->debug('Found local Velox binary: %s', (string) $binary->getPath());
 
             return $binary;
@@ -99,7 +111,6 @@ final class DependencyChecker
         #   todo: check download actions
 
         # Throw exception if Velox is not found
-        $this->logger->error('Velox binary not found in PATH or local directory `%s`', (string) $this->veloxPath);
         throw new DependencyException(
             'Velox binary not found. Please install Velox or ensure it is in your PATH.',
             dependencyName: self::VELOX_BINARY_NAME,
@@ -124,20 +135,21 @@ final class DependencyChecker
     }
 
     /**
-     * Checks if the Velox version satisfies the configured constraint.
+     * Checks if the binary version satisfies the constraint.
      *
      * @param Binary $binary The Velox binary to check
+     * @param string|null $constraint The version constraint to check against
      *
      * @return bool True if the version is satisfied, false otherwise
      */
-    private function checkVeloxVersion(Binary $binary): bool
+    private function checkBinaryVersion(Binary $binary, ?string $constraint): bool
     {
-        if ($this->config->veloxVersion === null) {
+        if ($constraint === null) {
             return true;
         }
 
         $version = $binary->getVersion();
-        $constrain =  Constraint::fromConstraintString($this->config->veloxVersion);
+        $constrain =  Constraint::fromConstraintString($constraint);
 
         return $version !== null && $constrain->isSatisfiedBy($version);
     }

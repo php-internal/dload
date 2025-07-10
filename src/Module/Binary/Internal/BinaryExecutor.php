@@ -6,6 +6,7 @@ namespace Internal\DLoad\Module\Binary\Internal;
 
 use Internal\DLoad\Module\Binary\Exception\BinaryExecutionException;
 use Internal\DLoad\Module\Common\FileSystem\Path;
+use Internal\DLoad\Service\Logger;
 
 /**
  * Executes binary commands and captures their output.
@@ -14,6 +15,10 @@ use Internal\DLoad\Module\Common\FileSystem\Path;
  */
 final class BinaryExecutor
 {
+    public function __construct(
+        private readonly Logger $logger,
+    ) {}
+
     /**
      * Executes a binary with the specified command and returns the output.
      *
@@ -31,8 +36,11 @@ final class BinaryExecutor
         $output = [];
         $returnCode = 0;
 
+        $cmd = "$escapedPath $command 2>&1";
+        $this->logger->debug('Executing command: %s', $cmd);
+
         // Execute with both stdout and stderr redirected to output
-        \exec("$escapedPath $command 2>&1", $output, $returnCode);
+        \exec($cmd, $output, $returnCode);
 
         // If command failed, throw exception
         if ($returnCode !== 0) {
