@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Binary;
 
+use Internal\DLoad\Module\Binary\Exception\BinaryExecutionException;
 use Internal\DLoad\Module\Common\FileSystem\Path;
 
 /**
@@ -56,8 +57,10 @@ interface Binary
     /**
      * Executes the binary with the given string input.
      *
-     * @param non-empty-string $args Arguments to pass to the binary
-     * @return string Output from the binary execution
+     * @param non-empty-string ...$args Arguments to pass to the binary
+     * @return list<string> Output from the binary execution
+     *
+     * @throws BinaryExecutionException If the binary execution returns a non-zero exit code
      */
-    public function execute(string ...$args): string;
+    public function execute(string ...$args): array;
 }

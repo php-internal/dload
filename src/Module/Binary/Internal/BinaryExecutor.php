@@ -24,15 +24,16 @@ final class BinaryExecutor
      *
      * @param Path $binaryPath Full path to binary executable
      * @param string $command Command argument(s) to execute
-     * @return string Command output
+     * @return list<string> Command output
      * @throws BinaryExecutionException If execution fails
      */
-    public function execute(Path $binaryPath, string $command): string
+    public function execute(Path $binaryPath, string $command): array
     {
         // Escape command for shell execution
         $escapedPath = \escapeshellarg((string) $binaryPath);
 
         // Execute the command and capture output
+        /** @var list<string> $output */
         $output = [];
         $returnCode = 0;
 
@@ -56,6 +57,6 @@ final class BinaryExecutor
         }
 
         // Return combined output
-        return \implode("\n", $output);
+        return $output;
     }
 }
