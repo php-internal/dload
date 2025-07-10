@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Binary\Internal;
 
-use Internal\DLoad\Module\Binary\Binary;
-use Internal\DLoad\Module\Binary\BinaryVersion;
 use Internal\DLoad\Module\Common\FileSystem\Path;
 use Internal\DLoad\Module\Config\Schema\Embed\Binary as BinaryConfig;
 
@@ -16,10 +14,9 @@ use Internal\DLoad\Module\Config\Schema\Embed\Binary as BinaryConfig;
  *
  * @internal
  */
-final class GlobalBinary implements Binary
+final class GlobalBinary extends AbstractBinary
 {
     private ?Path $resolvedPath = null;
-    private ?BinaryVersion $versionOutput = null;
 
     /**
      * @param non-empty-string $name Binary name to resolve from PATH
@@ -27,80 +24,17 @@ final class GlobalBinary implements Binary
      * @param BinaryExecutor $executor Binary execution service
      */
     public function __construct(
-        private readonly string $name,
-        private readonly BinaryConfig $config,
-        private readonly BinaryExecutor $executor,
-    ) {}
-
-    public function getName(): string
-    {
-        return $this->name;
+        string $name,
+        BinaryConfig $config,
+        BinaryExecutor $executor,
+    ) {
+        parent::__construct($name, $config, $executor);
     }
 
     public function getPath(): Path
     {
         $this->resolvePath();
         return $this->resolvedPath ?? throw new \RuntimeException("Can't resolve path for binary `{$this->name}`");
-    }
-
-    /**
-     * @psalm-assert-if-true !null $this->resolvedPath
-     */
-    public function exists(): bool
-    {
-        $this->resolvePath();
-        return $this->resolvedPath !== null && $this->resolvedPath->exists();
-    }
-
-    public function getVersion(): ?BinaryVersion
-    {
-        if ($this->versionOutput !== null) {
-            return $this->versionOutput;
-        }
-
-        if (!$this->exists() || $this->config->versionCommand === null) {
-            return null;
-        }
-
-        try {
-            $output = $this->executor->execute($this->resolvedPath, $this->config->versionCommand);
-            return $this->versionOutput = BinaryVersion::fromBinaryOutput($output);
-        } catch (\Throwable) {
-            return $this->versionOutput = BinaryVersion::empty();
-        }
-    }
-
-    public function getVersionString(): ?string
-    {
-        return $this->getVersion()?->number;
-    }
-
-    public function getSize(): ?int
-    {
-        if (!$this->exists()) {
-            return null;
-        }
-
-        $size = \filesize((string) $this->resolvedPath);
-        return $size === false ? null : $size;
-    }
-
-    public function getMTime(): ?\DateTimeImmutable
-    {
-        if (!$this->exists()) {
-            return null;
-        }
-
-        $mtime = \filemtime((string) $this->resolvedPath);
-        if ($mtime === false) {
-            return null;
-        }
-
-        try {
-            return new \DateTimeImmutable('@' . $mtime);
-        } catch (\Exception) {
-            return null;
-        }
     }
 
     /**

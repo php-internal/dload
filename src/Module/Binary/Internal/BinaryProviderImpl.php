@@ -30,9 +30,9 @@ final class BinaryProviderImpl implements BinaryProvider
         // Create binary instance
         $binary = new LocalBinary(
             name: $name ?? $config->name,
-            path: $binaryPath,
             config: $config,
             executor: $this->executor,
+            path: $binaryPath,
         );
 
         // Return binary only if it exists

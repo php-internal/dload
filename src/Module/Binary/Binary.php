@@ -52,4 +52,12 @@ interface Binary
      * @return \DateTimeImmutable|null Modification time or null if the binary doesn't exist
      */
     public function getMTime(): ?\DateTimeImmutable;
+
+    /**
+     * Executes the binary with the given string input.
+     *
+     * @param non-empty-string $args Arguments to pass to the binary
+     * @return string Output from the binary execution
+     */
+    public function execute(string ...$args): string;
 }
