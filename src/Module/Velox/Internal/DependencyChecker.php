@@ -7,6 +7,7 @@ namespace Internal\DLoad\Module\Velox\Internal;
 use Internal\DLoad\Module\Binary\Binary;
 use Internal\DLoad\Module\Binary\BinaryProvider;
 use Internal\DLoad\Module\Common\FileSystem\Path;
+use Internal\DLoad\Module\Common\OperatingSystem;
 use Internal\DLoad\Module\Config\Schema\Action\Velox as VeloxConfig;
 use Internal\DLoad\Module\Config\Schema\Embed\Binary as BinaryConfig;
 use Internal\DLoad\Module\Velox\Exception\Dependency as DependencyException;
@@ -33,6 +34,7 @@ final class DependencyChecker
     public function __construct(
         private readonly BinaryProvider $binaryProvider,
         private readonly Logger $logger,
+        private OperatingSystem $operatingSystem,
     ) {}
 
     /**
@@ -89,22 +91,37 @@ final class DependencyChecker
         $binaryConfig->versionCommand = '--version';
 
         # Check Velox globally
-        $binary = $this->binaryProvider->getGlobalBinary($binaryConfig, 'Velox');
-        if ($binary !== null && $this->checkBinaryVersion($binary, $this->config->veloxVersion)) {
-            $this->logger->debug('Found global Velox binary: %s', (string) $binary->getPath());
-            return $binary;
+        try {
+            $binary = $this->binaryProvider->getGlobalBinary($binaryConfig, 'Velox');
+            if ($binary !== null) {
+                $this->logger->debug('Found global Velox binary: %s', (string) $binary->getPath()->absolute());
+                if ($this->checkBinaryVersion($binary, $this->config->veloxVersion)) {
+                    return $binary;
+                }
+
+                $this->logger->debug(
+                    'Velox binary version `%s` does not satisfy the required constraint `%s`',
+                    (string) $binary->getVersion(),
+                    (string) $this->config->veloxVersion,
+                );
+            }
+        } catch (\Throwable) {
+            // Do nothing
         }
 
         # Check Velox locally
-        $binary = $this->binaryProvider->getLocalBinary(
-            $this->veloxPath,
-            $binaryConfig,
-            'Velox',
-        );
-        if ($binary !== null && $this->checkBinaryVersion($binary, $this->config->veloxVersion)) {
-            $this->logger->debug('Found local Velox binary: %s', (string) $binary->getPath());
+        $binary = $this->binaryProvider->getLocalBinary($this->veloxPath, $binaryConfig, 'Velox');
+        if ($binary !== null) {
+            $this->logger->debug('Found local Velox binary: %s', (string) $binary->getPath()->absolute());
+            if ($this->checkBinaryVersion($binary, $this->config->veloxVersion)) {
+                return $binary;
+            }
 
-            return $binary;
+            $this->logger->debug(
+                'Velox binary version `%s` does not satisfy the required constraint `%s`',
+                (string) $binary->getVersion(),
+                (string) $this->config->veloxVersion,
+            );
         }
 
         #   todo: download Velox if not installed (execute Download actions)
