@@ -32,6 +32,43 @@ DLoad 解决了 PHP 项目中的一个常见问题：如何在 PHP 代码的同�
 - 管理跨平台兼容性，无需手动配置
 - 将二进制文件和资产与版本控制分开
 
+### 目录
+
+- [安装](#安装)
+- [快速开始](#快速开始)
+- [命令行使用](#命令行使用)
+    - [初始化配置](#初始化配置)
+    - [下载软件](#下载软件)
+    - [查看软件](#查看软件)
+    - [构建自定义软件](#构建自定义软件)
+- [配置指南](#配置指南)
+    - [交互式配置](#交互式配置)
+    - [手动配置](#手动配置)
+    - [下载类型](#下载类型)
+    - [版本约束](#版本约束)
+    - [高级配置选项](#高级配置选项)
+- [构建自定义 RoadRunner](#构建自定义-roadrunner)
+    - [构建操作配置](#构建操作配置)
+    - [Velox 操作属性](#velox-操作属性)
+    - [构建过程](#构建过程)
+    - [配置文件生成](#配置文件生成)
+    - [使用下载的 Velox](#使用下载的-velox)
+    - [DLoad 配置](#dload-配置)
+    - [构建 RoadRunner](#构建-roadrunner)
+- [自定义软件注册表](#自定义软件注册表)
+    - [定义软件](#定义软件)
+    - [软件元素](#软件元素)
+- [用例](#用例)
+    - [开发环境设置](#开发环境设置)
+    - [新项目设置](#新项目设置)
+    - [CI/CD 集成](#cicd-集成)
+    - [跨平台团队](#跨平台团队)
+    - [PHAR 工具管理](#phar-工具管理)
+    - [前端资产分发](#前端资产分发)
+- [GitHub API 速率限制](#github-api-速率限制)
+- [贡献](#贡献)
+
+
 ## 安装
 
 ```bash
@@ -51,6 +88,8 @@ composer require internal/dload -W
     composer require internal/dload -W
     ```
 
+或者，您可以从 [GitHub 发布页面](https://github.com/php-internal/dload/releases) 下载最新版本。
+
 2. **交互式创建配置文件**：
 
     ```bash
@@ -62,7 +101,8 @@ composer require internal/dload -W
     ```xml
     <?xml version="1.0"?>
     <dload xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-           xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/php-internal/dload/refs/heads/1.x/dload.xsd">
+           xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/php-internal/dload/refs/heads/1.x/dload.xsd"
+   >
        <actions>
            <download software="rr" version="^2025.1.0"/>
            <download software="temporal" version="^1.3"/>
@@ -81,7 +121,7 @@ composer require internal/dload -W
     ```json
     {
         "scripts": {
-            "post-update-cmd": "dload get --no-interaction -v || echo can't dload binaries"
+            "post-update-cmd": "dload get --no-interaction -v || \"echo can't dload binaries\""
         }
     }
     ```
@@ -143,6 +183,25 @@ composer require internal/dload -W
 # 显示所有软件（已下载和可用的）
 ./vendor/bin/dload show --all
 ```
+
+### 构建自定义软件
+
+```bash
+# 使用配置文件构建自定义软件
+./vendor/bin/dload build
+
+# 使用特定配置文件构建
+./vendor/bin/dload build --config=./custom-dload.xml
+```
+
+#### 构建选项
+
+| 选项 | 描述 | 默认值 |
+|--------|-------------|---------|
+| `--config` | 配置文件路径 | ./dload.xml |
+
+`build` 命令执行配置文件中定义的构建操作，例如创建具有特定插件的自定义 RoadRunner 二进制文件。
+有关构建自定义 RoadRunner 的详细信息，请参阅 [构建自定义 RoadRunner](#构建自定义-roadrunner) 部分。
 
 ## 配置指南
 
@@ -263,6 +322,101 @@ DLoad 支持三种下载类型，决定资产的处理方式：
     </actions>
 </dload>
 ```
+
+## 构建自定义 RoadRunner
+
+DLoad 支持使用 Velox 构建工具构建自定义 RoadRunner 二进制文件。当您需要具有预构建版本中不可用的自定义插件组合的 RoadRunner 时，这非常有用。
+
+### 构建操作配置
+
+```xml
+<actions>
+    <!-- 使用本地 velox.toml 的基本配置 -->
+    <velox config-file="./velox.toml" />
+    
+    <!-- 使用特定版本 -->
+    <velox config-file="./velox.toml" 
+          velox-version="^1.4.0" 
+          golang-version="^1.22" 
+          binary-version="2024.1.5" 
+          binary-path="./bin/rr" />
+</actions>
+```
+
+### Velox 操作属性
+
+| 属性 | 描述 | 默认值 |
+|-----------|-------------|---------|
+| `velox-version` | Velox 构建工具版本 | 最新 |
+| `golang-version` | 所需的 Go 版本 | 最新 |
+| `binary-version` | 在 `rr --version` 中显示的 RoadRunner 版本 | 最新 |
+| `config-file` | 本地 velox.toml 文件路径 | `./velox.toml` |
+| `binary-path` | 保存构建的 RoadRunner 二进制文件的路径 | `./rr` |
+
+### 构建过程
+
+DLoad 自动处理构建过程：
+
+1. **Golang 检查**：验证 Go 是否全局安装（必需依赖项）
+2. **Velox 准备**：使用全局安装的 Velox、本地下载或在需要时自动下载
+3. **配置**：将您的本地 velox.toml 复制到构建目录
+4. **构建**：使用指定配置执行 `vx build` 命令
+5. **安装**：将构建的二进制文件移动到目标位置并设置可执行权限
+6. **清理**：删除临时构建文件
+
+> [!NOTE]
+> DLoad 需要在您的系统上全局安装 Go (Golang)。它不会下载或管理 Go 安装。
+
+### 配置文件生成
+
+您可以使用 https://build.roadrunner.dev/ 上的在线构建器生成 `velox.toml` 配置文件
+
+有关 Velox 配置选项和示例的详细文档，请访问 https://docs.roadrunner.dev/docs/customization/build
+
+此 Web 界面帮助您选择插件并为您的自定义 RoadRunner 构建生成适当的配置。
+
+### 使用下载的 Velox
+
+您可以将 Velox 作为构建过程的一部分下载，而不是依赖全局安装的版本：
+
+```xml
+<actions>
+    <download software="velox" extract-path="bin" version="2025.1.1" />
+    <velox config-file="velox.toml"
+          golang-version="^1.22"
+          binary-version="2024.1.5" />
+</actions>
+```
+
+这确保在不同环境和团队成员之间使用一致的 Velox 版本。
+
+### DLoad 配置
+
+```xml
+<?xml version="1.0"?>
+<dload xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/php-internal/dload/refs/heads/1.x/dload.xsd">
+    <actions>
+        <velox config-file="./velox.toml" 
+              velox-version="^1.4.0"
+              golang-version="^1.22"
+              binary-version="2024.1.5"
+              binary-path="./bin/rr" />
+    </actions>
+</dload>
+```
+
+### 构建 RoadRunner
+
+```bash
+# 使用 velox.toml 配置构建 RoadRunner
+./vendor/bin/dload build
+
+# 使用特定配置文件构建
+./vendor/bin/dload build --config=custom-rr.xml
+```
+
+构建的 RoadRunner 二进制文件将仅包含您在 `velox.toml` 文件中指定的插件，从而减少二进制文件大小并提高特定用例的性能。
 
 ## 自定义软件注册表
 
@@ -404,5 +558,5 @@ GITHUB_TOKEN=your_token_here ./vendor/bin/dload get
 欢迎贡献！提交拉取请求以：
 
 - 向预定义注册表添加新软件
-- 改进 DLoad 功能
+- 改进 DLoad 功能  
 - 增强文档并将其翻译为[其他语言](docs/guidelines/how-to-translate-readme-docs.md)

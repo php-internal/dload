@@ -32,6 +32,43 @@ Con DLoad, puedes:
 - Gestionar compatibilidad multiplataforma sin configuración manual
 - Mantener binarios y recursos separados de tu control de versiones
 
+### Tabla de Contenidos
+
+- [Instalación](#instalación)
+- [Inicio Rápido](#inicio-rápido)
+- [Uso de Línea de Comandos](#uso-de-línea-de-comandos)
+    - [Inicializar Configuración](#inicializar-configuración)
+    - [Descargar Software](#descargar-software)
+    - [Ver Software](#ver-software)
+    - [Construir Software Personalizado](#construir-software-personalizado)
+- [Guía de Configuración](#guía-de-configuración)
+    - [Configuración Interactiva](#configuración-interactiva)
+    - [Configuración Manual](#configuración-manual)
+    - [Tipos de Descarga](#tipos-de-descarga)
+    - [Restricciones de Versión](#restricciones-de-versión)
+    - [Opciones de Configuración Avanzadas](#opciones-de-configuración-avanzadas)
+- [Construir RoadRunner Personalizado](#construir-roadrunner-personalizado)
+    - [Configuración de Acción de Construcción](#configuración-de-acción-de-construcción)
+    - [Atributos de Acción Velox](#atributos-de-acción-velox)
+    - [Proceso de Construcción](#proceso-de-construcción)
+    - [Generación de Archivo de Configuración](#generación-de-archivo-de-configuración)
+    - [Usando Velox Descargado](#usando-velox-descargado)
+    - [Configuración DLoad](#configuración-dload)
+    - [Construyendo RoadRunner](#construyendo-roadrunner)
+- [Registro de Software Personalizado](#registro-de-software-personalizado)
+    - [Definiendo Software](#definiendo-software)
+    - [Elementos de Software](#elementos-de-software)
+- [Casos de Uso](#casos-de-uso)
+    - [Configuración de Entorno de Desarrollo](#configuración-de-entorno-de-desarrollo)
+    - [Configuración de Nuevo Proyecto](#configuración-de-nuevo-proyecto)
+    - [Integración CI/CD](#integración-cicd)
+    - [Equipos Multiplataforma](#equipos-multiplataforma)
+    - [Gestión de Herramientas PHAR](#gestión-de-herramientas-phar)
+    - [Distribución de Recursos Frontend](#distribución-de-recursos-frontend)
+- [Límites de Rate de API de GitHub](#límites-de-rate-de-api-de-github)
+- [Contribuciones](#contribuciones)
+
+
 ## Instalación
 
 ```bash
@@ -51,6 +88,8 @@ composer require internal/dload -W
     composer require internal/dload -W
     ```
 
+Alternativamente, puedes descargar la última versión desde [GitHub releases](https://github.com/php-internal/dload/releases).
+
 2. **Crea tu archivo de configuración interactivamente**:
 
     ```bash
@@ -62,7 +101,8 @@ composer require internal/dload -W
     ```xml
     <?xml version="1.0"?>
     <dload xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-           xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/php-internal/dload/refs/heads/1.x/dload.xsd">
+           xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/php-internal/dload/refs/heads/1.x/dload.xsd"
+   >
        <actions>
            <download software="rr" version="^2025.1.0"/>
            <download software="temporal" version="^1.3"/>
@@ -81,7 +121,7 @@ composer require internal/dload -W
     ```json
     {
         "scripts": {
-            "post-update-cmd": "dload get --no-interaction -v || echo can't dload binaries"
+            "post-update-cmd": "dload get --no-interaction -v || \"echo can't dload binaries\""
         }
     }
     ```
@@ -143,6 +183,25 @@ composer require internal/dload -W
 # Mostrar todo el software (descargado y disponible)
 ./vendor/bin/dload show --all
 ```
+
+### Construir Software Personalizado
+
+```bash
+# Construir software personalizado usando archivo de configuración
+./vendor/bin/dload build
+
+# Construir con archivo de configuración específico
+./vendor/bin/dload build --config=./custom-dload.xml
+```
+
+#### Opciones de Construcción
+
+| Opción | Descripción | Por defecto |
+|--------|-------------|---------|
+| `--config` | Ruta al archivo de configuración | ./dload.xml |
+
+El comando `build` ejecuta acciones de construcción definidas en tu archivo de configuración, como crear binarios RoadRunner personalizados con plugins específicos.
+Para información detallada sobre construir RoadRunner personalizado, consulta la sección [Construir RoadRunner Personalizado](#construir-roadrunner-personalizado).
 
 ## Guía de Configuración
 
@@ -263,6 +322,101 @@ Usa restricciones de versión estilo Composer:
     </actions>
 </dload>
 ```
+
+## Construir RoadRunner Personalizado
+
+DLoad soporta construir binarios RoadRunner personalizados usando la herramienta de construcción Velox. Esto es útil cuando necesitas RoadRunner con combinaciones de plugins personalizados que no están disponibles en versiones pre-construidas.
+
+### Configuración de Acción de Construcción
+
+```xml
+<actions>
+    <!-- Configuración básica usando velox.toml local -->
+    <velox config-file="./velox.toml" />
+    
+    <!-- Con versiones específicas -->
+    <velox config-file="./velox.toml" 
+          velox-version="^1.4.0" 
+          golang-version="^1.22" 
+          binary-version="2024.1.5" 
+          binary-path="./bin/rr" />
+</actions>
+```
+
+### Atributos de Acción Velox
+
+| Atributo | Descripción | Por defecto |
+|-----------|-------------|---------|
+| `velox-version` | Versión de la herramienta de construcción Velox | Última |
+| `golang-version` | Versión de Go requerida | Última |
+| `binary-version` | Versión de RoadRunner para mostrar en `rr --version` | Última |
+| `config-file` | Ruta al archivo velox.toml local | `./velox.toml` |
+| `binary-path` | Ruta para guardar el binario RoadRunner construido | `./rr` |
+
+### Proceso de Construcción
+
+DLoad maneja automáticamente el proceso de construcción:
+
+1. **Verificación de Golang**: Verifica que Go esté instalado globalmente (dependencia requerida)
+2. **Preparación de Velox**: Usa Velox desde instalación global, descarga local, o descarga automáticamente si es necesario
+3. **Configuración**: Copia tu velox.toml local al directorio de construcción
+4. **Construcción**: Ejecuta el comando `vx build` con la configuración especificada
+5. **Instalación**: Mueve el binario construido a la ubicación objetivo y establece permisos de ejecución
+6. **Limpieza**: Elimina archivos temporales de construcción
+
+> [!NOTE]
+> DLoad requiere que Go (Golang) esté instalado globalmente en tu sistema. No descarga ni gestiona instalaciones de Go.
+
+### Generación de Archivo de Configuración
+
+Puedes generar un archivo de configuración `velox.toml` usando el constructor en línea en https://build.roadrunner.dev/
+
+Para documentación detallada sobre opciones de configuración de Velox y ejemplos, visita https://docs.roadrunner.dev/docs/customization/build
+
+Esta interfaz web te ayuda a seleccionar plugins y genera la configuración apropiada para tu construcción RoadRunner personalizada.
+
+### Usando Velox Descargado
+
+Puedes descargar Velox como parte de tu proceso de construcción en lugar de depender de una versión instalada globalmente:
+
+```xml
+<actions>
+    <download software="velox" extract-path="bin" version="2025.1.1" />
+    <velox config-file="velox.toml"
+          golang-version="^1.22"
+          binary-version="2024.1.5" />
+</actions>
+```
+
+Esto asegura versiones consistentes de Velox entre diferentes entornos y miembros del equipo.
+
+### Configuración DLoad
+
+```xml
+<?xml version="1.0"?>
+<dload xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/php-internal/dload/refs/heads/1.x/dload.xsd">
+    <actions>
+        <velox config-file="./velox.toml" 
+              velox-version="^1.4.0"
+              golang-version="^1.22"
+              binary-version="2024.1.5"
+              binary-path="./bin/rr" />
+    </actions>
+</dload>
+```
+
+### Construyendo RoadRunner
+
+```bash
+# Construir RoadRunner usando configuración velox.toml
+./vendor/bin/dload build
+
+# Construir con archivo de configuración específico
+./vendor/bin/dload build --config=custom-rr.xml
+```
+
+El binario RoadRunner construido incluirá solo los plugins especificados en tu archivo `velox.toml`, reduciendo el tamaño del binario y mejorando el rendimiento para tu caso de uso específico.
 
 ## Registro de Software Personalizado
 
@@ -404,5 +558,5 @@ Añádelo a variables de entorno CI/CD para descargas automatizadas.
 ¡Las contribuciones son bienvenidas! Envía Pull Requests para:
 
 - Añadir nuevo software al registro predefinido
-- Mejorar la funcionalidad de DLoad
+- Mejorar la funcionalidad de DLoad  
 - Mejorar la documentación y traducirla a [otros idiomas](docs/guidelines/how-to-translate-readme-docs.md)
