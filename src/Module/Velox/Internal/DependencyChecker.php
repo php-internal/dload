@@ -4,14 +4,23 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Velox\Internal;
 
+use Internal\DLoad\DLoad;
 use Internal\DLoad\Module\Binary\Binary;
 use Internal\DLoad\Module\Binary\BinaryProvider;
+use Internal\DLoad\Module\Common\DloadResult;
 use Internal\DLoad\Module\Common\FileSystem\Path;
+use Internal\DLoad\Module\Config\Schema\Action\Download;
+use Internal\DLoad\Module\Config\Schema\Action\Type as DownloadType;
 use Internal\DLoad\Module\Config\Schema\Action\Velox as VeloxConfig;
+use Internal\DLoad\Module\Config\Schema\Actions;
 use Internal\DLoad\Module\Config\Schema\Embed\Binary as BinaryConfig;
+use Internal\DLoad\Module\Config\Schema\Embed\Software;
+use Internal\DLoad\Module\Downloader\SoftwareCollection;
 use Internal\DLoad\Module\Velox\Exception\Dependency as DependencyException;
 use Internal\DLoad\Module\Version\Constraint;
 use Internal\DLoad\Service\Logger;
+
+use function React\Async\await;
 
 /**
  * Dependency checker for Velox build requirements.
@@ -28,10 +37,14 @@ final class DependencyChecker
 
     private Path $veloxPath;
     private VeloxConfig $config;
+    private Path $buildDirectory;
 
     public function __construct(
         private readonly BinaryProvider $binaryProvider,
         private readonly Logger $logger,
+        private readonly SoftwareCollection $softwareCollection,
+        private readonly Actions $actions,
+        private readonly DLoad $downloader,
     ) {}
 
     /**
@@ -83,15 +96,23 @@ final class DependencyChecker
         $this->checkServiceState();
 
         # Prepare config
-        $binaryConfig = new BinaryConfig();
-        $binaryConfig->name = self::VELOX_BINARY_NAME;
-        $binaryConfig->versionCommand = '--version';
+        $softwareConfig = $this->softwareCollection->findSoftware('velox');
+        $binaryConfig = $softwareConfig?->binary;
+        if ($binaryConfig === null) {
+            $binaryConfig = new BinaryConfig();
+            $binaryConfig->name = 'vx';
+            $binaryConfig->versionCommand = '--version';
+        }
 
         # Check Velox globally
         try {
             $binary = $this->binaryProvider->getGlobalBinary($binaryConfig, 'Velox');
             if ($binary !== null) {
-                $this->logger->debug('Found global Velox binary: %s', (string) $binary->getPath()->absolute());
+                $this->logger->debug(
+                    'Found global Velox binary: %s (%s)',
+                    (string) $binary->getPath()->absolute(),
+                    (string) $binary->getVersion(),
+                );
                 if ($this->checkBinaryVersion($binary, $this->config->veloxVersion)) {
                     return $binary;
                 }
@@ -107,9 +128,14 @@ final class DependencyChecker
         }
 
         # Check Velox locally
+        # 1. Check local binary
         $binary = $this->binaryProvider->getLocalBinary($this->veloxPath, $binaryConfig, 'Velox');
         if ($binary !== null) {
-            $this->logger->debug('Found local Velox binary: %s', (string) $binary->getPath()->absolute());
+            $this->logger->debug(
+                'Found local Velox binary: %s (%s)',
+                (string) $binary->getPath()->absolute(),
+                (string) $binary->getVersion(),
+            );
             if ($this->checkBinaryVersion($binary, $this->config->veloxVersion)) {
                 return $binary;
             }
@@ -121,13 +147,46 @@ final class DependencyChecker
             );
         }
 
-        #   todo: download Velox if not installed (execute Download actions)
-        #   todo: check download actions
+        # 2. Check download actions
+        /** @var list<Software> $softwareList */
+        $downloads = [];
+        $binary = $this->checkDownloadedVelox($softwareConfig, $downloads);
+        if ($binary !== null) {
+            $this->logger->debug(
+                'Found downloaded Velox binary: %s (%s)',
+                (string) $binary->getPath()->absolute(),
+                (string) $binary->getVersion(),
+            );
+            return $binary;
+        }
+
+        # 3. If no binaries are found, download Velox
+        $softwareConfig === null and throw new DependencyException(
+            'Velox software configuration not found. Please ensure Velox is defined in your configuration.',
+            dependencyName: 'Velox',
+        );
+
+        # Add a download action if no actions are configured
+        $fallbackAction = Download::fromSoftwareId('velox');
+        $fallbackAction->version = $this->config->veloxVersion;
+        $fallbackAction->extractPath = $this->buildDirectory->__toString();
+        $fallbackAction->type = DownloadType::Binary;
+
+        $this->logger->info('Downloading Velox binary...');
+        $binary = $this->downloadVelox($softwareConfig, $downloads, $fallbackAction);
+        if ($binary !== null) {
+            $this->logger->debug(
+                'Downloaded Velox binary: %s (%s)',
+                (string) $binary->getPath()->absolute(),
+                (string) $binary->getVersion(),
+            );
+            return $binary;
+        }
 
         # Throw exception if Velox is not found
         throw new DependencyException(
             'Velox binary not found. Please install Velox or ensure it is in your PATH.',
-            dependencyName: self::VELOX_BINARY_NAME,
+            dependencyName: 'Velox',
         );
     }
 
@@ -179,5 +238,133 @@ final class DependencyChecker
         isset($this->config) or throw new \LogicException(
             'Velox configuration is not set. Use `withConfig()` to set it before checking dependencies.',
         );
+    }
+
+    /**
+     * Checks if Velox is downloaded and returns the binary if available.
+     *
+     * @param Software|null $softwareConfig The software configuration for Velox
+     * @param list<Download> $downloads The list of Velox download actions
+     *
+     * @return Binary|null The Velox binary if found, null otherwise
+     */
+    private function checkDownloadedVelox(?Software $softwareConfig, array &$downloads): ?Binary
+    {
+        $binaryConfig = $softwareConfig?->binary;
+        if ($softwareConfig === null || $binaryConfig === null) {
+            return null;
+        }
+
+        # Find the relevant download action for Velox
+        foreach ($this->actions->downloads as $download) {
+            $software = $this->softwareCollection->findSoftware($download->software);
+            if ($software !== $softwareConfig) {
+                continue;
+            }
+
+            # Get binary
+            $binary = $this->binaryProvider
+                ->getLocalBinary(Path::create($download->extractPath ?? '.'), $binaryConfig, $softwareConfig->name);
+
+            if ($binary === null) {
+                $downloads[] = $download;
+                continue;
+            }
+
+            if ($this->config->veloxVersion === null) {
+                return $binary;
+            }
+
+            # Check version constraint
+            $constraint = Constraint::fromConstraintString($this->config->veloxVersion);
+            $binaryVersion = $binary->getVersion();
+
+            if ($binaryVersion === null || !$constraint->isSatisfiedBy($binaryVersion)) {
+                $this->logger->debug(
+                    'Found downloaded Velox binary in `%s` but version `%s` does not satisfy constraint `%s`',
+                    $binary->getPath()->absolute()->__toString(),
+                    (string) $binaryVersion,
+                    $constraint->__toString(),
+                );
+
+                # If local binary does not satisfy the download version constraint,
+                # then we can redownload it
+                if ($binaryVersion !== null && $download->version !== null) {
+                    Constraint::fromConstraintString($download->version)
+                        ->isSatisfiedBy($binaryVersion) or $downloads[] = $download;
+                }
+
+                continue;
+            }
+
+            return $binary;
+        }
+
+        return null;
+    }
+
+    /**
+     * Downloads the Velox binary based on the provided download actions.
+     * If no downloads are configured or the download fails on version constraint,
+     * it uses a fallback action to download Velox.
+     *
+     * @param Software $software The software configuration for Velox
+     * @param list<Download> $downloads The list of download actions for Velox
+     * @param Download $fallbackAction The fallback download action if no downloads are configured
+     *
+     * @return Binary|null The downloaded Velox binary or null
+     *
+     * @throws DependencyException If the download fails or the binary is not found
+     */
+    private function downloadVelox(Software $software, array $downloads, Download $fallbackAction): ?Binary
+    {
+        $usedFallback = false;
+
+        try_download:
+        foreach ($downloads as $download) {
+            try {
+                $promise = $this->downloader->addTask($download, force: true);
+                $this->downloader->run();
+
+                /** @var DloadResult $result */
+                $result = await($promise);
+
+                # Check if the binary download was successful
+                $binary = $result->binary;
+                if ($binary === null) {
+                    $this->logger->debug('Download for Velox binary failed: no binary found.');
+                    continue;
+                }
+
+                $constraint = $this->config->veloxVersion === null
+                    ? null
+                    : Constraint::fromConstraintString($this->config->veloxVersion);
+                $binaryVersion = $binary->getVersion();
+
+                # Check if the downloaded binary satisfies the version constraint
+                if ($constraint === null or $binaryVersion !== null && $constraint->isSatisfiedBy($binaryVersion)) {
+                    return $binary;
+                }
+
+                $this->logger->debug(
+                    'Downloaded Velox binary `%s` with version `%s` does not satisfy the constraint `%s`',
+                    $binary->getPath()->__toString(),
+                    (string) $binaryVersion,
+                    (string) $this->config->veloxVersion,
+                );
+                continue;
+            } catch (\Throwable) {
+                continue;
+            }
+        }
+
+        if ($usedFallback) {
+            return null; // No valid binary found after trying all downloads
+        }
+
+        # If no downloads were successful, use the fallback action
+        $usedFallback = true;
+        $downloads = [$fallbackAction];
+        goto try_download;
     }
 }
