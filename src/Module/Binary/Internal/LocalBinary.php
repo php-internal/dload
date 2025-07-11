@@ -14,6 +14,8 @@ use Internal\DLoad\Module\Config\Schema\Embed\Binary as BinaryConfig;
  */
 final class LocalBinary extends AbstractBinary
 {
+    private readonly Path $path;
+
     /**
      * @param non-empty-string $name Binary name
      * @param Path $path Path to binary
@@ -24,8 +26,9 @@ final class LocalBinary extends AbstractBinary
         string $name,
         BinaryConfig $config,
         BinaryExecutor $executor,
-        private readonly Path $path,
+        Path $path,
     ) {
+        $this->path = $path->absolute();
         parent::__construct($name, $config, $executor);
     }
 
