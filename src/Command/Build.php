@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Command;
 
-use Internal\DLoad\Module\Common\FileSystem\Path;
 use Internal\DLoad\Module\Config\Schema\Action\Velox as VeloxAction;
 use Internal\DLoad\Module\Config\Schema\Actions;
 use Internal\DLoad\Module\Task\Progress;

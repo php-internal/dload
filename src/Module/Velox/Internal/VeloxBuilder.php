@@ -17,7 +17,6 @@ use Internal\DLoad\Module\Velox\Exception\Build as BuildException;
 use Internal\DLoad\Module\Velox\Exception\Config as ConfigException;
 use Internal\DLoad\Module\Velox\Result;
 use Internal\DLoad\Module\Velox\Task;
-use Internal\DLoad\Module\Version\Version;
 use Internal\DLoad\Service\Logger;
 use React\Promise\PromiseInterface;
 
