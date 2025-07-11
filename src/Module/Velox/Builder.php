@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Velox;
 
-use Internal\DLoad\Module\Common\FileSystem\Path;
 use Internal\DLoad\Module\Config\Schema\Action\Velox as VeloxAction;
 use Internal\DLoad\Module\Task\Progress;
 
@@ -28,22 +27,7 @@ interface Builder
      * 5. Cleans up temporary files
      *
      * @param VeloxAction $config Build configuration
-     * @param Path $destination Target directory for the built binary
      * @param \Closure(Progress): mixed $onProgress Progress callback
      */
-    public function build(VeloxAction $config, Path $destination, \Closure $onProgress): Task;
-
-    /**
-     * Validates build configuration without executing the build.
-     *
-     * Performs preliminary checks:
-     * - Configuration syntax and completeness
-     * - Dependency availability
-     * - Target directory permissions
-     *
-     * @param VeloxAction $config Configuration to validate
-     * @throws Exception\Config When configuration is invalid
-     * @throws Exception\Dependency When dependencies are unavailable
-     */
-    public function validate(VeloxAction $config): void;
+    public function build(VeloxAction $config, \Closure $onProgress): Task;
 }
