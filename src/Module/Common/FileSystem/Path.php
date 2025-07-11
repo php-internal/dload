@@ -194,15 +194,20 @@ final class Path implements \Stringable
         return self::create($cwd . self::DS . $this->path);
     }
 
+    /**
+     * Return a normalized relative version of this path.
+     *
+     * @return non-empty-string
+     */
     public function __toString(): string
     {
         return $this->path;
     }
 
     /**
-     * Check if a path is absolute
+     * Check if a path is absolute.
      *
-     * @param non-empty-string $path A normalized path
+     * @param non-empty-string $path A normalized path.
      */
     private static function _isAbsolute(string $path): bool
     {
@@ -210,7 +215,7 @@ final class Path implements \Stringable
     }
 
     /**
-     * Normalize a path by converting directory separators and resolving special path segments
+     * Normalize a path by converting directory separators and resolving special path segments.
      *
      * @return non-empty-string
      */

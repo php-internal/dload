@@ -57,7 +57,7 @@ interface Binary
     /**
      * Executes the binary with the given string input.
      *
-     * @param non-empty-string ...$args Arguments to pass to the binary
+     * @param string ...$args Arguments to pass to the binary
      * @return list<string> Output from the binary execution
      *
      * @throws BinaryExecutionException If the binary execution returns a non-zero exit code
