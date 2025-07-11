@@ -19,6 +19,7 @@ use Internal\DLoad\Module\Version\Version;
 use Internal\DLoad\Service\Logger;
 use React\Promise\PromiseInterface;
 
+use function React\Promise\reject;
 use function React\Promise\resolve;
 
 /**
@@ -55,6 +56,7 @@ final class VeloxBuilder implements Builder
 
                 # Check required Dependencies
                 $dependencyChecker = $this->dependencyChecker->withConfig($config, $buildDir);
+
                 # 1. Golang globally
                 $goBinary = $dependencyChecker->prepareGolang();
 
@@ -82,8 +84,7 @@ final class VeloxBuilder implements Builder
                     ],
                 ));
             } catch (\Throwable $e) {
-                $this->logger->error('Build failed: %s', $e->getMessage());
-                throw $e;
+                return reject($e);
             } finally {
                 # Remove the build directory
                 isset($buildDir) and FS::remove($buildDir);
