@@ -118,6 +118,11 @@
                                             <xs:documentation>Path to local velox.toml file</xs:documentation>
                                         </xs:annotation>
                                     </xs:attribute>
+                                    <xs:attribute name="binary-path" type="xs:string">
+                                        <xs:annotation>
+                                            <xs:documentation>Path to the RoadRunner binary to build</xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
                                 </xs:complexType>
                             </xs:element>
                         </xs:sequence>
