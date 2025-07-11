@@ -28,6 +28,8 @@ use function React\Async\await;
  * Checks for the availability of required binaries like Go and Velox,
  * and validates their versions against configured constraints.
  *
+ * @psalm-suppress PropertyNotSetInConstructor
+ *
  * @internal
  */
 final class DependencyChecker
@@ -358,13 +360,14 @@ final class DependencyChecker
             }
         }
 
-        if ($usedFallback) {
-            return null; // No valid binary found after trying all downloads
+        /** @psalm-suppress RedundantCondition */
+        if (!$usedFallback) {
+            # If no downloads were successful, use the fallback action
+            $usedFallback = true;
+            $downloads = [$fallbackAction];
+            goto try_download;
         }
 
-        # If no downloads were successful, use the fallback action
-        $usedFallback = true;
-        $downloads = [$fallbackAction];
-        goto try_download;
+        return null; // No valid binary found after trying all downloads
     }
 }

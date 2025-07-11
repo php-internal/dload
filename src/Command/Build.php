@@ -12,6 +12,7 @@ use Internal\DLoad\Module\Velox\Builder;
 use Internal\DLoad\Module\Velox\Exception\Build as BuildException;
 use Internal\DLoad\Module\Velox\Exception\Config as ConfigException;
 use Internal\DLoad\Module\Velox\Exception\Dependency as DependencyException;
+use Internal\DLoad\Module\Velox\Result;
 use Internal\DLoad\Module\Velox\Task;
 use React\Promise\PromiseInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -77,24 +78,15 @@ final class Build extends Base
     }
 
     /**
-     * Gets the destination path as a Path object.
-     */
-    private function getDestinationPath(InputInterface $input): Path
-    {
-        /** @var string $pathOption */
-        $pathOption = $input->getOption('path');
-        return Path::create($pathOption);
-    }
-
-    /**
      * Executes a single Velox build action.
      *
-     * @param callable(Progress): void $onProgress Callback to report progress
+     * @param \Closure(Progress): void $onProgress Callback to report progress
+     * @return PromiseInterface<Result|null> Promise that resolves to the build result or null if no binary was built
      */
     private function prepareBuildAction(
         Builder $builder,
         VeloxAction $veloxAction,
-        callable $onProgress,
+        \Closure $onProgress,
     ): PromiseInterface {
         $task = $builder->build($veloxAction, $onProgress);
 

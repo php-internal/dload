@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Internal\DLoad\Module\Velox\Internal;
 
 use Internal\DLoad\Module\Binary\Binary;
+use Internal\DLoad\Module\Binary\BinaryProvider;
 use Internal\DLoad\Module\Common\FileSystem\FS;
 use Internal\DLoad\Module\Common\FileSystem\Path;
 use Internal\DLoad\Module\Common\OperatingSystem;
 use Internal\DLoad\Module\Config\Schema\Action\Velox as VeloxAction;
 use Internal\DLoad\Module\Config\Schema\Downloader;
+use Internal\DLoad\Module\Config\Schema\Embed\Binary as BinaryConfig;
 use Internal\DLoad\Module\Velox\Builder;
 use Internal\DLoad\Module\Velox\Exception\Build as BuildException;
 use Internal\DLoad\Module\Velox\Exception\Config as ConfigException;
@@ -38,18 +40,21 @@ final class VeloxBuilder implements Builder
         private readonly Logger $logger,
         private readonly Downloader $appConfig,
         private readonly OperatingSystem $operatingSystem,
+        private readonly BinaryProvider $binaryProvider,
     ) {}
 
     public function build(VeloxAction $config, \Closure $onProgress): Task
     {
         $handler = function () use ($config, $onProgress): PromiseInterface {
-            # Prepare the destination binary path
-            $destination = Path::create($config->binaryPath ?? 'rr')->absolute();
-            $destination->extension() !== $this->operatingSystem->getBinaryExtension() and $destination = $destination
-                ->parent()
-                ->join($destination->stem() . $this->operatingSystem->getBinaryExtension());
-
             try {
+                // $this->validate($config);
+
+                # Prepare the destination binary path
+                $destination = Path::create($config->binaryPath ?? 'rr')->absolute();
+                $destination->extension() !== $this->operatingSystem->getBinaryExtension() and $destination = $destination
+                    ->parent()
+                    ->join($destination->stem() . $this->operatingSystem->getBinaryExtension());
+
                 # Prepare environment
                 # Create build directory
                 $buildDir = FS::tmpDir($this->appConfig->tmpDir, 'velox-build');
@@ -68,19 +73,16 @@ final class VeloxBuilder implements Builder
 
                 # Build
                 # Execute build command
-                $builtBinary = $this->executeBuild($configPath, $buildDir, $vxBinary);
+                $builtPath = $this->executeBuild($configPath, $buildDir, $vxBinary);
                 # Move built binary to destination
-                $this->installBinary($builtBinary, $destination);
+                $binary = $this->installBinary($builtPath, $destination);
 
-                $version = Version::fromVersionString($config->binaryVersion);
                 return resolve(new Result(
-                    binaryPath: $destination,
-                    version: $version,
+                    binary: $binary,
                     metadata: [
-                        'config_file' => $config->configFile,
                         'velox_version' => $vxBinary->getVersion(),
                         'golang_version' => $goBinary->getVersion(),
-                        'binary_version' => $version,
+                        'build_config' => $config,
                     ],
                 ));
             } catch (\Throwable $e) {
@@ -92,6 +94,18 @@ final class VeloxBuilder implements Builder
         };
 
         return new Task($config, $onProgress, $handler, $this->getBuildName($config));
+    }
+
+    public function validate(VeloxAction $config): void
+    {
+        ConfigValidator::validate($config);
+
+        // For this basic implementation, only local config files are supported
+        if ($config->configFile === null) {
+            throw new ConfigException(
+                'This implementation only supports local config files. Remote API configuration is not yet implemented.',
+            );
+        }
     }
 
     private function prepareConfig(VeloxAction $config, Path $buildDir): Path
@@ -177,7 +191,7 @@ final class VeloxBuilder implements Builder
      *
      * @throws \RuntimeException If the destination cannot be created or the binary cannot be moved
      */
-    private function installBinary(Path $builtBinary, Path $destination): void
+    private function installBinary(Path $builtBinary, Path $destination): Binary
     {
         # Check if build binary already exists
         $destination->exists()
@@ -190,6 +204,13 @@ final class VeloxBuilder implements Builder
         \chmod($destination->__toString(), 0755);
 
         $this->logger->info('Installed binary to: %s', $destination->__toString());
+
+        $binaryConfig = new BinaryConfig();
+        $binaryConfig->versionCommand = '--version';
+        $binaryConfig->name = $destination->stem();
+        return $this->binaryProvider->getLocalBinary($destination->parent(), $binaryConfig) ?? throw new \RuntimeException(
+            "Failed to create binary instance for: {$destination}",
+        );
     }
 
     /**

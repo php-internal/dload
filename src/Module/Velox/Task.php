@@ -72,7 +72,7 @@ final class Task
     public function getDescription(): string
     {
         $pluginCount = \count($this->config->plugins);
-        $configSource = $this->config->configFile ? 'local config' : 'API config';
+        $configSource = $this->config->configFile === null ? 'API config' : 'local config';
 
         return \sprintf(
             'Build RoadRunner with %d plugins using %s',

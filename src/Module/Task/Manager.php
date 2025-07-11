@@ -31,7 +31,7 @@ use React\Promise\PromiseInterface;
  */
 final class Manager
 {
-    /** @var array{\Fiber, Deferred} Active fiber tasks */
+    /** @var array<int, array{\Fiber, Deferred}> Active fiber tasks */
     private array $tasks = [];
 
     /**

@@ -71,6 +71,8 @@ final class Path implements \Stringable
 
     /**
      * Return the file stem (the file name without its extension)
+     *
+     * @return non-empty-string
      */
     public function stem(): string
     {

@@ -24,7 +24,7 @@ final class ObjectContainer implements Container, ContainerInterface
     /** @var array<class-string, object> */
     private array $cache = [];
 
-    /** @var array<class-string, array|\Closure(Container): object> */
+    /** @var array<class-string, array|\Closure(mixed ...): object> */
     private array $factory = [];
 
     private readonly Injector $injector;
@@ -89,7 +89,7 @@ final class ObjectContainer implements Container, ContainerInterface
     /**
      * @template T
      * @param class-string<T> $id Service identifier
-     * @param null|class-string<T>|array<string, mixed>|\Closure(Container): T $binding
+     * @param null|class-string<T>|array<string, mixed>|\Closure(mixed ...): T $binding
      */
     public function bind(string $id, \Closure|string|array|null $binding = null): void
     {
@@ -113,7 +113,7 @@ final class ObjectContainer implements Container, ContainerInterface
             "Class `$id` must have a factory or be a factory itself and implement `Factoriable`.",
         );
 
-        /** @var T $object */
+        /** @var \Closure(mixed ...): T $object */
         $object = $id::create(...);
         $this->factory[$id] = $object;
     }

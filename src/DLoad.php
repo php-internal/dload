@@ -186,10 +186,13 @@ final class DLoad
      *
      * @param Software $software Software package configuration
      * @param DownloadConfig $action Download action configuration
-     * @return \Closure(DownloadResult): void Function that extracts files from the downloaded archive
+     * @return DloadResult Result of the extraction process containing extracted files and binary
      */
-    private function prepareExtractTask(DownloadResult $downloadResult, Software $software, DownloadConfig $action): DloadResult
-    {
+    private function prepareExtractTask(
+        DownloadResult $downloadResult,
+        Software $software,
+        DownloadConfig $action,
+    ): DloadResult {
         $fileInfo = $downloadResult->file;
         $tempFilePath = Path::create($fileInfo->getRealPath() ?: $fileInfo->getPathname());
         $resultFiles = [];
@@ -243,7 +246,7 @@ final class DLoad
                     $isBinary = $to !== null;
                 }
 
-                $isBinary or [$to, $rule] = $this->shouldBeExtracted($file, $software->files, $destination);
+                isset($to) or [$to, $rule] = $this->shouldBeExtracted($file, $software->files, $destination);
                 if ($to === null) {
                     $this->logger->debug('Skipping file `%s`.', $file->getFilename());
                     $extractor->next();
@@ -267,7 +270,7 @@ final class DLoad
                     ),
                 );
 
-                \assert($rule !== null);
+                \assert(isset($rule));
                 $rule->chmod === null or @\chmod($path, $rule->chmod);
 
                 # Add files and binary to result
