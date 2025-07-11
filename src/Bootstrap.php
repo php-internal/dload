@@ -15,6 +15,8 @@ use Internal\DLoad\Module\HttpClient\Factory;
 use Internal\DLoad\Module\HttpClient\Internal\NyholmFactoryImpl;
 use Internal\DLoad\Module\Repository\Internal\GitHub\Factory as GithubRepositoryFactory;
 use Internal\DLoad\Module\Repository\RepositoryProvider;
+use Internal\DLoad\Module\Velox\Builder;
+use Internal\DLoad\Module\Velox\Internal\VeloxBuilder;
 use Internal\DLoad\Service\Container;
 
 /**
@@ -106,6 +108,7 @@ final class Bootstrap
         );
         $this->container->bind(BinaryProvider::class, BinaryProviderImpl::class);
         $this->container->bind(Factory::class, NyholmFactoryImpl::class);
+        $this->container->bind(Builder::class, VeloxBuilder::class);
 
         return $this;
     }

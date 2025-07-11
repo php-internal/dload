@@ -7,7 +7,6 @@ namespace Internal\DLoad\Module\Velox\Internal;
 use Internal\DLoad\Module\Binary\Binary;
 use Internal\DLoad\Module\Binary\BinaryProvider;
 use Internal\DLoad\Module\Common\FileSystem\Path;
-use Internal\DLoad\Module\Common\OperatingSystem;
 use Internal\DLoad\Module\Config\Schema\Action\Velox as VeloxConfig;
 use Internal\DLoad\Module\Config\Schema\Embed\Binary as BinaryConfig;
 use Internal\DLoad\Module\Velox\Exception\Dependency as DependencyException;
@@ -29,12 +28,10 @@ final class DependencyChecker
 
     private Path $veloxPath;
     private VeloxConfig $config;
-    private Path $buildDirectory;
 
     public function __construct(
         private readonly BinaryProvider $binaryProvider,
         private readonly Logger $logger,
-        private OperatingSystem $operatingSystem,
     ) {}
 
     /**

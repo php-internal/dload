@@ -42,10 +42,8 @@ final class VeloxBuilder implements Builder
     public function build(VeloxAction $config, \Closure $onProgress): Task
     {
         $handler = function () use ($config, $onProgress): PromiseInterface {
-            $this->validate($config);
-
             # Prepare the destination binary path
-            $destination = Path::create($config->binaryPath ?? '.')->absolute();
+            $destination = Path::create($config->binaryPath ?? 'rr')->absolute();
             $destination->extension() !== $this->operatingSystem->getBinaryExtension() and $destination = $destination
                 ->parent()
                 ->join($destination->stem() . $this->operatingSystem->getBinaryExtension());
@@ -92,7 +90,7 @@ final class VeloxBuilder implements Builder
             }
         };
 
-        return new Task($config, $onProgress, $handler, 'velox-build');
+        return new Task($config, $onProgress, $handler, $this->getBuildName($config));
     }
 
     private function prepareConfig(VeloxAction $config, Path $buildDir): Path
@@ -191,5 +189,28 @@ final class VeloxBuilder implements Builder
         \chmod($destination->__toString(), 0755);
 
         $this->logger->info('Installed binary to: %s', $destination->__toString());
+    }
+
+    /**
+     * Gets a descriptive name for the build action.
+     */
+    private function getBuildName(VeloxAction $veloxAction): string
+    {
+        if ($veloxAction->configFile !== null) {
+            return "Velox build (config: {$veloxAction->configFile})";
+        }
+
+        if ($veloxAction->plugins !== []) {
+            $pluginNames = \array_map(static fn($plugin) => $plugin->name, $veloxAction->plugins);
+            $pluginCount = \count($pluginNames);
+
+            if ($pluginCount <= 3) {
+                return 'Velox build (plugins: ' . \implode(', ', $pluginNames) . ')';
+            }
+
+            return "Velox build ({$pluginCount} plugins)";
+        }
+
+        return 'Velox build';
     }
 }

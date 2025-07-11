@@ -72,7 +72,7 @@ final class GlobalBinary extends AbstractBinary
         $output = [];
         $returnCode = 0;
 
-        \exec("$command $escapedBinaryName", $output, $returnCode);
+        \exec("$command $escapedBinaryName 2>&1", $output, $returnCode);
 
         if ($returnCode !== 0 || $output === []) {
             return null;

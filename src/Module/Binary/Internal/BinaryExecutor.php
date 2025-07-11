@@ -32,7 +32,6 @@ final class BinaryExecutor
         // Escape command for shell execution
         $escapedPath = \escapeshellarg((string) $binaryPath);
 
-        // Execute the command and capture output
         /** @var list<string> $output */
         $output = [];
         $returnCode = 0;
