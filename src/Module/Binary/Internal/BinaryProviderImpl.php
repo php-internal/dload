@@ -22,15 +22,27 @@ final class BinaryProviderImpl implements BinaryProvider
         private readonly BinaryExecutor $executor,
     ) {}
 
-    public function getBinary(Path|string $destinationPath, BinaryConfig $config): ?Binary
+    public function getLocalBinary(Path|string $destinationPath, BinaryConfig $config, ?string $name = null): ?Binary
     {
         // Get binary path
         $binaryPath = $this->buildBinaryPath($destinationPath, $config);
 
         // Create binary instance
-        $binary = new BinaryHandle(
-            name: $config->name,
+        $binary = new LocalBinary(
+            name: $name ?? $config->name,
+            config: $config,
+            executor: $this->executor,
             path: $binaryPath,
+        );
+
+        // Return binary only if it exists
+        return $binary->exists() ? $binary : null;
+    }
+
+    public function getGlobalBinary(BinaryConfig $config, ?string $name = null): ?Binary
+    {
+        $binary = new GlobalBinary(
+            name: $name ?? $config->name,
             config: $config,
             executor: $this->executor,
         );

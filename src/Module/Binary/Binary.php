@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Binary;
 
+use Internal\DLoad\Module\Binary\Exception\BinaryExecutionException;
 use Internal\DLoad\Module\Common\FileSystem\Path;
 
 /**
@@ -52,4 +53,14 @@ interface Binary
      * @return \DateTimeImmutable|null Modification time or null if the binary doesn't exist
      */
     public function getMTime(): ?\DateTimeImmutable;
+
+    /**
+     * Executes the binary with the given string input.
+     *
+     * @param string ...$args Arguments to pass to the binary
+     * @return list<string> Output from the binary execution
+     *
+     * @throws BinaryExecutionException If the binary execution returns a non-zero exit code
+     */
+    public function execute(string ...$args): array;
 }

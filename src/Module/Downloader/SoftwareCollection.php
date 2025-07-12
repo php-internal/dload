@@ -7,7 +7,6 @@ namespace Internal\DLoad\Module\Downloader;
 use Internal\DLoad\Info;
 use Internal\DLoad\Module\Config\Schema\CustomSoftwareRegistry;
 use Internal\DLoad\Module\Config\Schema\Embed\Software;
-use IteratorAggregate;
 
 /**
  * Collection of software package configurations.
@@ -15,7 +14,7 @@ use IteratorAggregate;
  * Manages both custom and default software registry entries.
  * Provides lookup functionality to find software by name or alias.
  *
- * @implements IteratorAggregate<Software>
+ * @implements \IteratorAggregate<Software>
  */
 final class SoftwareCollection implements \IteratorAggregate, \Countable
 {

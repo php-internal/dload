@@ -14,7 +14,7 @@
 
 <br />
 
-DLoad simplifica la descarga y gestión de artefactos binarios para tus proyectos. Perfecto para entornos de desarrollo que requieren herramientas específicas como RoadRunner, Temporal o binarios personalizados.
+DLoad simplifica la descarga y gestión de artefactos binarios para tus proyectos. Es perfecto para entornos de desarrollo que necesitan herramientas específicas como RoadRunner, Temporal o binarios personalizados.
 
 [![English readme](https://img.shields.io/badge/README-English%20%F0%9F%87%BA%F0%9F%87%B8-moccasin?style=flat-square)](README.md)
 [![Chinese readme](https://img.shields.io/badge/README-%E4%B8%AD%E6%96%87%20%F0%9F%87%A8%F0%9F%87%B3-moccasin?style=flat-square)](README-zh.md)
@@ -24,13 +24,50 @@ DLoad simplifica la descarga y gestión de artefactos binarios para tus proyecto
 ## ¿Por qué DLoad?
 
 DLoad resuelve un problema común en proyectos PHP: cómo distribuir e instalar herramientas binarias y recursos necesarios junto con tu código PHP.
-Con DLoad, puedes:
+Con DLoad puedes:
 
-- Descargar automáticamente herramientas requeridas durante la inicialización del proyecto
-- Asegurar que todos los miembros del equipo usen las mismas versiones de herramientas
-- Simplificar la incorporación automatizando la configuración del entorno
-- Gestionar compatibilidad multiplataforma sin configuración manual
-- Mantener binarios y recursos separados de tu control de versiones
+- Descargar automáticamente las herramientas que necesitas durante la configuración inicial del proyecto
+- Asegurar que todo el equipo use exactamente las mismas versiones de las herramientas
+- Simplificar la incorporación de nuevos desarrolladores automatizando la configuración del entorno
+- Manejar compatibilidad multiplataforma sin configuración manual
+- Mantener binarios y recursos fuera de tu control de versiones
+
+### Tabla de Contenidos
+
+- [Instalación](#instalación)
+- [Inicio Rápido](#inicio-rápido)
+- [Uso desde Línea de Comandos](#uso-desde-línea-de-comandos)
+    - [Inicializar Configuración](#inicializar-configuración)
+    - [Descargar Software](#descargar-software)
+    - [Ver Software](#ver-software)
+    - [Construir Software Personalizado](#construir-software-personalizado)
+- [Guía de Configuración](#guía-de-configuración)
+    - [Configuración Interactiva](#configuración-interactiva)
+    - [Configuración Manual](#configuración-manual)
+    - [Tipos de Descarga](#tipos-de-descarga)
+    - [Restricciones de Versión](#restricciones-de-versión)
+    - [Opciones de Configuración Avanzadas](#opciones-de-configuración-avanzadas)
+- [Construir RoadRunner Personalizado](#construir-roadrunner-personalizado)
+    - [Configuración de Acción de Construcción](#configuración-de-acción-de-construcción)
+    - [Atributos de Acción Velox](#atributos-de-acción-velox)
+    - [Proceso de Construcción](#proceso-de-construcción)
+    - [Generación de Archivo de Configuración](#generación-de-archivo-de-configuración)
+    - [Usar Velox Descargado](#usar-velox-descargado)
+    - [Configuración DLoad](#configuración-dload)
+    - [Construir RoadRunner](#construir-roadrunner)
+- [Registro de Software Personalizado](#registro-de-software-personalizado)
+    - [Definir Software](#definir-software)
+    - [Elementos de Software](#elementos-de-software)
+- [Casos de Uso](#casos-de-uso)
+    - [Configurar Entorno de Desarrollo](#configurar-entorno-de-desarrollo)
+    - [Configurar Nuevo Proyecto](#configurar-nuevo-proyecto)
+    - [Integración CI/CD](#integración-cicd)
+    - [Equipos Multiplataforma](#equipos-multiplataforma)
+    - [Gestión de Herramientas PHAR](#gestión-de-herramientas-phar)
+    - [Distribución de Assets Frontend](#distribución-de-assets-frontend)
+- [Límites de Rate de la API de GitHub](#límites-de-rate-de-la-api-de-github)
+- [Contribuir](#contribuir)
+
 
 ## Instalación
 
@@ -45,24 +82,27 @@ composer require internal/dload -W
 
 ## Inicio Rápido
 
-1. **Instala DLoad vía Composer**:
+1. **Instala DLoad usando Composer**:
 
     ```bash
     composer require internal/dload -W
     ```
 
-2. **Crea tu archivo de configuración interactivamente**:
+También puedes descargar la versión más reciente desde [GitHub releases](https://github.com/php-internal/dload/releases).
+
+2. **Crea tu archivo de configuración de forma interactiva**:
 
     ```bash
     ./vendor/bin/dload init
     ```
 
-    Este comando te guiará a través de la selección de paquetes de software y creará un archivo de configuración `dload.xml`. También puedes crearlo manualmente:
+    Este comando te ayudará a seleccionar paquetes de software y creará un archivo de configuración `dload.xml`. También puedes crearlo manualmente:
 
     ```xml
     <?xml version="1.0"?>
     <dload xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-           xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/php-internal/dload/refs/heads/1.x/dload.xsd">
+           xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/php-internal/dload/refs/heads/1.x/dload.xsd"
+   >
        <actions>
            <download software="rr" version="^2025.1.0"/>
            <download software="temporal" version="^1.3"/>
@@ -76,28 +116,28 @@ composer require internal/dload -W
     ./vendor/bin/dload get
     ```
 
-4. **Integración con Composer** (opcional):
+4. **Integra con Composer** (opcional):
 
     ```json
     {
         "scripts": {
-            "post-update-cmd": "dload get --no-interaction -v || echo can't dload binaries"
+            "post-update-cmd": "dload get --no-interaction -v || \"echo can't dload binaries\""
         }
     }
     ```
 
-## Uso de Línea de Comandos
+## Uso desde Línea de Comandos
 
 ### Inicializar Configuración
 
 ```bash
-# Crear archivo de configuración interactivamente
+# Crear archivo de configuración de forma interactiva
 ./vendor/bin/dload init
 
-# Crear configuración en ubicación específica
+# Crear configuración en una ubicación específica
 ./vendor/bin/dload init --config=./custom-dload.xml
 
-# Crear configuración mínima sin prompts
+# Crear configuración mínima sin preguntas
 ./vendor/bin/dload init --no-interaction
 
 # Sobrescribir configuración existente sin confirmación
@@ -107,26 +147,26 @@ composer require internal/dload -W
 ### Descargar Software
 
 ```bash
-# Descargar desde archivo de configuración
+# Descargar usando el archivo de configuración
 ./vendor/bin/dload get
 
 # Descargar paquetes específicos
 ./vendor/bin/dload get rr temporal
 
-# Descargar con opciones
+# Descargar con opciones adicionales
 ./vendor/bin/dload get rr --stability=beta --force
 ```
 
 #### Opciones de Descarga
 
-| Opción | Descripción | Por defecto |
-|--------|-------------|---------|
-| `--path` | Directorio para almacenar binarios | Directorio actual |
-| `--arch` | Arquitectura objetivo (amd64, arm64) | Arquitectura del sistema |
-| `--os` | SO objetivo (linux, darwin, windows) | SO actual |
-| `--stability` | Estabilidad de lanzamiento (stable, beta) | stable |
+| Opción | Descripción | Valor por defecto |
+|--------|-------------|-------------------|
+| `--path` | Directorio donde guardar los binarios | Directorio actual |
+| `--arch` | Arquitectura de destino (amd64, arm64) | Arquitectura del sistema |
+| `--os` | Sistema operativo de destino (linux, darwin, windows) | SO actual |
+| `--stability` | Estabilidad del release (stable, beta) | stable |
 | `--config` | Ruta al archivo de configuración | ./dload.xml |
-| `--force`, `-f` | Forzar descarga aunque el binario exista | false |
+| `--force`, `-f` | Forzar descarga aunque el binario ya exista | false |
 
 ### Ver Software
 
@@ -144,21 +184,40 @@ composer require internal/dload -W
 ./vendor/bin/dload show --all
 ```
 
+### Construir Software Personalizado
+
+```bash
+# Construir software personalizado usando el archivo de configuración
+./vendor/bin/dload build
+
+# Construir con un archivo de configuración específico
+./vendor/bin/dload build --config=./custom-dload.xml
+```
+
+#### Opciones de Construcción
+
+| Opción | Descripción | Valor por defecto |
+|--------|-------------|-------------------|
+| `--config` | Ruta al archivo de configuración | ./dload.xml |
+
+El comando `build` ejecuta las acciones de construcción definidas en tu archivo de configuración, como crear binarios personalizados de RoadRunner con plugins específicos.
+Para información detallada sobre cómo construir RoadRunner personalizado, consulta la sección [Construir RoadRunner Personalizado](#construir-roadrunner-personalizado).
+
 ## Guía de Configuración
 
 ### Configuración Interactiva
 
-La forma más fácil de crear un archivo de configuración es usando el comando interactivo `init`:
+La forma más sencilla de crear un archivo de configuración es usando el comando interactivo `init`:
 
 ```bash
 ./vendor/bin/dload init
 ```
 
-Esto:
+Esto hará lo siguiente:
 
-- Te guiará a través de la selección de paquetes de software
+- Te guiará en la selección de paquetes de software
 - Mostrará software disponible con descripciones y repositorios
-- Generará un archivo `dload.xml` correctamente formateado con validación de esquema
+- Generará un archivo `dload.xml` bien formateado con validación de esquema
 - Manejará archivos de configuración existentes de manera elegante
 
 ### Configuración Manual
@@ -180,31 +239,31 @@ Crea `dload.xml` en la raíz de tu proyecto:
 
 ### Tipos de Descarga
 
-DLoad soporta tres tipos de descarga que determinan cómo se procesan los recursos:
+DLoad soporta tres tipos de descarga que determinan cómo se procesan los assets:
 
-#### Atributo de Tipo
+#### Atributo Type
 
 ```xml
 <!-- Especificación explícita de tipo -->
-<download software="psalm" type="phar" />        <!-- Descargar .phar sin desempaquetar -->
+<download software="psalm" type="phar" />        <!-- Descargar .phar sin extraer -->
 <download software="frontend" type="archive" />  <!-- Forzar extracción de archivo -->
-<download software="rr" type="binary" />         <!-- Procesamiento específico de binarios -->
+<download software="rr" type="binary" />         <!-- Procesamiento específico para binarios -->
 
 <!-- Manejo automático de tipo (recomendado) -->
 <download software="rr" />           <!-- Usa todos los manejadores disponibles -->
-<download software="frontend" />     <!-- Procesamiento inteligente basado en configuración de software -->
+<download software="frontend" />     <!-- Procesamiento inteligente basado en la config del software -->
 ```
 
-#### Comportamiento Por Defecto (Tipo No Especificado)
+#### Comportamiento por Defecto (Sin Especificar Type)
 
-Cuando `type` no se especifica, DLoad automáticamente usa todos los manejadores disponibles:
+Cuando no se especifica `type`, DLoad automáticamente usa todos los manejadores disponibles:
 
-- **Procesamiento de binarios**: Si el software tiene sección `<binary>`, realiza verificación de presencia y versión de binarios
-- **Procesamiento de archivos**: Si el software tiene sección `<file>` y el recurso se descarga, procesa archivos durante el desempaquetado
-- **Descarga simple**: Si no existen secciones, descarga el recurso sin desempaquetar
+- **Procesamiento de binarios**: Si el software tiene una sección `<binary>`, verifica la presencia y versión del binario
+- **Procesamiento de archivos**: Si el software tiene una sección `<file>` y el asset se descarga, procesa los archivos durante la extracción
+- **Descarga simple**: Si no hay secciones, descarga el asset sin extraer
 
 ```xml
-<!-- lista de registro -->
+<!-- lista del registro -->
 <software name="complex-tool">
     <binary name="tool" pattern="/^tool-.*/" />
     <file pattern="/^config\..*/" extract-path="config" />
@@ -218,14 +277,14 @@ Cuando `type` no se especifica, DLoad automáticamente usa todos los manejadores
 #### Comportamientos de Tipos Explícitos
 
 | Tipo      | Comportamiento                                                     | Caso de Uso                       |
-|-----------|--------------------------------------------------------------|--------------------------------|
+|-----------|-------------------------------------------------------------------|----------------------------------|
 | `binary`  | Verificación de binarios, validación de versión, permisos de ejecución  | Herramientas CLI, ejecutables         |
-| `phar`    | Descarga archivos `.phar` como ejecutables **sin desempaquetar** | Herramientas PHP como Psalm, PHPStan  |
-| `archive` | **Fuerza desempaquetado incluso para archivos .phar**                    | Cuando necesitas contenido de archivo |
+| `phar`    | Descarga archivos `.phar` como ejecutables **sin extraer** | Herramientas PHP como Psalm, PHPStan  |
+| `archive` | **Fuerza la extracción incluso para archivos .phar**                    | Cuando necesitas el contenido del archivo |
 
 > [!NOTE]
-> Usa `type="phar"` para herramientas PHP que deben permanecer como archivos `.phar`.
-> Usar `type="archive"` desempaquetará incluso archivos `.phar`.
+> Usa `type="phar"` para herramientas PHP que deben mantenerse como archivos `.phar`.
+> Usar `type="archive"` extraerá incluso archivos `.phar`.
 
 ### Restricciones de Versión
 
@@ -243,7 +302,7 @@ Usa restricciones de versión estilo Composer:
     <!-- Restricciones de estabilidad -->
     <download software="tool" version="^1.0.0@beta" />
     
-    <!-- Lanzamientos de características (establece automáticamente estabilidad de vista previa) -->
+    <!-- Releases experimentales (automáticamente establece estabilidad preview) -->
     <download software="experimental" version="^1.0.0-experimental" />
 </actions>
 ```
@@ -257,16 +316,111 @@ Usa restricciones de versión estilo Composer:
         <download software="frontend" extract-path="public/assets" />
         <download software="config" extract-path="config" />
         
-        <!-- Dirigir diferentes entornos -->
+        <!-- Apuntar a diferentes entornos -->
         <download software="prod-tool" version="^2.0.0@stable" />
         <download software="dev-tool" version="^2.0.0@beta" />
     </actions>
 </dload>
 ```
 
+## Construir RoadRunner Personalizado
+
+DLoad soporta la construcción de binarios personalizados de RoadRunner usando la herramienta Velox. Esto es útil cuando necesitas RoadRunner con combinaciones específicas de plugins que no están disponibles en las versiones pre-construidas.
+
+### Configuración de Acción de Construcción
+
+```xml
+<actions>
+    <!-- Configuración básica usando velox.toml local -->
+    <velox config-file="./velox.toml" />
+    
+    <!-- Con versiones específicas -->
+    <velox config-file="./velox.toml" 
+          velox-version="^1.4.0" 
+          golang-version="^1.22" 
+          binary-version="2024.1.5" 
+          binary-path="./bin/rr" />
+</actions>
+```
+
+### Atributos de Acción Velox
+
+| Atributo | Descripción | Valor por defecto |
+|-----------|-------------|-------------------|
+| `velox-version` | Versión de la herramienta Velox | Última |
+| `golang-version` | Versión requerida de Go | Última |
+| `binary-version` | Versión de RoadRunner para mostrar en `rr --version` | Última |
+| `config-file` | Ruta al archivo velox.toml local | `./velox.toml` |
+| `binary-path` | Ruta donde guardar el binario construido de RoadRunner | `./rr` |
+
+### Proceso de Construcción
+
+DLoad maneja automáticamente todo el proceso de construcción:
+
+1. **Verificación de Golang**: Verifica que Go esté instalado globalmente (dependencia requerida)
+2. **Preparación de Velox**: Usa Velox desde instalación global, descarga local, o lo descarga automáticamente si es necesario
+3. **Configuración**: Copia tu archivo velox.toml local al directorio de construcción
+4. **Construcción**: Ejecuta el comando `vx build` con la configuración especificada
+5. **Instalación**: Mueve el binario construido a la ubicación de destino y establece permisos de ejecución
+6. **Limpieza**: Elimina archivos temporales de construcción
+
+> [!NOTE]
+> DLoad requiere que Go (Golang) esté instalado globalmente en tu sistema. No descarga ni gestiona instalaciones de Go.
+
+### Generación de Archivo de Configuración
+
+Puedes generar un archivo de configuración `velox.toml` usando el constructor online en https://build.roadrunner.dev/
+
+Para documentación detallada sobre opciones de configuración de Velox y ejemplos, visita https://docs.roadrunner.dev/docs/customization/build
+
+Esta interfaz web te ayuda a seleccionar plugins y genera la configuración apropiada para tu build personalizado de RoadRunner.
+
+### Usar Velox Descargado
+
+Puedes descargar Velox como parte de tu proceso de construcción en lugar de depender de una versión instalada globalmente:
+
+```xml
+<actions>
+    <download software="velox" extract-path="bin" version="2025.1.1" />
+    <velox config-file="velox.toml"
+          golang-version="^1.22"
+          binary-version="2024.1.5" />
+</actions>
+```
+
+Esto asegura versiones consistentes de Velox entre diferentes entornos y miembros del equipo.
+
+### Configuración DLoad
+
+```xml
+<?xml version="1.0"?>
+<dload xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/php-internal/dload/refs/heads/1.x/dload.xsd">
+    <actions>
+        <velox config-file="./velox.toml" 
+              velox-version="^1.4.0"
+              golang-version="^1.22"
+              binary-version="2024.1.5"
+              binary-path="./bin/rr" />
+    </actions>
+</dload>
+```
+
+### Construir RoadRunner
+
+```bash
+# Construir RoadRunner usando la configuración velox.toml
+./vendor/bin/dload build
+
+# Construir con un archivo de configuración específico
+./vendor/bin/dload build --config=custom-rr.xml
+```
+
+El binario de RoadRunner construido incluirá solo los plugins especificados en tu archivo `velox.toml`, reduciendo el tamaño del binario y mejorando el rendimiento para tu caso de uso específico.
+
 ## Registro de Software Personalizado
 
-### Definiendo Software
+### Definir Software
 
 ```xml
 <dload>
@@ -279,15 +433,15 @@ Usa restricciones de versión estilo Composer:
             <binary name="rr" pattern="/^roadrunner-.*/" />
         </software>
 
-        <!-- Archivo con archivos -->
-        <software name="frontend" description="Recursos de frontend">
+        <!-- Archive con archivos -->
+        <software name="frontend" description="Assets de frontend">
             <repository type="github" uri="my-org/frontend" asset-pattern="/^artifacts.*/" />
             <file pattern="/^.*\.js$/" />
             <file pattern="/^.*\.css$/" />
         </software>
 
         <!-- Mixto: binarios + archivos -->
-        <software name="development-suite" description="Herramientas de desarrollo completas">
+        <software name="development-suite" description="Suite completa de herramientas de desarrollo">
             <repository type="github" uri="my-org/dev-tools" />
             <binary name="cli-tool" pattern="/^cli-tool.*/" />
             <file pattern="/^config\.yml$/" extract-path="config" />
@@ -305,27 +459,27 @@ Usa restricciones de versión estilo Composer:
 
 ### Elementos de Software
 
-#### Configuración de Repositorio
+#### Configuración de Repository
 
 - **type**: Actualmente soporta "github"
 - **uri**: Ruta del repositorio (ej., "username/repo")
-- **asset-pattern**: Patrón de expresión regular para coincidir con recursos de lanzamiento
+- **asset-pattern**: Patrón regex para hacer match con assets de release
 
-#### Elementos Binarios
+#### Elementos Binary
 
 - **name**: Nombre del binario para referencia
-- **pattern**: Patrón de expresión regular para coincidir con binario en recursos
-- Maneja automáticamente filtrado por SO/arquitectura
+- **pattern**: Patrón regex para hacer match con el binario en los assets
+- Maneja automáticamente el filtrado por SO/arquitectura
 
-#### Elementos de Archivo
+#### Elementos File
 
-- **pattern**: Patrón de expresión regular para coincidir con archivos
+- **pattern**: Patrón regex para hacer match con archivos
 - **extract-path**: Directorio de extracción opcional
 - Funciona en cualquier sistema (sin filtrado por SO/arquitectura)
 
 ## Casos de Uso
 
-### Configuración de Entorno de Desarrollo
+### Configurar Entorno de Desarrollo
 
 ```bash
 # Configuración única para nuevos desarrolladores
@@ -334,10 +488,10 @@ composer install
 ./vendor/bin/dload get
 ```
 
-### Configuración de Nuevo Proyecto
+### Configurar Nuevo Proyecto
 
 ```bash
-# Iniciar un nuevo proyecto con DLoad
+# Empezar un nuevo proyecto con DLoad
 composer init
 composer require internal/dload -W
 ./vendor/bin/dload init
@@ -358,7 +512,7 @@ Cada desarrollador obtiene los binarios correctos para su sistema:
 
 ```xml
 <actions>
-    <download software="rr" />        <!-- Binario Linux para Linux, .exe Windows para Windows -->
+    <download software="rr" />        <!-- Binario Linux para Linux, .exe de Windows para Windows -->
     <download software="temporal" />   <!-- Binario macOS para macOS, etc. -->
 </actions>
 ```
@@ -372,11 +526,11 @@ Cada desarrollador obtiene los binarios correctos para su sistema:
     <download software="phpstan" type="phar" />
     
     <!-- Extraer contenido en su lugar -->
-    <download software="psalm" type="archive" />  <!-- Desempaqueta psalm.phar -->
+    <download software="psalm" type="archive" />  <!-- Extrae psalm.phar -->
 </actions>
 ```
 
-### Distribución de Recursos Frontend
+### Distribución de Assets Frontend
 
 ```xml
 <software name="ui-kit">
@@ -389,7 +543,7 @@ Cada desarrollador obtiene los binarios correctos para su sistema:
 </actions>
 ```
 
-## Límites de Rate de API de GitHub
+## Límites de Rate de la API de GitHub
 
 Usa un token de acceso personal para evitar límites de rate:
 
@@ -397,12 +551,12 @@ Usa un token de acceso personal para evitar límites de rate:
 GITHUB_TOKEN=your_token_here ./vendor/bin/dload get
 ```
 
-Añádelo a variables de entorno CI/CD para descargas automatizadas.
+Agrégalo a las variables de entorno CI/CD para descargas automatizadas.
 
-## Contribuciones
+## Contribuir
 
 ¡Las contribuciones son bienvenidas! Envía Pull Requests para:
 
-- Añadir nuevo software al registro predefinido
-- Mejorar la funcionalidad de DLoad
+- Agregar nuevo software al registro predefinido
+- Mejorar la funcionalidad de DLoad  
 - Mejorar la documentación y traducirla a [otros idiomas](docs/guidelines/how-to-translate-readme-docs.md)

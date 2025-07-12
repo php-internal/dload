@@ -58,8 +58,70 @@
                                                 <xs:enumeration value="binary"/>
                                                 <xs:enumeration value="archive"/>
                                                 <xs:enumeration value="phar"/>
+                                                <xs:enumeration value="velox"/>
                                             </xs:restriction>
                                         </xs:simpleType>
+                                    </xs:attribute>
+                                </xs:complexType>
+                            </xs:element>
+                            <xs:element name="velox" minOccurs="0" maxOccurs="unbounded">
+                                <xs:annotation>
+                                    <xs:documentation>Velox build action for creating custom RoadRunner binaries</xs:documentation>
+                                </xs:annotation>
+                                <xs:complexType>
+                                    <xs:sequence>
+                                        <xs:element name="plugin" minOccurs="0" maxOccurs="unbounded">
+                                            <xs:annotation>
+                                                <xs:documentation>Plugin to include in the RoadRunner build</xs:documentation>
+                                            </xs:annotation>
+                                            <xs:complexType>
+                                                <xs:attribute name="name" type="xs:string" use="required">
+                                                    <xs:annotation>
+                                                        <xs:documentation>Plugin name (required)</xs:documentation>
+                                                    </xs:annotation>
+                                                </xs:attribute>
+                                                <xs:attribute name="version" type="xs:string">
+                                                    <xs:annotation>
+                                                        <xs:documentation>Plugin version constraint</xs:documentation>
+                                                    </xs:annotation>
+                                                </xs:attribute>
+                                                <xs:attribute name="owner" type="xs:string">
+                                                    <xs:annotation>
+                                                        <xs:documentation>Repository owner/organization</xs:documentation>
+                                                    </xs:annotation>
+                                                </xs:attribute>
+                                                <xs:attribute name="repository" type="xs:string">
+                                                    <xs:annotation>
+                                                        <xs:documentation>Repository name</xs:documentation>
+                                                    </xs:annotation>
+                                                </xs:attribute>
+                                            </xs:complexType>
+                                        </xs:element>
+                                    </xs:sequence>
+                                    <xs:attribute name="velox-version" type="xs:string">
+                                        <xs:annotation>
+                                            <xs:documentation>Version constraint for velox build tool</xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
+                                    <xs:attribute name="golang-version" type="xs:string">
+                                        <xs:annotation>
+                                            <xs:documentation>Required Go version constraint</xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
+                                    <xs:attribute name="binary-version" type="xs:string">
+                                        <xs:annotation>
+                                            <xs:documentation>RoadRunner version to display in --version</xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
+                                    <xs:attribute name="config-file" type="xs:string">
+                                        <xs:annotation>
+                                            <xs:documentation>Path to local velox.toml file</xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
+                                    <xs:attribute name="binary-path" type="xs:string">
+                                        <xs:annotation>
+                                            <xs:documentation>Path to the RoadRunner binary to build</xs:documentation>
+                                        </xs:annotation>
                                     </xs:attribute>
                                 </xs:complexType>
                             </xs:element>

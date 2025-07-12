@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Internal\DLoad\Module\Downloader\Task;
 
 use Internal\DLoad\Module\Config\Schema\Embed\Software;
-use Internal\DLoad\Module\Downloader\Progress;
+use Internal\DLoad\Module\Task\Progress;
 use React\Promise\PromiseInterface;
 
 /**
