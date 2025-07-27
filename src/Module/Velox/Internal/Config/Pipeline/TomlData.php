@@ -2,54 +2,66 @@
 
 declare(strict_types=1);
 
-namespace Internal\DLoad\Module\Velox\Internal\Config;
-
-use Internal\DLoad\Module\Velox\Exception\Config as ConfigException;
+namespace Internal\DLoad\Module\Velox\Internal\Config\Pipeline;
 
 /**
- * Simple TOML merger for combining local and remote configurations.
+ * Immutable TOML data container for pipeline processing.
+ *
+ * Provides methods for merging, setting values, and converting
+ * between array and TOML string representations.
+ * Consolidates all TOML parsing and formatting functionality.
  *
  * @internal
  * @psalm-internal Internal\DLoad\Module\Velox
  */
-final class TomlMerger
+final class TomlData
 {
+    public function __construct(
+        private readonly array $data = [],
+    ) {}
+
+    public static function fromString(string $toml): self
+    {
+        $instance = new self();
+        $data = $instance->parseToml($toml);
+        return new self($data);
+    }
+
     /**
-     * Merges remote TOML configuration into a local base configuration.
-     *
-     * Remote plugins extend/override local plugins while preserving other sections.
+     * Merges remote TOML configuration into local base configuration.
      *
      * @param string $localToml Base TOML configuration
      * @param string $remoteToml Remote TOML configuration with plugins
      * @return string Merged TOML configuration
-     * @throws ConfigException When merging fails
      */
-    public function merge(string $localToml, string $remoteToml): string
+    public static function mergeTomlStrings(string $localToml, string $remoteToml): string
     {
-        try {
-            $localData = $this->parseToml($localToml);
-            $remoteData = $this->parseToml($remoteToml);
+        $local = self::fromString($localToml);
+        $remote = self::fromString($remoteToml);
+        return $local->merge($remote)->toToml();
+    }
 
-            // Merge github.plugins sections
-            if (isset($remoteData['github']['plugins'])) {
-                $localData['github']['plugins'] = \array_merge(
-                    $localData['github']['plugins'] ?? [],
-                    $remoteData['github']['plugins'],
-                );
-            }
+    public function merge(TomlData $other): self
+    {
+        $merged = $this->deepMerge($this->data, $other->data);
+        return new self($merged);
+    }
 
-            // Preserve roadrunner version from local unless remote specifies one
-            if (isset($remoteData['roadrunner']['ref']) && !isset($localData['roadrunner']['ref'])) {
-                $localData['roadrunner']['ref'] = $remoteData['roadrunner']['ref'];
-            }
+    public function set(string $path, mixed $value): self
+    {
+        $data = $this->data;
+        $this->setNestedValue($data, $path, $value);
+        return new self($data);
+    }
 
-            return $this->arrayToToml($localData);
-        } catch (\Throwable $e) {
-            throw new ConfigException(
-                'Failed to merge TOML configurations: ' . $e->getMessage(),
-                previous: $e,
-            );
-        }
+    public function toToml(): string
+    {
+        return $this->arrayToToml($this->data);
+    }
+
+    public function getData(): array
+    {
+        return $this->data;
     }
 
     /**
@@ -92,31 +104,6 @@ final class TomlMerger
         }
 
         return $result;
-    }
-
-    /**
-     * Sets a nested array value using dot notation.
-     *
-     * @param array<string, mixed> $array Target array
-     * @param string $path Dot-separated path
-     * @param mixed $value Value to set
-     */
-    private function setNestedValue(array &$array, string $path, mixed $value): void
-    {
-        $keys = \explode('.', $path);
-        $current = &$array;
-
-        foreach ($keys as $key) {
-            if (!\is_array($current)) {
-                $current = [];
-            }
-            if (!isset($current[$key])) {
-                $current[$key] = [];
-            }
-            $current = &$current[$key];
-        }
-
-        $current = $value;
     }
 
     /**
@@ -195,5 +182,38 @@ final class TomlMerger
         }
 
         return $toml;
+    }
+
+    private function deepMerge(array $array1, array $array2): array
+    {
+        $merged = $array1;
+
+        foreach ($array2 as $key => $value) {
+            if (\is_array($value) && isset($merged[$key]) && \is_array($merged[$key])) {
+                $merged[$key] = $this->deepMerge($merged[$key], $value);
+            } else {
+                $merged[$key] = $value;
+            }
+        }
+
+        return $merged;
+    }
+
+    private function setNestedValue(array &$array, string $path, mixed $value): void
+    {
+        $keys = \explode('.', $path);
+        $current = &$array;
+
+        foreach ($keys as $key) {
+            if (!\is_array($current)) {
+                $current = [];
+            }
+            if (!isset($current[$key])) {
+                $current[$key] = [];
+            }
+            $current = &$current[$key];
+        }
+
+        $current = $value;
     }
 }

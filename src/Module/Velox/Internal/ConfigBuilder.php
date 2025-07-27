@@ -6,13 +6,10 @@ namespace Internal\DLoad\Module\Velox\Internal;
 
 use Internal\DLoad\Module\Common\FileSystem\Path;
 use Internal\DLoad\Module\Config\Schema\Action\Velox as VeloxAction;
-use Internal\DLoad\Module\Velox\ApiClient;
 use Internal\DLoad\Module\Velox\Exception\Config;
 use Internal\DLoad\Module\Velox\Exception\Config as ConfigException;
-use Internal\DLoad\Module\Velox\Internal\Config\Strategy;
-use Internal\DLoad\Module\Velox\Internal\Config\Strategy\Hybrid;
-use Internal\DLoad\Module\Velox\Internal\Config\Strategy\Local;
-use Internal\DLoad\Module\Velox\Internal\Config\Strategy\Remote;
+use Internal\DLoad\Module\Velox\Internal\Config\ConfigPipelineBuilder;
+use Internal\DLoad\Module\Velox\Internal\Config\Pipeline\ConfigContext;
 use Internal\DLoad\Module\Velox\Internal\Config\Validator;
 use Internal\DLoad\Service\Logger;
 
@@ -20,12 +17,8 @@ use Internal\DLoad\Service\Logger;
  * Main Velox configuration builder service.
  *
  * Provides functionality to generate velox.toml configuration files
- * from various sources (local files, remote API, or hybrid approach).
- *
- * Uses strategy pattern to handle different configuration scenarios:
- * - Local config file only
- * - Remote API config only
- * - Hybrid (local + remote merge)
+ * using a pipeline-based architecture that processes multiple configuration
+ * sources in sequence: base template → remote API → local file → build mixins → GitHub token.
  *
  * @internal
  * @psalm-internal Internal\DLoad\Module\Velox
@@ -33,7 +26,7 @@ use Internal\DLoad\Service\Logger;
 final class ConfigBuilder
 {
     public function __construct(
-        private readonly ApiClient $apiClient,
+        private readonly ConfigPipelineBuilder $pipelineBuilder,
         private readonly Validator $validator,
         private readonly Logger $logger,
     ) {}
@@ -41,10 +34,8 @@ final class ConfigBuilder
     /**
      * Builds a velox.toml configuration file for the given action.
      *
-     * Handles all configuration scenarios:
-     * - Local config file only
-     * - Remote API config only
-     * - Hybrid (local + remote merge)
+     * Uses pipeline-based architecture to process configuration sources in sequence:
+     * 0. Base template → 1. Remote API → 2. Local file → 3. Build mixins → 4. GitHub token
      *
      * @param VeloxAction $action Build configuration specification
      * @param Path $buildDir Directory where config file should be created
@@ -53,10 +44,13 @@ final class ConfigBuilder
      */
     public function buildConfig(VeloxAction $action, Path $buildDir): Path
     {
-        $this->logger->debug('Building Velox configuration...');
+        $this->logger->debug('Building Velox configuration with pipeline...');
 
-        $strategy = $this->getConfigStrategy($action);
-        $configContent = $strategy->build($action);
+        $pipeline = $this->pipelineBuilder->build();
+        $context = new ConfigContext($action, buildDir: $buildDir);
+
+        $result = $pipeline->process($context);
+        $configContent = $result->tomlData->toToml();
 
         $configPath = $buildDir->join('velox.toml');
 
@@ -83,18 +77,5 @@ final class ConfigBuilder
     public function validateConfig(Path $configPath): bool
     {
         return $this->validator->validateTomlFile($configPath);
-    }
-
-    /**
-     * Selects the appropriate configuration strategy based on action inputs.
-     */
-    private function getConfigStrategy(VeloxAction $action): Strategy
-    {
-        return match (true) {
-            $action->configFile !== null && $action->plugins !== [] => new Hybrid($this->apiClient),
-            $action->configFile !== null => new Local(),
-            $action->plugins !== [] => new Remote($this->apiClient),
-            default => throw new ConfigException('No valid configuration source provided'),
-        };
     }
 }
