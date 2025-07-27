@@ -20,19 +20,19 @@ final class ConfigContext
 {
     public function __construct(
         public readonly VeloxAction $action,
+        public readonly Path $buildDir,
         public readonly TomlData $tomlData = new TomlData(),
         public readonly array $metadata = [],
-        public readonly Path $buildDir,
     ) {}
 
     public function withTomlData(TomlData $tomlData): self
     {
-        return new self($this->action, $tomlData, $this->metadata, $this->buildDir);
+        return new self($this->action, $this->buildDir, $tomlData, $this->metadata);
     }
 
     public function withMetadata(array $metadata): self
     {
-        return new self($this->action, $this->tomlData, $metadata, $this->buildDir);
+        return new self($this->action, $this->buildDir, $this->tomlData, $metadata);
     }
 
     public function addMetadata(string $key, mixed $value): self

@@ -52,9 +52,9 @@ final class ConfigPipelineTest extends TestCase
         $pipeline = new ConfigPipeline($processors);
         $originalContext = new ConfigContext(
             $this->veloxAction,
+            $this->buildDir,
             new TomlData(['key' => 'value']),
             ['metadata' => 'test'],
-            $this->buildDir,
         );
 
         // Act
@@ -70,15 +70,15 @@ final class ConfigPipelineTest extends TestCase
         $processor = $this->createMock(ConfigProcessor::class);
         $originalContext = new ConfigContext(
             $this->veloxAction,
+            $this->buildDir,
             new TomlData(['key' => 'value']),
             [],
-            $this->buildDir,
         );
         $modifiedContext = new ConfigContext(
             $this->veloxAction,
+            $this->buildDir,
             new TomlData(['key' => 'modified']),
             [],
-            $this->buildDir,
         );
 
         $processor->expects(self::once())
@@ -105,27 +105,27 @@ final class ConfigPipelineTest extends TestCase
 
         $originalContext = new ConfigContext(
             $this->veloxAction,
+            $this->buildDir,
             new TomlData(['step' => '0']),
             [],
-            $this->buildDir,
         );
         $context1 = new ConfigContext(
             $this->veloxAction,
+            $this->buildDir,
             new TomlData(['step' => '1']),
             [],
-            $this->buildDir,
         );
         $context2 = new ConfigContext(
             $this->veloxAction,
+            $this->buildDir,
             new TomlData(['step' => '2']),
             [],
-            $this->buildDir,
         );
         $finalContext = new ConfigContext(
             $this->veloxAction,
+            $this->buildDir,
             new TomlData(['step' => '3']),
             [],
-            $this->buildDir,
         );
 
         // Set up expectations for sequential processing
@@ -164,27 +164,27 @@ final class ConfigPipelineTest extends TestCase
         $originalMetadata = ['version' => '1.0'];
         $originalContext = new ConfigContext(
             $this->veloxAction,
+            $this->buildDir,
             $originalTomlData,
             $originalMetadata,
-            $this->buildDir,
         );
 
         // First processor modifies TOML data
         $intermediateTomlData = new TomlData(['initial' => 'data', 'added_by_p1' => 'value1']);
         $intermediateContext = new ConfigContext(
             $this->veloxAction,
+            $this->buildDir,
             $intermediateTomlData,
             $originalMetadata,
-            $this->buildDir,
         );
 
         // Second processor modifies metadata
         $finalMetadata = ['version' => '1.0', 'processed_by' => 'p2'];
         $finalContext = new ConfigContext(
             $this->veloxAction,
+            $this->buildDir,
             $intermediateTomlData,
             $finalMetadata,
-            $this->buildDir,
         );
 
         $processor1->expects(self::once())
@@ -216,16 +216,16 @@ final class ConfigPipelineTest extends TestCase
         $originalMetadata = ['original' => 'metadata'];
         $originalContext = new ConfigContext(
             $this->veloxAction,
+            $this->buildDir,
             $originalTomlData,
             $originalMetadata,
-            $this->buildDir,
         );
 
         $modifiedContext = new ConfigContext(
             $this->veloxAction,
+            $this->buildDir,
             new TomlData(['modified' => 'data']),
             ['modified' => 'metadata'],
-            $this->buildDir,
         );
 
         $processor->expects(self::once())
@@ -256,23 +256,23 @@ final class ConfigPipelineTest extends TestCase
 
         $originalContext = new ConfigContext(
             $this->veloxAction,
+            $this->buildDir,
             new TomlData(['data' => 'original']),
             [],
-            $this->buildDir,
         );
 
         $modifiedContext = new ConfigContext(
             $this->veloxAction,
+            $this->buildDir,
             new TomlData(['data' => 'modified_by_p1']),
             [],
-            $this->buildDir,
         );
 
         $finalContext = new ConfigContext(
             $this->veloxAction,
+            $this->buildDir,
             new TomlData(['data' => 'modified_by_p3']),
             [],
-            $this->buildDir,
         );
 
         // First processor modifies context
@@ -309,17 +309,17 @@ final class ConfigPipelineTest extends TestCase
         $processor = $this->createMock(ConfigProcessor::class);
         $originalContext = new ConfigContext(
             $this->veloxAction,
+            $this->buildDir,
             new TomlData(['test' => 'data']),
             ['test' => 'metadata'],
-            $this->buildDir,
         );
 
         // Processor only modifies TOML data and metadata, not action or buildDir
         $modifiedContext = new ConfigContext(
             $this->veloxAction,
+            $this->buildDir,
             new TomlData(['modified' => 'data']),
             ['modified' => 'metadata'],
-            $this->buildDir,
         );
 
         $processor->expects(self::once())
@@ -361,9 +361,9 @@ final class ConfigPipelineTest extends TestCase
 
         $originalContext = new ConfigContext(
             $this->veloxAction,
+            $this->buildDir,
             new TomlData(['counter' => 0]),
             [],
-            $this->buildDir,
         );
 
         $pipeline = new ConfigPipeline($processors);
