@@ -56,7 +56,8 @@ final class TomlData
 
     public function toToml(): string
     {
-        return $this->arrayToToml($this->data);
+        $normalizedData = $this->normalizeData($this->data);
+        return $this->arrayToToml($normalizedData);
     }
 
     public function getData(): array
@@ -134,13 +135,65 @@ final class TomlData
             $toml .= "\n";
         }
 
+        // Order sections with roadrunner first, then debug, logs, github, gitlab, etc.
+        $orderedSections = $this->orderSections($sections);
+
         // Then output sections (associative arrays)
-        foreach ($sections as $sectionKey => $sectionValue) {
+        foreach ($orderedSections as $sectionKey => $sectionValue) {
             $toml .= $this->sectionToToml($sectionKey, $sectionValue);
         }
 
         // Remove trailing whitespace
         return \rtrim($toml);
+    }
+
+    /**
+     * Orders sections with priority: roadrunner first, then debug, logs, github, gitlab, etc.
+     *
+     * @param array<string, mixed> $sections Sections to order
+     * @return array<string, mixed> Ordered sections
+     */
+    private function orderSections(array $sections): array
+    {
+        $priority = ['roadrunner', 'debug', 'log', 'github', 'gitlab'];
+        $orderedSections = [];
+        $remainingSections = $sections;
+
+        // First add priority sections in order
+        foreach ($priority as $sectionKey) {
+            if (isset($remainingSections[$sectionKey])) {
+                $orderedSections[$sectionKey] = $remainingSections[$sectionKey];
+                unset($remainingSections[$sectionKey]);
+            }
+        }
+
+        // Then add any remaining sections
+        foreach ($remainingSections as $sectionKey => $sectionValue) {
+            $orderedSections[$sectionKey] = $sectionValue;
+        }
+
+        return $orderedSections;
+    }
+
+    /**
+     * Normalizes configuration data before TOML conversion.
+     *
+     * @param array<string, mixed> $data Configuration data
+     * @return array<string, mixed> Normalized data
+     */
+    private function normalizeData(array $data): array
+    {
+        $normalized = $data;
+
+        // Normalize roadrunner.ref directive - add "v" prefix if not exists
+        if (isset($normalized['roadrunner']['ref'])) {
+            $ref = $normalized['roadrunner']['ref'];
+            if (\is_string($ref) && $ref !== '' && !\str_starts_with($ref, 'v')) {
+                $normalized['roadrunner']['ref'] = 'v' . $ref;
+            }
+        }
+
+        return $normalized;
     }
 
     /**

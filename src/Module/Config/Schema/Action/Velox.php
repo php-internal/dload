@@ -32,9 +32,9 @@ final class Velox
     #[XPath('@golang-version')]
     public ?string $golangVersion = null;
 
-    /** @var non-empty-string|null $binaryVersion RoadRunner version to display in --version */
-    #[XPath('@binary-version')]
-    public ?string $binaryVersion = null;
+    /** @var non-empty-string|null $roadrunnerVersion RoadRunner version to display in --version */
+    #[XPath('@roadrunner-version')]
+    public ?string $roadrunnerVersion = null;
 
     /** @var non-empty-string|null $configFile Path to local velox.toml file */
     #[XPath('@config-file')]

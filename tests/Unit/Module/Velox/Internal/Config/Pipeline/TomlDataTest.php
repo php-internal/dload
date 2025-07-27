@@ -624,4 +624,160 @@ final class TomlDataTest extends TestCase
         // Assert
         self::assertSame($expectedData, $tomlData->getData());
     }
+
+    public function testToTomlOrdersSectionsWithRoadrunnerFirst(): void
+    {
+        // Arrange - sections in different order
+        $data = [
+            'github' => ['plugins' => ['logger' => 'enabled']],
+            'log' => ['level' => 'debug'],
+            'roadrunner' => ['ref' => 'v2025.1.1'],
+            'debug' => ['enabled' => 'true'],
+            'other' => ['key' => 'value'],
+        ];
+        $tomlData = new TomlData($data);
+
+        // Act
+        $result = $tomlData->toToml();
+
+        // Assert - roadrunner should be first, then debug, log, github, then others
+        $expectedToml = <<<TOML
+            [roadrunner]
+            ref = "v2025.1.1"
+
+            [debug]
+            enabled = "true"
+
+            [log]
+            level = "debug"
+
+            [github.plugins]
+            logger = "enabled"
+
+            [other]
+            key = "value"
+            TOML;
+
+        self::assertSame($expectedToml, $result);
+    }
+
+    public function testToTomlNormalizesRoadrunnerRefWithVPrefix(): void
+    {
+        // Arrange - ref without "v" prefix
+        $data = [
+            'roadrunner' => ['ref' => '2025.1.1'],
+        ];
+        $tomlData = new TomlData($data);
+
+        // Act
+        $result = $tomlData->toToml();
+
+        // Assert - "v" prefix should be added
+        $expectedToml = <<<TOML
+            [roadrunner]
+            ref = "v2025.1.1"
+            TOML;
+
+        self::assertSame($expectedToml, $result);
+    }
+
+    public function testToTomlPreservesExistingVPrefixInRoadrunnerRef(): void
+    {
+        // Arrange - ref already has "v" prefix
+        $data = [
+            'roadrunner' => ['ref' => 'v2025.1.1'],
+        ];
+        $tomlData = new TomlData($data);
+
+        // Act
+        $result = $tomlData->toToml();
+
+        // Assert - "v" prefix should be preserved
+        $expectedToml = <<<TOML
+            [roadrunner]
+            ref = "v2025.1.1"
+            TOML;
+
+        self::assertSame($expectedToml, $result);
+    }
+
+    public function testToTomlHandlesEmptyRoadrunnerRef(): void
+    {
+        // Arrange - empty ref
+        $data = [
+            'roadrunner' => ['ref' => ''],
+        ];
+        $tomlData = new TomlData($data);
+
+        // Act
+        $result = $tomlData->toToml();
+
+        // Assert - empty ref should remain empty
+        $expectedToml = <<<TOML
+            [roadrunner]
+            ref = ""
+            TOML;
+
+        self::assertSame($expectedToml, $result);
+    }
+
+    public function testToTomlHandlesNonStringRoadrunnerRef(): void
+    {
+        // Arrange - non-string ref
+        $data = [
+            'roadrunner' => ['ref' => 123],
+        ];
+        $tomlData = new TomlData($data);
+
+        // Act
+        $result = $tomlData->toToml();
+
+        // Assert - non-string ref should remain unchanged
+        $expectedToml = <<<TOML
+            [roadrunner]
+            ref = "123"
+            TOML;
+
+        self::assertSame($expectedToml, $result);
+    }
+
+    public function testToTomlWithCompleteConfigurationOrdering(): void
+    {
+        // Arrange - complex configuration with multiple sections
+        $data = [
+            'other' => ['key' => 'value'],
+            'gitlab' => ['url' => 'gitlab.com'],
+            'github' => ['token' => 'secret'],
+            'log' => ['level' => 'info'],
+            'debug' => ['enabled' => 'false'],
+            'roadrunner' => ['ref' => '2025.1.1'],
+        ];
+        $tomlData = new TomlData($data);
+
+        // Act
+        $result = $tomlData->toToml();
+
+        // Assert - proper ordering and normalization
+        $expectedToml = <<<TOML
+            [roadrunner]
+            ref = "v2025.1.1"
+
+            [debug]
+            enabled = "false"
+
+            [log]
+            level = "info"
+
+            [github]
+            token = "secret"
+
+            [gitlab]
+            url = "gitlab.com"
+
+            [other]
+            key = "value"
+            TOML;
+
+        self::assertSame($expectedToml, $result);
+    }
 }
