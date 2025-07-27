@@ -23,9 +23,9 @@ final class BuildMixinsProcessor implements ConfigProcessor
         $tomlData = $context->tomlData;
         $appliedMixins = [];
 
-        if ($context->action->binaryVersion !== null) {
-            $tomlData = $tomlData->set('roadrunner.ref', $context->action->binaryVersion);
-            $appliedMixins[] = 'binary_version';
+        if ($context->action->roadrunnerVersion !== null) {
+            $tomlData = $tomlData->set('roadrunner.ref', $context->action->roadrunnerVersion);
+            $appliedMixins[] = 'roadrunner_ref';
         }
 
         if ($appliedMixins === []) {

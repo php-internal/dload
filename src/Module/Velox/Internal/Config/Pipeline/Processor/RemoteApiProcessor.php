@@ -34,7 +34,7 @@ final class RemoteApiProcessor implements ConfigProcessor
         $apiToml = $this->apiClient->generateConfig(
             $context->action->plugins,
             $context->action->golangVersion,
-            $context->action->binaryVersion,
+            $context->action->roadrunnerVersion,
         );
 
         $apiData = TomlData::fromString($apiToml);

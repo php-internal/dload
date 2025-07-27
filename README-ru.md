@@ -339,7 +339,7 @@ DLoad поддерживает сборку кастомных бинарник�
     <velox config-file="./velox.toml" 
           velox-version="^1.4.0" 
           golang-version="^1.22" 
-          binary-version="2024.1.5" 
+          roadrunner-ref="2024.1.5" 
           binary-path="./bin/rr" />
 </actions>
 ```
@@ -350,7 +350,7 @@ DLoad поддерживает сборку кастомных бинарник�
 |---------|----------|--------------|
 | `velox-version` | Версия инструмента сборки Velox | Последняя |
 | `golang-version` | Требуемая версия Go | Последняя |
-| `binary-version` | Версия RoadRunner для отображения в `rr --version` | Последняя |
+| `roadrunner-ref` | Git-ссылка RoadRunner (тег, коммит или ветка) для сборки | Последняя |
 | `config-file` | Путь к локальному файлу velox.toml | `./velox.toml` |
 | `binary-path` | Путь для сохранения собранного бинарника RoadRunner | `./rr` |
 
@@ -385,7 +385,7 @@ DLoad автоматически управляет процессом сбор�
     <download software="velox" extract-path="bin" version="2025.1.1" />
     <velox config-file="velox.toml"
           golang-version="^1.22"
-          binary-version="2024.1.5" />
+          roadrunner-ref="2024.1.5" />
 </actions>
 ```
 
@@ -401,7 +401,7 @@ DLoad автоматически управляет процессом сбор�
         <velox config-file="./velox.toml" 
               velox-version="^1.4.0"
               golang-version="^1.22"
-              binary-version="2024.1.5"
+              roadrunner-ref="2024.1.5"
               binary-path="./bin/rr" />
     </actions>
 </dload>

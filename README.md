@@ -338,7 +338,7 @@ DLoad supports building custom RoadRunner binaries using the Velox build tool. T
     <velox config-file="./velox.toml" 
           velox-version="^1.4.0" 
           golang-version="^1.22" 
-          binary-version="2024.1.5" 
+          roadrunner-ref="2024.1.5" 
           binary-path="./bin/rr" />
 </actions>
 ```
@@ -349,7 +349,7 @@ DLoad supports building custom RoadRunner binaries using the Velox build tool. T
 |-----------|-------------|---------|
 | `velox-version` | Version of Velox build tool | Latest |
 | `golang-version` | Required Go version | Latest |
-| `binary-version` | RoadRunner version to display in `rr --version` | Latest |
+| `roadrunner-ref` | RoadRunner Git reference (tag, commit, or branch) to use for building | Latest |
 | `config-file` | Path to local velox.toml file | `./velox.toml` |
 | `binary-path` | Path to save the built RoadRunner binary | `./rr` |
 
@@ -384,7 +384,7 @@ You can download Velox as part of your build process instead of relying on a glo
     <download software="velox" extract-path="bin" version="2025.1.1" />
     <velox config-file="velox.toml"
           golang-version="^1.22"
-          binary-version="2024.1.5" />
+          roadrunner-ref="2024.1.5" />
 </actions>
 ```
 
@@ -400,7 +400,7 @@ This ensures consistent Velox versions across different environments and team me
         <velox config-file="./velox.toml" 
               velox-version="^1.4.0"
               golang-version="^1.22"
-              binary-version="2024.1.5"
+              roadrunner-ref="2024.1.5"
               binary-path="./bin/rr" />
     </actions>
 </dload>

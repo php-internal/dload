@@ -338,7 +338,7 @@ DLoad 支持使用 Velox 构建工具来构建自定义 RoadRunner 二进制文�
     <velox config-file="./velox.toml" 
           velox-version="^1.4.0" 
           golang-version="^1.22" 
-          binary-version="2024.1.5" 
+          roadrunner-ref="2024.1.5" 
           binary-path="./bin/rr" />
 </actions>
 ```
@@ -349,7 +349,7 @@ DLoad 支持使用 Velox 构建工具来构建自定义 RoadRunner 二进制文�
 |-----------|-------------|---------|
 | `velox-version` | Velox 构建工具版本 | 最新版 |
 | `golang-version` | 所需的 Go 版本 | 最新版 |
-| `binary-version` | 在 `rr --version` 中显示的 RoadRunner 版本 | 最新版 |
+| `roadrunner-ref` | 用于构建的 RoadRunner Git 引用（标签、提交或分支） | 最新版 |
 | `config-file` | 本地 velox.toml 文件路径 | `./velox.toml` |
 | `binary-path` | 保存构建的 RoadRunner 二进制文件的路径 | `./rr` |
 
@@ -384,7 +384,7 @@ DLoad 会自动处理构建过程：
     <download software="velox" extract-path="bin" version="2025.1.1" />
     <velox config-file="velox.toml"
           golang-version="^1.22"
-          binary-version="2024.1.5" />
+          roadrunner-ref="2024.1.5" />
 </actions>
 ```
 
@@ -400,7 +400,7 @@ DLoad 会自动处理构建过程：
         <velox config-file="./velox.toml" 
               velox-version="^1.4.0"
               golang-version="^1.22"
-              binary-version="2024.1.5"
+              roadrunner-ref="2024.1.5"
               binary-path="./bin/rr" />
     </actions>
 </dload>

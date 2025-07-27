@@ -21,7 +21,7 @@ interface ApiClient
      *
      * @param list<Plugin> $plugins List of plugins to include
      * @param string|null $golangVersion Go version constraint
-     * @param string|null $binaryVersion RoadRunner binary version
+     * @param string|null $binaryVersion RoadRunner version (reference)
      * @param array<string, mixed> $options Additional configuration options
      * @return string Generated velox.toml content
      * @throws Exception\Api When API request fails

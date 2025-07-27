@@ -56,8 +56,7 @@ final class TomlData
 
     public function toToml(): string
     {
-        $normalizedData = $this->normalizeData($this->data);
-        return $this->arrayToToml($normalizedData);
+        return $this->arrayToToml($this->data);
     }
 
     public function getData(): array
@@ -173,27 +172,6 @@ final class TomlData
         }
 
         return $orderedSections;
-    }
-
-    /**
-     * Normalizes configuration data before TOML conversion.
-     *
-     * @param array<string, mixed> $data Configuration data
-     * @return array<string, mixed> Normalized data
-     */
-    private function normalizeData(array $data): array
-    {
-        $normalized = $data;
-
-        // Normalize roadrunner.ref directive - add "v" prefix if not exists
-        if (isset($normalized['roadrunner']['ref'])) {
-            $ref = $normalized['roadrunner']['ref'];
-            if (\is_string($ref) && $ref !== '' && !\str_starts_with($ref, 'v')) {
-                $normalized['roadrunner']['ref'] = 'v' . $ref;
-            }
-        }
-
-        return $normalized;
     }
 
     /**

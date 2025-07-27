@@ -35,7 +35,7 @@ final class BuildRoadRunner implements ApiClientInterface
         ];
 
         $golangVersion !== null and $requestData['golang_version'] = $golangVersion;
-        $binaryVersion !== null and $requestData['binary_version'] = $binaryVersion;
+        $binaryVersion !== null and $requestData['roadrunner_ref'] = $binaryVersion;
         $options === [] or $requestData = \array_merge($requestData, $options);
 
         return $this->makeRequest(

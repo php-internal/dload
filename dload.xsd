@@ -108,9 +108,9 @@
                                             <xs:documentation>Required Go version constraint</xs:documentation>
                                         </xs:annotation>
                                     </xs:attribute>
-                                    <xs:attribute name="binary-version" type="xs:string">
+                                    <xs:attribute name="roadrunner-ref" type="xs:string">
                                         <xs:annotation>
-                                            <xs:documentation>RoadRunner version to display in --version</xs:documentation>
+                                            <xs:documentation>RoadRunner Git reference (tag, commit, or branch) to use for building</xs:documentation>
                                         </xs:annotation>
                                     </xs:attribute>
                                     <xs:attribute name="config-file" type="xs:string">
