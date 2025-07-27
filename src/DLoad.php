@@ -37,9 +37,9 @@ use function React\Promise\resolve;
  * based on configuration actions.
  *
  * ```php
- * $dload = $container->get(DLoad::class);
- * $dload->addTask(new DownloadConfig('rr', '^2.12.0'));
- * $dload->run();
+ *  $dload = $container->get(DLoad::class);
+ *  $dload->addTask(new DownloadConfig('rr', '^2.12.0'));
+ *  $dload->run();
  * ```
  *
  * @internal
@@ -236,6 +236,7 @@ final class DLoad
             $binaryPattern = $this->generateBinaryExtractionConfig($software->binary);
 
             while ($extractor->valid()) {
+                $to = $rule = null;
                 $file = $extractor->current();
                 \assert($file instanceof \SplFileInfo);
 
