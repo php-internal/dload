@@ -345,13 +345,13 @@ DLoad 支持使用 Velox 构建工具来构建自定义 RoadRunner 二进制文�
 
 ### Velox 动作属性
 
-| 属性 | 说明 | 默认值 |
-|-----------|-------------|---------|
-| `velox-version` | Velox 构建工具版本 | 最新版 |
-| `golang-version` | 所需的 Go 版本 | 最新版 |
-| `roadrunner-ref` | 用于构建的 RoadRunner Git 引用（标签、提交或分支） | 最新版 |
-| `config-file` | 本地 velox.toml 文件路径 | `./velox.toml` |
-| `binary-path` | 保存构建的 RoadRunner 二进制文件的路径 | `./rr` |
+| 属性 | 说明 |
+|-----------|-------------|
+| `velox-version` | 使用的 Velox 构建工具的版本约束 |
+| `golang-version` | 构建 RoadRunner 所需的 Go 版本约束 |
+| `roadrunner-ref` | 用作构建基础的 RoadRunner Git 引用（标签、提交或分支） |
+| `config-file` | 基础配置文件路径，可能与远程 API 响应或其他源合并 |
+| `binary-path` | 构建的 RoadRunner 二进制文件输出路径。文件扩展名根据操作系统自动添加（Windows 下为 `.exe`）。默认为当前工作目录 |
 
 ### 构建流程
 

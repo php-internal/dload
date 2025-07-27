@@ -345,13 +345,13 @@ DLoad soporta la construcción de binarios personalizados de RoadRunner usando l
 
 ### Atributos de Acción Velox
 
-| Atributo | Descripción | Valor por defecto |
-|-----------|-------------|-------------------|
-| `velox-version` | Versión de la herramienta Velox | Última |
-| `golang-version` | Versión requerida de Go | Última |
-| `roadrunner-ref` | Referencia Git de RoadRunner (tag, commit o rama) para la compilación | Última |
-| `config-file` | Ruta al archivo velox.toml local | `./velox.toml` |
-| `binary-path` | Ruta donde guardar el binario construido de RoadRunner | `./rr` |
+| Atributo | Descripción |
+|-----------|-------------|
+| `velox-version` | Restricción de versión para la herramienta de construcción Velox a utilizar |
+| `golang-version` | Restricción de versión de Go requerida para construir RoadRunner |
+| `roadrunner-ref` | Referencia Git de RoadRunner (tag, commit o rama) a usar como base para la construcción |
+| `config-file` | Ruta al archivo de configuración base que puede fusionarse con respuestas de API remotas u otras fuentes |
+| `binary-path` | Ruta de salida para el binario RoadRunner construido. La extensión del archivo se agrega automáticamente según el SO (`.exe` para Windows). Por defecto usa el directorio de trabajo actual |
 
 ### Proceso de Construcción
 
