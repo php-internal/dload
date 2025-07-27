@@ -31,7 +31,7 @@ final class ConfigPipelineBuilder
         private readonly Container $container,
         private readonly array $pipes = [
             BaseTemplateProcessor::class,
-            // RemoteApiProcessor::class,
+            RemoteApiProcessor::class,
             LocalFileProcessor::class,
             BuildMixinsProcessor::class,
             GitHubTokenProcessor::class,

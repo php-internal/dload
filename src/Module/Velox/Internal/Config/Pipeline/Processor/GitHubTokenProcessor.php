@@ -30,7 +30,7 @@ final class GitHubTokenProcessor implements ConfigProcessor
             return $context;
         }
 
-        $tomlData = $context->tomlData->set('github.token', $this->gitHub->token);
+        $tomlData = $context->tomlData->set('github.token.token', $this->gitHub->token);
 
         return $context
             ->withTomlData($tomlData)

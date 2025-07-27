@@ -35,27 +35,11 @@ interface ApiClient
     ): string;
 
     /**
-     * Validates plugin specifications against the API.
-     *
-     * @param list<Plugin> $plugins Plugins to validate
-     * @return array<string, mixed> Validation results
-     * @throws Exception\Api When API request fails
-     */
-    public function validatePlugins(array $plugins): array;
-
-    /**
      * Retrieves available plugin information from the API.
      *
-     * @param string|null $search Optional search term
+     * @param non-empty-string|null $search Optional search term
      * @return array<string, mixed> Available plugins
      * @throws Exception\Api When API request fails
      */
     public function getAvailablePlugins(?string $search = null): array;
-
-    /**
-     * Checks API availability and health.
-     *
-     * @return bool True if API is available
-     */
-    public function isAvailable(): bool;
 }
