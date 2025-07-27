@@ -14,7 +14,7 @@ use Internal\DLoad\Module\Config\Schema\Downloader;
 use Internal\DLoad\Module\Config\Schema\Embed\Binary as BinaryConfig;
 use Internal\DLoad\Module\Velox\Builder;
 use Internal\DLoad\Module\Velox\Exception\Build as BuildException;
-use Internal\DLoad\Module\Velox\Exception\Config as ConfigException;
+use Internal\DLoad\Module\Velox\Internal\Config\Validator;
 use Internal\DLoad\Module\Velox\Result;
 use Internal\DLoad\Module\Velox\Task;
 use Internal\DLoad\Service\Logger;
@@ -24,10 +24,10 @@ use function React\Promise\reject;
 use function React\Promise\resolve;
 
 /**
- * Basic Velox builder implementation with local config support.
+ * Velox builder implementation with comprehensive config support.
  *
  * Provides a synchronous implementation for building RoadRunner binaries
- * using Velox with local configuration files.
+ * using Velox with support for local configs, remote API configs, and hybrid merging.
  *
  * @internal
  * @psalm-internal Internal\DLoad\Module\Velox
@@ -40,6 +40,7 @@ final class VeloxBuilder implements Builder
         private readonly Downloader $appConfig,
         private readonly OperatingSystem $operatingSystem,
         private readonly BinaryProvider $binaryProvider,
+        private readonly ConfigBuilder $configBuilder,
     ) {}
 
     public function build(VeloxAction $config, \Closure $onProgress): Task
@@ -68,7 +69,7 @@ final class VeloxBuilder implements Builder
                 $vxBinary = $dependencyChecker->prepareVelox();
 
                 # Prepare configuration file
-                $configPath = $this->prepareConfig($config, $buildDir);
+                $configPath = $this->configBuilder->buildConfig($config, $buildDir);
 
                 # Build
                 # Execute build command
@@ -97,29 +98,7 @@ final class VeloxBuilder implements Builder
 
     public function validate(VeloxAction $config): void
     {
-        ConfigValidator::validate($config);
-
-        // For this basic implementation, only local config files are supported
-        if ($config->configFile === null) {
-            throw new ConfigException(
-                'This implementation only supports local config files. Remote API configuration is not yet implemented.',
-            );
-        }
-    }
-
-    private function prepareConfig(VeloxAction $config, Path $buildDir): Path
-    {
-        $sourceConfig = Path::create($config->configFile ?? 'velox.toml');
-        $targetConfig = $buildDir->join('velox.toml');
-
-        \copy($sourceConfig->__toString(), $targetConfig->__toString()) or throw new ConfigException(
-            "Failed to copy config file from `{$sourceConfig}` to `{$targetConfig}`",
-            configPath: $config->configFile,
-        );
-
-        $this->logger->debug('Copied config file to: %s', (string) $targetConfig);
-
-        return $targetConfig;
+        Validator::validate($config);
     }
 
     /**
