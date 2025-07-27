@@ -115,26 +115,32 @@ final class TomlData
     private function arrayToToml(array $data): string
     {
         $toml = '';
+        $sections = [];
 
-        // First output top-level keys
+        // First output top-level keys (non-arrays and inline arrays)
         foreach ($data as $key => $value) {
             if (!\is_array($value)) {
                 $toml .= "{$key} = \"{$value}\"\n";
+            } elseif ($this->isInlineArray($value)) {
+                $toml .= $this->formatKeyValue((string) $key, $value);
+            } else {
+                // Collect sections for later
+                $sections[$key] = $value;
             }
         }
 
-        if ($toml !== '') {
+        // Add separator between top-level values and sections
+        if ($toml !== '' && !empty($sections)) {
             $toml .= "\n";
         }
 
-        // Then output sections
-        foreach ($data as $sectionKey => $sectionValue) {
-            if (\is_array($sectionValue)) {
-                $toml .= $this->sectionToToml($sectionKey, $sectionValue);
-            }
+        // Then output sections (associative arrays)
+        foreach ($sections as $sectionKey => $sectionValue) {
+            $toml .= $this->sectionToToml($sectionKey, $sectionValue);
         }
 
-        return $toml;
+        // Remove trailing whitespace
+        return \rtrim($toml);
     }
 
     /**
@@ -148,40 +154,149 @@ final class TomlData
     {
         $toml = '';
 
-        // Check if this section has subsections
+        // Check if this section has subsections (associative arrays, not inline arrays)
         $hasSubsections = false;
         foreach ($data as $value) {
-            if (\is_array($value)) {
+            if (\is_array($value) && !$this->isInlineArray($value)) {
                 $hasSubsections = true;
                 break;
             }
         }
 
         if (!$hasSubsections) {
-            // Simple section with key-value pairs
+            // Simple section with key-value pairs (and possibly inline arrays)
             $toml .= "[{$sectionName}]\n";
             foreach ($data as $key => $value) {
-                $toml .= "{$key} = \"{$value}\"\n";
+                $toml .= $this->formatKeyValue((string) $key, $value);
             }
             $toml .= "\n";
         } else {
-            // Section with subsections (like github.plugins)
+            // Handle mixed content: simple values and subsections
+            $simpleValues = [];
+            $subsections = [];
+
             foreach ($data as $subKey => $subValue) {
-                if (\is_array($subValue)) {
-                    $toml .= "[{$sectionName}.{$subKey}]\n";
-                    foreach ($subValue as $key => $value) {
-                        $toml .= "{$key} = \"{$value}\"\n";
-                    }
-                    $toml .= "\n";
+                if (\is_array($subValue) && !$this->isInlineArray($subValue)) {
+                    $subsections[$subKey] = $subValue;
                 } else {
-                    $toml .= "[{$sectionName}]\n";
-                    $toml .= "{$subKey} = \"{$subValue}\"\n";
-                    $toml .= "\n";
+                    $simpleValues[$subKey] = $subValue;
                 }
+            }
+
+            // Only output the section header if there are simple values
+            // If there are only subsections, skip the intermediate section header
+            if (!empty($simpleValues)) {
+                $toml .= "[{$sectionName}]\n";
+                foreach ($simpleValues as $key => $value) {
+                    $toml .= $this->formatKeyValue((string) $key, $value);
+                }
+                $toml .= "\n";
+            }
+
+            // Output subsections directly
+            foreach ($subsections as $subKey => $subValue) {
+                $toml .= $this->renderNestedSection("{$sectionName}.{$subKey}", $subValue);
             }
         }
 
         return $toml;
+    }
+
+    /**
+     * Renders a nested section recursively.
+     *
+     * @param string $sectionPath Full section path (e.g., "github.plugins.logger")
+     * @param array<string, mixed> $data Section data
+     * @return string TOML section content
+     */
+    private function renderNestedSection(string $sectionPath, array $data): string
+    {
+        $toml = '';
+
+        // Separate simple values from subsections
+        $simpleValues = [];
+        $subsections = [];
+
+        foreach ($data as $key => $value) {
+            if (\is_array($value) && !$this->isInlineArray($value)) {
+                $subsections[$key] = $value;
+            } else {
+                $simpleValues[$key] = $value;
+            }
+        }
+
+        // Add section header if there are simple values OR if this section has no subsections
+        // (meaning it's an empty section that should be rendered)
+        if (!empty($simpleValues) || empty($subsections)) {
+            $toml .= "[{$sectionPath}]\n";
+            foreach ($simpleValues as $key => $value) {
+                $toml .= $this->formatKeyValue((string) $key, $value);
+            }
+            $toml .= "\n";
+        }
+
+        // Render subsections
+        foreach ($subsections as $key => $value) {
+            $toml .= $this->renderNestedSection("{$sectionPath}.{$key}", $value);
+        }
+
+        return $toml;
+    }
+
+    /**
+     * Formats a key-value pair for TOML output.
+     *
+     * @param string $key The key
+     * @param mixed $value The value
+     * @return string Formatted TOML key-value pair
+     */
+    private function formatKeyValue(string $key, mixed $value): string
+    {
+        if (\is_array($value)) {
+            // For array values, render them as inline arrays
+            return "{$key} = " . $this->formatArrayValue($value) . "\n";
+        }
+
+        return "{$key} = \"{$value}\"\n";
+    }
+
+    /**
+     * Formats an array value for TOML output.
+     *
+     * @param array<mixed> $array The array to format
+     * @return string Formatted TOML array
+     */
+    private function formatArrayValue(array $array): string
+    {
+        $items = [];
+        foreach ($array as $item) {
+            if (\is_array($item)) {
+                // Nested arrays are not typically supported in TOML inline arrays
+                // Convert to string representation
+                $items[] = '"' . \json_encode($item) . '"';
+            } else {
+                $items[] = '"' . (string) $item . '"';
+            }
+        }
+
+        return '[' . \implode(', ', $items) . ']';
+    }
+
+    /**
+     * Determines if an array should be rendered as an inline array rather than a section.
+     *
+     * @param array<mixed> $array The array to check
+     * @return bool True if it should be an inline array
+     */
+    private function isInlineArray(array $array): bool
+    {
+        // If empty, treat as section (will render as empty section)
+        if (empty($array)) {
+            return false;
+        }
+
+        // If all keys are numeric (sequential), it's an inline array
+        return \array_keys($array) === \range(0, \count($array) - 1);
     }
 
     private function deepMerge(array $array1, array $array2): array

@@ -269,7 +269,6 @@ final class TomlDataTest extends TestCase
             [section]
             nested1 = "data1"
             nested2 = "data2"
-            \n
             TOML;
 
         // Act
@@ -291,7 +290,7 @@ final class TomlDataTest extends TestCase
             ],
         ];
         $tomlData = new TomlData($data);
-        $expectedToml = "[github.plugins]\nlogger = \"enabled\"\ncache = \"disabled\"\n\n";
+        $expectedToml = "[github.plugins]\nlogger = \"enabled\"\ncache = \"disabled\"";
 
         // Act
         $result = $tomlData->toToml();
@@ -311,7 +310,11 @@ final class TomlDataTest extends TestCase
         ];
         $tomlData = new TomlData($data);
         $expectedToml = <<<TOML
-            [roadrunner]\nsimple = "value"\n\n[roadrunner.plugins]\nlogger = "enabled"\n\n
+            [roadrunner]
+            simple = "value"
+
+            [roadrunner.plugins]
+            logger = "enabled"
             TOML;
 
         // Act
@@ -338,7 +341,7 @@ final class TomlDataTest extends TestCase
         // Arrange
         $localToml = "local_key = \"local_value\"\n\n[roadrunner]\nversion = \"1.0\"";
         $remoteToml = "remote_key = \"remote_value\"\n\n[github.plugins]\nlogger = \"enabled\"";
-        $expectedMerged = "local_key = \"local_value\"\nremote_key = \"remote_value\"\n\n[roadrunner]\nversion = \"1.0\"\n\n[github.plugins]\nlogger = \"enabled\"\n\n";
+        $expectedMerged = "local_key = \"local_value\"\nremote_key = \"remote_value\"\n\n[roadrunner]\nversion = \"1.0\"\n\n[github.plugins]\nlogger = \"enabled\"";
 
         // Act
         $result = TomlData::mergeTomlStrings($localToml, $remoteToml);
@@ -358,8 +361,8 @@ final class TomlDataTest extends TestCase
         $result2 = TomlData::mergeTomlStrings($emptyToml, $localToml);
 
         // Assert
-        self::assertSame("key = \"value\"\n\n", $result1);
-        self::assertSame("key = \"value\"\n\n", $result2);
+        self::assertSame("key = \"value\"", $result1);
+        self::assertSame("key = \"value\"", $result2);
     }
 
     public function testRoundTripConversion(): void
@@ -411,5 +414,214 @@ final class TomlDataTest extends TestCase
 
         // Assert
         self::assertSame(['key' => 'value'], $data);
+    }
+
+    public function testToTomlHandlesDeeplyNestedSections(): void
+    {
+        // Arrange
+        $data = [
+            'github' => [
+                'plugins' => [
+                    'logger' => [
+                        'ref' => 'v5.1.8',
+                        'owner' => 'roadrunner-server',
+                        'repository' => 'logger',
+                    ],
+                    'server' => [
+                        'ref' => 'v5.2.9',
+                        'owner' => 'roadrunner-server',
+                        'repository' => 'server',
+                    ],
+                ],
+            ],
+        ];
+        $tomlData = new TomlData($data);
+        $expectedToml = <<<TOML
+            [github.plugins.logger]
+            ref = "v5.1.8"
+            owner = "roadrunner-server"
+            repository = "logger"
+
+            [github.plugins.server]
+            ref = "v5.2.9"
+            owner = "roadrunner-server"
+            repository = "server"
+            TOML;
+
+        // Act
+        $result = $tomlData->toToml();
+
+        // Assert
+        self::assertSame($expectedToml, $result);
+    }
+
+    public function testToTomlHandlesInlineArrays(): void
+    {
+        // Arrange
+        $data = [
+            'features' => ['logging', 'caching', 'metrics'],
+            'ports' => [8080, 9090, 3000],
+        ];
+        $tomlData = new TomlData($data);
+        $expectedToml = <<<TOML
+            features = ["logging", "caching", "metrics"]
+            ports = ["8080", "9090", "3000"]
+            TOML;
+
+        // Act
+        $result = $tomlData->toToml();
+
+        // Assert
+        self::assertSame($expectedToml, $result);
+    }
+
+    public function testToTomlHandlesMixedTopLevelAndNestedStructures(): void
+    {
+        // Arrange
+        $data = [
+            'roadrunner' => [
+                'ref' => 'v2025.1.1',
+            ],
+            'log' => [
+                'level' => 'debug',
+                'mode' => 'dev',
+            ],
+            'github' => [
+                'token' => [
+                    'token' => '${GITHUB_TOKEN}',
+                ],
+                'plugins' => [
+                    'logger' => [
+                        'ref' => 'v5.1.8',
+                        'owner' => 'roadrunner-server',
+                        'repository' => 'logger',
+                    ],
+                ],
+            ],
+        ];
+        $tomlData = new TomlData($data);
+        $expectedToml = <<<TOML
+            [roadrunner]
+            ref = "v2025.1.1"
+
+            [log]
+            level = "debug"
+            mode = "dev"
+
+            [github.token]
+            token = "\${GITHUB_TOKEN}"
+
+            [github.plugins.logger]
+            ref = "v5.1.8"
+            owner = "roadrunner-server"
+            repository = "logger"
+            TOML;
+
+        // Act
+        $result = $tomlData->toToml();
+
+        // Assert
+        self::assertSame($expectedToml, $result);
+    }
+
+    public function testFromStringAndToTomlRoundTripWithNestedArrays(): void
+    {
+        // Arrange - This mimics the structure from velox.toml
+        $originalToml = <<<TOML
+            [roadrunner]
+            ref = "v2025.1.1"
+
+            [log]
+            level = "debug"
+            mode = "dev"
+
+            [github.token]
+            token = "\${GITHUB_TOKEN}"
+
+            [github.plugins.logger]
+            ref = "v5.1.8"
+            owner = "roadrunner-server"
+            repository = "logger"
+
+            [github.plugins.server]
+            ref = "v5.2.9"
+            owner = "roadrunner-server"
+            repository = "server"
+            TOML;
+
+        // Act
+        $tomlData = TomlData::fromString($originalToml);
+        $convertedToml = $tomlData->toToml();
+        $roundTripData = TomlData::fromString($convertedToml);
+
+        // Assert
+        self::assertSame($tomlData->getData(), $roundTripData->getData());
+    }
+
+    public function testToTomlHandlesEmptyNestedSections(): void
+    {
+        // Arrange
+        $data = [
+            'section' => [
+                'empty_subsection' => [],
+                'populated_subsection' => ['key' => 'value'],
+            ],
+        ];
+        $tomlData = new TomlData($data);
+        $expectedToml = <<<TOML
+            [section.empty_subsection]
+
+            [section.populated_subsection]
+            key = "value"
+            TOML;
+
+        // Act
+        $result = $tomlData->toToml();
+
+        // Assert
+        self::assertSame($expectedToml, $result);
+    }
+
+    public function testParseTomlWithComplexNestedStructure(): void
+    {
+        // Arrange
+        $toml = <<<TOML
+            [roadrunner]
+            ref = "v2025.1.1"
+
+            [github.plugins.logger]
+            ref = "v5.1.8"
+            owner = "roadrunner-server"
+            repository = "logger"
+
+            [github.plugins.temporal]
+            ref = "v5.7.0"
+            owner = "temporalio"
+            repository = "roadrunner-temporal"
+            TOML;
+
+        $expectedData = [
+            'roadrunner' => ['ref' => 'v2025.1.1'],
+            'github' => [
+                'plugins' => [
+                    'logger' => [
+                        'ref' => 'v5.1.8',
+                        'owner' => 'roadrunner-server',
+                        'repository' => 'logger',
+                    ],
+                    'temporal' => [
+                        'ref' => 'v5.7.0',
+                        'owner' => 'temporalio',
+                        'repository' => 'roadrunner-temporal',
+                    ],
+                ],
+            ],
+        ];
+
+        // Act
+        $tomlData = TomlData::fromString($toml);
+
+        // Assert
+        self::assertSame($expectedData, $tomlData->getData());
     }
 }

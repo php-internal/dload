@@ -47,7 +47,7 @@ final class ConfigBuilder
         $this->logger->debug('Building Velox configuration with pipeline...');
 
         $pipeline = $this->pipelineBuilder->build();
-        $context = new ConfigContext($action, buildDir: $buildDir);
+        $context = new ConfigContext($action, $buildDir);
 
         $result = $pipeline->process($context);
         $configContent = $result->tomlData->toToml();
