@@ -28,6 +28,7 @@ I need a single message with all the md file content.
   - Command examples and their arguments: Verify technical accuracy and formatting.
   - Technical terminology consistency throughout the document.
   - Cultural adaptations that make sense in target language context.
+  - **Language naturalness**: Ensure the translation uses natural, living language that doesn't sound synthetic or machine-generated, while maintaining technical precision. Find the golden mean between conversational flow and technical accuracy.
 
 **Step 5: Finalize and Save the Translated Document 💾**
 
@@ -91,6 +92,7 @@ CONTRIBUTING-de.md
 
 - Use clear and specific prompts to minimize errors.
 - Always double-check technical content, as LLMs may mistranslate code or markup.
+- **Prioritize natural language flow**: Avoid overly literal translations that sound robotic. The text should read as if written by a native speaker while preserving technical accuracy.
 - Consider using frameworks like MAPS (Multi-Aspect Prompting and Selection) for complex translations, which guide the LLM through keywords, topics, and relevant examples to improve accuracy and reduce errors.
 - Remember: Human review is essential for catching subtle mistakes and ensuring the translation meets your quality standards.
 

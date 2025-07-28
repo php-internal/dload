@@ -103,7 +103,7 @@ final class Show extends Base
                     continue;
                 }
 
-                $binary = $binaryProvider->getBinary($destinationPath, $software->binary);
+                $binary = $binaryProvider->getLocalBinary($destinationPath, $software->binary, $software->name);
                 if ($binary === null) {
                     continue;
                 }
@@ -146,7 +146,7 @@ final class Show extends Base
                 continue;
             }
 
-            $binary = $binaryProvider->getBinary($destinationPath, $software->binary);
+            $binary = $binaryProvider->getLocalBinary($destinationPath, $software->binary, $software->name);
             if ($binary === null) {
                 continue;
             }
@@ -224,8 +224,7 @@ final class Show extends Base
             return Command::FAILURE;
         }
 
-        $destinationPath = \getcwd();
-
+        $destinationPath = Path::create(\getcwd() ?: '.');
 
         // Check if software is in project config
         $inConfig = false;
@@ -278,7 +277,7 @@ final class Show extends Base
         }
 
         // Binary information
-        $binary = $binaryProvider->getBinary($destinationPath, $software->binary);
+        $binary = $binaryProvider->getLocalBinary($destinationPath, $software->binary, $software->name);
 
         $this->displayBinaryDetails($binary, $output);
 

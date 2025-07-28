@@ -13,7 +13,7 @@ use Internal\DLoad\Module\Common\Internal\Attribute\XPath;
  */
 final class Downloader
 {
-    /** @var string|null $tmpDir Temporary directory for downloads */
+    /** @var non-empty-string|null $tmpDir Temporary directory for downloads */
     #[XPath('/dload/@temp-dir')]
     public ?string $tmpDir = null;
 }

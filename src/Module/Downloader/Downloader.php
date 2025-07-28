@@ -6,6 +6,7 @@ namespace Internal\DLoad\Module\Downloader;
 
 use Internal\DLoad\Module\Archive\ArchiveFactory;
 use Internal\DLoad\Module\Common\Architecture;
+use Internal\DLoad\Module\Common\FileSystem\FS;
 use Internal\DLoad\Module\Common\FileSystem\Path;
 use Internal\DLoad\Module\Common\OperatingSystem;
 use Internal\DLoad\Module\Common\Stability;
@@ -23,6 +24,7 @@ use Internal\DLoad\Module\Repository\Collection\AssetsCollection;
 use Internal\DLoad\Module\Repository\ReleaseInterface;
 use Internal\DLoad\Module\Repository\Repository;
 use Internal\DLoad\Module\Repository\RepositoryProvider;
+use Internal\DLoad\Module\Task\Progress;
 use Internal\DLoad\Module\Version\Constraint;
 use Internal\DLoad\Service\Destroyable;
 use Internal\DLoad\Service\Logger;
@@ -418,7 +420,7 @@ final class Downloader
      */
     private function getTempDirectory(): Path
     {
-        $temp = Path::create($this->config->tmpDir ?? \sys_get_temp_dir());
+        $temp = FS::tmpDir($this->config->tmpDir);
 
         $temp->exists() or \mkdir((string) $temp, recursive: true);
         $temp->isDir() && $temp->isWriteable() or throw new \LogicException(

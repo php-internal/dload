@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Internal\DLoad\Module\Downloader;
+namespace Internal\DLoad\Module\Task;
 
 /**
  * Represents download progress information.

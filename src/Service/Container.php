@@ -77,7 +77,8 @@ interface Container extends Destroyable
      *
      * @template T
      * @param class-string<T> $id Service identifier
-     * @param null|array<string, mixed>|\Closure(Container): T $binding Factory function or constructor arguments
+     * @param null|class-string<T>|array<string, mixed>|\Closure(Container): T $binding Factory
+     *        function, constructor arguments, or alias class name.
      */
-    public function bind(string $id, \Closure|array|null $binding = null): void;
+    public function bind(string $id, \Closure|string|array|null $binding = null): void;
 }

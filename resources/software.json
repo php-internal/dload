@@ -20,6 +20,22 @@
             ]
         },
         {
+            "name": "Velox",
+            "alias": "velox",
+            "binary": {
+                "name": "vx",
+                "version-command": "--version"
+            },
+            "homepage": "https://roadrunner.dev",
+            "description": "Automated build system for the RoadRunner with custom plugins",
+            "repositories": [
+                {
+                    "type": "github",
+                    "uri": "roadrunner-server/velox"
+                }
+            ]
+        },
+        {
             "name": "Temporal",
             "alias": "temporal",
             "description": "Temporal SDK",

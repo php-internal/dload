@@ -2,9 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Internal\DLoad\Module\Downloader;
+namespace Internal\DLoad\Module\Task;
 
 use Internal\DLoad\Service\Logger;
+use React\Promise\Deferred;
+use React\Promise\PromiseInterface;
 
 /**
  * Task Manager Service
@@ -27,9 +29,9 @@ use Internal\DLoad\Service\Logger;
  * $taskManager->await();
  * ```
  */
-final class TaskManager
+final class Manager
 {
-    /** @var array<\Fiber> Active fiber tasks */
+    /** @var array<int, array{\Fiber, Deferred}> Active fiber tasks */
     private array $tasks = [];
 
     /**
@@ -44,11 +46,17 @@ final class TaskManager
     /**
      * Adds a new task to the execution queue
      *
-     * @param \Closure $callback Task implementation
+     * @template TResult
+     *
+     * @param \Closure(): TResult $callback Task implementation
+     *
+     * @return PromiseInterface<TResult>
      */
-    public function addTask(\Closure $callback): void
+    public function addTask(\Closure $callback): PromiseInterface
     {
-        $this->tasks[] = new \Fiber($callback);
+        $deferred = new Deferred();
+        $this->tasks[] = [new \Fiber($callback), $deferred];
+        return $deferred->promise();
     }
 
     /**
@@ -66,10 +74,15 @@ final class TaskManager
             return;
         }
 
-        foreach ($this->tasks as $key => $task) {
+        /**
+         * @var \Fiber $task
+         * @var Deferred $deferred
+         */
+        foreach ($this->tasks as $key => [$task, $deferred]) {
             try {
                 if ($task->isTerminated()) {
                     unset($this->tasks[$key]);
+                    $deferred->resolve($task->getReturn());
                     continue;
                 }
 
@@ -83,6 +96,7 @@ final class TaskManager
                 $this->logger->error($e->getMessage());
                 $this->logger->exception($e);
                 unset($this->tasks[$key]);
+                $deferred->reject($e);
                 yield $e;
             }
         }

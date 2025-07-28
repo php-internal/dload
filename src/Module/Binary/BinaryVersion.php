@@ -21,7 +21,7 @@ final class BinaryVersion extends Version
     /**
      * Resolves the version from binary command output.
      *
-     * @param non-empty-string $output Output from binary execution
+     * @param string $output Output from binary execution
      * @return BinaryVersion Extracted version
      */
     public static function fromBinaryOutput(string $output): static

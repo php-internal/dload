@@ -6,6 +6,7 @@ namespace Internal\DLoad\Module\Binary\Internal;
 
 use Internal\DLoad\Module\Binary\Exception\BinaryExecutionException;
 use Internal\DLoad\Module\Common\FileSystem\Path;
+use Internal\DLoad\Service\Logger;
 
 /**
  * Executes binary commands and captures their output.
@@ -14,25 +15,32 @@ use Internal\DLoad\Module\Common\FileSystem\Path;
  */
 final class BinaryExecutor
 {
+    public function __construct(
+        private readonly Logger $logger,
+    ) {}
+
     /**
      * Executes a binary with the specified command and returns the output.
      *
      * @param Path $binaryPath Full path to binary executable
      * @param string $command Command argument(s) to execute
-     * @return string Command output
+     * @return list<string> Command output
      * @throws BinaryExecutionException If execution fails
      */
-    public function execute(Path $binaryPath, string $command): string
+    public function execute(Path $binaryPath, string $command): array
     {
         // Escape command for shell execution
         $escapedPath = \escapeshellarg((string) $binaryPath);
 
-        // Execute the command and capture output
+        /** @var list<string> $output */
         $output = [];
         $returnCode = 0;
 
+        $cmd = "$escapedPath $command 2>&1";
+        $this->logger->debug('Executing command: %s', $cmd);
+
         // Execute with both stdout and stderr redirected to output
-        \exec("$escapedPath $command 2>&1", $output, $returnCode);
+        \exec($cmd, $output, $returnCode);
 
         // If command failed, throw exception
         if ($returnCode !== 0) {
@@ -48,6 +56,6 @@ final class BinaryExecutor
         }
 
         // Return combined output
-        return \implode("\n", $output);
+        return $output;
     }
 }

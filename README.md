@@ -32,6 +32,43 @@ With DLoad, you can:
 - Manage cross-platform compatibility without manual configuration
 - Keep binaries and assets separate from your version control
 
+### Table of Contents
+
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Command Line Usage](#command-line-usage)
+    - [Initialize Configuration](#initialize-configuration)
+    - [Download Software](#download-software)
+    - [View Software](#view-software)
+    - [Build Custom Software](#build-custom-software)
+- [Configuration Guide](#configuration-guide)
+    - [Interactive Configuration](#interactive-configuration)
+    - [Manual Configuration](#manual-configuration)
+    - [Download Types](#download-types)
+    - [Version Constraints](#version-constraints)
+    - [Advanced Configuration Options](#advanced-configuration-options)
+- [Building Custom RoadRunner](#building-custom-roadrunner)
+    - [Build Action Configuration](#build-action-configuration)
+    - [Velox Action Attributes](#velox-action-attributes)
+    - [Build Process](#build-process)
+    - [Configuration File Generation](#configuration-file-generation)
+    - [Using Downloaded Velox](#using-downloaded-velox)
+    - [DLoad Configuration](#dload-configuration)
+    - [Building RoadRunner](#building-roadrunner)
+- [Custom Software Registry](#custom-software-registry)
+    - [Defining Software](#defining-software)
+    - [Software Elements](#software-elements)
+- [Use Cases](#use-cases)
+    - [Development Environment Setup](#development-environment-setup)
+    - [New Project Setup](#new-project-setup)
+    - [CI/CD Integration](#cicd-integration)
+    - [Cross-Platform Teams](#cross-platform-teams)
+    - [PHAR Tools Management](#phar-tools-management)
+    - [Frontend Asset Distribution](#frontend-asset-distribution)
+- [GitHub API Rate Limits](#github-api-rate-limits)
+- [Contributing](#contributing)
+
+
 ## Installation
 
 ```bash
@@ -146,6 +183,25 @@ Alternatively, you can download the latest release from [GitHub releases](https:
 # Show all software (downloaded and available)
 ./vendor/bin/dload show --all
 ```
+
+### Build Custom Software
+
+```bash
+# Build custom software using configuration file
+./vendor/bin/dload build
+
+# Build with specific configuration file
+./vendor/bin/dload build --config=./custom-dload.xml
+```
+
+#### Build Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--config` | Path to configuration file | ./dload.xml |
+
+The `build` command executes build actions defined in your configuration file, such as creating custom RoadRunner binaries with specific plugins.
+For detailed information about building custom RoadRunner, see the [Building Custom RoadRunner](#building-custom-roadrunner) section.
 
 ## Configuration Guide
 
@@ -265,6 +321,107 @@ Use Composer-style version constraints:
         <download software="dev-tool" version="^2.0.0@beta" />
     </actions>
 </dload>
+```
+
+## Building Custom RoadRunner
+
+DLoad supports building custom RoadRunner binaries using the Velox build tool. This is useful when you need RoadRunner with custom plugin combinations that aren't available in pre-built releases.
+
+### Build Action Configuration
+
+```xml
+<actions>
+    <!-- Basic configuration using local velox.toml -->
+    <velox config-file="./velox.toml" />
+
+    <!-- With specific versions -->
+    <velox config-file="./velox.toml"
+           velox-version="2025.1.1"
+           golang-version="^1.22"
+           roadrunner-ref="v2025.1.2"
+           binary-path="./bin/rr"
+           debug="true" />
+
+    <!-- Custom plugins -->
+    <velox>
+        <plugin name="temporal" />
+        <plugin name="kv" />
+    </velox>
+</actions>
+```
+
+### Velox Action Attributes
+
+| Attribute | Description |
+|-----------|-------------|
+| `velox-version` | Version constraint for the Velox build tool to use |
+| `golang-version` | Go version constraint required for building RoadRunner |
+| `roadrunner-ref` | RoadRunner Git reference (tag, commit, or branch) to use as the base for building |
+| `config-file` | Path to base configuration file that may be merged with remote API responses or other sources |
+| `binary-path` | Output path for the built RoadRunner binary. File extension is automatically added based on OS (`.exe` for Windows). Defaults to current working directory |
+| `debug` | Build RoadRunner with debug symbols to profile it with pprof (boolean, defaults to `false`) |
+
+### Build Process
+
+DLoad automatically handles the build process:
+
+1. **Golang Check**: Verifies Go is installed globally (required dependency)
+2. **Velox Preparation**: Uses Velox from global installation, local download, or downloads automatically if needed
+3. **Configuration**: Copies your local velox.toml to build directory
+4. **Building**: Executes `vx build` command with specified configuration
+5. **Installation**: Moves built binary to target location and sets executable permissions
+6. **Cleanup**: Removes temporary build files
+
+> [!NOTE]
+> DLoad requires Go (Golang) to be installed globally on your system. It does not download or manage Go installations.
+
+### Configuration File Generation
+
+You can generate a `velox.toml` configuration file using the online builder at https://build.roadrunner.dev/
+
+For detailed documentation on Velox configuration options and examples, visit https://docs.roadrunner.dev/docs/customization/build
+
+This web interface helps you select plugins and generates the appropriate configuration for your custom RoadRunner build.
+
+### Using Downloaded Velox
+
+You can download Velox as part of your build process instead of relying on a globally installed version:
+
+```xml
+<actions>
+    <download software="velox" extract-path="bin" version="2025.1.1" />
+    <velox config-file="velox.toml"
+          golang-version="^1.22"
+          roadrunner-ref="2024.1.5" />
+</actions>
+```
+
+This ensures consistent Velox versions across different environments and team members.
+
+### DLoad Configuration
+
+```xml
+<?xml version="1.0"?>
+<dload xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/php-internal/dload/refs/heads/1.x/dload.xsd">
+    <actions>
+        <velox config-file="./velox.toml" 
+              velox-version="^1.4.0"
+              golang-version="^1.22"
+              roadrunner-ref="2024.1.5"
+              binary-path="./bin/rr" />
+    </actions>
+</dload>
+```
+
+### Building RoadRunner
+
+```bash
+# Build RoadRunner using velox.toml configuration
+./vendor/bin/dload build
+
+# Build with specific configuration file
+./vendor/bin/dload build --config=custom-rr.xml
 ```
 
 ## Custom Software Registry
