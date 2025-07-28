@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.5.0 (2025-07-28)
+
+## What's Changed
+* Separate HTTP Client module by @roxblnfk in https://github.com/php-internal/dload/pull/63
+* Add RoadRunner building by @roxblnfk in https://github.com/php-internal/dload/pull/65
+
+
+**Full Changelog**: https://github.com/php-internal/dload/compare/1.4.1...1.5.0
+
 ## 1.4.1 (2025-06-27)
 
 ## What's Changed
