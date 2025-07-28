@@ -50,4 +50,8 @@ final class Velox
     /** @var non-empty-string|null $binaryPath Path to the RoadRunner binary to build */
     #[XPath('@binary-path')]
     public ?string $binaryPath = null;
+
+    /** @var bool $debug Build RoadRunner with debug symbols to profile it with pprof */
+    #[XPath('@debug')]
+    public bool $debug = false;
 }

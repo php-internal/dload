@@ -28,7 +28,7 @@ final class BaseTemplateProcessor implements ConfigProcessor
                 'mode' => 'dev',
             ],
             'debug' => [
-                'enabled ' => true,
+                'enabled ' => false,
             ],
         ]);
 

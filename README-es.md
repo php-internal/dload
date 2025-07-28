@@ -335,11 +335,12 @@ DLoad soporta la construcción de binarios personalizados de RoadRunner usando l
     <velox config-file="./velox.toml" />
     
     <!-- Con versiones específicas -->
-    <velox config-file="./velox.toml" 
-          velox-version="^1.4.0" 
-          golang-version="^1.22" 
-          roadrunner-ref="2024.1.5" 
-          binary-path="./bin/rr" />
+    <velox config-file="./velox.toml"
+          velox-version="2025.1.1"
+          golang-version="^1.22"
+          roadrunner-ref="2024.1.5"
+          binary-path="./bin/rr"
+          debug="true" />
 </actions>
 ```
 
@@ -352,6 +353,7 @@ DLoad soporta la construcción de binarios personalizados de RoadRunner usando l
 | `roadrunner-ref` | Referencia Git de RoadRunner (tag, commit o rama) a usar como base para la construcción |
 | `config-file` | Ruta al archivo de configuración base que puede fusionarse con respuestas de API remotas u otras fuentes |
 | `binary-path` | Ruta de salida para el binario RoadRunner construido. La extensión del archivo se agrega automáticamente según el SO (`.exe` para Windows). Por defecto usa el directorio de trabajo actual |
+| `debug` | Construir RoadRunner con símbolos de depuración para perfilarlo con pprof (booleano, por defecto `false`) |
 
 ### Proceso de Construcción
 

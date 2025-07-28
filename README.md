@@ -333,13 +333,20 @@ DLoad supports building custom RoadRunner binaries using the Velox build tool. T
 <actions>
     <!-- Basic configuration using local velox.toml -->
     <velox config-file="./velox.toml" />
-    
+
     <!-- With specific versions -->
-    <velox config-file="./velox.toml" 
-          velox-version="^1.4.0" 
-          golang-version="^1.22" 
-          roadrunner-ref="2024.1.5" 
-          binary-path="./bin/rr" />
+    <velox config-file="./velox.toml"
+           velox-version="2025.1.1"
+           golang-version="^1.22"
+           roadrunner-ref="v2025.1.2"
+           binary-path="./bin/rr"
+           debug="true" />
+
+    <!-- Custom plugins -->
+    <velox>
+        <plugin name="temporal" />
+        <plugin name="kv" />
+    </velox>
 </actions>
 ```
 
@@ -352,6 +359,7 @@ DLoad supports building custom RoadRunner binaries using the Velox build tool. T
 | `roadrunner-ref` | RoadRunner Git reference (tag, commit, or branch) to use as the base for building |
 | `config-file` | Path to base configuration file that may be merged with remote API responses or other sources |
 | `binary-path` | Output path for the built RoadRunner binary. File extension is automatically added based on OS (`.exe` for Windows). Defaults to current working directory |
+| `debug` | Build RoadRunner with debug symbols to profile it with pprof (boolean, defaults to `false`) |
 
 ### Build Process
 
@@ -415,8 +423,6 @@ This ensures consistent Velox versions across different environments and team me
 # Build with specific configuration file
 ./vendor/bin/dload build --config=custom-rr.xml
 ```
-
-The built RoadRunner binary will include only the plugins specified in your `velox.toml` file, reducing binary size and improving performance for your specific use case.
 
 ## Custom Software Registry
 

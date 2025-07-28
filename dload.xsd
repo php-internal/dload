@@ -123,6 +123,11 @@
                                             <xs:documentation>Path to the RoadRunner binary to build</xs:documentation>
                                         </xs:annotation>
                                     </xs:attribute>
+                                    <xs:attribute name="debug" type="xs:boolean">
+                                        <xs:annotation>
+                                            <xs:documentation>Build RoadRunner with debug symbols to profile it with pprof</xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
                                 </xs:complexType>
                             </xs:element>
                         </xs:sequence>

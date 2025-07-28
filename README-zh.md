@@ -336,10 +336,11 @@ DLoad 支持使用 Velox 构建工具来构建自定义 RoadRunner 二进制文�
     
     <!-- 带有特定版本 -->
     <velox config-file="./velox.toml" 
-          velox-version="^1.4.0" 
-          golang-version="^1.22" 
-          roadrunner-ref="2024.1.5" 
-          binary-path="./bin/rr" />
+          velox-version="2025.1.1"
+          golang-version="^1.22"
+          roadrunner-ref="2024.1.5"
+          binary-path="./bin/rr"
+          debug="true" />
 </actions>
 ```
 
@@ -352,6 +353,7 @@ DLoad 支持使用 Velox 构建工具来构建自定义 RoadRunner 二进制文�
 | `roadrunner-ref` | 用作构建基础的 RoadRunner Git 引用（标签、提交或分支） |
 | `config-file` | 基础配置文件路径，可能与远程 API 响应或其他源合并 |
 | `binary-path` | 构建的 RoadRunner 二进制文件输出路径。文件扩展名根据操作系统自动添加（Windows 下为 `.exe`）。默认为当前工作目录 |
+| `debug` | 使用调试符号构建 RoadRunner，以便使用 pprof 进行性能分析（布尔值，默认为 `false`） |
 
 ### 构建流程
 

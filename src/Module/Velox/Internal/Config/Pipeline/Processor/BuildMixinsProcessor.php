@@ -10,8 +10,7 @@ use Internal\DLoad\Module\Velox\Internal\Config\Pipeline\ConfigProcessor;
 /**
  * Build mixins processor
  *
- * Applies build action settings such as binary version and Go version.
- * Runs when version settings are provided in the action.
+ * Applies build action settings such as RoadRunner version and debug flags.
  *
  * @internal
  * @psalm-internal Internal\DLoad\Module\Velox
@@ -28,9 +27,8 @@ final class BuildMixinsProcessor implements ConfigProcessor
             $appliedMixins[] = 'roadrunner_ref';
         }
 
-        if ($appliedMixins === []) {
-            return $context;
-        }
+        $tomlData = $tomlData->set('debug.enabled', $context->action->debug);
+        $appliedMixins[] = 'debug_enabled';
 
         return $context->withTomlData($tomlData)
             ->addMetadata('build_mixins_applied', true)
