@@ -54,7 +54,7 @@ final class ConfigBuilder
 
         $configPath = $buildDir->join('velox.toml');
 
-        \file_put_contents($configPath->__toString(), $configContent) or throw new ConfigException(
+        \file_put_contents($configPath->__toString(), $configContent) === false and throw new ConfigException(
             "Failed to write config file to: {$configPath}",
         );
 

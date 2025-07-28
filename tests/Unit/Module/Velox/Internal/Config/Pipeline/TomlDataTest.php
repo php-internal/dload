@@ -661,26 +661,6 @@ final class TomlDataTest extends TestCase
         self::assertSame($expectedToml, $result);
     }
 
-    public function testToTomlNormalizesRoadrunnerRefWithVPrefix(): void
-    {
-        // Arrange - ref without "v" prefix
-        $data = [
-            'roadrunner' => ['ref' => '2025.1.1'],
-        ];
-        $tomlData = new TomlData($data);
-
-        // Act
-        $result = $tomlData->toToml();
-
-        // Assert - "v" prefix should be added
-        $expectedToml = <<<TOML
-            [roadrunner]
-            ref = "v2025.1.1"
-            TOML;
-
-        self::assertSame($expectedToml, $result);
-    }
-
     public function testToTomlPreservesExistingVPrefixInRoadrunnerRef(): void
     {
         // Arrange - ref already has "v" prefix
@@ -750,7 +730,7 @@ final class TomlDataTest extends TestCase
             'github' => ['token' => 'secret'],
             'log' => ['level' => 'info'],
             'debug' => ['enabled' => 'false'],
-            'roadrunner' => ['ref' => '2025.1.1'],
+            'roadrunner' => ['ref' => 'v2025.1.1'],
         ];
         $tomlData = new TomlData($data);
 

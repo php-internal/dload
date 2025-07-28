@@ -81,12 +81,6 @@
     </MixedArgument>
   </file>
   <file src="src/DLoad.php">
-    <MixedArgument>
-      <code><![CDATA[$rule->chmod]]></code>
-    </MixedArgument>
-    <MixedPropertyFetch>
-      <code><![CDATA[$rule->chmod]]></code>
-    </MixedPropertyFetch>
     <PossiblyNullArgument>
       <code><![CDATA[$software->binary]]></code>
     </PossiblyNullArgument>
@@ -392,6 +386,45 @@
     <NullableReturnStatement>
       <code><![CDATA[$constraint->isSatisfiedBy($this->version)]]></code>
     </NullableReturnStatement>
+  </file>
+  <file src="src/Module/Velox/Internal/Client/BuildRoadRunner.php">
+    <MixedReturnStatement>
+      <code><![CDATA[\json_decode($response, true, 512, JSON_THROW_ON_ERROR)]]></code>
+    </MixedReturnStatement>
+  </file>
+  <file src="src/Module/Velox/Internal/Config/Pipeline/TomlData.php">
+    <ArgumentTypeCoercion>
+      <code><![CDATA[$path]]></code>
+    </ArgumentTypeCoercion>
+    <MixedArgument>
+      <code><![CDATA[$sectionValue]]></code>
+    </MixedArgument>
+    <MixedArgumentTypeCoercion>
+      <code><![CDATA[$merged[$key]]]></code>
+      <code><![CDATA[$subValue]]></code>
+      <code><![CDATA[$value]]></code>
+      <code><![CDATA[$value]]></code>
+    </MixedArgumentTypeCoercion>
+    <MixedAssignment>
+      <code><![CDATA[$item]]></code>
+      <code><![CDATA[$orderedSections[$sectionKey]]]></code>
+      <code><![CDATA[$orderedSections[$sectionKey]]]></code>
+      <code><![CDATA[$sectionValue]]></code>
+      <code><![CDATA[$sectionValue]]></code>
+      <code><![CDATA[$simpleValues[$key]]]></code>
+      <code><![CDATA[$simpleValues[$subKey]]]></code>
+      <code><![CDATA[$subValue]]></code>
+      <code><![CDATA[$value]]></code>
+      <code><![CDATA[$value]]></code>
+      <code><![CDATA[$value]]></code>
+      <code><![CDATA[$value]]></code>
+      <code><![CDATA[$value]]></code>
+      <code><![CDATA[$value]]></code>
+      <code><![CDATA[$value]]></code>
+    </MixedAssignment>
+    <PossiblyFalseOperand>
+      <code><![CDATA[\json_encode($item)]]></code>
+    </PossiblyFalseOperand>
   </file>
   <file src="src/Module/Version/Constraint.php">
     <ArgumentTypeCoercion>

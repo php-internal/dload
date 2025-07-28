@@ -36,7 +36,7 @@ final class LocalFileProcessor implements ConfigProcessor
             );
         }
 
-        $localToml = \file_get_contents($configPath->__toString());
+        $localToml = @\file_get_contents($configPath->__toString());
 
         $localToml === false and throw new ConfigException(
             "Failed to read local config file: {$configPath}.",
