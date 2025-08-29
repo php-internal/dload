@@ -153,6 +153,9 @@ Alternatively, you can download the latest release from [GitHub releases](https:
 # Download specific packages
 ./vendor/bin/dload get rr temporal
 
+# Download with specific versions and minimum stability
+./vendor/bin/dload get rr:2025.* dolt:1.44.1 mago:1.*@alpha
+
 # Download with options
 ./vendor/bin/dload get rr --stability=beta --force
 ```

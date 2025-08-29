@@ -154,6 +154,9 @@ composer require internal/dload -W
 # Загрузить конкретные пакеты
 ./vendor/bin/dload get rr temporal
 
+# Загрузить с указанием конкретных версий
+./vendor/bin/dload get rr:2025.1.0 dolt:1.44.1 temporal:1.*@alpha
+
 # Загрузить с дополнительными опциями
 ./vendor/bin/dload get rr --stability=beta --force
 ```
