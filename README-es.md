@@ -153,6 +153,9 @@ También puedes descargar la versión más reciente desde [GitHub releases](http
 # Descargar paquetes específicos
 ./vendor/bin/dload get rr temporal
 
+# Descargar con versiones específicas
+./vendor/bin/dload get rr:2025.1.0 dolt:1.44.1 temporal:1.*@alpha
+
 # Descargar con opciones adicionales
 ./vendor/bin/dload get rr --stability=beta --force
 ```

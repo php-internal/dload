@@ -10,8 +10,10 @@ use Internal\DLoad\Module\Common\OperatingSystem;
 use Internal\DLoad\Module\Common\Stability;
 use Internal\DLoad\Module\Config\Schema\Action\Download as DownloadConfig;
 use Internal\DLoad\Module\Config\Schema\Actions;
+use Internal\DLoad\Service\Container;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Exception\InvalidArgumentException;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -31,8 +33,8 @@ use Symfony\Component\Console\Output\OutputInterface;
  * # Download specific version of software
  * ./vendor/bin/dload get rr --stability=beta
  *
- * # Download multiple software packages
- * ./vendor/bin/dload get rr dolt temporal
+ * # Download multiple software packages with versions and stability
+ * ./vendor/bin/dload get rr dolt:1.44.1 temporal:1.*@alpha
  *
  * # Download software defined in config file
  * ./vendor/bin/dload get --config=./dload.xml
@@ -66,7 +68,7 @@ final class Get extends Base
         $this->addOption('path', null, InputOption::VALUE_OPTIONAL, 'Path to store the binary, e.g. "./bin"', ".");
         $this->addOption('arch', null, InputOption::VALUE_OPTIONAL, 'Architecture, e.g. "amd64", "arm64" etc.');
         $this->addOption('os', null, InputOption::VALUE_OPTIONAL, 'Operating system, e.g. "linux", "darwin" etc.');
-        $this->addOption('stability', null, InputOption::VALUE_OPTIONAL, 'Stability, e.g. "stable", "beta" etc.');
+        $this->addOption('stability', null, InputOption::VALUE_OPTIONAL, 'Minimum stability, e.g. "rc", "beta" etc.');
         $this->addOption('force', 'f', InputOption::VALUE_NONE, 'Force download even if binary exists');
     }
 
@@ -88,9 +90,11 @@ final class Get extends Base
         parent::execute($input, $output);
         $container = $this->container;
 
+        self::applyFlags($input, $container);
+
         /** @var Actions $actionsConfig */
         $actionsConfig = $container->get(Actions::class);
-        $actions = $this->getDownloadActions($input, $actionsConfig);
+        $actions = self::getDownloadActions($input, $actionsConfig);
 
         $output->writeln('Architecture: ' . $container->get(Architecture::class)->name);
         $output->writeln('  Op. system: ' . $container->get(OperatingSystem::class)->name);
@@ -121,7 +125,7 @@ final class Get extends Base
      *
      * @return list<DownloadConfig> List of download configurations to process
      */
-    private function getDownloadActions(InputInterface $input, Actions $actionsConfig): array
+    private static function getDownloadActions(InputInterface $input, Actions $actionsConfig): array
     {
         $argument = $input->getArgument(self::ARG_SOFTWARE);
         if ($argument === []) {
@@ -135,9 +139,59 @@ final class Get extends Base
         }
 
         return \array_map(
-            static fn(mixed $software): DownloadConfig => $toDownload[$software]
-                ?? DownloadConfig::fromSoftwareId((string) $software),
-            $input->getArgument(self::ARG_SOFTWARE),
+            static fn(string $software): DownloadConfig => $toDownload[$software] ?? self::parseSoftware($software),
+            (array) $input->getArgument(self::ARG_SOFTWARE),
         );
+    }
+
+    /**
+     * Parses a software identifier into a download configuration.
+     *
+     * Supports "name:version" format to specify exact versions.
+     * E.g. "rr:2.10.0", "dolt:1.2.3@beta", "temporal:1.3.1-priority", etc.
+     *
+     * @param string $software Software identifier, e.g. "rr" or "dolt:1.2.3"
+     * @return DownloadConfig Parsed download configuration
+     */
+    private static function parseSoftware(string $software): DownloadConfig
+    {
+        [$name, $version] = \explode(':', $software, 2) + [1 => ''];
+        $name === '' and throw new InvalidArgumentException("Software name cannot be empty, given: {$software}.");
+
+        $action = DownloadConfig::fromSoftwareId($name);
+        $version === '' or $action->version = $version;
+
+        return $action;
+    }
+
+    /**
+     * Applies command-line flags to override container settings.
+     *
+     * Sets architecture, operating system, and stability in the container
+     * based on provided CLI options.
+     *
+     * @param InputInterface $input Command input
+     * @param Container $container Dependency injection container
+     *
+     * @throws InvalidArgumentException When an unknown value is provided
+     */
+    private static function applyFlags(InputInterface $input, Container $container): void
+    {
+        $stability = (string) $input->getOption('stability');
+        $stability === '' or $container->set(
+            Stability::fromString((string) $input->getOption('stability')) ?? throw new InvalidArgumentException(
+                "Unknown stability level: {$stability}.",
+            ),
+        );
+
+        $os = (string) $input->getOption('os');
+        $os === '' or $container->set(OperatingSystem::tryFromString($os) ?? throw new InvalidArgumentException(
+            "Unknown operating system: {$os}.",
+        ));
+
+        $arch = (string) $input->getOption('arch');
+        $arch === '' or $container->set(Architecture::tryFromString($arch) ?? throw new InvalidArgumentException(
+            "Unknown architecture: {$arch}.",
+        ));
     }
 }

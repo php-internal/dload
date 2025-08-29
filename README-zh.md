@@ -153,6 +153,9 @@ composer require internal/dload -W
 # 下载指定软件包
 ./vendor/bin/dload get rr temporal
 
+# 下载指定版本的软件包
+./vendor/bin/dload get rr:2025.1.0 dolt:1.44.1 temporal:1.*@alpha
+
 # 带选项下载
 ./vendor/bin/dload get rr --stability=beta --force
 ```
