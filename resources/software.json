@@ -138,7 +138,7 @@
         {
             "name": "Trap",
             "alias": "trap",
-            "description": "A minimized version of the Buggregator Server that does not require Docker and is intended solely for local use.\n",
+            "description": "A minimized version of the Buggregator Server that does not require Docker and is intended solely for local use.",
             "homepage": "https://buggregator.dev/",
             "repositories": [
                 {
@@ -149,6 +149,23 @@
             ],
             "binary": {
                 "name": "trap",
+                "version-command": "--version"
+            }
+        },
+        {
+            "name": "Mago",
+            "alias": "mago",
+            "description": "Mago is a toolchain for PHP that aims to provide a set of tools to help developers write better code.",
+            "homepage": "https://mago.carthage.software/",
+            "repositories": [
+                {
+                    "type": "github",
+                    "uri": "carthage-software/mago",
+                    "asset-pattern": "/^mago.*/"
+                }
+            ],
+            "binary": {
+                "name": "mago",
                 "version-command": "--version"
             }
         }
