@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.6.1 (2025-08-29)
+
+## What's Changed
+* Fix processing of `--path` flag in the `get` command by @roxblnfk in https://github.com/php-internal/dload/pull/70
+
+
+**Full Changelog**: https://github.com/php-internal/dload/compare/1.6.0...1.6.1
+
 ## 1.6.0 (2025-08-29)
 
 ## What's Changed
