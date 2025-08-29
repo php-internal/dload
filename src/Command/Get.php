@@ -10,8 +10,10 @@ use Internal\DLoad\Module\Common\OperatingSystem;
 use Internal\DLoad\Module\Common\Stability;
 use Internal\DLoad\Module\Config\Schema\Action\Download as DownloadConfig;
 use Internal\DLoad\Module\Config\Schema\Actions;
+use Internal\DLoad\Service\Container;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Exception\InvalidArgumentException;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -66,7 +68,7 @@ final class Get extends Base
         $this->addOption('path', null, InputOption::VALUE_OPTIONAL, 'Path to store the binary, e.g. "./bin"', ".");
         $this->addOption('arch', null, InputOption::VALUE_OPTIONAL, 'Architecture, e.g. "amd64", "arm64" etc.');
         $this->addOption('os', null, InputOption::VALUE_OPTIONAL, 'Operating system, e.g. "linux", "darwin" etc.');
-        $this->addOption('stability', null, InputOption::VALUE_OPTIONAL, 'Stability, e.g. "stable", "beta" etc.');
+        $this->addOption('stability', null, InputOption::VALUE_OPTIONAL, 'Minimum stability, e.g. "rc", "beta" etc.');
         $this->addOption('force', 'f', InputOption::VALUE_NONE, 'Force download even if binary exists');
     }
 
@@ -88,12 +90,7 @@ final class Get extends Base
         parent::execute($input, $output);
         $container = $this->container;
 
-        $input->hasOption('stability') and
-            $container->set(Stability::fromString((string) $input->getOption('stability')));
-        $input->hasOption('os') and
-            $container->set(OperatingSystem::tryFromString((string) $input->getOption('os')));
-        $input->hasOption('arch') and
-            $container->set(Architecture::tryFromString((string) $input->getOption('arch')));
+        $this->applyFlags($input, $container);
 
         /** @var Actions $actionsConfig */
         $actionsConfig = $container->get(Actions::class);
@@ -146,5 +143,36 @@ final class Get extends Base
                 ?? DownloadConfig::fromSoftwareId((string) $software),
             $input->getArgument(self::ARG_SOFTWARE),
         );
+    }
+
+    /**
+     * Applies command-line flags to override container settings.
+     *
+     * Sets architecture, operating system, and stability in the container
+     * based on provided CLI options.
+     *
+     * @param InputInterface $input Command input
+     * @param Container $container Dependency injection container
+     *
+     * @throws InvalidArgumentException When an unknown value is provided
+     */
+    private function applyFlags(InputInterface $input, Container $container): void
+    {
+        $stability = (string) $input->getOption('stability');
+        $stability === '' or $container->set(
+            Stability::fromString((string) $input->getOption('stability')) ?? throw new InvalidArgumentException(
+                "Unknown stability level: {$stability}",
+            ),
+        );
+
+        $os = (string) $input->getOption('os');
+        $os === '' or $container->set(OperatingSystem::tryFromString($os) ?? throw new InvalidArgumentException(
+            "Unknown operating system: {$os}",
+        ));
+
+        $arch = (string) $input->getOption('arch');
+        $arch === '' or $container->set(Architecture::tryFromString($arch) ?? throw new InvalidArgumentException(
+            "Unknown architecture: {$arch}",
+        ));
     }
 }
