@@ -138,8 +138,13 @@ final class Get extends Base
             $toDownload[$action->software] = $action;
         }
 
+        $destinationPath = $input->getOption('path');
+
         return \array_map(
-            static fn(string $software): DownloadConfig => $toDownload[$software] ?? self::parseSoftware($software),
+            static fn(string $software): DownloadConfig => $toDownload[$software] ?? self::parseSoftware(
+                $software,
+                $destinationPath,
+            ),
             (array) $input->getArgument(self::ARG_SOFTWARE),
         );
     }
@@ -150,16 +155,18 @@ final class Get extends Base
      * Supports "name:version" format to specify exact versions.
      * E.g. "rr:2.10.0", "dolt:1.2.3@beta", "temporal:1.3.1-priority", etc.
      *
-     * @param string $software Software identifier, e.g. "rr" or "dolt:1.2.3"
+     * @param non-empty-string $software Software identifier, e.g. "rr" or "dolt:1.2.3"
+     * @param non-empty-string|null $destinationPath Optional path to store the binary
      * @return DownloadConfig Parsed download configuration
      */
-    private static function parseSoftware(string $software): DownloadConfig
+    private static function parseSoftware(string $software, ?string $destinationPath): DownloadConfig
     {
         [$name, $version] = \explode(':', $software, 2) + [1 => ''];
         $name === '' and throw new InvalidArgumentException("Software name cannot be empty, given: {$software}.");
 
         $action = DownloadConfig::fromSoftwareId($name);
         $version === '' or $action->version = $version;
+        $action->extractPath = $destinationPath;
 
         return $action;
     }
