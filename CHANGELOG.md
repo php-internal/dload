@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.6.0 (2025-08-29)
+
+## What's Changed
+* Enhance version syntax for get command by @roxblnfk in https://github.com/php-internal/dload/pull/68
+
+
+**Full Changelog**: https://github.com/php-internal/dload/compare/1.5.0...1.6.0
+
 ## 1.5.0 (2025-07-28)
 
 ## What's Changed
