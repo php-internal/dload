@@ -88,6 +88,13 @@ final class Get extends Base
         parent::execute($input, $output);
         $container = $this->container;
 
+        $input->hasOption('stability') and
+            $container->set(Stability::fromString((string) $input->getOption('stability')));
+        $input->hasOption('os') and
+            $container->set(OperatingSystem::tryFromString((string) $input->getOption('os')));
+        $input->hasOption('arch') and
+            $container->set(Architecture::tryFromString((string) $input->getOption('arch')));
+
         /** @var Actions $actionsConfig */
         $actionsConfig = $container->get(Actions::class);
         $actions = $this->getDownloadActions($input, $actionsConfig);
