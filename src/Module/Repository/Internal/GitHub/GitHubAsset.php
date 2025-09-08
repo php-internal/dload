@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Repository\Internal\GitHub;
 
+use Internal\Destroy\Destroyable;
 use Internal\DLoad\Module\Common\Architecture;
 use Internal\DLoad\Module\Common\OperatingSystem;
 use Internal\DLoad\Module\HttpClient\Method;
 use Internal\DLoad\Module\Repository\Internal\Asset;
 use Internal\DLoad\Module\Repository\Internal\GitHub\Api\Response\AssetInfo;
 use Internal\DLoad\Module\Repository\Internal\GitHub\Api\RepositoryApi;
-use Internal\DLoad\Service\Destroyable;
 use Psr\Http\Client\ClientExceptionInterface;
 
 /**

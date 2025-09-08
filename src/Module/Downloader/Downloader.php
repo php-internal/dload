@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Downloader;
 
+use Internal\Destroy\Destroyable;
 use Internal\DLoad\Module\Archive\ArchiveFactory;
 use Internal\DLoad\Module\Common\Architecture;
 use Internal\DLoad\Module\Common\FileSystem\FS;
@@ -26,7 +27,6 @@ use Internal\DLoad\Module\Repository\Repository;
 use Internal\DLoad\Module\Repository\RepositoryProvider;
 use Internal\DLoad\Module\Task\Progress;
 use Internal\DLoad\Module\Version\Constraint;
-use Internal\DLoad\Service\Destroyable;
 use Internal\DLoad\Service\Logger;
 use React\Promise\PromiseInterface;
 

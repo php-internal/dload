@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Repository\Internal\GitHub;
 
+use Internal\Destroy\Destroyable;
 use Internal\DLoad\Module\Repository\Collection\AssetsCollection;
 use Internal\DLoad\Module\Repository\Internal\GitHub\Api\Response\ReleaseInfo;
 use Internal\DLoad\Module\Repository\Internal\GitHub\Api\RepositoryApi;
 use Internal\DLoad\Module\Repository\Internal\Release;
 use Internal\DLoad\Module\Version\Version;
-use Internal\DLoad\Service\Destroyable;
 
 /**
  * GitHub Release class representing a release in a GitHub repository.

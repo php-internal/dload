@@ -23,7 +23,7 @@ namespace Internal\DLoad\Service;
  *
  * @internal
  */
-interface Container extends Destroyable
+interface Container extends \Internal\Destroy\Destroyable
 {
     /**
      * Retrieves a service from the container.

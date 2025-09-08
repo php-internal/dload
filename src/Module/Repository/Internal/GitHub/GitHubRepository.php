@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Repository\Internal\GitHub;
 
+use Internal\Destroy\Destroyable;
 use Internal\DLoad\Module\Repository\Collection\ReleasesCollection;
 use Internal\DLoad\Module\Repository\Internal\GitHub\Api\RepositoryApi;
 use Internal\DLoad\Module\Repository\Repository;
-use Internal\DLoad\Service\Destroyable;
 
 /**
  * GitHub Repository class representing a GitHub repository.
