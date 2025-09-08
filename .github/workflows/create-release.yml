@@ -19,7 +19,7 @@ jobs:
         uses: googleapis/release-please-action@v4
         id: release
         with:
-          token: ${{ secrets.DLOAD_RELEASE_TOKEN }}
+          token: ${{ secrets.RELEASE_TOKEN }}
           config-file: .github/.release-please-config.json
           manifest-file: resources/version.json
           target-branch: 1.x

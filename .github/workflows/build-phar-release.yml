@@ -77,7 +77,7 @@ jobs:
         uses: softprops/action-gh-release@v2.0.5
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          token: "${{ secrets.DLOAD_RELEASE_TOKEN }}"
+          token: "${{ secrets.RELEASE_TOKEN }}"
           files: |
             ${{ env.DLOAD_PHAR }}
             ${{ env.DLOAD_PHAR_SIGNATURE }}

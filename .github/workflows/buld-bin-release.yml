@@ -78,7 +78,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          token: "${{ secrets.DLOAD_RELEASE_TOKEN }}"
+          token: "${{ secrets.RELEASE_TOKEN }}"
           files: |
             ./dload-${{ env.VERSION }}-${{ matrix.platform.os }}-${{ matrix.platform.arch }}.tar.gz
 
@@ -135,7 +135,7 @@ jobs:
           export SPC_SKIP_BREW_INSTALL=1
           .build/bin/spc download micro --for-extensions=ctype,dom,filter,libxml,mbstring,phar,simplexml,sockets,curl,tokenizer,xml,xmlwriter --with-php=8.4 --prefer-pre-built
         env:
-          GITHUB_TOKEN: ${{ secrets.DLOAD_RELEASE_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
 
       - name: Verify environment is ready
         run: |
@@ -172,7 +172,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          token: "${{ secrets.DLOAD_RELEASE_TOKEN }}"
+          token: "${{ secrets.RELEASE_TOKEN }}"
           files: |
             ./dload-${{ env.VERSION }}-darwin-arm64.tar.gz
 
@@ -238,7 +238,7 @@ jobs:
           export PATH="/usr/local/bin:$PATH"
           .build/bin/spc download micro --for-extensions=ctype,dom,filter,libxml,mbstring,phar,simplexml,sockets,curl,tokenizer,xml,xmlwriter --with-php=8.4 --prefer-pre-built
         env:
-          GITHUB_TOKEN: ${{ secrets.DLOAD_RELEASE_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
 
       - name: Verify environment is ready
         run: |
@@ -275,7 +275,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          token: "${{ secrets.DLOAD_RELEASE_TOKEN }}"
+          token: "${{ secrets.RELEASE_TOKEN }}"
           files: |
             ./dload-${{ env.VERSION }}-darwin-amd64.tar.gz
 
@@ -356,6 +356,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          token: "${{ secrets.DLOAD_RELEASE_TOKEN }}"
+          token: "${{ secrets.RELEASE_TOKEN }}"
           files: |
             ./dload-${{ env.VERSION }}-windows-amd64.tar.gz
