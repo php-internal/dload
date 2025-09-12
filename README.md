@@ -1,8 +1,9 @@
-<div align="center">
-
-![DLoad](./resources/logo.svg)
-
-</div>
+<p align="center">
+    <img alt="logo"
+         src="https://github.com/php-internal/dload/blob/1.x/resources/logo.svg?raw=true"
+         style="width: 4in; display: block"
+    />
+</p>
 
 <p align="center">Download artifacts easily</p>
 
