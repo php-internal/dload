@@ -60,6 +60,34 @@ final class DLoadTest extends TestCase
         }
     }
 
+    public function testDownloadsTrapPharSuccessfullyWithForceOption(): void
+    {
+        // Arrange
+        $downloadConfig = new DownloadConfig();
+        $downloadConfig->software = 'trap';
+        $downloadConfig->version = '1.13.16';
+        $downloadConfig->type = Type::Phar;
+        $downloadConfig->extractPath = (string) $this->destinationDir;
+
+        // Act
+        $this->dload->addTask($downloadConfig);
+        $this->dload->run();
+        $this->dload->addTask($downloadConfig, true);
+        $this->dload->run();
+
+        // Assert - Check that trap.phar was downloaded
+        $expectedPharPath = (string) $this->destinationDir->join('trap.phar');
+        self::assertFileExists($expectedPharPath, 'Trap PHAR should be downloaded to destination directory');
+
+        // Verify the file is not empty
+        self::assertGreaterThan(1024, \filesize($expectedPharPath), 'Downloaded PHAR should have substantial size');
+
+        // Verify file permissions (should be executable)
+        if (PHP_OS_FAMILY !== 'Windows') {
+            self::assertTrue(\is_executable($expectedPharPath), 'PHAR file should be executable');
+        }
+    }
+
     public function testDownloadsTrapBinary(): void
     {
         // Arrange
