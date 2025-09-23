@@ -102,11 +102,11 @@ final class FS
      *
      * @param Path $from Source file path
      * @param Path $to Destination file path
-     * @param bool $overwrite Whether to overwrite the destination file if it exists (default: false)
+     * @param bool $overwrite Whether to overwrite the destination file if it exists (default: true)
      *
      * @throws \RuntimeException If the move operation fails
      */
-    public static function moveFile(Path $from, Path $to, bool $overwrite = false): bool
+    public static function moveFile(Path $from, Path $to, bool $overwrite = true): bool
     {
         if ($from->absolute() === $to->absolute()) {
             return true; // No need to move if paths are the same
