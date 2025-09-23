@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.6.2 (2025-09-23)
+
+## What's Changed
+* Fix `--force` option by @ERuban in https://github.com/php-internal/dload/pull/76
+
+## New Contributors
+* @ERuban made their first contribution in https://github.com/php-internal/dload/pull/76
+
+**Full Changelog**: https://github.com/php-internal/dload/compare/1.6.1...1.6.2
+
 ## 1.6.1 (2025-08-29)
 
 ## What's Changed
