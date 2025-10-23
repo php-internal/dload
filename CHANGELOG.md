@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.6.3 (2025-10-23)
+
+## What's Changed
+* Process GitHub message with assoc content by @roxblnfk in https://github.com/php-internal/dload/pull/78
+
+
+**Full Changelog**: https://github.com/php-internal/dload/compare/1.6.2...1.6.3
+
 ## 1.6.2 (2025-09-23)
 
 ## What's Changed
