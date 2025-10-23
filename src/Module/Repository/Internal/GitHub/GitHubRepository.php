@@ -7,6 +7,7 @@ namespace Internal\DLoad\Module\Repository\Internal\GitHub;
 use Internal\Destroy\Destroyable;
 use Internal\DLoad\Module\Repository\Collection\ReleasesCollection;
 use Internal\DLoad\Module\Repository\Internal\GitHub\Api\RepositoryApi;
+use Internal\DLoad\Module\Repository\Internal\GitHub\Exception\GitHubRateLimitException;
 use Internal\DLoad\Module\Repository\Repository;
 
 /**
@@ -73,6 +74,8 @@ final class GitHubRepository implements Repository, Destroyable
 
                     // Check if there are more pages by getting next page
                     $hasMorePages = $paginator->getNextPage() !== null;
+                } catch (GitHubRateLimitException $e) {
+                    throw $e;
                 } catch (\Throwable) {
                     return;
                 }

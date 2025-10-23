@@ -86,9 +86,9 @@ final class Client
             // GitHub rate limit responses have format: ["API rate limit ...", "https://docs.github.com/..."]
             if (\is_array($decoded)
                 && \count($decoded) === 2
-                && \is_string($decoded[0])
-                && \is_string($decoded[1])
-                && \str_contains($decoded[0], 'API rate limit')
+                && \is_string(\reset($decoded))
+                && \is_string(\next($decoded))
+                && \str_contains(\reset($decoded), 'API rate limit')
             ) {
                 throw GitHubRateLimitException::fromApiResponse($decoded);
             }
