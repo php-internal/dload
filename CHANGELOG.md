@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.6.4 (2025-11-06)
+
+## What's Changed
+* Use TOML library to work with Velox config by @roxblnfk in https://github.com/php-internal/dload/pull/81
+
+
+**Full Changelog**: https://github.com/php-internal/dload/compare/1.6.3...1.6.4
+
 ## 1.6.3 (2025-10-23)
 
 ## What's Changed
