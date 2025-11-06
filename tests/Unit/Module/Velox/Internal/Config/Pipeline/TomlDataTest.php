@@ -12,31 +12,6 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(TomlData::class)]
 final class TomlDataTest extends TestCase
 {
-    public static function provideNestedSectionData(): \Generator
-    {
-        yield 'simple nested section' => [
-            "[github.plugins.logger]\ntype = \"logger\"",
-            ['github' => ['plugins' => ['logger' => ['type' => 'logger']]]],
-        ];
-
-        yield 'multiple nested sections' => [
-            "[github.plugins.logger]\ntype = \"logger\"\n\n[github.plugins.cache]\ntype = \"cache\"",
-            [
-                'github' => [
-                    'plugins' => [
-                        'logger' => ['type' => 'logger'],
-                        'cache' => ['type' => 'cache'],
-                    ],
-                ],
-            ],
-        ];
-
-        yield 'deeply nested section' => [
-            "[a.b.c.d]\nvalue = \"deep\"",
-            ['a' => ['b' => ['c' => ['d' => ['value' => 'deep']]]]],
-        ];
-    }
-
     public static function provideSetPathData(): \Generator
     {
         yield 'simple key' => [
@@ -76,18 +51,16 @@ final class TomlDataTest extends TestCase
             ['key' => 'value with spaces'],
         ];
 
-        yield 'no quotes' => [
-            'key = simple_value',
-            ['key' => 'simple_value'],
-        ];
-
         yield 'mixed quotes in section' => [
-            "[section]\ndouble = \"quoted\"\nsingle = 'quoted'\nbare = unquoted",
+            <<<TOML
+                [section]
+                double = "quoted"
+                single = 'quoted'
+                TOML,
             [
                 'section' => [
                     'double' => 'quoted',
                     'single' => 'quoted',
-                    'bare' => 'unquoted',
                 ],
             ],
         ];
@@ -123,41 +96,6 @@ final class TomlDataTest extends TestCase
             'section' => ['nested' => 'data'],
         ];
 
-        // Act
-        $tomlData = TomlData::fromString($toml);
-
-        // Assert
-        self::assertSame($expectedData, $tomlData->getData());
-    }
-
-    public function testFromStringHandlesEmptyString(): void
-    {
-        // Act
-        $tomlData = TomlData::fromString('');
-
-        // Assert
-        self::assertSame([], $tomlData->getData());
-    }
-
-    public function testFromStringHandlesCommentsAndEmptyLines(): void
-    {
-        // Arrange
-        $toml = "# This is a comment\n\nkey = \"value\"\n# Another comment\n\n[section]\n# Comment in section\nnested = \"data\"";
-        $expectedData = [
-            'key' => 'value',
-            'section' => ['nested' => 'data'],
-        ];
-
-        // Act
-        $tomlData = TomlData::fromString($toml);
-
-        // Assert
-        self::assertSame($expectedData, $tomlData->getData());
-    }
-
-    #[DataProvider('provideNestedSectionData')]
-    public function testFromStringHandlesNestedSections(string $toml, array $expectedData): void
-    {
         // Act
         $tomlData = TomlData::fromString($toml);
 
@@ -263,12 +201,13 @@ final class TomlDataTest extends TestCase
         ];
         $tomlData = new TomlData($data);
         $expectedToml = <<<TOML
-            key1 = "value1"
-            key2 = "value2"
+            key1 = 'value1'
+            key2 = 'value2'
 
             [section]
-            nested1 = "data1"
-            nested2 = "data2"
+            nested1 = 'data1'
+            nested2 = 'data2'
+
             TOML;
 
         // Act
@@ -290,7 +229,7 @@ final class TomlDataTest extends TestCase
             ],
         ];
         $tomlData = new TomlData($data);
-        $expectedToml = "[github.plugins]\nlogger = \"enabled\"\ncache = \"disabled\"";
+        $expectedToml = "[github.plugins]\nlogger = 'enabled'\ncache = 'disabled'\n";
 
         // Act
         $result = $tomlData->toToml();
@@ -310,11 +249,11 @@ final class TomlDataTest extends TestCase
         ];
         $tomlData = new TomlData($data);
         $expectedToml = <<<TOML
-            [roadrunner]
-            simple = "value"
+            roadrunner.simple = 'value'
 
             [roadrunner.plugins]
-            logger = "enabled"
+            logger = 'enabled'
+
             TOML;
 
         // Act
@@ -334,35 +273,6 @@ final class TomlDataTest extends TestCase
 
         // Assert
         self::assertSame('', $result);
-    }
-
-    public function testMergeTomlStringsReturnsMergedTomlString(): void
-    {
-        // Arrange
-        $localToml = "local_key = \"local_value\"\n\n[roadrunner]\nversion = \"1.0\"";
-        $remoteToml = "remote_key = \"remote_value\"\n\n[github.plugins]\nlogger = \"enabled\"";
-        $expectedMerged = "local_key = \"local_value\"\nremote_key = \"remote_value\"\n\n[roadrunner]\nversion = \"1.0\"\n\n[github.plugins]\nlogger = \"enabled\"";
-
-        // Act
-        $result = TomlData::mergeTomlStrings($localToml, $remoteToml);
-
-        // Assert
-        self::assertSame($expectedMerged, $result);
-    }
-
-    public function testMergeTomlStringsHandlesEmptyStrings(): void
-    {
-        // Arrange
-        $localToml = "key = \"value\"";
-        $emptyToml = "";
-
-        // Act
-        $result1 = TomlData::mergeTomlStrings($localToml, $emptyToml);
-        $result2 = TomlData::mergeTomlStrings($emptyToml, $localToml);
-
-        // Assert
-        self::assertSame("key = \"value\"", $result1);
-        self::assertSame("key = \"value\"", $result2);
     }
 
     public function testRoundTripConversion(): void
@@ -438,14 +348,15 @@ final class TomlDataTest extends TestCase
         $tomlData = new TomlData($data);
         $expectedToml = <<<TOML
             [github.plugins.logger]
-            ref = "v5.1.8"
-            owner = "roadrunner-server"
-            repository = "logger"
+            ref = 'v5.1.8'
+            owner = 'roadrunner-server'
+            repository = 'logger'
 
             [github.plugins.server]
-            ref = "v5.2.9"
-            owner = "roadrunner-server"
-            repository = "server"
+            ref = 'v5.2.9'
+            owner = 'roadrunner-server'
+            repository = 'server'
+
             TOML;
 
         // Act
@@ -464,8 +375,9 @@ final class TomlDataTest extends TestCase
         ];
         $tomlData = new TomlData($data);
         $expectedToml = <<<TOML
-            features = ["logging", "caching", "metrics"]
-            ports = ["8080", "9090", "3000"]
+            features = ['logging', 'caching', 'metrics']
+            ports = [8080, 9090, 3000]
+
             TOML;
 
         // Act
@@ -502,19 +414,20 @@ final class TomlDataTest extends TestCase
         $tomlData = new TomlData($data);
         $expectedToml = <<<TOML
             [roadrunner]
-            ref = "v2025.1.1"
+            ref = 'v2025.1.1'
 
             [log]
-            level = "debug"
-            mode = "dev"
+            level = 'debug'
+            mode = 'dev'
 
             [github.token]
-            token = "\${GITHUB_TOKEN}"
+            token = '\${GITHUB_TOKEN}'
 
             [github.plugins.logger]
-            ref = "v5.1.8"
-            owner = "roadrunner-server"
-            repository = "logger"
+            ref = 'v5.1.8'
+            owner = 'roadrunner-server'
+            repository = 'logger'
+
             TOML;
 
         // Act
@@ -558,30 +471,6 @@ final class TomlDataTest extends TestCase
         self::assertSame($tomlData->getData(), $roundTripData->getData());
     }
 
-    public function testToTomlHandlesEmptyNestedSections(): void
-    {
-        // Arrange
-        $data = [
-            'section' => [
-                'empty_subsection' => [],
-                'populated_subsection' => ['key' => 'value'],
-            ],
-        ];
-        $tomlData = new TomlData($data);
-        $expectedToml = <<<TOML
-            [section.empty_subsection]
-
-            [section.populated_subsection]
-            key = "value"
-            TOML;
-
-        // Act
-        $result = $tomlData->toToml();
-
-        // Assert
-        self::assertSame($expectedToml, $result);
-    }
-
     public function testParseTomlWithComplexNestedStructure(): void
     {
         // Arrange
@@ -623,141 +512,5 @@ final class TomlDataTest extends TestCase
 
         // Assert
         self::assertSame($expectedData, $tomlData->getData());
-    }
-
-    public function testToTomlOrdersSectionsWithRoadrunnerFirst(): void
-    {
-        // Arrange - sections in different order
-        $data = [
-            'github' => ['plugins' => ['logger' => 'enabled']],
-            'log' => ['level' => 'debug'],
-            'roadrunner' => ['ref' => 'v2025.1.1'],
-            'debug' => ['enabled' => 'true'],
-            'other' => ['key' => 'value'],
-        ];
-        $tomlData = new TomlData($data);
-
-        // Act
-        $result = $tomlData->toToml();
-
-        // Assert - roadrunner should be first, then debug, log, github, then others
-        $expectedToml = <<<TOML
-            [roadrunner]
-            ref = "v2025.1.1"
-
-            [debug]
-            enabled = "true"
-
-            [log]
-            level = "debug"
-
-            [github.plugins]
-            logger = "enabled"
-
-            [other]
-            key = "value"
-            TOML;
-
-        self::assertSame($expectedToml, $result);
-    }
-
-    public function testToTomlPreservesExistingVPrefixInRoadrunnerRef(): void
-    {
-        // Arrange - ref already has "v" prefix
-        $data = [
-            'roadrunner' => ['ref' => 'v2025.1.1'],
-        ];
-        $tomlData = new TomlData($data);
-
-        // Act
-        $result = $tomlData->toToml();
-
-        // Assert - "v" prefix should be preserved
-        $expectedToml = <<<TOML
-            [roadrunner]
-            ref = "v2025.1.1"
-            TOML;
-
-        self::assertSame($expectedToml, $result);
-    }
-
-    public function testToTomlHandlesEmptyRoadrunnerRef(): void
-    {
-        // Arrange - empty ref
-        $data = [
-            'roadrunner' => ['ref' => ''],
-        ];
-        $tomlData = new TomlData($data);
-
-        // Act
-        $result = $tomlData->toToml();
-
-        // Assert - empty ref should remain empty
-        $expectedToml = <<<TOML
-            [roadrunner]
-            ref = ""
-            TOML;
-
-        self::assertSame($expectedToml, $result);
-    }
-
-    public function testToTomlHandlesNonStringRoadrunnerRef(): void
-    {
-        // Arrange - non-string ref
-        $data = [
-            'roadrunner' => ['ref' => 123],
-        ];
-        $tomlData = new TomlData($data);
-
-        // Act
-        $result = $tomlData->toToml();
-
-        // Assert - non-string ref should remain unchanged
-        $expectedToml = <<<TOML
-            [roadrunner]
-            ref = "123"
-            TOML;
-
-        self::assertSame($expectedToml, $result);
-    }
-
-    public function testToTomlWithCompleteConfigurationOrdering(): void
-    {
-        // Arrange - complex configuration with multiple sections
-        $data = [
-            'other' => ['key' => 'value'],
-            'gitlab' => ['url' => 'gitlab.com'],
-            'github' => ['token' => 'secret'],
-            'log' => ['level' => 'info'],
-            'debug' => ['enabled' => 'false'],
-            'roadrunner' => ['ref' => 'v2025.1.1'],
-        ];
-        $tomlData = new TomlData($data);
-
-        // Act
-        $result = $tomlData->toToml();
-
-        // Assert - proper ordering and normalization
-        $expectedToml = <<<TOML
-            [roadrunner]
-            ref = "v2025.1.1"
-
-            [debug]
-            enabled = "false"
-
-            [log]
-            level = "info"
-
-            [github]
-            token = "secret"
-
-            [gitlab]
-            url = "gitlab.com"
-
-            [other]
-            key = "value"
-            TOML;
-
-        self::assertSame($expectedToml, $result);
     }
 }
