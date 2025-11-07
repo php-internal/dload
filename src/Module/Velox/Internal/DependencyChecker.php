@@ -66,7 +66,7 @@ final class DependencyChecker
         $binaryConfig->versionCommand = 'version';
 
         # Find Golang binary
-        $binary = $this->binaryProvider->getGlobalBinary($binaryConfig, 'Go') ?? throw new DependencyException(
+        $binary = $this->binaryProvider->getGlobalBinary($binaryConfig, 'go') ?? throw new DependencyException(
             'Go (golang) binary not found. Please install Go or ensure it is in your PATH.',
             dependencyName: self::GOLANG_BINARY_NAME,
         );
