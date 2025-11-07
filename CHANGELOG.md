@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.6.5 (2025-11-07)
+
+**Full Changelog**: https://github.com/php-internal/dload/compare/1.6.4...1.6.5
+
 ## 1.6.4 (2025-11-06)
 
 ## What's Changed
