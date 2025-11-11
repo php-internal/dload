@@ -34,4 +34,8 @@ final class Plugin
     /** @var non-empty-string|null $repository Repository name */
     #[XPath('@repository')]
     public ?string $repository = null;
+
+    /** @var non-empty-string|null $replace Replacement source */
+    #[XPath('@replace')]
+    public ?string $replace = null;
 }

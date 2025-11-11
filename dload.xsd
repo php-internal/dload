@@ -95,6 +95,11 @@
                                                         <xs:documentation>Repository name</xs:documentation>
                                                     </xs:annotation>
                                                 </xs:attribute>
+                                                <xs:attribute name="replace" type="xs:string">
+                                                    <xs:annotation>
+                                                        <xs:documentation>Replacement source for the plugin (e.g., local path or alternative repository for Go module replacement)</xs:documentation>
+                                                    </xs:annotation>
+                                                </xs:attribute>
                                             </xs:complexType>
                                         </xs:element>
                                     </xs:sequence>
