@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Velox\Internal\Config\Pipeline\Processor;
 
+use Internal\DLoad\Module\Common\FileSystem\Path;
 use Internal\DLoad\Module\Velox\Internal\Config\Pipeline\ConfigContext;
 use Internal\DLoad\Module\Velox\Internal\Config\Pipeline\ConfigProcessor;
 
@@ -27,10 +28,28 @@ final class BuildMixinsProcessor implements ConfigProcessor
             $appliedMixins[] = 'roadrunner_ref';
         }
 
+        // Merge replacements
+        foreach ($context->action->plugins as $plugin) {
+            if ($plugin->replace === null) {
+                continue;
+            }
+
+
+            $tomlData = $tomlData->set(
+                'github.plugins.' . $plugin->name . '.replace',
+                \str_starts_with($plugin->replace, 'github.com/')
+                    ? $plugin->replace
+                    : Path::create($plugin->replace)->absolute()->__toString(),
+            );
+        }
+
+
         $tomlData = $tomlData->set('debug.enabled', $context->action->debug);
         $appliedMixins[] = 'debug_enabled';
+        $tomlData->toToml();
 
-        return $context->withTomlData($tomlData)
+        return $context
+            ->withTomlData($tomlData)
             ->addMetadata('build_mixins_applied', true)
             ->addMetadata('applied_mixins', $appliedMixins);
     }

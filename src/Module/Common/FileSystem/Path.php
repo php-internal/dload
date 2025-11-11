@@ -184,14 +184,16 @@ final class Path implements \Stringable
 
     /**
      * Return a normalized absolute version of this path
+     *
+     * @param non-empty-string|null $cwd Current working directory to resolve relative paths against.
      */
-    public function absolute(): self
+    public function absolute(?string $cwd = null): self
     {
         if ($this->isAbsolute()) {
             return $this;
         }
 
-        $cwd = \getcwd();
+        $cwd ??= \getcwd();
         $cwd === false and throw new \RuntimeException('Cannot get current working directory.');
         return self::create($cwd . self::DS . $this->path);
     }
