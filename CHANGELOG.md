@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.7.0 (2025-11-11)
+
+## What's Changed
+* Support `velox.plugin.replace` option by @roxblnfk in https://github.com/php-internal/dload/pull/84
+
+
+**Full Changelog**: https://github.com/php-internal/dload/compare/1.6.5...1.7.0
+
 ## 1.6.5 (2025-11-07)
 
 **Full Changelog**: https://github.com/php-internal/dload/compare/1.6.4...1.6.5
