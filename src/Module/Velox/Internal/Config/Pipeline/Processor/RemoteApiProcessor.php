@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Velox\Internal\Config\Pipeline\Processor;
 
-use Internal\DLoad\Module\Common\FileSystem\Path;
 use Internal\DLoad\Module\Velox\ApiClient;
 use Internal\DLoad\Module\Velox\Internal\Config\Pipeline\ConfigContext;
 use Internal\DLoad\Module\Velox\Internal\Config\Pipeline\ConfigProcessor;
