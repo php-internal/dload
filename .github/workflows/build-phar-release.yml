@@ -24,7 +24,7 @@ jobs:
       GPG_KEYS_ENCRYPTED: ".github/phar/keys.asc.gpg"
     steps:
       - name: 📦 Check out the codebase
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: 🛠️ Setup PHP
         uses: shivammathur/setup-php@v2

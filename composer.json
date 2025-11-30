@@ -15,8 +15,8 @@
     ],
     "funding": [
         {
-            "type": "patreon",
-            "url": "https://patreon.com/roxblnfk"
+            "type": "boosty",
+            "url": "https://boosty.to/roxblnfk"
         }
     ],
     "require": {
@@ -29,16 +29,16 @@
         "psr/http-client": "^1.0",
         "react/async": "^3.2 || ^4.3",
         "react/promise": "^2.10 || ^3.2",
-        "symfony/console": "^6.4 || ^7",
-        "symfony/http-client": "^4.4 || ^5.4 || ^6.4 || ^7",
+        "symfony/console": "^6.4 || ^7 || ^8",
+        "symfony/http-client": "^4.4 || ^5.4 || ^6.4 || ^7 || ^8",
         "yiisoft/injector": "^1.2"
     },
     "require-dev": {
-        "buggregator/trap": "^1.10",
+        "buggregator/trap": "^1.15",
         "dereuromark/composer-prefer-lowest": "^0.1.10",
         "phpunit/phpunit": "^10.5",
         "spiral/code-style": "^2.2.2",
-        "ta-tikoma/phpunit-architecture-test": "^0.8.4",
+        "ta-tikoma/phpunit-architecture-test": "^0.8.5",
         "vimeo/psalm": "^6.10"
     },
     "suggest": {
