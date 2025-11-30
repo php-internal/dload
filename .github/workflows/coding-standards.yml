@@ -19,7 +19,7 @@ jobs:
       pull-requests: read
     steps:
       - name: 📦 Check out the codebase
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: 🧐 Lint commits using "commitlint"
         uses: wagoid/commitlint-github-action@v6.0.1
@@ -37,7 +37,7 @@ jobs:
       pull-requests: read
     steps:
       - name: 📦 Check out the codebase
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: 🧐 Lint YAML files
         uses: ibiqlik/action-yamllint@v3
@@ -54,7 +54,7 @@ jobs:
       group: markdown-linting-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
     steps:
       - name: 📦 Check out the codebase
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: 🧐 Lint Markdown files
         uses: DavidAnson/markdownlint-cli2-action@v16.0.0
