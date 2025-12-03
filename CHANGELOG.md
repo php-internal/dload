@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.2](https://github.com/php-internal/dload/compare/1.7.1...1.7.2) (2025-12-03)
+
+
+### Code Refactoring
+
+* Use `internal/path` instead of local implementation ([2aba0bd](https://github.com/php-internal/dload/commit/2aba0bd25d232b1f2da0d285769477d47d9b7a7c))
+
 ## 1.7.1 (2025-11-30)
 
 **Full Changelog**: https://github.com/php-internal/dload/compare/1.7.0...1.7.1
