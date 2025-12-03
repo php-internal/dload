@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Velox\Internal\Config;
 
-use Internal\DLoad\Module\Common\FileSystem\Path;
 use Internal\DLoad\Module\Config\Schema\Action\Velox as VeloxAction;
 use Internal\DLoad\Module\Velox\Exception\Config as ConfigException;
+use Internal\Path;
 
 /**
  * Configuration validator for Velox actions.

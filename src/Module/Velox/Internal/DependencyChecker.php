@@ -8,7 +8,6 @@ use Internal\DLoad\DLoad;
 use Internal\DLoad\Module\Binary\Binary;
 use Internal\DLoad\Module\Binary\BinaryProvider;
 use Internal\DLoad\Module\Common\DloadResult;
-use Internal\DLoad\Module\Common\FileSystem\Path;
 use Internal\DLoad\Module\Config\Schema\Action\Download;
 use Internal\DLoad\Module\Config\Schema\Action\Type as DownloadType;
 use Internal\DLoad\Module\Config\Schema\Action\Velox as VeloxConfig;
@@ -19,6 +18,7 @@ use Internal\DLoad\Module\Downloader\SoftwareCollection;
 use Internal\DLoad\Module\Velox\Exception\Dependency as DependencyException;
 use Internal\DLoad\Module\Version\Constraint;
 use Internal\DLoad\Service\Logger;
+use Internal\Path;
 
 use function React\Async\await;
 

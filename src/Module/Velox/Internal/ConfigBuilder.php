@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Velox\Internal;
 
-use Internal\DLoad\Module\Common\FileSystem\Path;
 use Internal\DLoad\Module\Config\Schema\Action\Velox as VeloxAction;
 use Internal\DLoad\Module\Velox\Exception\Config;
 use Internal\DLoad\Module\Velox\Exception\Config as ConfigException;
@@ -12,6 +11,7 @@ use Internal\DLoad\Module\Velox\Internal\Config\ConfigPipelineBuilder;
 use Internal\DLoad\Module\Velox\Internal\Config\Pipeline\ConfigContext;
 use Internal\DLoad\Module\Velox\Internal\Config\Validator;
 use Internal\DLoad\Service\Logger;
+use Internal\Path;
 
 /**
  * Main Velox configuration builder service.

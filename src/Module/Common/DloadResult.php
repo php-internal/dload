@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Internal\DLoad\Module\Common;
 
 use Internal\DLoad\Module\Binary\Binary;
-use Internal\DLoad\Module\Common\FileSystem\Path;
+use Internal\Path;
 
 /**
  * @internal

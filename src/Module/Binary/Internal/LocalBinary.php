@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Binary\Internal;
 
-use Internal\DLoad\Module\Common\FileSystem\Path;
 use Internal\DLoad\Module\Config\Schema\Embed\Binary as BinaryConfig;
+use Internal\Path;
 
 /**
  * Internal implementation of Binary interface.

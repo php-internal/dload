@@ -14,6 +14,7 @@ infection.*            export-ignore
 tests                  export-ignore
 docs                   export-ignore
 resources/mock         export-ignore
+CLAUDE.*               export-ignore
 
 *.http binary
 *.gpg binary

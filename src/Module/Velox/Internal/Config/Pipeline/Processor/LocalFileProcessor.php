@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Velox\Internal\Config\Pipeline\Processor;
 
-use Internal\DLoad\Module\Common\FileSystem\Path;
 use Internal\DLoad\Module\Velox\Exception\Config as ConfigException;
 use Internal\DLoad\Module\Velox\Internal\Config\Pipeline\ConfigContext;
 use Internal\DLoad\Module\Velox\Internal\Config\Pipeline\ConfigProcessor;
 use Internal\DLoad\Module\Velox\Internal\Config\Pipeline\TomlData;
+use Internal\Path;
 
 /**
  * Local file processor (step 2).

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Internal\DLoad\Module\Binary\Internal;
 
 use Internal\DLoad\Module\Binary\Exception\BinaryExecutionException;
-use Internal\DLoad\Module\Common\FileSystem\Path;
 use Internal\DLoad\Service\Logger;
+use Internal\Path;
 
 /**
  * Executes binary commands and captures their output.

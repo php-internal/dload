@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Velox\Internal\Config\Pipeline;
 
-use Internal\DLoad\Module\Common\FileSystem\Path;
 use Internal\DLoad\Module\Config\Schema\Action\Velox as VeloxAction;
+use Internal\Path;
 
 /**
  * Immutable context for configuration pipeline processing.

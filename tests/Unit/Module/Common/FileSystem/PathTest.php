@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Unit\Module\Common\FileSystem;
 
-use Internal\DLoad\Module\Common\FileSystem\Path;
+use Internal\Path;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;

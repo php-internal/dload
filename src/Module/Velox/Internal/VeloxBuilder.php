@@ -7,7 +7,6 @@ namespace Internal\DLoad\Module\Velox\Internal;
 use Internal\DLoad\Module\Binary\Binary;
 use Internal\DLoad\Module\Binary\BinaryProvider;
 use Internal\DLoad\Module\Common\FileSystem\FS;
-use Internal\DLoad\Module\Common\FileSystem\Path;
 use Internal\DLoad\Module\Common\OperatingSystem;
 use Internal\DLoad\Module\Config\Schema\Action\Velox as VeloxAction;
 use Internal\DLoad\Module\Config\Schema\Downloader;
@@ -18,6 +17,7 @@ use Internal\DLoad\Module\Velox\Internal\Config\Validator;
 use Internal\DLoad\Module\Velox\Result;
 use Internal\DLoad\Module\Velox\Task;
 use Internal\DLoad\Service\Logger;
+use Internal\Path;
 use React\Promise\PromiseInterface;
 
 use function React\Promise\reject;

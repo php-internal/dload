@@ -8,7 +8,6 @@ use Internal\DLoad\Module\Archive\ArchiveFactory;
 use Internal\DLoad\Module\Binary\BinaryProvider;
 use Internal\DLoad\Module\Common\DloadResult;
 use Internal\DLoad\Module\Common\FileSystem\FS;
-use Internal\DLoad\Module\Common\FileSystem\Path;
 use Internal\DLoad\Module\Common\Input\Destination;
 use Internal\DLoad\Module\Common\OperatingSystem;
 use Internal\DLoad\Module\Config\Schema\Action\Download as DownloadConfig;
@@ -24,6 +23,7 @@ use Internal\DLoad\Module\Task\Manager;
 use Internal\DLoad\Module\Version\Constraint;
 use Internal\DLoad\Module\Version\Version;
 use Internal\DLoad\Service\Logger;
+use Internal\Path;
 use React\Promise\PromiseInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 

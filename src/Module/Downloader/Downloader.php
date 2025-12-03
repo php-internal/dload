@@ -8,7 +8,6 @@ use Internal\Destroy\Destroyable;
 use Internal\DLoad\Module\Archive\ArchiveFactory;
 use Internal\DLoad\Module\Common\Architecture;
 use Internal\DLoad\Module\Common\FileSystem\FS;
-use Internal\DLoad\Module\Common\FileSystem\Path;
 use Internal\DLoad\Module\Common\OperatingSystem;
 use Internal\DLoad\Module\Common\Stability;
 use Internal\DLoad\Module\Config\Schema\Action\Download;
@@ -28,6 +27,7 @@ use Internal\DLoad\Module\Repository\RepositoryProvider;
 use Internal\DLoad\Module\Task\Progress;
 use Internal\DLoad\Module\Version\Constraint;
 use Internal\DLoad\Service\Logger;
+use Internal\Path;
 use React\Promise\PromiseInterface;
 
 use function React\Async\await;

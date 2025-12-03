@@ -6,8 +6,8 @@ namespace Internal\DLoad\Module\Binary\Internal;
 
 use Internal\DLoad\Module\Binary\Binary;
 use Internal\DLoad\Module\Binary\BinaryVersion;
-use Internal\DLoad\Module\Common\FileSystem\Path;
 use Internal\DLoad\Module\Config\Schema\Embed\Binary as BinaryConfig;
+use Internal\Path;
 
 abstract class AbstractBinary implements Binary
 {

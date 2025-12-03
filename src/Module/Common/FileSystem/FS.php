@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Common\FileSystem;
 
+use Internal\Path;
+
 /**
  * File system utility class.
  *
