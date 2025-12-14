@@ -44,20 +44,9 @@ abstract class Base extends Command
     /** @var Container IoC container with services */
     protected Container $container;
 
-    /**
-     * Configures command options.
-     *
-     * Adds option for specifying configuration file location.
-     */
-    public function configure(): void
-    {
-        parent::configure();
-        $this->addOption('config', null, InputOption::VALUE_OPTIONAL, 'Path to the configuration file');
-    }
-
     public static function getCommandName(): ?string
     {
-        if (!class_exists(AsCommand::class)) {
+        if (!\class_exists(AsCommand::class)) {
             // Fall back on lower Symfony versions
             return self::getDefaultName();
         }
@@ -69,6 +58,17 @@ abstract class Base extends Command
         }
 
         return null;
+    }
+
+    /**
+     * Configures command options.
+     *
+     * Adds option for specifying configuration file location.
+     */
+    public function configure(): void
+    {
+        parent::configure();
+        $this->addOption('config', null, InputOption::VALUE_OPTIONAL, 'Path to the configuration file');
     }
 
     /**
