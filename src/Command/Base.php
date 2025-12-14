@@ -7,6 +7,7 @@ namespace Internal\DLoad\Command;
 use Internal\DLoad\Bootstrap;
 use Internal\DLoad\Service\Container;
 use Internal\DLoad\Service\Logger;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -42,6 +43,22 @@ abstract class Base extends Command
 
     /** @var Container IoC container with services */
     protected Container $container;
+
+    public static function getCommandName(): ?string
+    {
+        if (!\class_exists(AsCommand::class)) {
+            // Fall back on lower Symfony versions
+            return self::getDefaultName();
+        }
+
+        if ($attributes = (new \ReflectionClass(static::class))->getAttributes(AsCommand::class)) {
+            /** @var AsCommand $attribute */
+            $attribute = $attributes[0]->newInstance();
+            return $attribute->name;
+        }
+
+        return null;
+    }
 
     /**
      * Configures command options.
