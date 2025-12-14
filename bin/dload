@@ -46,14 +46,14 @@ use Symfony\Component\Console\CommandLoader\FactoryCommandLoader;
     $application = new Application();
     $application->setCommandLoader(
         new FactoryCommandLoader([
-            Command\Get::getDefaultName() => static fn() => new Command\Get(),
-            Command\ListSoftware::getDefaultName() => static fn() => new Command\ListSoftware(),
-            Command\Show::getDefaultName() => static fn() => new Command\Show(),
-            Command\Init::getDefaultName() => static fn() => new Command\Init(),
-            Command\Build::getDefaultName() => static fn() => new Command\Build(),
+            Command\Get::getCommandName() => static fn() => new Command\Get(),
+            Command\ListSoftware::getCommandName() => static fn() => new Command\ListSoftware(),
+            Command\Show::getCommandName() => static fn() => new Command\Show(),
+            Command\Init::getCommandName() => static fn() => new Command\Init(),
+            Command\Build::getCommandName() => static fn() => new Command\Build(),
         ]),
     );
-    $application->setDefaultCommand(Command\Get::getDefaultName(), false);
+    $application->setDefaultCommand(Command\Get::getCommandName(), false);
     $application->setVersion(Info::version());
     $application->setName(Info::NAME);
     $application->run();
