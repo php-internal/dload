@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.3](https://github.com/php-internal/dload/compare/1.7.2...1.7.3) (2025-12-14)
+
+
+### Bug Fixes
+
+* Stop using deprecated `Command::getDefaultName()` ([#90](https://github.com/php-internal/dload/issues/90)) ([8b22008](https://github.com/php-internal/dload/commit/8b22008edb4e0948c60062abbbc929fbcd4ca87d))
+
 ## [1.7.2](https://github.com/php-internal/dload/compare/1.7.1...1.7.2) (2025-12-03)
 
 
