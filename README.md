@@ -463,6 +463,14 @@ This ensures consistent Velox versions across different environments and team me
             <repository type="github" uri="vimeo/psalm" />
             <binary name="psalm.phar" pattern="/^psalm\.phar$/" />
         </software>
+        
+        <!-- GitLab repository -->
+        <software name="My cool project" alias="cool-project"
+              homepage="https://gitlab.com/path/to/my/repository"
+              description="">
+            <repository type="gitlab" uri="path/to/my/repository" asset-pattern="/^cool-.*/" />
+            <binary name="cool" pattern="/^cool-.*/" />
+        </software>
     </registry>
 </dload>
 ```
@@ -553,12 +561,13 @@ Each developer gets the correct binaries for their system:
 </actions>
 ```
 
-## GitHub API Rate Limits
+## API Rate Limits
 
 Use a personal access token to avoid rate limits:
 
 ```bash
 GITHUB_TOKEN=your_token_here ./vendor/bin/dload get
+GITLAB_TOKEN=your_token_here ./vendor/bin/dload get
 ```
 
 Add to CI/CD environment variables for automated downloads.
