@@ -50,7 +50,7 @@ final class Client
         $headers = [];
         if ($this->gitLabConfig->token !== null) {
             $headers = [
-                'PRIVATE-TOKEN' =>  $this->gitLabConfig->token
+                'PRIVATE-TOKEN' =>  $this->gitLabConfig->token,
             ];
         }
 

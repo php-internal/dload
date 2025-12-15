@@ -7,7 +7,6 @@ namespace Internal\DLoad\Module\Repository\Internal\GitLab;
 use Internal\Destroy\Destroyable;
 use Internal\DLoad\Module\Common\Architecture;
 use Internal\DLoad\Module\Common\OperatingSystem;
-use Internal\DLoad\Module\HttpClient\Method;
 use Internal\DLoad\Module\Repository\Internal\Asset;
 use Internal\DLoad\Module\Repository\Internal\GitLab\Api\Response\AssetInfo;
 use Internal\DLoad\Module\Repository\Internal\GitLab\Api\RepositoryApi;

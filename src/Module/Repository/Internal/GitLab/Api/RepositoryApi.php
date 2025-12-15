@@ -33,9 +33,6 @@ final class RepositoryApi
      */
     public readonly string $repositoryPath;
 
-    /**
-     * @param non-empty-string $repo
-     */
     public function __construct(
         private readonly Client $client,
         private readonly HttpFactory $httpFactory,
@@ -53,9 +50,10 @@ final class RepositoryApi
      */
     public function downloadArtifact(string $repositoryPath, string $releaseName, string $fileName): ResponseInterface
     {
-        $url = sprintf(self::URL_RELEASE_ASSET, urlencode($repositoryPath), $releaseName, $fileName);
+        $url = \sprintf(self::URL_RELEASE_ASSET, \urlencode($repositoryPath), $releaseName, $fileName);
         return $this->client->downloadArtifact($url);
     }
+
     /**
      * @param Method|non-empty-string $method
      * @param array<string, string> $headers
@@ -73,7 +71,7 @@ final class RepositoryApi
      */
     public function getRepository(): RepositoryInfo
     {
-        $response = $this->request(Method::Get, \sprintf(self::URL_REPOSITORY, urlencode($this->repositoryPath)));
+        $response = $this->request(Method::Get, \sprintf(self::URL_REPOSITORY, \urlencode($this->repositoryPath)));
 
         /** @var array{
          *     name: string,
@@ -158,7 +156,7 @@ final class RepositoryApi
         return $this->request(
             Method::Get,
             $this->httpFactory->uri(
-                \sprintf(self::URL_RELEASES, urlencode($this->repositoryPath)),
+                \sprintf(self::URL_RELEASES, \urlencode($this->repositoryPath)),
                 ['page' => $page],
             ),
         );
