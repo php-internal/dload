@@ -32,7 +32,7 @@ final class AssetInfo
     {
         return new self(
             name: $data['name'],
-            downloadUrl: $data['direct_asset_url'],
+            downloadUrl: $data['url'],
         );
     }
 }

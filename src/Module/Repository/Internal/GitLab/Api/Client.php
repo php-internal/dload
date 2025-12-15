@@ -42,6 +42,24 @@ final class Client
     }
 
     /**
+     * @throws GitLabRateLimitException
+     * @throws ClientExceptionInterface
+     */
+    public function downloadArtifact(string|UriInterface $uri): ResponseInterface
+    {
+        $headers = [];
+        if ($this->gitLabConfig->token !== null) {
+            $headers = [
+                'PRIVATE-TOKEN' =>  $this->gitLabConfig->token
+            ];
+        }
+
+        $request = $this->httpFactory->request(Method::Get, $uri, $headers);
+
+        return $this->sendRequest($request);
+    }
+
+    /**
      * @param Method|non-empty-string $method
      * @param array<string, string> $headers
      * @throws GitLabRateLimitException

@@ -26,6 +26,7 @@ final class RepositoryApi
 {
     private const URL_REPOSITORY = 'https://gitlab.com/api/v4/projects/%s';
     private const URL_RELEASES = 'https://gitlab.com/api/v4/projects/%s/releases';
+    private const URL_RELEASE_ASSET = 'https://gitlab.com/api/v4/projects/%s/releases/%s/downloads/%s';
 
     /**
      * @var non-empty-string
@@ -43,6 +44,18 @@ final class RepositoryApi
         $this->repositoryPath = $projectPath;
     }
 
+    /**
+     * @param non-empty-string $repositoryPath
+     * @param non-empty-string $releaseName
+     * @param non-empty-string $fileName
+     * @throws GitLabRateLimitException
+     * @throws ClientExceptionInterface
+     */
+    public function downloadArtifact(string $repositoryPath, string $releaseName, string $fileName): ResponseInterface
+    {
+        $url = sprintf(self::URL_RELEASE_ASSET, urlencode($repositoryPath), $releaseName, $fileName);
+        return $this->client->downloadArtifact($url);
+    }
     /**
      * @param Method|non-empty-string $method
      * @param array<string, string> $headers
