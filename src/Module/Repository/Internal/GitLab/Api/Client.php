@@ -80,8 +80,8 @@ final class Client
     {
         $response = $this->client->sendRequest($request);
 
-        if ($response->getStatusCode() === 403) {
-            throw GitLabRateLimitException::fromApiResponse();
+        if ($response->getStatusCode() === 429) {
+            throw new GitLabRateLimitException();
         }
 
         return $response;

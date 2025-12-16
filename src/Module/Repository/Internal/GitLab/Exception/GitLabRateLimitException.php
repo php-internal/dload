@@ -18,12 +18,4 @@ final class GitLabRateLimitException extends \RuntimeException
     ) {
         parent::__construct($message, 0, $previous);
     }
-
-    /**
-     * Creates exception from GitLab API response body.
-     */
-    public static function fromApiResponse(): self
-    {
-        return new self();
-    }
 }
