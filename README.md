@@ -601,7 +601,7 @@ Release artifacts:
     image: gitlab/glab:latest
     needs: [ "Build artifacts" ]
     script:
-        - glab auth login --token $GL_TOKEN --hostname $CI_SERVER_HOST
+        - glab auth login --job-token $CI_JOB_TOKEN --hostname $CI_SERVER_HOST
         - glab release upload --use-package-registry "$CI_COMMIT_TAG" ./bin/*
     rules:
         - if: $CI_COMMIT_TAG
