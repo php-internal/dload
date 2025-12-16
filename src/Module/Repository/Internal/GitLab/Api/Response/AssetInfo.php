@@ -15,24 +15,28 @@ final class AssetInfo
     /**
      * @param non-empty-string $name
      * @param non-empty-string $downloadUrl
+     * @param non-empty-string|null $linkType
      */
     public function __construct(
         public readonly string $name,
         public readonly string $downloadUrl,
+        public readonly ?string $linkType = null,
     ) {}
 
     /**
      * @param array{
-     *     name: string,
-     *     url: string,
-     *     direct_asset_url: string,
+     *     name: non-empty-string,
+     *     url: non-empty-string,
+     *     direct_asset_url?: non-empty-string,
+     *     link_type: non-empty-string,
      * } $data
      */
     public static function fromApiResponse(array $data): self
     {
         return new self(
             name: $data['name'],
-            downloadUrl: $data['url'],
+            downloadUrl: !empty($data['direct_asset_url']) ? $data['direct_asset_url'] : $data['url'],
+            linkType: $data['link_type'] ?? null,
         );
     }
 }

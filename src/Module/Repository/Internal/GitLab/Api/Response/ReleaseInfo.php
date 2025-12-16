@@ -27,15 +27,18 @@ final class ReleaseInfo
 
     /**
      * @param array{
-     *      name: string|null,
-     *      tag_name: string,
-     *      released_at: string,
-     *     assets: array{
-     *         links: list<array{
-     *          name: string,
-     *          url: string,
-     *          direct_asset_url: string,
-     *        }>
+     *      name: non-empty-string|null,
+     *      tag_name: non-empty-string,
+     *      description: null|non-empty-string,
+     *      created_at: non-empty-string,
+     *      released_at: non-empty-string,
+     *      assets: array{
+     *          links: list<array{
+     *              name: non-empty-string,
+     *              url: non-empty-string,
+     *              direct_asset_url?: non-empty-string,
+     *              link_type: non-empty-string,
+     *          }>
      *      },
      *      upcoming_release: bool
      * } $data
