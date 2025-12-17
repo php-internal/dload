@@ -66,7 +66,8 @@ DLoad решает распространённую проблему в PHP-пр
     - [Кроссплатформенные команды](#кроссплатформенные-команды)
     - [Управление PHAR-инструментами](#управление-phar-инструментами)
     - [Распространение фронтенд-ресурсов](#распространение-фронтенд-ресурсов)
-- [Ограничения GitHub API](#ограничения-github-api)
+- [Ограничения API](#ограничения-api)
+- [Конфигурация Gitlab CI](#конфигурация-gitlab-ci)
 - [Участие в разработке](#участие-в-разработке)
 
 
@@ -459,6 +460,14 @@ DLoad автоматически управляет процессом сбор�
             <repository type="github" uri="vimeo/psalm" />
             <binary name="psalm.phar" pattern="/^psalm\.phar$/" />
         </software>
+
+        <!-- GitLab репозиторий -->
+        <software name="My cool project" alias="cool-project"
+              homepage="https://gitlab.com/path/to/my/repository"
+              description="">
+            <repository type="gitlab" uri="path/to/my/repository" asset-pattern="/^cool-.*/" />
+            <binary name="cool" pattern="/^cool-.*/" />
+        </software>
     </registry>
 </dload>
 ```
@@ -549,15 +558,50 @@ composer require internal/dload -W
 </actions>
 ```
 
-## Ограничения GitHub API
+## Ограничения API
 
-Используйте персональный токен доступа чтобы избежать ограничений:
+Используйте персональный токен доступа, чтобы избежать ограничений:
 
 ```bash
 GITHUB_TOKEN=your_token_here ./vendor/bin/dload get
+GITLAB_TOKEN=your_token_here ./vendor/bin/dload get
 ```
 
 Добавьте в переменные окружения CI/CD для автоматических загрузок.
+
+## Конфигурация Gitlab CI
+
+При создании релиза в Gitlab обязательно загрузите артефакты на страницу релиза через
+менеджер пакетов. Это легко сделать с помощью Gitlab CLI и команды `glab release upload --use-package-registry`.
+
+```yaml
+# .gitlab-ci.yml
+
+Build artifacts:
+  stage: push
+  script:
+    - mkdir bin
+    - echo "Mock binary for darwin arm" > bin/cool-darwin-arm64
+    - echo "Mock binary for darwin amd" > bin/cool-darwin-amd64
+    - echo "Mock binary for linux arm" > bin/cool-linux-arm64
+    - echo "Mock binary for linux amd" > bin/cool-linux-amd64
+  artifacts:
+    expire_in: 2 hours
+    paths:
+      - $CI_PROJECT_DIR/bin/cool-*
+  rules:
+    - if: $CI_COMMIT_TAG
+
+Release artifacts:
+    stage: deploy
+    image: gitlab/glab:latest
+    needs: [ "Build artifacts" ]
+    script:
+        - glab auth login --job-token $CI_JOB_TOKEN --hostname $CI_SERVER_HOST
+        - glab release upload --use-package-registry "$CI_COMMIT_TAG" ./bin/*
+    rules:
+        - if: $CI_COMMIT_TAG
+```
 
 ## Участие в разработке
 

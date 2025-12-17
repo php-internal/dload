@@ -66,7 +66,8 @@ With DLoad, you can:
     - [Cross-Platform Teams](#cross-platform-teams)
     - [PHAR Tools Management](#phar-tools-management)
     - [Frontend Asset Distribution](#frontend-asset-distribution)
-- [GitHub API Rate Limits](#github-api-rate-limits)
+- [API Rate Limits](#api-rate-limits)
+- [Gitlab CI configuration](#gitlab-ci-configuration)
 - [Contributing](#contributing)
 
 
@@ -578,7 +579,7 @@ When you make a release in Gitlab, make sure to upload your assets to the releas
 package manager. This can easily be done via Gitlab CLI and the `glab release upload --use-package-registry`
 command.
 
-```
+```yaml
 # .gitlab-ci.yml
 
 Build artifacts:

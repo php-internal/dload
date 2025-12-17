@@ -65,7 +65,8 @@ Con DLoad puedes:
     - [Equipos Multiplataforma](#equipos-multiplataforma)
     - [Gestión de Herramientas PHAR](#gestión-de-herramientas-phar)
     - [Distribución de Assets Frontend](#distribución-de-assets-frontend)
-- [Límites de Rate de la API de GitHub](#límites-de-rate-de-la-api-de-github)
+- [Límites de Rate de la API](#límites-de-rate-de-la-api)
+- [Configuración de Gitlab CI](#configuración-de-gitlab-ci)
 - [Contribuir](#contribuir)
 
 
@@ -458,6 +459,14 @@ El binario de RoadRunner construido incluirá solo los plugins especificados en 
             <repository type="github" uri="vimeo/psalm" />
             <binary name="psalm.phar" pattern="/^psalm\.phar$/" />
         </software>
+
+        <!-- Repositorio GitLab -->
+        <software name="My cool project" alias="cool-project"
+              homepage="https://gitlab.com/path/to/my/repository"
+              description="">
+            <repository type="gitlab" uri="path/to/my/repository" asset-pattern="/^cool-.*/" />
+            <binary name="cool" pattern="/^cool-.*/" />
+        </software>
     </registry>
 </dload>
 ```
@@ -548,15 +557,50 @@ Cada desarrollador obtiene los binarios correctos para su sistema:
 </actions>
 ```
 
-## Límites de Rate de la API de GitHub
+## Límites de Rate de la API
 
 Usa un token de acceso personal para evitar límites de rate:
 
 ```bash
 GITHUB_TOKEN=your_token_here ./vendor/bin/dload get
+GITLAB_TOKEN=your_token_here ./vendor/bin/dload get
 ```
 
 Agrégalo a las variables de entorno CI/CD para descargas automatizadas.
+
+## Configuración de Gitlab CI
+
+Al crear un release en Gitlab, asegúrate de subir tus assets a la página del release a través del
+gestor de paquetes. Esto se puede hacer fácilmente mediante Gitlab CLI y el comando `glab release upload --use-package-registry`.
+
+```yaml
+# .gitlab-ci.yml
+
+Build artifacts:
+  stage: push
+  script:
+    - mkdir bin
+    - echo "Mock binary for darwin arm" > bin/cool-darwin-arm64
+    - echo "Mock binary for darwin amd" > bin/cool-darwin-amd64
+    - echo "Mock binary for linux arm" > bin/cool-linux-arm64
+    - echo "Mock binary for linux amd" > bin/cool-linux-amd64
+  artifacts:
+    expire_in: 2 hours
+    paths:
+      - $CI_PROJECT_DIR/bin/cool-*
+  rules:
+    - if: $CI_COMMIT_TAG
+
+Release artifacts:
+    stage: deploy
+    image: gitlab/glab:latest
+    needs: [ "Build artifacts" ]
+    script:
+        - glab auth login --job-token $CI_JOB_TOKEN --hostname $CI_SERVER_HOST
+        - glab release upload --use-package-registry "$CI_COMMIT_TAG" ./bin/*
+    rules:
+        - if: $CI_COMMIT_TAG
+```
 
 ## Contribuir
 

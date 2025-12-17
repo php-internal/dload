@@ -65,7 +65,8 @@ DLoad 解决了 PHP 项目中的一个实际问题：如何在分发 PHP 代码�
     - [跨平台团队协作](#跨平台团队协作)
     - [PHAR 工具管理](#phar-工具管理)
     - [前端资源分发](#前端资源分发)
-- [GitHub API 速率限制](#github-api-速率限制)
+- [API 速率限制](#api-速率限制)
+- [Gitlab CI 配置](#gitlab-ci-配置)
 - [参与贡献](#参与贡献)
 
 
@@ -458,6 +459,14 @@ DLoad 会自动处理构建过程：
             <repository type="github" uri="vimeo/psalm" />
             <binary name="psalm.phar" pattern="/^psalm\.phar$/" />
         </software>
+
+        <!-- GitLab 仓库 -->
+        <software name="My cool project" alias="cool-project"
+              homepage="https://gitlab.com/path/to/my/repository"
+              description="">
+            <repository type="gitlab" uri="path/to/my/repository" asset-pattern="/^cool-.*/" />
+            <binary name="cool" pattern="/^cool-.*/" />
+        </software>
     </registry>
 </dload>
 ```
@@ -548,15 +557,50 @@ composer require internal/dload -W
 </actions>
 ```
 
-## GitHub API 速率限制
+## API 速率限制
 
 使用个人访问令牌来避免速率限制：
 
 ```bash
 GITHUB_TOKEN=your_token_here ./vendor/bin/dload get
+GITLAB_TOKEN=your_token_here ./vendor/bin/dload get
 ```
 
 在 CI/CD 环境变量中添加此配置，以便自动下载。
+
+## Gitlab CI 配置
+
+在 Gitlab 中创建发布时，请确保通过包管理器将构建产物上传到发布页面。
+这可以通过 Gitlab CLI 和 `glab release upload --use-package-registry` 命令轻松完成。
+
+```yaml
+# .gitlab-ci.yml
+
+Build artifacts:
+  stage: push
+  script:
+    - mkdir bin
+    - echo "Mock binary for darwin arm" > bin/cool-darwin-arm64
+    - echo "Mock binary for darwin amd" > bin/cool-darwin-amd64
+    - echo "Mock binary for linux arm" > bin/cool-linux-arm64
+    - echo "Mock binary for linux amd" > bin/cool-linux-amd64
+  artifacts:
+    expire_in: 2 hours
+    paths:
+      - $CI_PROJECT_DIR/bin/cool-*
+  rules:
+    - if: $CI_COMMIT_TAG
+
+Release artifacts:
+    stage: deploy
+    image: gitlab/glab:latest
+    needs: [ "Build artifacts" ]
+    script:
+        - glab auth login --job-token $CI_JOB_TOKEN --hostname $CI_SERVER_HOST
+        - glab release upload --use-package-registry "$CI_COMMIT_TAG" ./bin/*
+    rules:
+        - if: $CI_COMMIT_TAG
+```
 
 ## 参与贡献
 
