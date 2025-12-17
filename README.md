@@ -463,6 +463,14 @@ This ensures consistent Velox versions across different environments and team me
             <repository type="github" uri="vimeo/psalm" />
             <binary name="psalm.phar" pattern="/^psalm\.phar$/" />
         </software>
+        
+        <!-- GitLab repository -->
+        <software name="My cool project" alias="cool-project"
+              homepage="https://gitlab.com/path/to/my/repository"
+              description="">
+            <repository type="gitlab" uri="path/to/my/repository" asset-pattern="/^cool-.*/" />
+            <binary name="cool" pattern="/^cool-.*/" />
+        </software>
     </registry>
 </dload>
 ```
@@ -553,15 +561,51 @@ Each developer gets the correct binaries for their system:
 </actions>
 ```
 
-## GitHub API Rate Limits
+## API Rate Limits
 
 Use a personal access token to avoid rate limits:
 
 ```bash
 GITHUB_TOKEN=your_token_here ./vendor/bin/dload get
+GITLAB_TOKEN=your_token_here ./vendor/bin/dload get
 ```
 
 Add to CI/CD environment variables for automated downloads.
+
+## Gitlab CI configuration
+
+When you make a release in Gitlab, make sure to upload your assets to the release page via
+package manager. This can easily be done via Gitlab CLI and the `glab release upload --use-package-registry`
+command.
+
+```
+# .gitlab-ci.yml
+
+Build artifacts:
+  stage: push
+  script:
+    - mkdir bin
+    - echo "Mock binary for darwin arm" > bin/cool-darwin-arm64
+    - echo "Mock binary for darwin amd" > bin/cool-darwin-amd64
+    - echo "Mock binary for linux arm" > bin/cool-linux-arm64
+    - echo "Mock binary for linux amd" > bin/cool-linux-amd64
+  artifacts:
+    expire_in: 2 hours
+    paths:
+      - $CI_PROJECT_DIR/bin/cool-*
+  rules:
+    - if: $CI_COMMIT_TAG
+
+Release artifacts:
+    stage: deploy
+    image: gitlab/glab:latest
+    needs: [ "Build artifacts" ]
+    script:
+        - glab auth login --job-token $CI_JOB_TOKEN --hostname $CI_SERVER_HOST
+        - glab release upload --use-package-registry "$CI_COMMIT_TAG" ./bin/*
+    rules:
+        - if: $CI_COMMIT_TAG
+```
 
 ## Contributing
 

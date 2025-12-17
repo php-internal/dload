@@ -14,6 +14,7 @@ use Internal\DLoad\Module\Common\Stability;
 use Internal\DLoad\Module\HttpClient\Factory;
 use Internal\DLoad\Module\HttpClient\Internal\NyholmFactoryImpl;
 use Internal\DLoad\Module\Repository\Internal\GitHub\Factory as GithubRepositoryFactory;
+use Internal\DLoad\Module\Repository\Internal\GitLab\Factory as GitLabRepositoryFactory;
 use Internal\DLoad\Module\Repository\RepositoryProvider;
 use Internal\DLoad\Module\Velox\ApiClient;
 use Internal\DLoad\Module\Velox\Builder;
@@ -106,7 +107,8 @@ final class Bootstrap
         $this->container->bind(
             RepositoryProvider::class,
             static fn(Container $container): RepositoryProvider => (new RepositoryProvider())
-                ->addRepositoryFactory($container->get(GithubRepositoryFactory::class)),
+                ->addRepositoryFactory($container->get(GithubRepositoryFactory::class))
+                ->addRepositoryFactory($container->get(GitLabRepositoryFactory::class)),
         );
         $this->container->bind(BinaryProvider::class, BinaryProviderImpl::class);
         $this->container->bind(Factory::class, NyholmFactoryImpl::class);
