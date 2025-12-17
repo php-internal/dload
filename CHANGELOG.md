@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.0](https://github.com/php-internal/dload/compare/1.7.3...1.8.0) (2025-12-17)
+
+
+### Features
+
+* Add support for Gitlab ([#92](https://github.com/php-internal/dload/issues/92)) ([d68a2a1](https://github.com/php-internal/dload/commit/d68a2a1cf17ec122f7f55f2d68d8956fd4cefebe))
+
 ## [1.7.3](https://github.com/php-internal/dload/compare/1.7.2...1.7.3) (2025-12-14)
 
 
