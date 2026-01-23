@@ -70,6 +70,23 @@
             }
         },
         {
+            "name": "DoltgreSQL",
+            "alias": "doltgres",
+            "description": "DoltgreSQL is a Postgres-compatible version of Dolt - a SQL database that you can fork, clone, branch, merge, push and pull.",
+            "homepage": "https://www.dolthub.com",
+            "repositories": [
+                {
+                    "type": "github",
+                    "uri": "dolthub/doltgresql",
+                    "asset-pattern": "/^doltgresql-.*/"
+                }
+            ],
+            "binary": {
+                "name": "doltgres",
+                "version-command": "version"
+            }
+        },
+        {
             "name": "ProtoC PHP gRPC Plugin",
             "alias": "protoc-gen-php-grpc",
             "description": "Protobuf PHP gRPC generator plugin",
