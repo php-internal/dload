@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.9.0](https://github.com/php-internal/dload/compare/1.8.0...1.9.0) (2026-02-13)
+
+
+### Features
+
+* add DoltgreSQL entry ([#95](https://github.com/php-internal/dload/issues/95)) ([91e8181](https://github.com/php-internal/dload/commit/91e8181a9e77ae2b8ffcfd5628c72581b067fc77))
+
+
+### Documentation
+
+* **Readme:** Sync translations with GitLab support changes ([6514fda](https://github.com/php-internal/dload/commit/6514fdafbb0ddce0361e6734d47516ce4f83ed97))
+
 ## [1.8.0](https://github.com/php-internal/dload/compare/1.7.3...1.8.0) (2025-12-17)
 
 
