@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.0](https://github.com/php-internal/dload/compare/1.9.0...1.10.0) (2026-03-21)
+
+
+### Features
+
+* support macos operation system ([#98](https://github.com/php-internal/dload/issues/98)) ([5d60329](https://github.com/php-internal/dload/commit/5d603293b661f22a8adf0ccd378ccc023d593af6))
+
 ## [1.9.0](https://github.com/php-internal/dload/compare/1.8.0...1.9.0) (2026-02-13)
 
 
