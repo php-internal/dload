@@ -19,6 +19,7 @@ class OperatingSystemTest extends TestCase
         yield ['roadrunner-2024.1.5-unknown-musl-amd64.tar.gz', null];
         yield ['protoc-27.3-win64.zip', OperatingSystem::Windows];
         yield ['protoc-27.3-win32.zip', OperatingSystem::Windows];
+        yield ['temporal-test-server_1.33.0_macOS_arm64.tar.gz', OperatingSystem::Darwin];
     }
 
     #[DataProvider('provideBuildNames')]
