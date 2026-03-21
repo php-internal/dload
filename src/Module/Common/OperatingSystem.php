@@ -49,7 +49,7 @@ enum OperatingSystem: string implements Factoriable
         return match (\strtolower($name)) {
             'windows', 'win32', 'win64' => self::Windows,
             'bsd', 'freebsd' => self::BSD,
-            'darwin' => self::Darwin,
+            'darwin', 'macos' => self::Darwin,
             'linux' => \str_contains(\PHP_OS, 'alpine')
                 ? self::Alpine
                 : self::Linux,
@@ -60,7 +60,7 @@ enum OperatingSystem: string implements Factoriable
     public static function tryFromBuildName(string $name): ?self
     {
         return \preg_match(
-            '/(?:\b|_)(windows|linux|darwin|alpine|bsd|freebsd|win32|win64)(?:\b|_)/i',
+            '/(?:\b|_)(windows|linux|darwin|macos|alpine|bsd|freebsd|win32|win64)(?:\b|_)/i',
             $name,
             $matches,
         ) === 1
