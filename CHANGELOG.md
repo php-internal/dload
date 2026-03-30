@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.11.0](https://github.com/php-internal/dload/compare/1.10.0...1.11.0) (2026-03-30)
+
+
+### Features
+
+* Support `.gz` archives ([fcdc71d](https://github.com/php-internal/dload/commit/fcdc71d4b4debb6c7b82fe036fa9a6eb8d827f49))
+* Validate file extensions in renaming logic ([7bf11e1](https://github.com/php-internal/dload/commit/7bf11e189d600fc650f57b251a9a05e06934e3e5))
+
 ## [1.10.0](https://github.com/php-internal/dload/compare/1.9.0...1.10.0) (2026-03-21)
 
 
