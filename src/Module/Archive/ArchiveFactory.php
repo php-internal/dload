@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Internal\DLoad\Module\Archive;
 
 use Closure as ArchiveMatcher;
+use Internal\DLoad\Module\Archive\Internal\GzArchive;
 use Internal\DLoad\Module\Archive\Internal\NullArchive;
 use Internal\DLoad\Module\Archive\Internal\PharArchive;
 use Internal\DLoad\Module\Archive\Internal\TarPharArchive;
@@ -115,6 +116,11 @@ final class ArchiveFactory
             'zip',
             static fn(\SplFileInfo $info): Archive => new ZipPharArchive($info),
         ), ['zip']);
+
+        $this->extend($this->matcher(
+            'gz',
+            static fn(\SplFileInfo $info): Archive => new GzArchive($info),
+        ), ['gz']);
 
         $this->extend($this->matcher(
             'tar.gz',
