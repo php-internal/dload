@@ -88,6 +88,31 @@ final class DLoadTest extends TestCase
         }
     }
 
+    public function testDownloadsTomlTestGzBinary(): void
+    {
+        // Arrange
+        $dload = $this->buildDLoad($this->createTomlTestXmlConfig());
+        $downloadConfig = new DownloadConfig();
+        $downloadConfig->software = 'toml-test';
+        $downloadConfig->version = '2.1.0';
+        $downloadConfig->type = Type::Binary;
+        $downloadConfig->extractPath = (string) $this->destinationDir;
+
+        // Act
+        $dload->addTask($downloadConfig);
+        $dload->run();
+
+        // Assert - Check that toml-test binary was downloaded and extracted from .gz
+        $os = OperatingSystem::fromGlobals();
+        $expectedPath = (string) $this->destinationDir->join('toml-test' . $os->getBinaryExtension());
+        self::assertFileExists($expectedPath, 'toml-test binary should be downloaded and extracted from .gz archive');
+        self::assertGreaterThan(1024, \filesize($expectedPath), 'Downloaded binary should have substantial size');
+
+        if (\PHP_OS_FAMILY !== 'Windows') {
+            self::assertTrue(\is_executable($expectedPath), 'Binary file should be executable');
+        }
+    }
+
     public function testDownloadsTrapBinary(): void
     {
         // Arrange
@@ -120,21 +145,7 @@ final class DLoadTest extends TestCase
         $this->tempDir = $this->testRuntimeDir->join('temp');
         $this->destinationDir = $this->testRuntimeDir;
 
-        // Initialize DLoad through Bootstrap
-        $container = Bootstrap::init()
-            ->withConfig(
-                $this->createTrapXmlConfig(),
-                [],
-                [],
-                \getenv(),
-            )
-            ->finish();
-        $container->set($input = new ArgvInput(), InputInterface::class);
-        $container->set($output = new BufferedOutput(), OutputInterface::class);
-        $container->set(new SymfonyStyle($input, $output), StyleInterface::class);
-        $container->set(new Logger($output));
-
-        $this->dload = $container->get(DLoad::class);
+        $this->dload = $this->buildDLoad($this->createTrapXmlConfig());
     }
 
     protected function tearDown(): void
@@ -143,6 +154,42 @@ final class DLoadTest extends TestCase
         if ($this->testRuntimeDir->isDir()) {
             $this->removeDirectory($this->testRuntimeDir);
         }
+    }
+
+    /**
+     * @return non-empty-string
+     */
+    private function buildDLoad(string $xmlConfig): DLoad
+    {
+        $container = Bootstrap::init()
+            ->withConfig($xmlConfig, [], [], \getenv())
+            ->finish();
+        $container->set($input = new ArgvInput(), InputInterface::class);
+        $container->set($output = new BufferedOutput(), OutputInterface::class);
+        $container->set(new SymfonyStyle($input, $output), StyleInterface::class);
+        $container->set(new Logger($output));
+
+        return $container->get(DLoad::class);
+    }
+
+    /**
+     * @return non-empty-string
+     */
+    private function createTomlTestXmlConfig(): string
+    {
+        return <<<XML
+            <?xml version="1.0"?>
+            <dload temp-dir="{$this->tempDir}" >
+                <registry overwrite="false">
+                    <software name="TOML Test" alias="toml-test">
+                        <repository type="github" uri="toml-lang/toml-test"
+                            asset-pattern="/^toml-test-.*/"
+                        />
+                        <binary name="toml-test" pattern="/^toml-test-.*/" version-command="version" />
+                    </software>
+                </registry>
+            </dload>
+            XML;
     }
 
     /**
