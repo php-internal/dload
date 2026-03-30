@@ -307,10 +307,16 @@ final class DLoad
     {
         foreach ($mapping as $conf) {
             if (\preg_match($conf->pattern, $source->getFilename())) {
+                $extension = $source->getExtension();
+                // Validate that the "extension" looks like a real file extension
+                // (short, alphanumeric only — e.g. "exe", "phar", "gz")
+                // and not a version/platform artifact like "0-linux-amd64"
+                $hasRealExtension = $extension !== '' && \preg_match('/^(?=.*[a-zA-Z])[a-zA-Z0-9]{1,10}$/', $extension) === 1;
+
                 $newName = match (true) {
                     $conf->rename === null => $source->getFilename(),
-                    $source->getExtension() === '' => $conf->rename,
-                    default => $conf->rename . '.' . $source->getExtension(),
+                    !$hasRealExtension => $conf->rename,
+                    default => $conf->rename . '.' . $extension,
                 };
 
                 return [new \SplFileInfo((string) $path->join($newName)), $conf];
