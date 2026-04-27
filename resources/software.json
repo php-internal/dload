@@ -170,6 +170,23 @@
             }
         },
         {
+            "name": "Buggregator",
+            "description": "Buggregator Server is a self-hosted debugging server for PHP applications.",
+            "homepage": "https://buggregator.dev/",
+            "repositories": [
+                {
+                    "type": "github",
+                    "uri": "buggregator/server",
+                    "asset-pattern": "/^buggregator-.*/"
+                }
+            ],
+            "binary": {
+                "name": "buggregator",
+                "pattern": "/^buggregator-.*/",
+                "version-command": "--version"
+            }
+        },
+        {
             "name": "Mago",
             "alias": "mago",
             "description": "Mago is a toolchain for PHP that aims to provide a set of tools to help developers write better code.",
