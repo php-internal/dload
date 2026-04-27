@@ -10,6 +10,7 @@ use Internal\DLoad\Module\HttpClient\Factory as HttpFactory;
 use Internal\DLoad\Module\Repository\Internal\GitHub\Api\Client;
 use Internal\DLoad\Module\Repository\Internal\GitHub\Api\RepositoryApi;
 use Internal\DLoad\Module\Repository\RepositoryFactory;
+use Internal\DLoad\Service\Logger;
 
 /**
  * Factory for creating GitHub repository instances.
@@ -28,6 +29,7 @@ final class Factory implements RepositoryFactory
     public function __construct(
         private readonly HttpFactory $httpFactory,
         GitHub $gitHubConfig,
+        private readonly Logger $logger,
     ) {
         $this->gitHubClient = new Client(
             $httpFactory,
@@ -48,7 +50,7 @@ final class Factory implements RepositoryFactory
 
         $api = $this->createRepositoryApi($org, $repo);
 
-        return new GitHubRepository($api, $org, $repo);
+        return new GitHubRepository($api, $org, $repo, $this->logger);
     }
 
     /**
@@ -57,6 +59,6 @@ final class Factory implements RepositoryFactory
      */
     private function createRepositoryApi(string $owner, string $repo): RepositoryApi
     {
-        return new RepositoryApi($this->gitHubClient, $this->httpFactory, $owner, $repo);
+        return new RepositoryApi($this->gitHubClient, $this->httpFactory, $owner, $repo, $this->logger);
     }
 }

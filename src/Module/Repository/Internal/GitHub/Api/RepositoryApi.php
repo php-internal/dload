@@ -10,6 +10,7 @@ use Internal\DLoad\Module\Repository\Internal\GitHub\Api\Response\ReleaseInfo;
 use Internal\DLoad\Module\Repository\Internal\GitHub\Api\Response\RepositoryInfo;
 use Internal\DLoad\Module\Repository\Internal\GitHub\Exception\GitHubRateLimitException;
 use Internal\DLoad\Module\Repository\Internal\Paginator;
+use Internal\DLoad\Service\Logger;
 use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\UriInterface;
@@ -41,6 +42,7 @@ final class RepositoryApi
         private readonly HttpFactory $httpFactory,
         string $owner,
         string $repo,
+        private readonly Logger $logger,
     ) {
         $this->repositoryPath = $owner . '/' . $repo;
     }
@@ -117,7 +119,8 @@ final class RepositoryApi
                     foreach ($data as $releaseData) {
                         try {
                             $releases[] = ReleaseInfo::fromApiResponse($releaseData);
-                        } catch (\Throwable) {
+                        } catch (\Throwable $e) {
+                            $this->logger->exception($e, important: false);
                             // Skip invalid releases
                             continue;
                         }
@@ -128,7 +131,8 @@ final class RepositoryApi
                     // Check if there are more pages
                     $hasMorePages = $this->hasNextPage($response);
                     $currentPage++;
-                } catch (ClientExceptionInterface) {
+                } catch (ClientExceptionInterface $e) {
+                    $this->logger->exception($e, important: false);
                     return;
                 }
             } while ($hasMorePages);

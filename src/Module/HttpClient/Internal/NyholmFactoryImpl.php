@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\HttpClient\Internal;
 
+use Internal\DLoad\Info;
 use Internal\DLoad\Module\HttpClient\Factory;
 use Internal\DLoad\Module\HttpClient\Method;
+use Internal\DLoad\Service\Logger;
 use Nyholm\Psr7\Request;
 use Nyholm\Psr7\Uri;
 use Psr\Http\Client\ClientInterface;
@@ -18,6 +20,10 @@ use Symfony\Component\HttpClient\Psr18Client;
  */
 class NyholmFactoryImpl implements Factory
 {
+    public function __construct(
+        private readonly Logger $logger,
+    ) {}
+
     public function uri(string $path, array $query = []): UriInterface
     {
         // Build URI with path and query parameters
@@ -32,11 +38,17 @@ class NyholmFactoryImpl implements Factory
         string|UriInterface $uri,
         array $headers = [],
     ): RequestInterface {
+        $this->logger->debug('Request to %s', (string) $uri);
         return new Request(Method::fromString($method)->value, $uri, $headers);
     }
 
     public function client(): ClientInterface
     {
-        return new Psr18Client();
+        return (new Psr18Client())->withOptions([
+            'timeout' => 30,
+            'headers' => [
+                'User-Agent' => 'DLoad/' . Info::version(),
+            ],
+        ]);
     }
 }

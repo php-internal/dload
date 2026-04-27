@@ -9,6 +9,7 @@ use Internal\DLoad\Module\Repository\Collection\ReleasesCollection;
 use Internal\DLoad\Module\Repository\Internal\GitHub\Api\RepositoryApi;
 use Internal\DLoad\Module\Repository\Internal\GitHub\Exception\GitHubRateLimitException;
 use Internal\DLoad\Module\Repository\Repository;
+use Internal\DLoad\Service\Logger;
 
 /**
  * GitHub Repository class representing a GitHub repository.
@@ -35,6 +36,7 @@ final class GitHubRepository implements Repository, Destroyable
         private readonly RepositoryApi $api,
         string $org,
         string $repo,
+        private readonly Logger $logger,
     ) {
         $this->name = $org . '/' . $repo;
     }
@@ -65,7 +67,8 @@ final class GitHubRepository implements Repository, Destroyable
                     foreach ($releases as $releaseDTO) {
                         try {
                             $toYield[] = GitHubRelease::fromDTO($this->api, $this, $releaseDTO);
-                        } catch (\Throwable) {
+                        } catch (\Throwable $e) {
+                            $this->logger->exception($e, important: false);
                             // Skip invalid releases
                             continue;
                         }
