@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.12.0](https://github.com/php-internal/dload/compare/1.11.0...1.12.0) (2026-04-28)
+
+
+### Features
+
+* Add Buggregator server into the registry ([#105](https://github.com/php-internal/dload/issues/105)) ([7035ef0](https://github.com/php-internal/dload/commit/7035ef0c2a7992ad0a514ca0a6daf7f69f9946a2))
+
+
+### Code Refactoring
+
+* Add more debug info into GitHub API implementation ([17bb1fa](https://github.com/php-internal/dload/commit/17bb1fa3b7903e6260927a12204d17dc47b549bf))
+* Remove symfony/http-client 4 and 5 from composer.json ([7035ef0](https://github.com/php-internal/dload/commit/7035ef0c2a7992ad0a514ca0a6daf7f69f9946a2))
+
 ## [1.11.0](https://github.com/php-internal/dload/compare/1.10.0...1.11.0) (2026-03-30)
 
 
