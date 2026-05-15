@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.13.1](https://github.com/php-internal/dload/compare/1.13.0...1.13.1) (2026-05-15)
+
+
+### Bug Fixes
+
+* **show:** respect destination and extract-path when locating binaries ([5f0c445](https://github.com/php-internal/dload/commit/5f0c445d52afb30eadd1f6b6f708b76826b1ab56))
+
+
+### Documentation
+
+* Add AI skills ([56c191c](https://github.com/php-internal/dload/commit/56c191cdaaea5c07ad23b1c49afba33f6ca09a81))
+
 ## [1.13.0](https://github.com/php-internal/dload/compare/1.12.0...1.13.0) (2026-05-15)
 
 
