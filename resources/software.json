@@ -187,6 +187,24 @@
             }
         },
         {
+            "name": "Buf",
+            "alias": "buf",
+            "description": "The best way of working with Protocol Buffers: lint, format, breaking change detection, and code generation.",
+            "homepage": "https://buf.build/",
+            "repositories": [
+                {
+                    "type": "github",
+                    "uri": "bufbuild/buf",
+                    "asset-pattern": "/^buf-.*/"
+                }
+            ],
+            "binary": {
+                "name": "buf",
+                "pattern": "/^buf(-.*)?(\\.exe)?$/",
+                "version-command": "--version"
+            }
+        },
+        {
             "name": "Mago",
             "alias": "mago",
             "description": "Mago is a toolchain for PHP that aims to provide a set of tools to help developers write better code.",
