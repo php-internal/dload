@@ -6,6 +6,8 @@ namespace Internal\DLoad\Command;
 
 use Internal\DLoad\Module\Binary\Binary;
 use Internal\DLoad\Module\Binary\BinaryProvider;
+use Internal\DLoad\Module\Common\Input\Destination;
+use Internal\DLoad\Module\Config\Schema\Action\Download;
 use Internal\DLoad\Module\Config\Schema\Actions;
 use Internal\DLoad\Module\Downloader\SoftwareCollection;
 use Internal\Path;
@@ -48,6 +50,7 @@ final class Show extends Base
         // Get all software from collection
         $collection = $this->container->get(SoftwareCollection::class);
         $binaryProvider = $this->container->get(BinaryProvider::class);
+        $destination = $this->container->get(Destination::class);
         $softwareName = (string) $input->getArgument('software');
 
         // Get configuration if available
@@ -59,29 +62,31 @@ final class Show extends Base
         }
 
         if ($softwareName !== '') {
-            return $this->showSoftwareDetails($softwareName, $collection, $binaryProvider, $actions, $output);
+            return $this->showSoftwareDetails($softwareName, $collection, $binaryProvider, $destination, $actions, $output);
         }
 
-        return $this->listAllSoftware($collection, $binaryProvider, $actions, $input, $output);
+        return $this->listAllSoftware($collection, $binaryProvider, $destination, $actions, $input, $output);
     }
 
     private function listAllSoftware(
         SoftwareCollection $collection,
         BinaryProvider $binaryProvider,
+        Destination $destination,
         ?Actions $actions,
         InputInterface $input,
         OutputInterface $output,
     ): int {
         $showAll = (bool) $input->getOption('all');
-        $destinationPath = Path::create((string) \getcwd());
+        $fallbackPath = $this->resolveDestinationPath($destination, null);
 
-        $configSoftwareIds = [];
+        /** @var array<non-empty-string, Download> $configDownloads */
+        $configDownloads = [];
         if ($actions !== null) {
-            $configSoftwareIds = \array_map(
-                static fn($download) => $download->software,
-                $actions->downloads,
-            );
+            foreach ($actions->downloads as $download) {
+                $configDownloads[$download->software] = $download;
+            }
         }
+        $configSoftwareIds = \array_keys($configDownloads);
 
         // Track downloaded software to avoid showing them twice
         $downloadedSoftwareIds = [];
@@ -103,7 +108,11 @@ final class Show extends Base
                     continue;
                 }
 
-                $binary = $binaryProvider->getLocalBinary($destinationPath, $software->binary, $software->name);
+                $perDownloadPath = $this->resolveDestinationPath(
+                    $destination,
+                    $configDownloads[$software->getId()] ?? null,
+                );
+                $binary = $binaryProvider->getLocalBinary($perDownloadPath, $software->binary, $software->name);
                 if ($binary === null) {
                     continue;
                 }
@@ -146,7 +155,7 @@ final class Show extends Base
                 continue;
             }
 
-            $binary = $binaryProvider->getLocalBinary($destinationPath, $software->binary, $software->name);
+            $binary = $binaryProvider->getLocalBinary($fallbackPath, $software->binary, $software->name);
             if ($binary === null) {
                 continue;
             }
@@ -209,6 +218,7 @@ final class Show extends Base
         string $softwareName,
         SoftwareCollection $collection,
         BinaryProvider $binaryProvider,
+        Destination $destination,
         ?Actions $actions,
         OutputInterface $output,
     ): int {
@@ -224,12 +234,11 @@ final class Show extends Base
             return Command::FAILURE;
         }
 
-        $destinationPath = Path::create(\getcwd() ?: '.');
-
         // Check if software is in project config
         $inConfig = false;
         $configConstraints = null;
         $configExtractPath = null;
+        $matchedDownload = null;
 
         if ($actions !== null) {
             foreach ($actions->downloads as $download) {
@@ -237,10 +246,13 @@ final class Show extends Base
                     $inConfig = true;
                     $configConstraints = $download->version;
                     $configExtractPath = $download->extractPath;
+                    $matchedDownload = $download;
                     break;
                 }
             }
         }
+
+        $destinationPath = $this->resolveDestinationPath($destination, $matchedDownload);
 
         // Display detailed information
         $output->writeln(\sprintf('<info>Software:</info> %s', $software->name));
@@ -304,6 +316,16 @@ final class Show extends Base
             '  <info>Last modified:</info> %s',
             $mtime->format('Y-m-d H:i:s'),
         ));
+    }
+
+    /**
+     * Mirrors the precedence in {@see \Internal\DLoad\DLoad::getDestinationPath()}.
+     */
+    private function resolveDestinationPath(Destination $destination, ?Download $download): Path
+    {
+        return Path::create(
+            $destination->path ?? $download?->extractPath ?? (\getcwd() ?: '.'),
+        );
     }
 
     private function formatSize(?int $bytes): string
