@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.13.0](https://github.com/php-internal/dload/compare/1.12.0...1.13.0) (2026-05-15)
+
+
+### Features
+
+* Add Buf to software registry ([35fb4f3](https://github.com/php-internal/dload/commit/35fb4f306a21c0d10871d818a1a2d1a109efdcdd))
+
 ## [1.12.0](https://github.com/php-internal/dload/compare/1.11.0...1.12.0) (2026-04-28)
 
 
