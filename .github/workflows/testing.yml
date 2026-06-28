@@ -28,7 +28,7 @@ jobs:
           - locked
     steps:
       - name: 📦 Check out the codebase
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: 🛠️ Setup PHP
         uses: shivammathur/setup-php@v2
@@ -83,7 +83,7 @@ jobs:
           - highest
     steps:
       - name: 📦 Check out the codebase
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: 🛠️ Setup PHP
         uses: shivammathur/setup-php@v2
@@ -127,7 +127,7 @@ jobs:
       DLOAD_PHAR_SIGNATURE: ".build/phar/dload.phar.asc"
     steps:
       - name: 📦 Check out the codebase
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
