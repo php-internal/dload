@@ -24,4 +24,36 @@ jobs:
           manifest-file: resources/version.json
           target-branch: 1.x
 
+      # Refresh the Vibe Index badge on the open release PR so it ships with the
+      # release. Runs only while the release PR exists; the badge change is
+      # reviewed and merged together with it.
+      - name: 🛒 Checkout release PR branch
+        if: ${{ steps.release.outputs.prs_created == 'true' }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ fromJSON(steps.release.outputs.pr).headBranchName }}
+          fetch-depth: 0  # the action needs the full git history
+
+      - name: ✨ Update Vibe Index badge
+        if: ${{ steps.release.outputs.prs_created == 'true' }}
+        uses: roxblnfk/action-vibe-index@v1
+        with:
+          update-files: 'README.md, README-zh.md, README-ru.md, README-es.md'
+          badge-discovery: markdown
+          # No commit here: this workflow triggers on push to 1.x, so the
+          # action's own push would target 1.x, not the checked-out PR branch.
+          # Commit & push below with plain git, which pushes the PR branch.
+
+      - name: 💾 Commit & push the badge to the release PR
+        if: ${{ steps.release.outputs.prs_created == 'true' }}
+        run: |
+          if git diff --quiet; then
+            echo "Badge already up to date."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "chore: update Vibe Index badge"
+          git push
+
 ...
