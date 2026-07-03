@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.14.0](https://github.com/php-internal/dload/compare/1.13.1...1.14.0) (2026-07-03)
+
+
+### Features
+
+* **registry:** add YiiPress engine ([947d5e8](https://github.com/php-internal/dload/commit/947d5e8184cff6749d09e61a37cd30b663705ab7))
+
+
+### Bug Fixes
+
+* **ci:** push Vibe Index badge to PR branch with authenticated git ([42bf7ca](https://github.com/php-internal/dload/commit/42bf7caa7bfbf8fba7a4b05ad40830c088588c5d))
+* **ci:** push Vibe Index badge to release PR via action auto-commit ([11109b2](https://github.com/php-internal/dload/commit/11109b2e9e4e9a9b792620f81176aa9e3da6ec41))
+
 ## [1.13.1](https://github.com/php-internal/dload/compare/1.13.0...1.13.1) (2026-05-15)
 
 
