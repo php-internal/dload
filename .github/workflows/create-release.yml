@@ -35,12 +35,26 @@ jobs:
         with:
           ref: ${{ fromJSON(steps.release.outputs.pr).headBranchName }}
           fetch-depth: 0 # the action needs the full git history
+          # Use the release PAT so the badge push below is authenticated as the
+          # PR author. The default GITHUB_TOKEN (github-actions[bot]) is denied
+          # push access to the release branch.
+          token: ${{ secrets.RELEASE_TOKEN }}
 
       - name: ✨ Update Vibe Index badge
         if: ${{ steps.release.outputs.prs_created == 'true' }}
         uses: roxblnfk/action-vibe-index@v1
         with:
           update-files: "README.md, README-zh.md, README-ru.md, README-es.md"
-          commit: true
-          push: true
+          # No commit/push here: the action pushes to the trigger branch (1.x),
+          # not the checked-out PR branch. Commit & push below with plain git,
+          # which targets the current PR branch.
+
+      - name: 💾 Commit & push the badge to the release PR
+        if: ${{ steps.release.outputs.prs_created == 'true' }}
+        run: |
+          git diff --quiet && { echo "Badge already up to date."; exit 0; }
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "chore: update Vibe Index badge"
+          git push
 ...
