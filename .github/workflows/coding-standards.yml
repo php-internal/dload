@@ -46,23 +46,6 @@ jobs:
           file_or_dir: '.'
           strict: true
 
-  markdown-linting:
-    timeout-minutes: 4
-    runs-on: ubuntu-latest
-    concurrency:
-      cancel-in-progress: true
-      group: markdown-linting-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-    steps:
-      - name: 📦 Check out the codebase
-        uses: actions/checkout@v7
-
-      - name: 🧐 Lint Markdown files
-        uses: DavidAnson/markdownlint-cli2-action@v16.0.0
-        with:
-          globs: |
-            *.md
-            !CHANGELOG.md
-
   coding-standards:
     permissions:
       contents: write
