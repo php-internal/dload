@@ -1,15 +1,17 @@
 ---
-
 # https://github.com/wayofdev/gh-actions/blob/master/.github/workflows/create-release.yml
 # https://github.com/google-github-actions/release-please-action#release-types-supported
 # https://github.com/googleapis/release-please/blob/main/docs/customizing.md
 
-on:  # yamllint disable-line rule:truthy
+on: # yamllint disable-line rule:truthy
   push:
     branches:
       - 1.x
 
 name: 📦 Create release
+
+permissions:
+  contents: write
 
 jobs:
   release:
@@ -32,28 +34,13 @@ jobs:
         uses: actions/checkout@v7
         with:
           ref: ${{ fromJSON(steps.release.outputs.pr).headBranchName }}
-          fetch-depth: 0  # the action needs the full git history
+          fetch-depth: 0 # the action needs the full git history
 
       - name: ✨ Update Vibe Index badge
         if: ${{ steps.release.outputs.prs_created == 'true' }}
         uses: roxblnfk/action-vibe-index@v1
         with:
-          update-files: 'README.md, README-zh.md, README-ru.md, README-es.md'
-          badge-discovery: markdown
-          # No commit here: this workflow triggers on push to 1.x, so the
-          # action's own push would target 1.x, not the checked-out PR branch.
-          # Commit & push below with plain git, which pushes the PR branch.
-
-      - name: 💾 Commit & push the badge to the release PR
-        if: ${{ steps.release.outputs.prs_created == 'true' }}
-        run: |
-          if git diff --quiet; then
-            echo "Badge already up to date."
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -am "chore: update Vibe Index badge"
-          git push
-
+          update-files: "README.md, README-zh.md, README-ru.md, README-es.md"
+          commit: true
+          push: true
 ...
