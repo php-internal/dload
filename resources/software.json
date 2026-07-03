@@ -220,6 +220,23 @@
                 "name": "mago",
                 "version-command": "--version"
             }
+        },
+        {
+            "name": "YiiPress",
+            "alias": "yiipress",
+            "description": "Static website builder engine powered by Yii3",
+            "homepage": "https://yiipress.yiiframework.com",
+            "repositories": [
+                {
+                    "type": "github",
+                    "uri": "yiipress/engine",
+                    "asset-pattern": "/^yiipress-.*/"
+                }
+            ],
+            "binary": {
+                "name": "yiipress",
+                "version-command": "--version"
+            }
         }
     ]
 }
