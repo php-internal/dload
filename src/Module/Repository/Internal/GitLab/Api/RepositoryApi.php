@@ -33,6 +33,9 @@ final class RepositoryApi
      */
     public readonly string $repositoryPath;
 
+    /**
+     * @param non-empty-string $projectPath
+     */
     public function __construct(
         private readonly Client $client,
         private readonly HttpFactory $httpFactory,
@@ -71,11 +74,11 @@ final class RepositoryApi
         $response = $this->request(Method::Get, \sprintf(self::URL_REPOSITORY, \urlencode($this->repositoryPath)));
 
         /** @var array{
-         *     name: string,
-         *     name_with_namespace: string,
+         *     name: non-empty-string,
+         *     name_with_namespace: non-empty-string,
          *     description: string|null,
-         *     web_url: string,
-         *     visibility: bool,
+         *     web_url: non-empty-string,
+         *     visibility: string,
          *     created_at: string,
          *     updated_at: string
          * } $data */

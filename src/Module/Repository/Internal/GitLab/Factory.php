@@ -45,7 +45,8 @@ final class Factory implements RepositoryFactory
 
     public function create(RepositoryConfig $config): GitLabRepository
     {
-        $uri = \parse_url($config->uri, PHP_URL_PATH) ?? $config->uri;
+        $path = \parse_url($config->uri, PHP_URL_PATH);
+        $uri = \is_string($path) && $path !== '' ? $path : $config->uri;
         $api = $this->createRepositoryApi($uri);
 
         return new GitLabRepository($api, $uri, $this->logger);

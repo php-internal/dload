@@ -29,11 +29,11 @@ final class RepositoryInfo
 
     /**
      * @param array{
-     *     name: string,
-     *     name_with_namespace: string,
+     *     name: non-empty-string,
+     *     name_with_namespace: non-empty-string,
      *     description: string|null,
-     *     web_url: string,
-     *     visibility: bool,
+     *     web_url: non-empty-string,
+     *     visibility: string,
      *     created_at: string,
      *     updated_at: string
      * } $data
