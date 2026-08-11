@@ -8,18 +8,20 @@ use Internal\DLoad\Module\Archive\Exception\ArchiveException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(ArchiveException::class)]
-final class ArchiveExceptionTest extends TestCase
+#[\Testo\Codecov\Covers(ArchiveException::class)]
+final class ArchiveExceptionTest
 {
+    #[\Testo\Test]
     public function testExceptionInheritsFromRuntimeException(): void
     {
         // Arrange
         $exception = new ArchiveException('Test message');
 
         // Assert
-        self::assertInstanceOf(\RuntimeException::class, $exception);
+        \Testo\Assert::instanceOf($exception, \RuntimeException::class);
     }
 
+    #[\Testo\Test]
     public function testExceptionReturnsCorrectMessage(): void
     {
         // Arrange
@@ -29,9 +31,10 @@ final class ArchiveExceptionTest extends TestCase
         $exception = new ArchiveException($message);
 
         // Assert
-        self::assertSame($message, $exception->getMessage());
+        \Testo\Assert::same($exception->getMessage(), $message);
     }
 
+    #[\Testo\Test]
     public function testExceptionCanHaveCustomCode(): void
     {
         // Arrange
@@ -41,9 +44,10 @@ final class ArchiveExceptionTest extends TestCase
         $exception = new ArchiveException('Test message', $code);
 
         // Assert
-        self::assertSame($code, $exception->getCode());
+        \Testo\Assert::same($exception->getCode(), $code);
     }
 
+    #[\Testo\Test]
     public function testExceptionCanHavePreviousException(): void
     {
         // Arrange
@@ -53,6 +57,6 @@ final class ArchiveExceptionTest extends TestCase
         $exception = new ArchiveException('Test message', 0, $previous);
 
         // Assert
-        self::assertSame($previous, $exception->getPrevious());
+        \Testo\Assert::same($exception->getPrevious(), $previous);
     }
 }

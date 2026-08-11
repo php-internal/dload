@@ -8,9 +8,10 @@ use Internal\DLoad\Module\Downloader\Exception\NothingExtracted;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(NothingExtracted::class)]
-final class NothingExtractedTest extends TestCase
+#[\Testo\Codecov\Covers(NothingExtracted::class)]
+final class NothingExtractedTest
 {
+    #[\Testo\Test]
     public function testMessageListsRulesAndArchiveContent(): void
     {
         // Arrange
@@ -33,6 +34,7 @@ final class NothingExtractedTest extends TestCase
         self::assertStringContainsString('Files in the asset: CHANGELOG.md, LICENSE, rr.exe', $message);
     }
 
+    #[\Testo\Test]
     public function testMessageTruncatesLongFileList(): void
     {
         // Arrange

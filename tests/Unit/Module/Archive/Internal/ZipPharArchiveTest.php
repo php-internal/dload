@@ -8,9 +8,10 @@ use Internal\DLoad\Module\Archive\Internal\ZipPharArchive;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(ZipPharArchive::class)]
-final class ZipPharArchiveTest extends TestCase
+#[\Testo\Codecov\Covers(ZipPharArchive::class)]
+final class ZipPharArchiveTest
 {
+    #[\Testo\Test]
     public function testConstructorValidatesFile(): void
     {
         // Arrange
@@ -19,8 +20,7 @@ final class ZipPharArchiveTest extends TestCase
         $file->method('getFilename')->willReturn('invalid.zip');
 
         // Assert
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Archive "invalid.zip" is not a file.');
+        \Testo\Expect::exception(\InvalidArgumentException::class)->withMessage('Archive "invalid.zip" is not a file.');
 
         // Act
         new ZipPharArchive($file);

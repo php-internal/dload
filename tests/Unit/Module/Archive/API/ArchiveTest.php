@@ -11,8 +11,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(Archive::class)]
-final class ArchiveTest extends TestCase
+#[\Testo\Codecov\Covers(Archive::class)]
+final class ArchiveTest
 {
     private \SplFileInfo $archiveFile;
 
@@ -31,6 +31,7 @@ final class ArchiveTest extends TestCase
         yield 'non-existent extension' => [$files, 'jpg', 0];
     }
 
+    #[\Testo\Test]
     public function testExtractYieldsFilesFromArchive(): void
     {
         // Arrange
@@ -48,11 +49,12 @@ final class ArchiveTest extends TestCase
         }
 
         // Assert
-        self::assertCount(2, $result);
-        self::assertSame($file1, $result['file1.txt']);
-        self::assertSame($file2, $result['file2.txt']);
+        \Testo\Assert::count($result, 2);
+        \Testo\Assert::same($result['file1.txt'], $file1);
+        \Testo\Assert::same($result['file2.txt'], $file2);
     }
 
+    #[\Testo\Test]
     public function testExtractThrowsArchiveException(): void
     {
         // Arrange
@@ -60,13 +62,13 @@ final class ArchiveTest extends TestCase
         $archive->throwExceptionOnExtract('Custom error message');
 
         // Assert
-        $this->expectException(ArchiveException::class);
-        $this->expectExceptionMessage('Custom error message');
+        \Testo\Expect::exception(ArchiveException::class)->withMessage('Custom error message');
 
         // Act
         \iterator_to_array($archive->extract());
     }
 
+    #[\Testo\Test]
     public function testExtractReturnsDestinationFileWhenRequested(): void
     {
         // Arrange
@@ -83,12 +85,13 @@ final class ArchiveTest extends TestCase
         $result = $generator->send($destinationFile);
 
         // Assert
-        self::assertSame('source.txt', $path);
-        self::assertSame($sourceFile, $info);
-        self::assertSame($destinationFile, $result);
+        \Testo\Assert::same($path, 'source.txt');
+        \Testo\Assert::same($info, $sourceFile);
+        \Testo\Assert::same($result, $destinationFile);
     }
 
-    #[DataProvider('provideFileTypes')]
+    #[\Testo\Data\DataProvider('provideFileTypes')]
+    #[\Testo\Test]
     public function testExtractFilteringByFileType(array $files, string $extension, int $expectedCount): void
     {
         // Arrange
@@ -108,9 +111,10 @@ final class ArchiveTest extends TestCase
         }
 
         // Assert
-        self::assertCount($expectedCount, $extracted);
+        \Testo\Assert::count($extracted, $expectedCount);
     }
 
+    #[\Testo\Lifecycle\BeforeTest]
     protected function setUp(): void
     {
         // Arrange

@@ -11,8 +11,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(Constraint::class)]
-final class ConstraintTest extends TestCase
+#[\Testo\Codecov\Covers(Constraint::class)]
+final class ConstraintTest
 {
     public static function provideValidConstraints(): \Generator
     {
@@ -305,7 +305,8 @@ final class ConstraintTest extends TestCase
         yield ['^1.0-priority@RC', '1.3.1-priority.0', false];
     }
 
-    #[DataProvider('provideValidConstraints')]
+    #[\Testo\Data\DataProvider('provideValidConstraints')]
+    #[\Testo\Test]
     public function testFromConstraintStringWithValidInput(
         string $constraint,
         string $expectedBaseVersion,
@@ -317,34 +318,36 @@ final class ConstraintTest extends TestCase
         $result = Constraint::fromConstraintString($constraint);
 
         // Assert
-        self::assertSame($expectedBaseVersion, $result->versionConstraint, "Base version for: {$description}");
-        self::assertSame($expectedFeatureSuffix, $result->featureSuffix, "Feature suffix for: {$description}");
-        self::assertSame($expectedStability, $result->minimumStability, "Stability for: {$description}");
+        \Testo\Assert::same($result->versionConstraint, $expectedBaseVersion, "Base version for: {$description}");
+        \Testo\Assert::same($result->featureSuffix, $expectedFeatureSuffix, "Feature suffix for: {$description}");
+        \Testo\Assert::same($result->minimumStability, $expectedStability, "Stability for: {$description}");
     }
 
-    #[DataProvider('provideInvalidConstraints')]
+    #[\Testo\Data\DataProvider('provideInvalidConstraints')]
+    #[\Testo\Test]
     public function testFromConstraintStringWithInvalidInput(
         string $constraint,
         string $expectedExceptionMessage,
         string $description,
     ): void {
         // Assert
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage($expectedExceptionMessage);
+        \Testo\Expect::exception(\InvalidArgumentException::class)->withMessage($expectedExceptionMessage);
 
         // Act
         Constraint::fromConstraintString($constraint);
     }
 
+    #[\Testo\Test]
     public function testGetBaseConstraint(): void
     {
         // Arrange
         $constraint = Constraint::fromConstraintString('^2.12.0', 'feature', Stability::Beta);
 
         // Assert
-        self::assertSame('^2.12.0', $constraint->versionConstraint);
+        \Testo\Assert::same($constraint->versionConstraint, '^2.12.0');
     }
 
+    #[\Testo\Test]
     public function testToStringWithBaseVersionOnly(): void
     {
         // Arrange
@@ -354,9 +357,10 @@ final class ConstraintTest extends TestCase
         $result = (string) $constraint;
 
         // Assert
-        self::assertSame('^2.12.0', $result);
+        \Testo\Assert::same($result, '^2.12.0');
     }
 
+    #[\Testo\Test]
     public function testToStringWithFeatureSuffixAndCustomStability(): void
     {
         // Arrange
@@ -366,10 +370,11 @@ final class ConstraintTest extends TestCase
         $result = (string) $constraint;
 
         // Assert
-        self::assertSame('^2.12.0-feature@beta', $result);
+        \Testo\Assert::same($result, '^2.12.0-feature@beta');
     }
 
-    #[DataProvider('provideComparableConstraints')]
+    #[\Testo\Data\DataProvider('provideComparableConstraints')]
+    #[\Testo\Test]
     public function testIsSatisfiedBy(string $constraint, string $version, bool $expected): void
     {
         // Arrange
@@ -380,6 +385,6 @@ final class ConstraintTest extends TestCase
         $result = $constraintObj->isSatisfiedBy($versionObj);
 
         // Assert
-        self::assertSame($expected, $result, "Constraint: {$constraint}, Version: {$version}");
+        \Testo\Assert::same($result, $expected, "Constraint: {$constraint}, Version: {$version}");
     }
 }

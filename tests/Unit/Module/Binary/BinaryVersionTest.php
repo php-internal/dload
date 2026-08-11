@@ -9,8 +9,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(BinaryVersion::class)]
-final class BinaryVersionTest extends TestCase
+#[\Testo\Codecov\Covers(BinaryVersion::class)]
+final class BinaryVersionTest
 {
     /**
      * Provides test cases for semantic version extraction.
@@ -131,33 +131,36 @@ final class BinaryVersionTest extends TestCase
     /**
      * Tests that the resolver correctly extracts semantic versions.
      */
-    #[DataProvider('provideSemanticVersionOutputs')]
+    #[\Testo\Data\DataProvider('provideSemanticVersionOutputs')]
+    #[\Testo\Test]
     public function testResolveVersionExtractsSemanticVersions(string $output, string $string, ?string $number): void
     {
         // Act
         $result = BinaryVersion::fromBinaryOutput($output);
 
         // Assert
-        self::assertSame($string, $result->string);
-        self::assertSame($number ?? $string, $result->number);
+        \Testo\Assert::same($result->string, $string);
+        \Testo\Assert::same($result->number, $number ?? $string);
     }
 
     /**
      * Tests that the resolver correctly extracts versions using fallback patterns.
      */
-    #[DataProvider('provideFallbackVersionOutputs')]
+    #[\Testo\Data\DataProvider('provideFallbackVersionOutputs')]
+    #[\Testo\Test]
     public function testResolveVersionExtractsVersionsWithFallbacks(string $output, ?string $number): void
     {
         // Act
         $result = BinaryVersion::fromBinaryOutput($output);
 
         // Assert
-        self::assertSame($number, $result->number);
+        \Testo\Assert::same($result->number, $number);
     }
 
     /**
      * Tests that the resolver returns null when no version can be extracted.
      */
+    #[\Testo\Test]
     public function testResolveVersionReturnsNullWhenNoVersionFound(): void
     {
         // Arrange
@@ -167,6 +170,6 @@ final class BinaryVersionTest extends TestCase
         $result = BinaryVersion::fromBinaryOutput($output);
 
         // Assert
-        self::assertNull($result->number);
+        \Testo\Assert::null($result->number);
     }
 }

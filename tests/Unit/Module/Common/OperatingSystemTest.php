@@ -8,7 +8,7 @@ use Internal\DLoad\Module\Common\OperatingSystem;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
-class OperatingSystemTest extends TestCase
+class OperatingSystemTest
 {
     public static function provideBuildNames(): iterable
     {
@@ -22,9 +22,10 @@ class OperatingSystemTest extends TestCase
         yield ['temporal-test-server_1.33.0_macOS_arm64.tar.gz', OperatingSystem::Darwin];
     }
 
-    #[DataProvider('provideBuildNames')]
+    #[\Testo\Data\DataProvider('provideBuildNames')]
+    #[\Testo\Test]
     public function testTryFromBuildName(string $name, ?OperatingSystem $expected): void
     {
-        self::assertSame($expected, OperatingSystem::tryFromBuildName($name));
+        \Testo\Assert::same(OperatingSystem::tryFromBuildName($name), $expected);
     }
 }

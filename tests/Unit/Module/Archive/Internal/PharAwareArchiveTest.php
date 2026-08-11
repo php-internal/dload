@@ -9,11 +9,12 @@ use Internal\DLoad\Module\Archive\Internal\PharAwareArchive;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(PharAwareArchive::class)]
-final class PharAwareArchiveTest extends TestCase
+#[\Testo\Codecov\Covers(PharAwareArchive::class)]
+final class PharAwareArchiveTest
 {
     private \SplFileInfo $fileInfo;
 
+    #[\Testo\Test]
     public function testExtractThrowsExceptionWhenArchiveIsNotReadable(): void
     {
         // Arrange
@@ -24,13 +25,13 @@ final class PharAwareArchiveTest extends TestCase
         $archive = $this->createPharAwareArchive($pharData);
 
         // Assert
-        $this->expectException(ArchiveException::class);
-        $this->expectExceptionMessage('Could not open "unreadable.phar" for reading.');
+        \Testo\Expect::exception(ArchiveException::class)->withMessage('Could not open "unreadable.phar" for reading.');
 
         // Act
         \iterator_to_array($archive->extract());
     }
 
+    #[\Testo\Lifecycle\BeforeTest]
     protected function setUp(): void
     {
         // Arrange

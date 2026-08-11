@@ -10,8 +10,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(CachedGenerator::class)]
-final class CachedGeneratorTest extends TestCase
+#[\Testo\Codecov\Covers(CachedGenerator::class)]
+final class CachedGeneratorTest
 {
     /**
      * Data provider for traversable types test.
@@ -36,6 +36,7 @@ final class CachedGeneratorTest extends TestCase
     /**
      * Tests that the generator correctly caches items as they are yielded.
      */
+    #[\Testo\Test]
     public function testIterationCachesYieldedItems(): void
     {
         // Arrange
@@ -57,15 +58,16 @@ final class CachedGeneratorTest extends TestCase
         $allItems = \iterator_to_array($cachedGenerator);
 
         // Assert
-        self::assertCount(3, $iteratedItems);
-        self::assertSame([0, 1, 2], $iteratedItems);
+        \Testo\Assert::count($iteratedItems, 3);
+        \Testo\Assert::same($iteratedItems, [0, 1, 2]);
         // self::assertCount(5, $allItems);
-        self::assertSame([0, 1, 2, 3, 4], $allItems);
+        \Testo\Assert::same($allItems, [0, 1, 2, 3, 4]);
     }
 
     /**
      * Tests that first() returns the first element from the generator.
      */
+    #[\Testo\Test]
     public function testFirstReturnsFirstElement(): void
     {
         // Arrange
@@ -76,12 +78,13 @@ final class CachedGeneratorTest extends TestCase
         $firstItem = $cachedGenerator->first();
 
         // Assert
-        self::assertSame(0, $firstItem);
+        \Testo\Assert::same($firstItem, 0);
     }
 
     /**
      * Tests that first() returns null when the generator is empty.
      */
+    #[\Testo\Test]
     public function testFirstReturnsNullForEmptyGenerator(): void
     {
         // Arrange
@@ -92,12 +95,13 @@ final class CachedGeneratorTest extends TestCase
         $firstItem = $cachedGenerator->first();
 
         // Assert
-        self::assertNull($firstItem);
+        \Testo\Assert::null($firstItem);
     }
 
     /**
      * Tests that first() can retrieve the first item without affecting future iterations.
      */
+    #[\Testo\Test]
     public function testFirstDoesNotConsumeItemFromIteration(): void
     {
         // Arrange
@@ -109,14 +113,15 @@ final class CachedGeneratorTest extends TestCase
         $allItems = \iterator_to_array($cachedGenerator);
 
         // Assert
-        self::assertSame(0, $firstItem);
-        self::assertCount(3, $allItems);
-        self::assertSame([0, 1, 2], $allItems);
+        \Testo\Assert::same($firstItem, 0);
+        \Testo\Assert::count($allItems, 3);
+        \Testo\Assert::same($allItems, [0, 1, 2]);
     }
 
     /**
      * Tests that isEmpty() correctly identifies empty generators.
      */
+    #[\Testo\Test]
     public function testIsEmptyReturnsTrueForEmptyGenerator(): void
     {
         // Arrange
@@ -127,12 +132,13 @@ final class CachedGeneratorTest extends TestCase
         $isEmpty = $cachedGenerator->isEmpty();
 
         // Assert
-        self::assertTrue($isEmpty);
+        \Testo\Assert::true($isEmpty);
     }
 
     /**
      * Tests that isEmpty() correctly identifies non-empty generators.
      */
+    #[\Testo\Test]
     public function testIsEmptyReturnsFalseForNonEmptyGenerator(): void
     {
         // Arrange
@@ -143,12 +149,13 @@ final class CachedGeneratorTest extends TestCase
         $isEmpty = $cachedGenerator->isEmpty();
 
         // Assert
-        self::assertFalse($isEmpty);
+        \Testo\Assert::false($isEmpty);
     }
 
     /**
      * Tests that count() correctly returns the number of items in the generator.
      */
+    #[\Testo\Test]
     public function testCountReturnsCorrectItemCount(): void
     {
         // Arrange
@@ -159,12 +166,13 @@ final class CachedGeneratorTest extends TestCase
         $count = $cachedGenerator->count();
 
         // Assert
-        self::assertSame(5, $count);
+        \Testo\Assert::same($count, 5);
     }
 
     /**
      * Tests that count() returns zero for an empty generator.
      */
+    #[\Testo\Test]
     public function testCountReturnsZeroForEmptyGenerator(): void
     {
         // Arrange
@@ -175,12 +183,13 @@ final class CachedGeneratorTest extends TestCase
         $count = $cachedGenerator->count();
 
         // Assert
-        self::assertSame(0, $count);
+        \Testo\Assert::same($count, 0);
     }
 
     /**
      * Tests that partial iteration followed by count() returns the correct total count.
      */
+    #[\Testo\Test]
     public function testPartialIterationFollowedByCountReturnsCorrectTotal(): void
     {
         // Arrange
@@ -199,12 +208,13 @@ final class CachedGeneratorTest extends TestCase
         $count = $cachedGenerator->count();
 
         // Assert
-        self::assertSame(5, $count);
+        \Testo\Assert::same($count, 5);
     }
 
     /**
      * Tests that the cache persists after a complete iteration.
      */
+    #[\Testo\Test]
     public function testCachePersistsAfterCompleteIteration(): void
     {
         // Arrange
@@ -218,8 +228,8 @@ final class CachedGeneratorTest extends TestCase
         $secondIteration = \iterator_to_array($cachedGenerator);
 
         // Assert
-        self::assertSame($firstIteration, $secondIteration);
-        self::assertSame([0, 1, 2], $firstIteration);
+        \Testo\Assert::same($secondIteration, $firstIteration);
+        \Testo\Assert::same($firstIteration, [0, 1, 2]);
     }
 
     /**
@@ -228,7 +238,8 @@ final class CachedGeneratorTest extends TestCase
      * @param \Traversable $traversable The traversable to test
      * @param array $expected The expected result
      */
-    #[DataProvider('provideTraversables')]
+    #[\Testo\Data\DataProvider('provideTraversables')]
+    #[\Testo\Test]
     public function testHandlesVariousTraversableTypes(\Traversable $traversable, array $expected): void
     {
         // Arrange
@@ -238,12 +249,13 @@ final class CachedGeneratorTest extends TestCase
         $result = \iterator_to_array($cachedGenerator);
 
         // Assert
-        self::assertSame($expected, $result);
+        \Testo\Assert::same($result, $expected);
     }
 
     /**
      * Tests that cached generator works correctly with nested generators.
      */
+    #[\Testo\Test]
     public function testHandlesNestedGenerators(): void
     {
         // Arrange
@@ -258,12 +270,13 @@ final class CachedGeneratorTest extends TestCase
         $result = \iterator_to_array($cachedGenerator);
 
         // Assert
-        self::assertSame([0, 1, 10, 11], $result);
+        \Testo\Assert::same($result, [0, 1, 10, 11]);
     }
 
     /**
      * Tests behavior with large datasets to ensure memory effectiveness.
      */
+    #[\Testo\Test]
     public function testHandlesLargeDatasets(): void
     {
         // Arrange
@@ -287,9 +300,9 @@ final class CachedGeneratorTest extends TestCase
         $totalCount = $cachedGenerator->count();
 
         // Assert
-        self::assertSame(0, $firstAccess);
-        self::assertCount(10, $partialIteration);
-        self::assertSame(1000, $totalCount);
+        \Testo\Assert::same($firstAccess, 0);
+        \Testo\Assert::count($partialIteration, 10);
+        \Testo\Assert::same($totalCount, 1000);
     }
 
     /**

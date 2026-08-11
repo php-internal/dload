@@ -14,8 +14,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(LocalFileProcessor::class)]
-final class LocalFileProcessorTest extends TestCase
+#[\Testo\Codecov\Covers(LocalFileProcessor::class)]
+final class LocalFileProcessorTest
 {
     private LocalFileProcessor $processor;
     private VeloxAction $veloxAction;
@@ -50,6 +50,7 @@ final class LocalFileProcessorTest extends TestCase
         ];
     }
 
+    #[\Testo\Test]
     public function testInvokeReturnsOriginalContextWhenConfigFileIsNull(): void
     {
         // Arrange
@@ -65,9 +66,10 @@ final class LocalFileProcessorTest extends TestCase
         $result = $this->processor->__invoke($originalContext);
 
         // Assert
-        self::assertSame($originalContext, $result);
+        \Testo\Assert::same($result, $originalContext);
     }
 
+    #[\Testo\Test]
     public function testInvokeThrowsExceptionWhenConfigFileDoesNotExist(): void
     {
         // Arrange
@@ -81,18 +83,18 @@ final class LocalFileProcessorTest extends TestCase
         );
 
         // Assert (before Act for exceptions)
-        $this->expectException(ConfigException::class);
-        $this->expectExceptionMessage("Local config file not found: {$configPath}");
+        \Testo\Expect::exception(ConfigException::class)->withMessage("Local config file not found: {$configPath}");
 
         // Act
         $this->processor->__invoke($context);
     }
 
+    #[\Testo\Test]
     public function testInvokeThrowsExceptionWhenFileCannotBeRead(): void
     {
         // Skip this test on Windows as chmod doesn't work the same way
         if (PHP_OS_FAMILY === 'Windows') {
-            self::markTestSkipped('File permission tests are not reliable on Windows');
+            throw new \Testo\Core\Exception\SkipTest('File permission tests are not reliable on Windows');
         }
 
         // Arrange
@@ -109,8 +111,7 @@ final class LocalFileProcessorTest extends TestCase
         \chmod($tempFile, 0000);
 
         // Assert (before Act for exceptions)
-        $this->expectException(ConfigException::class);
-        $this->expectExceptionMessage("Failed to read local config file: {$tempFile}");
+        \Testo\Expect::exception(ConfigException::class)->withMessage("Failed to read local config file: {$tempFile}");
 
         // Act
         try {
@@ -122,6 +123,7 @@ final class LocalFileProcessorTest extends TestCase
         }
     }
 
+    #[\Testo\Test]
     public function testInvokeSuccessfullyProcessesValidTomlFile(): void
     {
         // Arrange
@@ -143,21 +145,22 @@ final class LocalFileProcessorTest extends TestCase
         $result = $this->processor->__invoke($context);
 
         // Assert
-        self::assertNotSame($context, $result);
+        \Testo\Assert::notSame($result, $context);
 
         $resultData = $result->tomlData->getData();
-        self::assertSame('base_data', $resultData['existing']);
-        self::assertSame('custom-roadrunner', $resultData['binary_name']);
-        self::assertSame('master', $resultData['github']['plugins']['logger']['ref']);
+        \Testo\Assert::same($resultData['existing'], 'base_data');
+        \Testo\Assert::same($resultData['binary_name'], 'custom-roadrunner');
+        \Testo\Assert::same($resultData['github']['plugins']['logger']['ref'], 'master');
 
-        self::assertTrue($result->metadata['local_file_applied']);
-        self::assertSame(\str_replace('\\', '/', $tempFile), $result->metadata['local_file_path']);
-        self::assertSame('metadata', $result->metadata['original']);
+        \Testo\Assert::true($result->metadata['local_file_applied']);
+        \Testo\Assert::same($result->metadata['local_file_path'], \str_replace('\\', '/', $tempFile));
+        \Testo\Assert::same($result->metadata['original'], 'metadata');
 
         // Clean up
         \unlink($tempFile);
     }
 
+    #[\Testo\Test]
     public function testInvokeMergesLocalDataWithExistingData(): void
     {
         // Arrange
@@ -186,16 +189,17 @@ final class LocalFileProcessorTest extends TestCase
         $resultData = $result->tomlData->getData();
 
         // Verify merge behavior
-        self::assertSame('rr', $resultData['roadrunner']['binary']);
-        self::assertSame('2023.3.0', $resultData['roadrunner']['version']);
-        self::assertSame('v1.0.0', $resultData['github']['plugins']['logger']['ref']);
-        self::assertSame('v4.7.0', $resultData['github']['plugins']['http']['ref']);
+        \Testo\Assert::same($resultData['roadrunner']['binary'], 'rr');
+        \Testo\Assert::same($resultData['roadrunner']['version'], '2023.3.0');
+        \Testo\Assert::same($resultData['github']['plugins']['logger']['ref'], 'v1.0.0');
+        \Testo\Assert::same($resultData['github']['plugins']['http']['ref'], 'v4.7.0');
 
         // Clean up
         \unlink($tempFile);
     }
 
-    #[DataProvider('provideValidTomlFiles')]
+    #[\Testo\Data\DataProvider('provideValidTomlFiles')]
+    #[\Testo\Test]
     public function testInvokeHandlesVariousTomlFormats(
         string $tomlContent,
         array $expectedKeys,
@@ -223,7 +227,7 @@ final class LocalFileProcessorTest extends TestCase
             foreach ($expectedKeys as $key => $expectedValue) {
                 self::assertArrayHasKey($key, $resultData);
                 if ($expectedValue !== null) {
-                    self::assertSame($expectedValue, $resultData[$key]);
+                    \Testo\Assert::same($resultData[$key], $expectedValue);
                 }
             }
         }
@@ -232,6 +236,7 @@ final class LocalFileProcessorTest extends TestCase
         \unlink($tempFile);
     }
 
+    #[\Testo\Test]
     public function testInvokePreservesContextImmutability(): void
     {
         // Arrange
@@ -252,21 +257,22 @@ final class LocalFileProcessorTest extends TestCase
         $result = $this->processor->__invoke($originalContext);
 
         // Assert - Original context should remain unchanged
-        self::assertSame(['original' => 'data'], $originalContext->tomlData->getData());
-        self::assertSame(['original' => 'metadata'], $originalContext->metadata);
-        self::assertSame($this->veloxAction, $originalContext->action);
-        self::assertSame($this->buildDir, $originalContext->buildDir);
+        \Testo\Assert::same($originalContext->tomlData->getData(), ['original' => 'data']);
+        \Testo\Assert::same($originalContext->metadata, ['original' => 'metadata']);
+        \Testo\Assert::same($originalContext->action, $this->veloxAction);
+        \Testo\Assert::same($originalContext->buildDir, $this->buildDir);
 
         // Result should have new data
         $resultData = $result->tomlData->getData();
-        self::assertSame('data', $resultData['original']);
-        self::assertSame('new_value', $resultData['new_key']);
-        self::assertTrue($result->metadata['local_file_applied']);
+        \Testo\Assert::same($resultData['original'], 'data');
+        \Testo\Assert::same($resultData['new_key'], 'new_value');
+        \Testo\Assert::true($result->metadata['local_file_applied']);
 
         // Clean up
         \unlink($tempFile);
     }
 
+    #[\Testo\Test]
     public function testInvokePreservesActionAndBuildDir(): void
     {
         // Arrange
@@ -285,13 +291,14 @@ final class LocalFileProcessorTest extends TestCase
         $result = $this->processor->__invoke($context);
 
         // Assert
-        self::assertSame($this->veloxAction, $result->action);
-        self::assertSame($this->buildDir, $result->buildDir);
+        \Testo\Assert::same($result->action, $this->veloxAction);
+        \Testo\Assert::same($result->buildDir, $this->buildDir);
 
         // Clean up
         \unlink($tempFile);
     }
 
+    #[\Testo\Test]
     public function testInvokeAddsCorrectMetadata(): void
     {
         // Arrange
@@ -311,17 +318,18 @@ final class LocalFileProcessorTest extends TestCase
         $result = $this->processor->__invoke($context);
 
         // Assert
-        self::assertTrue($result->metadata['local_file_applied']);
-        self::assertSame(\str_replace('\\', '/', $tempFile), $result->metadata['local_file_path']);
+        \Testo\Assert::true($result->metadata['local_file_applied']);
+        \Testo\Assert::same($result->metadata['local_file_path'], \str_replace('\\', '/', $tempFile));
 
         // Verify existing metadata is preserved
-        self::assertSame('value', $result->metadata['existing']);
-        self::assertSame(42, $result->metadata['count']);
+        \Testo\Assert::same($result->metadata['existing'], 'value');
+        \Testo\Assert::same($result->metadata['count'], 42);
 
         // Clean up
         \unlink($tempFile);
     }
 
+    #[\Testo\Test]
     public function testInvokeWithRelativeConfigPath(): void
     {
         // Arrange
@@ -346,14 +354,15 @@ final class LocalFileProcessorTest extends TestCase
 
         // Assert
         $resultData = $result->tomlData->getData();
-        self::assertSame('success', $resultData['relative_test']);
-        self::assertTrue($result->metadata['local_file_applied']);
+        \Testo\Assert::same($resultData['relative_test'], 'success');
+        \Testo\Assert::true($result->metadata['local_file_applied']);
 
         // Clean up
         \chdir($originalDir);
         \unlink($tempFile);
     }
 
+    #[\Testo\Lifecycle\BeforeTest]
     protected function setUp(): void
     {
         // Arrange (common setup)

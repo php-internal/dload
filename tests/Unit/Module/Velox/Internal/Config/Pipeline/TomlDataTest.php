@@ -9,8 +9,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(TomlData::class)]
-final class TomlDataTest extends TestCase
+#[\Testo\Codecov\Covers(TomlData::class)]
+final class TomlDataTest
 {
     public static function provideSetPathData(): \Generator
     {
@@ -66,15 +66,17 @@ final class TomlDataTest extends TestCase
         ];
     }
 
+    #[\Testo\Test]
     public function testConstructorCreatesEmptyInstance(): void
     {
         // Act
         $tomlData = new TomlData();
 
         // Assert
-        self::assertSame([], $tomlData->getData());
+        \Testo\Assert::same($tomlData->getData(), []);
     }
 
+    #[\Testo\Test]
     public function testConstructorCreatesInstanceWithData(): void
     {
         // Arrange
@@ -84,9 +86,10 @@ final class TomlDataTest extends TestCase
         $tomlData = new TomlData($data);
 
         // Assert
-        self::assertSame($data, $tomlData->getData());
+        \Testo\Assert::same($tomlData->getData(), $data);
     }
 
+    #[\Testo\Test]
     public function testFromStringCreatesInstanceFromTomlString(): void
     {
         // Arrange
@@ -100,9 +103,10 @@ final class TomlDataTest extends TestCase
         $tomlData = TomlData::fromString($toml);
 
         // Assert
-        self::assertSame($expectedData, $tomlData->getData());
+        \Testo\Assert::same($tomlData->getData(), $expectedData);
     }
 
+    #[\Testo\Test]
     public function testMergeCreatesNewInstanceWithMergedData(): void
     {
         // Arrange
@@ -123,11 +127,12 @@ final class TomlDataTest extends TestCase
         $merged = $tomlData1->merge($tomlData2);
 
         // Assert
-        self::assertNotSame($tomlData1, $merged);
-        self::assertNotSame($tomlData2, $merged);
-        self::assertEquals($expectedMerged, $merged->getData());
+        \Testo\Assert::notSame($merged, $tomlData1);
+        \Testo\Assert::notSame($merged, $tomlData2);
+        \Testo\Assert::equals($merged->getData(), $expectedMerged);
     }
 
+    #[\Testo\Test]
     public function testMergeOverwritesExistingKeys(): void
     {
         // Arrange
@@ -144,9 +149,10 @@ final class TomlDataTest extends TestCase
         $merged = $tomlData1->merge($tomlData2);
 
         // Assert
-        self::assertSame($expectedMerged, $merged->getData());
+        \Testo\Assert::same($merged->getData(), $expectedMerged);
     }
 
+    #[\Testo\Test]
     public function testMergeHandlesNestedArrays(): void
     {
         // Arrange
@@ -169,10 +175,11 @@ final class TomlDataTest extends TestCase
         $merged = $tomlData1->merge($tomlData2);
 
         // Assert
-        self::assertEquals($expectedMerged, $merged->getData());
+        \Testo\Assert::equals($merged->getData(), $expectedMerged);
     }
 
-    #[DataProvider('provideSetPathData')]
+    #[\Testo\Data\DataProvider('provideSetPathData')]
+    #[\Testo\Test]
     public function testSetCreatesNewInstanceWithUpdatedValue(string $path, mixed $value, array $expectedData): void
     {
         // Arrange
@@ -183,11 +190,12 @@ final class TomlDataTest extends TestCase
         $updated = $tomlData->set($path, $value);
 
         // Assert
-        self::assertNotSame($tomlData, $updated);
-        self::assertSame($expectedData, $updated->getData());
-        self::assertSame($initialData, $tomlData->getData()); // Original unchanged
+        \Testo\Assert::notSame($updated, $tomlData);
+        \Testo\Assert::same($updated->getData(), $expectedData);
+        \Testo\Assert::same($tomlData->getData(), $initialData); // Original unchanged
     }
 
+    #[\Testo\Test]
     public function testToTomlConvertsDataToTomlString(): void
     {
         // Arrange
@@ -214,9 +222,10 @@ final class TomlDataTest extends TestCase
         $result = $tomlData->toToml();
 
         // Assert
-        self::assertSame($expectedToml, $result);
+        \Testo\Assert::same($result, $expectedToml);
     }
 
+    #[\Testo\Test]
     public function testToTomlHandlesNestedSections(): void
     {
         // Arrange
@@ -235,9 +244,10 @@ final class TomlDataTest extends TestCase
         $result = $tomlData->toToml();
 
         // Assert
-        self::assertSame($expectedToml, $result);
+        \Testo\Assert::same($result, $expectedToml);
     }
 
+    #[\Testo\Test]
     public function testToTomlHandlesMixedSectionTypes(): void
     {
         // Arrange
@@ -260,9 +270,10 @@ final class TomlDataTest extends TestCase
         $result = $tomlData->toToml();
 
         // Assert
-        self::assertSame($expectedToml, $result);
+        \Testo\Assert::same($result, $expectedToml);
     }
 
+    #[\Testo\Test]
     public function testToTomlHandlesEmptyData(): void
     {
         // Arrange
@@ -272,9 +283,10 @@ final class TomlDataTest extends TestCase
         $result = $tomlData->toToml();
 
         // Assert
-        self::assertSame('', $result);
+        \Testo\Assert::same($result, '');
     }
 
+    #[\Testo\Test]
     public function testRoundTripConversion(): void
     {
         // Arrange
@@ -286,19 +298,21 @@ final class TomlDataTest extends TestCase
         $roundTripData = TomlData::fromString($convertedToml);
 
         // Assert
-        self::assertSame($tomlData->getData(), $roundTripData->getData());
+        \Testo\Assert::same($roundTripData->getData(), $tomlData->getData());
     }
 
-    #[DataProvider('provideQuotedValues')]
+    #[\Testo\Data\DataProvider('provideQuotedValues')]
+    #[\Testo\Test]
     public function testFromStringHandlesQuotedValues(string $toml, array $expectedData): void
     {
         // Act
         $tomlData = TomlData::fromString($toml);
 
         // Assert
-        self::assertSame($expectedData, $tomlData->getData());
+        \Testo\Assert::same($tomlData->getData(), $expectedData);
     }
 
+    #[\Testo\Test]
     public function testImmutabilityOfOriginalData(): void
     {
         // Arrange
@@ -310,10 +324,11 @@ final class TomlDataTest extends TestCase
         $tomlData->merge(new TomlData(['otherkey' => 'othervalue']));
 
         // Assert - original data and instance should be unchanged
-        self::assertSame(['key' => 'value'], $tomlData->getData());
-        self::assertSame(['key' => 'value'], $originalData);
+        \Testo\Assert::same($tomlData->getData(), ['key' => 'value']);
+        \Testo\Assert::same($originalData, ['key' => 'value']);
     }
 
+    #[\Testo\Test]
     public function testGetDataReturnsReadOnlyArray(): void
     {
         // Arrange
@@ -323,9 +338,10 @@ final class TomlDataTest extends TestCase
         $data = $tomlData->getData();
 
         // Assert
-        self::assertSame(['key' => 'value'], $data);
+        \Testo\Assert::same($data, ['key' => 'value']);
     }
 
+    #[\Testo\Test]
     public function testToTomlHandlesDeeplyNestedSections(): void
     {
         // Arrange
@@ -363,9 +379,10 @@ final class TomlDataTest extends TestCase
         $result = $tomlData->toToml();
 
         // Assert
-        self::assertSame($expectedToml, $result);
+        \Testo\Assert::same($result, $expectedToml);
     }
 
+    #[\Testo\Test]
     public function testToTomlHandlesInlineArrays(): void
     {
         // Arrange
@@ -384,9 +401,10 @@ final class TomlDataTest extends TestCase
         $result = $tomlData->toToml();
 
         // Assert
-        self::assertSame($expectedToml, $result);
+        \Testo\Assert::same($result, $expectedToml);
     }
 
+    #[\Testo\Test]
     public function testToTomlHandlesMixedTopLevelAndNestedStructures(): void
     {
         // Arrange
@@ -434,9 +452,10 @@ final class TomlDataTest extends TestCase
         $result = $tomlData->toToml();
 
         // Assert
-        self::assertSame($expectedToml, $result);
+        \Testo\Assert::same($result, $expectedToml);
     }
 
+    #[\Testo\Test]
     public function testFromStringAndToTomlRoundTripWithNestedArrays(): void
     {
         // Arrange - This mimics the structure from velox.toml
@@ -468,9 +487,10 @@ final class TomlDataTest extends TestCase
         $roundTripData = TomlData::fromString($convertedToml);
 
         // Assert
-        self::assertSame($tomlData->getData(), $roundTripData->getData());
+        \Testo\Assert::same($roundTripData->getData(), $tomlData->getData());
     }
 
+    #[\Testo\Test]
     public function testParseTomlWithComplexNestedStructure(): void
     {
         // Arrange
@@ -511,6 +531,6 @@ final class TomlDataTest extends TestCase
         $tomlData = TomlData::fromString($toml);
 
         // Assert
-        self::assertSame($expectedData, $tomlData->getData());
+        \Testo\Assert::same($tomlData->getData(), $expectedData);
     }
 }

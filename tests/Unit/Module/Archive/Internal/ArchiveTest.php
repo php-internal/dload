@@ -8,9 +8,10 @@ use Internal\DLoad\Module\Archive\Internal\Archive;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(Archive::class)]
-final class ArchiveTest extends TestCase
+#[\Testo\Codecov\Covers(Archive::class)]
+final class ArchiveTest
 {
+    #[\Testo\Test]
     public function testConstructorThrowsExceptionWhenFileDoesNotExist(): void
     {
         // Arrange
@@ -19,13 +20,13 @@ final class ArchiveTest extends TestCase
         $file->method('getFilename')->willReturn('non-existent.zip');
 
         // Assert
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Archive "non-existent.zip" is not a file.');
+        \Testo\Expect::exception(\InvalidArgumentException::class)->withMessage('Archive "non-existent.zip" is not a file.');
 
         // Act
         $this->createArchiveInstance($file);
     }
 
+    #[\Testo\Test]
     public function testConstructorThrowsExceptionWhenFileIsNotReadable(): void
     {
         // Arrange
@@ -35,13 +36,13 @@ final class ArchiveTest extends TestCase
         $file->method('getFilename')->willReturn('unreadable.zip');
 
         // Assert
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Archive file "unreadable.zip" is not readable.');
+        \Testo\Expect::exception(\InvalidArgumentException::class)->withMessage('Archive file "unreadable.zip" is not readable.');
 
         // Act
         $this->createArchiveInstance($file);
     }
 
+    #[\Testo\Test]
     public function testConstructorSucceedsWithValidFile(): void
     {
         // Arrange
@@ -53,7 +54,7 @@ final class ArchiveTest extends TestCase
         $archive = $this->createArchiveInstance($file);
 
         // Assert
-        self::assertInstanceOf(Archive::class, $archive);
+        \Testo\Assert::instanceOf($archive, Archive::class);
     }
 
     /**

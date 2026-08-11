@@ -8,9 +8,10 @@ use Internal\DLoad\Module\Archive\Internal\NullArchive;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(NullArchive::class)]
-final class NullArchiveTest extends TestCase
+#[\Testo\Codecov\Covers(NullArchive::class)]
+final class NullArchiveTest
 {
+    #[\Testo\Test]
     public function testConstructorValidatesFile(): void
     {
         // Arrange
@@ -20,13 +21,13 @@ final class NullArchiveTest extends TestCase
         $file->method('getFilename')->willReturn('not-a-file');
 
         // Assert
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Archive "not-a-file" is not a file.');
+        \Testo\Expect::exception(\InvalidArgumentException::class)->withMessage('Archive "not-a-file" is not a file.');
 
         // Act
         new NullArchive($file);
     }
 
+    #[\Testo\Test]
     public function testExtractYieldsFileAsItself(): void
     {
         // Arrange
@@ -45,10 +46,11 @@ final class NullArchiveTest extends TestCase
         $key = $generator->key();
         $value = $generator->current();
 
-        self::assertSame('/path/to/source-file', $key);
-        self::assertSame($sourceFile, $value);
+        \Testo\Assert::same($key, '/path/to/source-file');
+        \Testo\Assert::same($value, $sourceFile);
     }
 
+    #[\Testo\Test]
     public function testExtractCopiesFileWhenDestinationProvided(): void
     {
         // This test would require mocking the global copy function

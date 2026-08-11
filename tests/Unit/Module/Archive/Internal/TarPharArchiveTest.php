@@ -8,9 +8,10 @@ use Internal\DLoad\Module\Archive\Internal\TarPharArchive;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(TarPharArchive::class)]
-final class TarPharArchiveTest extends TestCase
+#[\Testo\Codecov\Covers(TarPharArchive::class)]
+final class TarPharArchiveTest
 {
+    #[\Testo\Test]
     public function testConstructorValidatesFile(): void
     {
         // Arrange
@@ -20,8 +21,7 @@ final class TarPharArchiveTest extends TestCase
         $file->method('getFilename')->willReturn('unreadable.tar.gz');
 
         // Assert
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Archive file "unreadable.tar.gz" is not readable.');
+        \Testo\Expect::exception(\InvalidArgumentException::class)->withMessage('Archive file "unreadable.tar.gz" is not readable.');
 
         // Act
         new TarPharArchive($file);

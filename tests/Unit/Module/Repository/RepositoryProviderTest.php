@@ -12,8 +12,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(RepositoryProvider::class)]
-final class RepositoryProviderTest extends TestCase
+#[\Testo\Codecov\Covers(RepositoryProvider::class)]
+final class RepositoryProviderTest
 {
     private RepositoryProvider $repositoryProvider;
 
@@ -37,6 +37,7 @@ final class RepositoryProviderTest extends TestCase
         yield 'custom config without support' => [$customConfig, false];
     }
 
+    #[\Testo\Test]
     public function testAddRepositoryFactoryReturnsSelf(): void
     {
         // Arrange
@@ -46,9 +47,10 @@ final class RepositoryProviderTest extends TestCase
         $result = $this->repositoryProvider->addRepositoryFactory($factory);
 
         // Assert
-        self::assertSame($this->repositoryProvider, $result);
+        \Testo\Assert::same($result, $this->repositoryProvider);
     }
 
+    #[\Testo\Test]
     public function testGetByConfigReturnsRepositoryFromSupportingFactory(): void
     {
         // Arrange
@@ -74,9 +76,10 @@ final class RepositoryProviderTest extends TestCase
         $result = $this->repositoryProvider->getByConfig($config);
 
         // Assert
-        self::assertSame($repository, $result);
+        \Testo\Assert::same($result, $repository);
     }
 
+    #[\Testo\Test]
     public function testGetByConfigUsesFirstSupportingFactory(): void
     {
         // Arrange
@@ -103,9 +106,10 @@ final class RepositoryProviderTest extends TestCase
         $result = $this->repositoryProvider->getByConfig($config);
 
         // Assert
-        self::assertSame($repository1, $result);
+        \Testo\Assert::same($result, $repository1);
     }
 
+    #[\Testo\Test]
     public function testGetByConfigThrowsExceptionWhenNoFactorySupportsConfig(): void
     {
         // Arrange
@@ -118,14 +122,14 @@ final class RepositoryProviderTest extends TestCase
         $this->repositoryProvider->addRepositoryFactory($factory);
 
         // Assert (before Act for exceptions)
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage("No factory found for repository type `unsupported`.");
+        \Testo\Expect::exception(\RuntimeException::class)->withMessage("No factory found for repository type `unsupported`.");
 
         // Act
         $this->repositoryProvider->getByConfig($config);
     }
 
-    #[DataProvider('provideRepositoryConfigs')]
+    #[\Testo\Data\DataProvider('provideRepositoryConfigs')]
+    #[\Testo\Test]
     public function testGetByConfigWithVariousConfigs(RepositoryConfig $config, bool $factorySupports): void
     {
         // Arrange
@@ -142,8 +146,7 @@ final class RepositoryProviderTest extends TestCase
 
         // Assert expectation for exception if no factory supports
         if (!$factorySupports) {
-            $this->expectException(\RuntimeException::class);
-            $this->expectExceptionMessage("No factory found for repository type `{$config->type}`.");
+            \Testo\Expect::exception(\RuntimeException::class)->withMessage("No factory found for repository type `{$config->type}`.");
         }
 
         // Act
@@ -151,10 +154,11 @@ final class RepositoryProviderTest extends TestCase
 
         // Assert result if factory supports
         if ($factorySupports) {
-            self::assertSame($repository, $result);
+            \Testo\Assert::same($result, $repository);
         }
     }
 
+    #[\Testo\Lifecycle\BeforeTest]
     protected function setUp(): void
     {
         // Arrange (common setup)

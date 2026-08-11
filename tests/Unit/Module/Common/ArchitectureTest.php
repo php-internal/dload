@@ -8,7 +8,7 @@ use Internal\DLoad\Module\Common\Architecture;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
-class ArchitectureTest extends TestCase
+class ArchitectureTest
 {
     public static function provideBuildNames(): iterable
     {
@@ -22,9 +22,10 @@ class ArchitectureTest extends TestCase
         yield ['temporal-test-server_1.33.0_macOS_arm64.tar.gz', Architecture::ARM_64];
     }
 
-    #[DataProvider('provideBuildNames')]
+    #[\Testo\Data\DataProvider('provideBuildNames')]
+    #[\Testo\Test]
     public function testTryFromBuildName(string $name, ?Architecture $expected): void
     {
-        self::assertSame($expected, Architecture::tryFromBuildName($name));
+        \Testo\Assert::same(Architecture::tryFromBuildName($name), $expected);
     }
 }

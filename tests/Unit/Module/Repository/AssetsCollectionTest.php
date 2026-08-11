@@ -15,8 +15,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(AssetsCollection::class)]
-final class AssetsCollectionTest extends TestCase
+#[\Testo\Codecov\Covers(AssetsCollection::class)]
+final class AssetsCollectionTest
 {
     private RepositoryStub $repository;
     private ReleaseStub $release;
@@ -61,33 +61,36 @@ final class AssetsCollectionTest extends TestCase
         ];
     }
 
+    #[\Testo\Test]
     public function testWhereOperatingSystemFiltersAssetsByOs(): void
     {
         // Act
         $result = $this->collection->whereOperatingSystem(OperatingSystem::Linux);
 
         // Assert
-        self::assertCount(2, $result);
+        \Testo\Assert::count($result, 2);
 
         foreach ($result as $asset) {
-            self::assertSame(OperatingSystem::Linux, $asset->getOperatingSystem());
+            \Testo\Assert::same($asset->getOperatingSystem(), OperatingSystem::Linux);
         }
     }
 
+    #[\Testo\Test]
     public function testWhereArchitectureFiltersAssetsByArchitecture(): void
     {
         // Act
         $result = $this->collection->whereArchitecture(Architecture::ARM_64);
 
         // Assert
-        self::assertCount(3, $result);
+        \Testo\Assert::count($result, 3);
 
         foreach ($result as $asset) {
-            self::assertSame(Architecture::ARM_64, $asset->getArchitecture());
+            \Testo\Assert::same($asset->getArchitecture(), Architecture::ARM_64);
         }
     }
 
-    #[DataProvider('provideNamePatterns')]
+    #[\Testo\Data\DataProvider('provideNamePatterns')]
+    #[\Testo\Test]
     public function testWhereNameMatchesFiltersAssetsByNamePattern(
         string $pattern,
         array $expectedMatches,
@@ -96,7 +99,7 @@ final class AssetsCollectionTest extends TestCase
         $result = $this->collection->whereNameMatches($pattern);
 
         // Assert
-        self::assertCount(\count($expectedMatches), $result);
+        \Testo\Assert::count($result, \count($expectedMatches));
 
         $actualNames = \array_map(
             static fn($asset) => $asset->getName(),
@@ -104,19 +107,21 @@ final class AssetsCollectionTest extends TestCase
         );
 
         foreach ($expectedMatches as $expectedName) {
-            self::assertContains($expectedName, $actualNames);
+            \Testo\Assert::contains($actualNames, $expectedName);
         }
     }
 
+    #[\Testo\Test]
     public function testWhereNameMatchesWithInvalidPattern(): void
     {
         // Act
         $new = $this->collection->whereNameMatches('/invalid[pattern/');
 
         // Assert
-        self::assertCount(0, $new);
+        \Testo\Assert::count($new, 0);
     }
 
+    #[\Testo\Test]
     public function testChainedFiltersWorkCorrectly(): void
     {
         // Act
@@ -125,44 +130,47 @@ final class AssetsCollectionTest extends TestCase
             ->whereArchitecture(Architecture::ARM_64);
 
         // Assert
-        self::assertCount(1, $result);
+        \Testo\Assert::count($result, 1);
         $asset = $result->first();
-        self::assertSame('package-1.2.3-linux-arm64.tar.gz', $asset->getName());
+        \Testo\Assert::same($asset->getName(), 'package-1.2.3-linux-arm64.tar.gz');
     }
 
+    #[\Testo\Test]
     public function testFirstReturnsFirstAssetOrNull(): void
     {
         // Act with non-empty collection
         $first = $this->collection->first();
 
         // Assert
-        self::assertNotNull($first);
-        self::assertSame('package-1.2.3-linux-x64.tar.gz', $first->getName());
+        \Testo\Assert::notNull($first);
+        \Testo\Assert::same($first->getName(), 'package-1.2.3-linux-x64.tar.gz');
 
         // Act with empty collection
         $empty = new AssetsCollection([]);
         $result = $empty->first();
 
         // Assert
-        self::assertNull($result);
+        \Testo\Assert::null($result);
     }
 
+    #[\Testo\Test]
     public function testEmptyReturnsTrueForEmptyCollection(): void
     {
         // Act with non-empty collection
         $resultNonEmpty = $this->collection->empty();
 
         // Assert
-        self::assertFalse($resultNonEmpty);
+        \Testo\Assert::false($resultNonEmpty);
 
         // Act with empty collection
         $empty = new AssetsCollection([]);
         $resultEmpty = $empty->empty();
 
         // Assert
-        self::assertTrue($resultEmpty);
+        \Testo\Assert::true($resultEmpty);
     }
 
+    #[\Testo\Lifecycle\BeforeTest]
     protected function setUp(): void
     {
         // Arrange

@@ -13,12 +13,13 @@ use Internal\Path;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(ConfigPipeline::class)]
-final class ConfigPipelineTest extends TestCase
+#[\Testo\Codecov\Covers(ConfigPipeline::class)]
+final class ConfigPipelineTest
 {
     private VeloxAction $veloxAction;
     private Path $buildDir;
 
+    #[\Testo\Test]
     public function testConstructorCreatesInstanceWithProcessors(): void
     {
         // Arrange
@@ -30,9 +31,10 @@ final class ConfigPipelineTest extends TestCase
         $pipeline = new ConfigPipeline($processors);
 
         // Assert
-        self::assertInstanceOf(ConfigPipeline::class, $pipeline);
+        \Testo\Assert::instanceOf($pipeline, ConfigPipeline::class);
     }
 
+    #[\Testo\Test]
     public function testConstructorCreatesInstanceWithEmptyProcessors(): void
     {
         // Arrange
@@ -42,9 +44,10 @@ final class ConfigPipelineTest extends TestCase
         $pipeline = new ConfigPipeline($processors);
 
         // Assert
-        self::assertInstanceOf(ConfigPipeline::class, $pipeline);
+        \Testo\Assert::instanceOf($pipeline, ConfigPipeline::class);
     }
 
+    #[\Testo\Test]
     public function testProcessWithEmptyProcessorsReturnsOriginalContext(): void
     {
         // Arrange
@@ -61,9 +64,10 @@ final class ConfigPipelineTest extends TestCase
         $result = $pipeline->process($originalContext);
 
         // Assert
-        self::assertSame($originalContext, $result);
+        \Testo\Assert::same($result, $originalContext);
     }
 
+    #[\Testo\Test]
     public function testProcessWithSingleProcessorCallsProcessor(): void
     {
         // Arrange
@@ -92,10 +96,11 @@ final class ConfigPipelineTest extends TestCase
         $result = $pipeline->process($originalContext);
 
         // Assert
-        self::assertSame($modifiedContext, $result);
-        self::assertNotSame($originalContext, $result);
+        \Testo\Assert::same($result, $modifiedContext);
+        \Testo\Assert::notSame($result, $originalContext);
     }
 
+    #[\Testo\Test]
     public function testProcessWithMultipleProcessorsCallsThemInSequence(): void
     {
         // Arrange
@@ -150,10 +155,11 @@ final class ConfigPipelineTest extends TestCase
         $result = $pipeline->process($originalContext);
 
         // Assert
-        self::assertSame($finalContext, $result);
-        self::assertSame(['step' => '3'], $result->tomlData->getData());
+        \Testo\Assert::same($result, $finalContext);
+        \Testo\Assert::same($result->tomlData->getData(), ['step' => '3']);
     }
 
+    #[\Testo\Test]
     public function testProcessPassesThroughComplexContextChanges(): void
     {
         // Arrange
@@ -203,11 +209,12 @@ final class ConfigPipelineTest extends TestCase
         $result = $pipeline->process($originalContext);
 
         // Assert
-        self::assertSame($finalContext, $result);
-        self::assertSame(['initial' => 'data', 'added_by_p1' => 'value1'], $result->tomlData->getData());
-        self::assertSame(['version' => '1.0', 'processed_by' => 'p2'], $result->metadata);
+        \Testo\Assert::same($result, $finalContext);
+        \Testo\Assert::same($result->tomlData->getData(), ['initial' => 'data', 'added_by_p1' => 'value1']);
+        \Testo\Assert::same($result->metadata, ['version' => '1.0', 'processed_by' => 'p2']);
     }
 
+    #[\Testo\Test]
     public function testProcessPreservesContextImmutability(): void
     {
         // Arrange
@@ -239,14 +246,15 @@ final class ConfigPipelineTest extends TestCase
         $result = $pipeline->process($originalContext);
 
         // Assert - Original context should remain unchanged
-        self::assertSame(['original' => 'data'], $originalContext->tomlData->getData());
-        self::assertSame(['original' => 'metadata'], $originalContext->metadata);
+        \Testo\Assert::same($originalContext->tomlData->getData(), ['original' => 'data']);
+        \Testo\Assert::same($originalContext->metadata, ['original' => 'metadata']);
 
         // Result should have modified data
-        self::assertSame(['modified' => 'data'], $result->tomlData->getData());
-        self::assertSame(['modified' => 'metadata'], $result->metadata);
+        \Testo\Assert::same($result->tomlData->getData(), ['modified' => 'data']);
+        \Testo\Assert::same($result->metadata, ['modified' => 'metadata']);
     }
 
+    #[\Testo\Test]
     public function testProcessWithProcessorThatReturnsUnchangedContext(): void
     {
         // Arrange
@@ -299,10 +307,11 @@ final class ConfigPipelineTest extends TestCase
         $result = $pipeline->process($originalContext);
 
         // Assert
-        self::assertSame($finalContext, $result);
-        self::assertSame(['data' => 'modified_by_p3'], $result->tomlData->getData());
+        \Testo\Assert::same($result, $finalContext);
+        \Testo\Assert::same($result->tomlData->getData(), ['data' => 'modified_by_p3']);
     }
 
+    #[\Testo\Test]
     public function testProcessMaintainsActionAndBuildDirThroughPipeline(): void
     {
         // Arrange
@@ -333,12 +342,13 @@ final class ConfigPipelineTest extends TestCase
         $result = $pipeline->process($originalContext);
 
         // Assert
-        self::assertSame($this->veloxAction, $result->action);
-        self::assertSame($this->buildDir, $result->buildDir);
-        self::assertSame(['modified' => 'data'], $result->tomlData->getData());
-        self::assertSame(['modified' => 'metadata'], $result->metadata);
+        \Testo\Assert::same($result->action, $this->veloxAction);
+        \Testo\Assert::same($result->buildDir, $this->buildDir);
+        \Testo\Assert::same($result->tomlData->getData(), ['modified' => 'data']);
+        \Testo\Assert::same($result->metadata, ['modified' => 'metadata']);
     }
 
+    #[\Testo\Test]
     public function testProcessHandlesLargeNumberOfProcessors(): void
     {
         // Arrange
@@ -372,9 +382,10 @@ final class ConfigPipelineTest extends TestCase
         $result = $pipeline->process($originalContext);
 
         // Assert
-        self::assertSame(['counter' => 10], $result->tomlData->getData());
+        \Testo\Assert::same($result->tomlData->getData(), ['counter' => 10]);
     }
 
+    #[\Testo\Lifecycle\BeforeTest]
     protected function setUp(): void
     {
         $this->veloxAction = new VeloxAction();

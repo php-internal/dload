@@ -7,8 +7,9 @@ namespace Internal\DLoad\Tests\Unit\Module\Repository\Internal;
 use Internal\DLoad\Module\Repository\Internal\Paginator;
 use PHPUnit\Framework\TestCase;
 
-final class PaginatorTest extends TestCase
+final class PaginatorTest
 {
+    #[\Testo\Test]
     public function testCreateFromGenerator(): void
     {
         // Create a generator that yields arrays of items for each page
@@ -21,26 +22,27 @@ final class PaginatorTest extends TestCase
         $paginator = Paginator::createFromGenerator($loader(), null);
 
         // Test that we get the first page items
-        $this->assertEquals(['Item 1', 'Item 2'], $paginator->getPageItems());
-        $this->assertEquals(1, $paginator->getPageNumber());
+        \Testo\Assert::equals($paginator->getPageItems(), ['Item 1', 'Item 2']);
+        \Testo\Assert::equals($paginator->getPageNumber(), 1);
 
         // Test getting next page
         $page2 = $paginator->getNextPage();
-        $this->assertNotNull($page2);
-        $this->assertEquals(['Item 3', 'Item 4'], $page2->getPageItems());
-        $this->assertEquals(2, $page2->getPageNumber());
+        \Testo\Assert::notNull($page2);
+        \Testo\Assert::equals($page2->getPageItems(), ['Item 3', 'Item 4']);
+        \Testo\Assert::equals($page2->getPageNumber(), 2);
 
         // Test getting third page
         $page3 = $page2->getNextPage();
-        $this->assertNotNull($page3);
-        $this->assertEquals(['Item 5'], $page3->getPageItems());
-        $this->assertEquals(3, $page3->getPageNumber());
+        \Testo\Assert::notNull($page3);
+        \Testo\Assert::equals($page3->getPageItems(), ['Item 5']);
+        \Testo\Assert::equals($page3->getPageNumber(), 3);
 
         // Test that there's no fourth page
         $page4 = $page3->getNextPage();
-        $this->assertNull($page4);
+        \Testo\Assert::null($page4);
     }
 
+    #[\Testo\Test]
     public function testIteration(): void
     {
         // Create a generator that yields arrays of items for each page
@@ -53,9 +55,10 @@ final class PaginatorTest extends TestCase
 
         // Test iterating through all items
         $items = \iterator_to_array($paginator);
-        $this->assertEquals(['Item 1', 'Item 2', 'Item 3', 'Item 4'], $items);
+        \Testo\Assert::equals($items, ['Item 1', 'Item 2', 'Item 3', 'Item 4']);
     }
 
+    #[\Testo\Test]
     public function testCountWithCounter(): void
     {
         // Create a generator
@@ -70,9 +73,10 @@ final class PaginatorTest extends TestCase
         $paginator = Paginator::createFromGenerator($loader(), $counter);
 
         // Test count()
-        $this->assertEquals(4, $paginator->count());
+        \Testo\Assert::equals($paginator->count(), 4);
     }
 
+    #[\Testo\Test]
     public function testCountWithoutCounter(): void
     {
         // Create a generator
@@ -83,7 +87,7 @@ final class PaginatorTest extends TestCase
         $paginator = Paginator::createFromGenerator($loader(), null);
 
         // Test that count() throws an exception when no counter is provided
-        $this->expectException(\LogicException::class);
+        \Testo\Expect::exception(\LogicException::class);
         $paginator->count();
     }
 }

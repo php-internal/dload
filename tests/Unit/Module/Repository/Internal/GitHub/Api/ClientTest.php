@@ -22,8 +22,8 @@ use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\UriInterface;
 
-#[CoversClass(Client::class)]
-final class ClientTest extends TestCase
+#[\Testo\Codecov\Covers(Client::class)]
+final class ClientTest
 {
     private HttpFactoryStub $httpFactory;
     private ClientStub $httpClient;
@@ -130,6 +130,7 @@ final class ClientTest extends TestCase
         ];
     }
 
+    #[\Testo\Test]
     public function testRequestAddsDefaultHeaders(): void
     {
         // Arrange
@@ -146,9 +147,10 @@ final class ClientTest extends TestCase
         $result = $this->client->request($method, $uri);
 
         // Assert
-        self::assertSame($response, $result);
+        \Testo\Assert::same($result, $response);
     }
 
+    #[\Testo\Test]
     public function testRequestWithAuthTokenAddsAuthorizationHeader(): void
     {
         // Arrange
@@ -167,9 +169,10 @@ final class ClientTest extends TestCase
         $result = $clientWithToken->request($method, $uri);
 
         // Assert
-        self::assertEquals($response, $result);
+        \Testo\Assert::equals($result, $response);
     }
 
+    #[\Testo\Test]
     public function testRequestWithoutTokenDoesNotAddAuthorizationHeader(): void
     {
         // Arrange
@@ -184,9 +187,10 @@ final class ClientTest extends TestCase
         $result = $this->client->request($method, $uri);
 
         // Assert
-        self::assertEquals($response, $result);
+        \Testo\Assert::equals($result, $response);
     }
 
+    #[\Testo\Test]
     public function testDetectsRateLimitResponseAndThrowsException(): void
     {
         // Arrange
@@ -200,13 +204,13 @@ final class ClientTest extends TestCase
         $this->client = new Client($this->httpFactory, $this->httpClient, $this->gitHubConfig);
 
         // Assert (before Act for exceptions)
-        $this->expectException(RateLimitException::class);
-        $this->expectExceptionMessage('rate limit exceeded');
+        \Testo\Expect::exception(RateLimitException::class)->withMessage('rate limit exceeded');
 
         // Act
         $this->client->request($method, $uri);
     }
 
+    #[\Testo\Test]
     public function testRateLimitMessageSuggestsTokenWhenThereIsNoToken(): void
     {
         // Arrange
@@ -217,7 +221,7 @@ final class ClientTest extends TestCase
         // Act
         try {
             $this->client->sendRequest($request);
-            self::fail('RateLimitException is expected.');
+            \Testo\Assert::fail('RateLimitException is expected.');
         } catch (RateLimitException $e) {
             // Assert
             self::assertStringContainsString('GITHUB_TOKEN', $e->getMessage());
@@ -225,6 +229,7 @@ final class ClientTest extends TestCase
         }
     }
 
+    #[\Testo\Test]
     public function testAuthenticationMessageMentionsConfiguredToken(): void
     {
         // Arrange
@@ -237,7 +242,7 @@ final class ClientTest extends TestCase
         // Act
         try {
             $client->sendRequest($request);
-            self::fail('AuthenticationException is expected.');
+            \Testo\Assert::fail('AuthenticationException is expected.');
         } catch (AuthenticationException $e) {
             // Assert
             self::assertStringContainsString('Bad credentials', $e->getMessage());
@@ -245,6 +250,7 @@ final class ClientTest extends TestCase
         }
     }
 
+    #[\Testo\Test]
     public function testSendRequestDelegatesToHttpClient(): void
     {
         // Arrange
@@ -258,9 +264,10 @@ final class ClientTest extends TestCase
         $result = $this->client->sendRequest($request);
 
         // Assert
-        self::assertSame($response, $result);
+        \Testo\Assert::same($result, $response);
     }
 
+    #[\Testo\Test]
     public function testSendRequestWrapsClientExceptionsIntoApiException(): void
     {
         // Arrange
@@ -273,15 +280,16 @@ final class ClientTest extends TestCase
         // Act
         try {
             $this->client->sendRequest($request);
-            self::fail('ApiException is expected.');
+            \Testo\Assert::fail('ApiException is expected.');
         } catch (ApiException $e) {
             // Assert
             self::assertStringContainsString('Failed to reach GitHub API', $e->getMessage());
-            self::assertSame($clientException, $e->getPrevious());
+            \Testo\Assert::same($e->getPrevious(), $clientException);
         }
     }
 
-    #[DataProvider('provideRequestHeaders')]
+    #[\Testo\Data\DataProvider('provideRequestHeaders')]
+    #[\Testo\Test]
     public function testRequestMergesHeadersCorrectly(array $additionalHeaders): void
     {
         // Arrange
@@ -298,14 +306,15 @@ final class ClientTest extends TestCase
         $result = $this->client->request($method, $uri, $additionalHeaders);
 
         // Assert
-        self::assertSame($response, $result);
+        \Testo\Assert::same($result, $response);
     }
 
     /**
      * @param array<string, string[]> $headers
      * @param class-string<\Throwable>|null $expectedException
      */
-    #[DataProvider('provideErrorScenarios')]
+    #[\Testo\Data\DataProvider('provideErrorScenarios')]
+    #[\Testo\Test]
     public function testUnsuccessfulResponsesAreConvertedIntoExceptions(
         int $statusCode,
         string $responseBody,
@@ -325,9 +334,10 @@ final class ClientTest extends TestCase
         $result = $this->client->sendRequest($request);
 
         // Assert
-        self::assertSame($response, $result);
+        \Testo\Assert::same($result, $response);
     }
 
+    #[\Testo\Lifecycle\BeforeTest]
     protected function setUp(): void
     {
         // Arrange (common setup)

@@ -10,8 +10,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(Version::class)]
-final class VersionTest extends TestCase
+#[\Testo\Codecov\Covers(Version::class)]
+final class VersionTest
 {
     /**
      * Provides test cases for successful version string parsing.
@@ -130,7 +130,8 @@ final class VersionTest extends TestCase
     /**
      * Tests that valid version strings are parsed correctly.
      */
-    #[DataProvider('provideValidVersionStrings')]
+    #[\Testo\Data\DataProvider('provideValidVersionStrings')]
+    #[\Testo\Test]
     public function testFromVersionStringParsesValidVersions(
         string $input,
         string $expectedString,
@@ -142,21 +143,21 @@ final class VersionTest extends TestCase
         $version = Version::fromVersionString($input);
 
         // Assert
-        self::assertSame($expectedString, $version->string);
-        self::assertSame($expectedNumber, $version->number);
-        self::assertSame($expectedSuffix, $version->suffix);
-        self::assertSame($expectedStability, $version->stability);
+        \Testo\Assert::same($version->string, $expectedString);
+        \Testo\Assert::same($version->number, $expectedNumber);
+        \Testo\Assert::same($version->suffix, $expectedSuffix);
+        \Testo\Assert::same($version->stability, $expectedStability);
     }
 
     /**
      * Tests that invalid version strings throw InvalidArgumentException.
      */
-    #[DataProvider('provideInvalidVersionStrings')]
+    #[\Testo\Data\DataProvider('provideInvalidVersionStrings')]
+    #[\Testo\Test]
     public function testFromVersionStringThrowsExceptionForInvalidInput(string $input): void
     {
         // Assert
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage("Failed version string: {$input}.");
+        \Testo\Expect::exception(\InvalidArgumentException::class)->withMessage("Failed version string: {$input}.");
 
         // Act
         Version::fromVersionString($input);
@@ -165,21 +166,23 @@ final class VersionTest extends TestCase
     /**
      * Tests the empty version factory method.
      */
+    #[\Testo\Test]
     public function testEmptyCreatesVersionWithEmptyString(): void
     {
         // Act
         $version = Version::empty();
 
         // Assert
-        self::assertSame('', $version->string);
-        self::assertNull($version->number);
-        self::assertNull($version->suffix);
-        self::assertNull($version->stability);
+        \Testo\Assert::same($version->string, '');
+        \Testo\Assert::null($version->number);
+        \Testo\Assert::null($version->suffix);
+        \Testo\Assert::null($version->stability);
     }
 
     /**
      * Tests the __toString method returns the version number.
      */
+    #[\Testo\Test]
     public function testToStringReturnsVersionNumber(): void
     {
         // Arrange
@@ -189,12 +192,13 @@ final class VersionTest extends TestCase
         $result = (string) $version;
 
         // Assert
-        self::assertSame('1.2.3-beta', $result);
+        \Testo\Assert::same($result, '1.2.3-beta');
     }
 
     /**
      * Tests the __toString method with empty version.
      */
+    #[\Testo\Test]
     public function testToStringWithEmptyVersionReturnsEmptyString(): void
     {
         // Arrange
@@ -204,43 +208,46 @@ final class VersionTest extends TestCase
         $result = (string) $version;
 
         // Assert
-        self::assertSame('', $result);
+        \Testo\Assert::same($result, '');
     }
 
     /**
      * Tests that version properties are readonly.
      */
+    #[\Testo\Test]
     public function testVersionPropertiesAreReadonly(): void
     {
         // Arrange
         $version = Version::fromVersionString('1.2.3-beta-feature');
 
         // Act & Assert
-        self::assertSame('1.2.3-beta-feature', $version->string);
-        self::assertSame('1.2.3', $version->number);
-        self::assertSame('feature', $version->suffix);
-        self::assertSame(Stability::Beta, $version->stability);
+        \Testo\Assert::same($version->string, '1.2.3-beta-feature');
+        \Testo\Assert::same($version->number, '1.2.3');
+        \Testo\Assert::same($version->suffix, 'feature');
+        \Testo\Assert::same($version->stability, Stability::Beta);
     }
 
     /**
      * Tests that stability is correctly determined for complex version strings.
      */
+    #[\Testo\Test]
     public function testStabilityDetectionInComplexVersions(): void
     {
         // Arrange & Act & Assert
         $version1 = Version::fromVersionString('1.2.3-feature-build-rc');
-        self::assertSame(Stability::RC, $version1->stability);
-        self::assertSame('feature-build', $version1->suffix);
+        \Testo\Assert::same($version1->stability, Stability::RC);
+        \Testo\Assert::same($version1->suffix, 'feature-build');
 
         $version2 = Version::fromVersionString('1.2.3-alpha-feature-build');
-        self::assertSame(Stability::Alpha, $version2->stability);
-        self::assertSame('feature-build', $version2->suffix);
+        \Testo\Assert::same($version2->stability, Stability::Alpha);
+        \Testo\Assert::same($version2->suffix, 'feature-build');
     }
 
     /**
      * Tests that parseStability correctly identifies stability from version strings
      */
-    #[DataProvider('provideVersionsAndExpectedStability')]
+    #[\Testo\Data\DataProvider('provideVersionsAndExpectedStability')]
+    #[\Testo\Test]
     public function testParseStability(string $version, Stability $expected, string $description): void
     {
         // Act
@@ -248,21 +255,18 @@ final class VersionTest extends TestCase
         $stability = $version->stability;
 
         // Assert
-        self::assertSame(
-            $expected,
-            $stability,
-            \sprintf('%s: Version "%s" should be recognized as %s stability', $description, $version, $expected->value),
-        );
+        \Testo\Assert::same($stability, $expected, \sprintf('%s: Version "%s" should be recognized as %s stability', $description, $version, $expected->value));
     }
 
     /**
      * Tests that parseStability correctly identifies stability from version strings
      */
-    #[DataProvider('provideInvalidVersionStrings')]
+    #[\Testo\Data\DataProvider('provideInvalidVersionStrings')]
+    #[\Testo\Test]
     public function testParseStabilityInvalidCases(string $version): void
     {
         // Assert
-        $this->expectException(\InvalidArgumentException::class);
+        \Testo\Expect::exception(\InvalidArgumentException::class);
 
         // Act
         $version = Version::fromVersionString($version);

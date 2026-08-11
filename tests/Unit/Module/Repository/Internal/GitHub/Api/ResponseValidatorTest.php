@@ -15,10 +15,11 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\RequestInterface;
 
-#[CoversClass(ResponseValidator::class)]
-#[CoversClass(\Internal\DLoad\Module\Repository\Internal\ResponseValidator::class)]
-final class ResponseValidatorTest extends TestCase
+#[\Testo\Codecov\Covers(ResponseValidator::class)]
+#[\Testo\Codecov\Covers(\Internal\DLoad\Module\Repository\Internal\ResponseValidator::class)]
+final class ResponseValidatorTest
 {
+    #[\Testo\Test]
     public function testSuccessfulResponsePassesValidation(): void
     {
         // Arrange
@@ -28,9 +29,10 @@ final class ResponseValidatorTest extends TestCase
         $validator->validate(self::releasesRequest(), ResponseStub::ok('[]'));
 
         // Assert
-        self::assertTrue(true, 'Successful responses must not throw.');
+        \Testo\Assert::true(true, 'Successful responses must not throw.');
     }
 
+    #[\Testo\Test]
     public function testRateLimitWithoutTokenExplainsAnonymousLimit(): void
     {
         // Arrange
@@ -42,13 +44,13 @@ final class ResponseValidatorTest extends TestCase
         );
 
         // Assert (before Act for exceptions)
-        $this->expectException(RateLimitException::class);
-        $this->expectExceptionMessage('60 requests per hour');
+        \Testo\Expect::exception(RateLimitException::class)->withMessage('60 requests per hour');
 
         // Act
         $validator->validate(self::releasesRequest(), $response);
     }
 
+    #[\Testo\Test]
     public function testRateLimitWithTokenReportsSpentQuotaAndResetTime(): void
     {
         // Arrange
@@ -63,16 +65,17 @@ final class ResponseValidatorTest extends TestCase
         // Act
         try {
             $validator->validate(self::releasesRequest(), $response);
-            self::fail('RateLimitException is expected.');
+            \Testo\Assert::fail('RateLimitException is expected.');
         } catch (RateLimitException $e) {
             // Assert
             self::assertStringContainsString('spent its quota', $e->getMessage());
             self::assertStringContainsString('GITHUB_TOKEN', $e->getMessage());
-            self::assertNotNull($e->resetAt);
-            self::assertSame($resetsAt, $e->resetAt->getTimestamp());
+            \Testo\Assert::notNull($e->resetAt);
+            \Testo\Assert::same($e->resetAt->getTimestamp(), $resetsAt);
         }
     }
 
+    #[\Testo\Test]
     public function testSecondaryRateLimitIsRecognized(): void
     {
         // Arrange
@@ -84,13 +87,13 @@ final class ResponseValidatorTest extends TestCase
         );
 
         // Assert (before Act for exceptions)
-        $this->expectException(RateLimitException::class);
-        $this->expectExceptionMessage('secondary rate limit exceeded');
+        \Testo\Expect::exception(RateLimitException::class)->withMessage('secondary rate limit exceeded');
 
         // Act
         $validator->validate(self::releasesRequest(), $response);
     }
 
+    #[\Testo\Test]
     public function testForbiddenResponseMentionsRepositoryAndToken(): void
     {
         // Arrange
@@ -100,15 +103,16 @@ final class ResponseValidatorTest extends TestCase
         // Act
         try {
             $validator->validate(self::releasesRequest(), $response);
-            self::fail('AccessDeniedException is expected.');
+            \Testo\Assert::fail('AccessDeniedException is expected.');
         } catch (AccessDeniedException $e) {
             // Assert
-            self::assertSame('owner/repo', $e->repository);
+            \Testo\Assert::same($e->repository, 'owner/repo');
             self::assertStringContainsString('Resource not accessible by integration', $e->getMessage());
             self::assertStringContainsString('no read access to this repository', $e->getMessage());
         }
     }
 
+    #[\Testo\Test]
     public function testNotFoundResponseSuggestsCheckingRepositoryAddress(): void
     {
         // Arrange
@@ -118,7 +122,7 @@ final class ResponseValidatorTest extends TestCase
         // Act
         try {
             $validator->validate(self::releasesRequest(), $response);
-            self::fail('RepositoryNotFoundException is expected.');
+            \Testo\Assert::fail('RepositoryNotFoundException is expected.');
         } catch (RepositoryNotFoundException $e) {
             // Assert
             self::assertStringContainsString('repository `owner/repo`', $e->getMessage());
@@ -126,6 +130,7 @@ final class ResponseValidatorTest extends TestCase
         }
     }
 
+    #[\Testo\Test]
     public function testServerErrorIsReportedAsTemporaryFailure(): void
     {
         // Arrange
@@ -133,13 +138,13 @@ final class ResponseValidatorTest extends TestCase
         $response = new ResponseStub(503, [], 'Service Unavailable', 'Service Unavailable');
 
         // Assert (before Act for exceptions)
-        $this->expectException(ApiException::class);
-        $this->expectExceptionMessage('GitHub API is unavailable: HTTP 503');
+        \Testo\Expect::exception(ApiException::class)->withMessage('GitHub API is unavailable: HTTP 503');
 
         // Act
         $validator->validate(self::releasesRequest(), $response);
     }
 
+    #[\Testo\Test]
     public function testRepositoryIsResolvedFromAssetDownloadUrl(): void
     {
         // Arrange
@@ -150,13 +155,14 @@ final class ResponseValidatorTest extends TestCase
         // Act
         try {
             $validator->validate($request, $response);
-            self::fail('RepositoryNotFoundException is expected.');
+            \Testo\Assert::fail('RepositoryNotFoundException is expected.');
         } catch (RepositoryNotFoundException $e) {
             // Assert
-            self::assertSame('owner/repo', $e->repository);
+            \Testo\Assert::same($e->repository, 'owner/repo');
         }
     }
 
+    #[\Testo\Test]
     public function testTransportFailureKeepsTheOriginalError(): void
     {
         // Arrange
@@ -169,10 +175,11 @@ final class ResponseValidatorTest extends TestCase
         // Assert
         self::assertStringContainsString('Failed to reach GitHub API', $exception->getMessage());
         self::assertStringContainsString('Could not resolve host', $exception->getMessage());
-        self::assertSame($original, $exception->getPrevious());
-        self::assertSame('owner/repo', $exception->repository);
+        \Testo\Assert::same($exception->getPrevious(), $original);
+        \Testo\Assert::same($exception->repository, 'owner/repo');
     }
 
+    #[\Testo\Test]
     public function testLongApiMessageIsTruncatedWithoutBreakingUtf8(): void
     {
         // Arrange
@@ -184,11 +191,11 @@ final class ResponseValidatorTest extends TestCase
         // Act
         try {
             $validator->validate(self::releasesRequest(), $response);
-            self::fail('ApiException is expected.');
+            \Testo\Assert::fail('ApiException is expected.');
         } catch (ApiException $e) {
             // Assert
             $message = $e->getMessage();
-            self::assertSame(1, \preg_match('//u', $message), 'The message must stay valid UTF-8.');
+            \Testo\Assert::same(\preg_match('//u', $message), 1, 'The message must stay valid UTF-8.');
             self::assertStringContainsString('…', $message);
         }
     }

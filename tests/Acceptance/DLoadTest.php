@@ -26,14 +26,15 @@ use Symfony\Component\Console\Style\SymfonyStyle;
  * Tests the complete download workflow using real repositories and file extraction.
  * Requires internet connectivity to download actual software packages.
  */
-#[CoversClass(DLoad::class)]
-final class DLoadTest extends TestCase
+#[\Testo\Codecov\Covers(DLoad::class)]
+final class DLoadTest
 {
     private Path $testRuntimeDir;
     private Path $tempDir;
     private Path $destinationDir;
     private DLoad $dload;
 
+    #[\Testo\Test]
     public function testDownloadsTrapPharSuccessfully(): void
     {
         // Arrange
@@ -56,10 +57,11 @@ final class DLoadTest extends TestCase
 
         // Verify file permissions (should be executable)
         if (PHP_OS_FAMILY !== 'Windows') {
-            self::assertTrue(\is_executable($expectedPharPath), 'PHAR file should be executable');
+            \Testo\Assert::true(\is_executable($expectedPharPath), 'PHAR file should be executable');
         }
     }
 
+    #[\Testo\Test]
     public function testDownloadsTrapPharSuccessfullyWithForceOption(): void
     {
         // Arrange
@@ -84,10 +86,11 @@ final class DLoadTest extends TestCase
 
         // Verify file permissions (should be executable)
         if (PHP_OS_FAMILY !== 'Windows') {
-            self::assertTrue(\is_executable($expectedPharPath), 'PHAR file should be executable');
+            \Testo\Assert::true(\is_executable($expectedPharPath), 'PHAR file should be executable');
         }
     }
 
+    #[\Testo\Test]
     public function testDownloadsTomlTestGzBinary(): void
     {
         // Arrange
@@ -109,10 +112,11 @@ final class DLoadTest extends TestCase
         self::assertGreaterThan(1024, \filesize($expectedPath), 'Downloaded binary should have substantial size');
 
         if (\PHP_OS_FAMILY !== 'Windows') {
-            self::assertTrue(\is_executable($expectedPath), 'Binary file should be executable');
+            \Testo\Assert::true(\is_executable($expectedPath), 'Binary file should be executable');
         }
     }
 
+    #[\Testo\Test]
     public function testDownloadsTrapBinary(): void
     {
         // Arrange
@@ -134,9 +138,10 @@ final class DLoadTest extends TestCase
         // Verify the file is not empty
         self::assertGreaterThan(1024, \filesize($expectedPharPath), 'Downloaded binary should have substantial size');
 
-        self::assertTrue(\is_executable($expectedPharPath), 'Binary file should be executable');
+        \Testo\Assert::true(\is_executable($expectedPharPath), 'Binary file should be executable');
     }
 
+    #[\Testo\Lifecycle\BeforeTest]
     protected function setUp(): void
     {
         // Set up test directory structure
@@ -148,6 +153,7 @@ final class DLoadTest extends TestCase
         $this->dload = $this->buildDLoad($this->createTrapXmlConfig());
     }
 
+    #[\Testo\Lifecycle\AfterTest]
     protected function tearDown(): void
     {
         // Clean up test directories

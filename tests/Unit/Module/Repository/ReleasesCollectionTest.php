@@ -17,8 +17,8 @@ use Internal\DLoad\Tests\Unit\Module\Repository\Stub\RepositoryStub;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(ReleasesCollection::class)]
-final class ReleasesCollectionTest extends TestCase
+#[\Testo\Codecov\Covers(ReleasesCollection::class)]
+final class ReleasesCollectionTest
 {
     private RepositoryStub $repository;
 
@@ -27,24 +27,26 @@ final class ReleasesCollectionTest extends TestCase
 
     private ReleasesCollection $collection;
 
+    #[\Testo\Test]
     public function testSatisfiesFiltersReleasesByVersionConstraint(): void
     {
         // Act
         $result = $this->collection->satisfies(Constraint::fromConstraintString('^1.0.0'));
 
         // Assert
-        self::assertCount(2, $result, 'Should only include 1.0.0 and 1.5.0 versions');
+        \Testo\Assert::count($result, 2, 'Should only include 1.0.0 and 1.5.0 versions');
 
         $versions = \array_map(
             static fn(ReleaseInterface $release): string => $release->getName(),
             \iterator_to_array($result),
         );
 
-        self::assertContains('1.0.0', $versions);
-        self::assertContains('1.5.0', $versions);
+        \Testo\Assert::contains($versions, '1.0.0');
+        \Testo\Assert::contains($versions, '1.5.0');
         self::assertNotContains('2.0.0', $versions);
     }
 
+    #[\Testo\Test]
     public function testNotSatisfiesFiltersOutReleasesByVersionConstraint(): void
     {
         // Act
@@ -54,32 +56,35 @@ final class ReleasesCollectionTest extends TestCase
         self::assertGreaterThan(0, $result->count());
         self::assertNotContains('1.0.0', $this->getVersionsFromCollection($result));
         self::assertNotContains('1.5.0', $this->getVersionsFromCollection($result));
-        self::assertContains('2.0.0', $this->getVersionsFromCollection($result));
+        \Testo\Assert::contains($this->getVersionsFromCollection($result), '2.0.0');
     }
 
+    #[\Testo\Test]
     public function testStabilityFiltersReleasesByExactStability(): void
     {
         // Act
         $result = $this->collection->stability(Stability::Beta);
 
         // Assert
-        self::assertCount(1, $result);
-        self::assertSame('2.1.0-beta', $result->first()->getName());
+        \Testo\Assert::count($result, 1);
+        \Testo\Assert::same($result->first()->getName(), '2.1.0-beta');
     }
 
+    #[\Testo\Test]
     public function testStableFiltersToOnlyStableReleases(): void
     {
         // Act
         $result = $this->collection->stable();
 
         // Assert
-        self::assertCount(3, $result, 'Should only include stable versions');
+        \Testo\Assert::count($result, 3, 'Should only include stable versions');
 
         foreach ($result as $release) {
-            self::assertSame(Stability::Stable, $release->getVersion()->stability);
+            \Testo\Assert::same($release->getVersion()->stability, Stability::Stable);
         }
     }
 
+    #[\Testo\Test]
     public function testMinimumStabilityFiltersReleasesByMinimumStabilityLevel(): void
     {
         // Act
@@ -91,12 +96,13 @@ final class ReleasesCollectionTest extends TestCase
             $stabilities[] = $release->getVersion()->stability;
         }
 
-        self::assertContains(Stability::Stable, $stabilities);
-        self::assertContains(Stability::RC, $stabilities);
+        \Testo\Assert::contains($stabilities, Stability::Stable);
+        \Testo\Assert::contains($stabilities, Stability::RC);
         self::assertNotContains(Stability::Beta, $stabilities);
         self::assertNotContains(Stability::Alpha, $stabilities);
     }
 
+    #[\Testo\Test]
     public function testSortByVersionSortsReleasesByVersionDescending(): void
     {
         // Act
@@ -104,7 +110,7 @@ final class ReleasesCollectionTest extends TestCase
         $versions = $this->getVersionsFromCollection($result);
 
         // Assert
-        self::assertSame([
+        \Testo\Assert::same(\array_values($versions), [
             // Expected order by semantic version, newest first
             '2.1.0-beta',
             '2.1.0-alpha',
@@ -112,9 +118,10 @@ final class ReleasesCollectionTest extends TestCase
             '2.0.0',
             '1.5.0',
             '1.0.0',
-        ], \array_values($versions));
+        ]);
     }
 
+    #[\Testo\Test]
     public function testChainedFiltersWorkCorrectly(): void
     {
         // Act - Get stable releases that satisfy version constraint and sort them
@@ -125,9 +132,10 @@ final class ReleasesCollectionTest extends TestCase
 
         // Assert
         $versions = $this->getVersionsFromCollection($result);
-        self::assertSame(['1.5.0', '1.0.0'], \array_values($versions));
+        \Testo\Assert::same(\array_values($versions), ['1.5.0', '1.0.0']);
     }
 
+    #[\Testo\Test]
     public function testWithAssetsFiltersReleasesWithAssets(): void
     {
         // Arrange - Set up assets for the second release (1.5.0)
@@ -149,11 +157,12 @@ final class ReleasesCollectionTest extends TestCase
         $result = $this->collection->withAssets();
 
         // Assert
-        self::assertCount(1, $result);
-        self::assertSame('1.5.0', $result->first()->getName());
-        self::assertCount(1, $result->first()->getAssets());
+        \Testo\Assert::count($result, 1);
+        \Testo\Assert::same($result->first()->getName(), '1.5.0');
+        \Testo\Assert::count($result->first()->getAssets(), 1);
     }
 
+    #[\Testo\Lifecycle\BeforeTest]
     protected function setUp(): void
     {
         // Arrange

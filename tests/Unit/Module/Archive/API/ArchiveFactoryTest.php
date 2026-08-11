@@ -15,8 +15,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(ArchiveFactory::class)]
-final class ArchiveFactoryTest extends TestCase
+#[\Testo\Codecov\Covers(ArchiveFactory::class)]
+final class ArchiveFactoryTest
 {
     private ArchiveFactory $factory;
     private static string $fixturesDir;
@@ -37,17 +37,19 @@ final class ArchiveFactoryTest extends TestCase
         yield 'phar file' => ['archive.phar', PharArchive::class];
     }
 
-    #[DataProvider('provideDefaultSupportedExtensions')]
+    #[\Testo\Data\DataProvider('provideDefaultSupportedExtensions')]
+    #[\Testo\Test]
     public function testGetSupportedExtensionsReturnsDefaultExtensions(string $extension): void
     {
         // Act
         $extensions = $this->factory->getSupportedExtensions();
 
         // Assert
-        self::assertContains($extension, $extensions);
+        \Testo\Assert::contains($extensions, $extension);
     }
 
-    #[DataProvider('provideArchiveFiles')]
+    #[\Testo\Data\DataProvider('provideArchiveFiles')]
+    #[\Testo\Test]
     public function testCreateReturnsCorrectArchiveTypeForExtension(
         string $filename,
         string $expectedClass,
@@ -59,7 +61,7 @@ final class ArchiveFactoryTest extends TestCase
         }
 
         if (!isset(self::$archiveFixtures[$extension])) {
-            self::markTestSkipped("Archive fixture for {$extension} could not be created");
+            throw new \Testo\Core\Exception\SkipTest("Archive fixture for {$extension} could not be created");
         }
 
         // Arrange - use actual file
@@ -70,9 +72,10 @@ final class ArchiveFactoryTest extends TestCase
         $archive = $this->factory->create($file);
 
         // Assert
-        self::assertInstanceOf($expectedClass, $archive);
+        \Testo\Assert::instanceOf($archive, $expectedClass);
     }
 
+    #[\Testo\Test]
     public function testExtendAddsCustomMatcher(): void
     {
         // Arrange
@@ -92,10 +95,11 @@ final class ArchiveFactoryTest extends TestCase
         $extensions = $this->factory->getSupportedExtensions();
 
         // Assert
-        self::assertSame($mockArchive, $result);
-        self::assertContains($customExtension, $extensions);
+        \Testo\Assert::same($result, $mockArchive);
+        \Testo\Assert::contains($extensions, $customExtension);
     }
 
+    #[\Testo\Test]
     public function testCreateReturnsNullArchiveForNonArchiveFile(): void
     {
         // Arrange
@@ -105,9 +109,10 @@ final class ArchiveFactoryTest extends TestCase
         $archive = $this->factory->create($file);
 
         // Assert
-        self::assertInstanceOf(NullArchive::class, $archive);
+        \Testo\Assert::instanceOf($archive, NullArchive::class);
     }
 
+    #[\Testo\Test]
     public function testCreateThrowsExceptionForInvalidFile(): void
     {
         // Arrange
@@ -116,12 +121,13 @@ final class ArchiveFactoryTest extends TestCase
         $file->method('isFile')->willReturn(false);
 
         // Assert
-        $this->expectException(\InvalidArgumentException::class);
+        \Testo\Expect::exception(\InvalidArgumentException::class);
 
         // Act
         $this->factory->create($file);
     }
 
+    #[\Testo\Test]
     public function testExtendPrioritizesNewMatchersOverExisting(): void
     {
         // Arrange
@@ -139,9 +145,10 @@ final class ArchiveFactoryTest extends TestCase
         $result = $this->factory->create($zipFile);
 
         // Assert
-        self::assertSame($mockArchive, $result);
+        \Testo\Assert::same($result, $mockArchive);
     }
 
+    #[\Testo\Test]
     public function testNullArchiveUsedAsLastResort(): void
     {
         // Arrange - create custom matcher that always returns null
@@ -156,9 +163,10 @@ final class ArchiveFactoryTest extends TestCase
         $archive = $this->factory->create($file);
 
         // Assert - should fall back to NullArchive
-        self::assertInstanceOf(NullArchive::class, $archive);
+        \Testo\Assert::instanceOf($archive, NullArchive::class);
     }
 
+    #[\Testo\Lifecycle\BeforeClass]
     public static function setUpBeforeClass(): void
     {
         // Define project's test runtime directory
@@ -170,6 +178,7 @@ final class ArchiveFactoryTest extends TestCase
         self::$archiveFixtures = self::$fixtureGenerator->generateArchives();
     }
 
+    #[\Testo\Lifecycle\AfterClass]
     public static function tearDownAfterClass(): void
     {
         // Clean up fixtures
@@ -178,6 +187,7 @@ final class ArchiveFactoryTest extends TestCase
         }
     }
 
+    #[\Testo\Lifecycle\BeforeTest]
     protected function setUp(): void
     {
         // Arrange

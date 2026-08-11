@@ -15,11 +15,12 @@ use Internal\DLoad\Module\Repository\Exception\ApiException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(DownloadDiagnostics::class)]
-#[CoversClass(\Internal\DLoad\Module\Downloader\Internal\Diagnostics\RepositoryAttempt::class)]
-#[CoversClass(\Internal\DLoad\Module\Downloader\Internal\Diagnostics\ReleaseAttempt::class)]
-final class DownloadDiagnosticsTest extends TestCase
+#[\Testo\Codecov\Covers(DownloadDiagnostics::class)]
+#[\Testo\Codecov\Covers(\Internal\DLoad\Module\Downloader\Internal\Diagnostics\RepositoryAttempt::class)]
+#[\Testo\Codecov\Covers(\Internal\DLoad\Module\Downloader\Internal\Diagnostics\ReleaseAttempt::class)]
+final class DownloadDiagnosticsTest
 {
+    #[\Testo\Test]
     public function testReportDescribesTheRequestedConditions(): void
     {
         // Arrange
@@ -36,6 +37,7 @@ final class DownloadDiagnosticsTest extends TestCase
         );
     }
 
+    #[\Testo\Test]
     public function testReportMentionsMissingRepositoryConfiguration(): void
     {
         // Arrange
@@ -48,6 +50,7 @@ final class DownloadDiagnosticsTest extends TestCase
         self::assertStringContainsString('No repositories are configured for `app`', $report);
     }
 
+    #[\Testo\Test]
     public function testReportListsAvailableReleasesWhenNothingMatches(): void
     {
         // Arrange
@@ -66,6 +69,7 @@ final class DownloadDiagnosticsTest extends TestCase
         self::assertStringContainsString('Releases available in the repository: v1.2.0, v1.1.0', $report);
     }
 
+    #[\Testo\Test]
     public function testReportListsCheckedReleasesWithTheirAssets(): void
     {
         // Arrange
@@ -95,6 +99,7 @@ final class DownloadDiagnosticsTest extends TestCase
         );
     }
 
+    #[\Testo\Test]
     public function testReportContainsRepositoryLevelError(): void
     {
         // Arrange
@@ -118,6 +123,7 @@ final class DownloadDiagnosticsTest extends TestCase
         self::assertStringContainsString('2) gitlab `group/app`', $report);
     }
 
+    #[\Testo\Test]
     public function testReleaseWithoutFetchedAssetListIsNotReportedAsEmpty(): void
     {
         // Arrange
@@ -136,6 +142,7 @@ final class DownloadDiagnosticsTest extends TestCase
         self::assertStringNotContainsString('0 asset(s)', $report);
     }
 
+    #[\Testo\Test]
     public function testReportLimitsTheNumberOfDescribedReleases(): void
     {
         // Arrange
