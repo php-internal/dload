@@ -40,7 +40,6 @@ jobs:
       - name: 🛠️ Setup problem matchers
         run: |
           echo "::add-matcher::${{ runner.tool_cache }}/php.json"
-          echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
 
       - name: 🤖 Validate composer.json and composer.lock
         run: composer validate --ansi --strict
@@ -50,13 +49,13 @@ jobs:
         with:
           dependency-versions: ${{ matrix.dependencies }}
 
-      - name: 🧪 Collect code coverage with Xdebug and PhpUnit
+      - name: 🧪 Collect code coverage with Xdebug and Testo
         run: composer test:cc
 
       - name: 📤 Upload code coverage report to Codecov
         uses: codecov/codecov-action@v4
         with:
-          files: runtime/phpunit/logs/clover.xml
+          files: runtime/coverage/clover.xml
           token: ${{ secrets.CODECOV_TOKEN }}
           verbose: true
 
@@ -94,7 +93,6 @@ jobs:
       - name: 🛠️ Setup problem matchers
         run: |
           echo "::add-matcher::${{ runner.tool_cache }}/php.json"
-          echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
 
       - name: 🤖 Validate composer.json and composer.lock
         run: composer validate --ansi --strict

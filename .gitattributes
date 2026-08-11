@@ -11,6 +11,7 @@ composer-require-*     export-ignore
 Makefile               export-ignore
 Dockerfile             export-ignore
 infection.*            export-ignore
+testo.php              export-ignore
 tests                  export-ignore
 docs                   export-ignore
 resources/mock         export-ignore

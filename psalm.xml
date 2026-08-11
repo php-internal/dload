@@ -40,5 +40,7 @@
         <function name="trap"/>
         <function name="td"/>
         <function name="tr"/>
+        <function name="dump"/>
+        <function name="error_log"/>
     </forbiddenFunctions>
 </psalm>
