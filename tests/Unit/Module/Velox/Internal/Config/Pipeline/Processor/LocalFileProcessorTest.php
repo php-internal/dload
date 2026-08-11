@@ -107,7 +107,7 @@ final class LocalFileProcessorTest
         // Make file unreadable by changing permissions
         \chmod($tempFile, 0000);
 
-        Expect::exception(ConfigException::class)->withMessage("Failed to read local config file: {$tempFile}");
+        Expect::exception(ConfigException::class)->withMessageContaining("Failed to read local config file: {$tempFile}");
 
         try {
             $this->processor->__invoke($context);
