@@ -96,20 +96,20 @@
         "refactor": "rector process --config=rector.php",
         "refactor:ci": "rector process --config=rector.php --dry-run --ansi",
         "test": [
-            "testo --color=always --no-coverage"
+            "testo --ansi --no-coverage"
         ],
         "test:unit": [
-            "testo --color=always --no-coverage --suite=Unit"
+            "testo --ansi --no-coverage --suite=Unit"
         ],
         "test:integration": [
-            "testo --color=always --no-coverage --suite=Integration"
+            "testo --ansi --no-coverage --suite=Integration"
         ],
         "test:acc": [
-            "testo --color=always --no-coverage --suite=Acceptance"
+            "testo --ansi --no-coverage --suite=Acceptance"
         ],
         "test:cc": [
             "@putenv XDEBUG_MODE=coverage",
-            "testo --coverage-clover=runtime/coverage/clover.xml --color=always"
+            "testo --ansi --coverage-clover=runtime/coverage/clover.xml"
         ]
     }
 }
