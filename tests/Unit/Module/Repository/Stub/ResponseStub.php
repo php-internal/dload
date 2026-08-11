@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Internal\DLoad\Tests\Unit\Module\Repository\Internal\GitHub\Stub;
+namespace Internal\DLoad\Tests\Unit\Module\Repository\Stub;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamInterface;
 
 /**
- * HTTP Response stub for GitHub API tests.
+ * HTTP Response stub for repository API tests.
  *
  * Provides controllable response data for testing.
  */

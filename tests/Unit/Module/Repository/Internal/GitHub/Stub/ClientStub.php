@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Unit\Module\Repository\Internal\GitHub\Stub;
 
+use Internal\DLoad\Tests\Unit\Module\Repository\Stub\ResponseStub;
 use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestInterface;

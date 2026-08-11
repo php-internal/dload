@@ -68,6 +68,7 @@ With DLoad, you can:
     - [PHAR Tools Management](#phar-tools-management)
     - [Frontend Asset Distribution](#frontend-asset-distribution)
 - [API Rate Limits](#api-rate-limits)
+- [Failure Reporting](#failure-reporting)
 - [Gitlab CI configuration](#gitlab-ci-configuration)
 - [Contributing](#contributing)
 
@@ -573,6 +574,31 @@ GITLAB_TOKEN=your_token_here ./vendor/bin/dload get
 ```
 
 Add to CI/CD environment variables for automated downloads.
+
+> [!NOTE]
+> In GitHub Actions, `secrets.GITHUB_TOKEN` is scoped to the current repository and shares a limit of
+> 1,000 requests per hour across all jobs of the repository. With a large job matrix the limit may run out,
+> and downloads from other repositories may be rejected. Use a personal access token if that happens.
+
+## Failure Reporting
+
+`dload get` exits with a non-zero code when at least one requested package was not installed, and prints
+the reason for every failed download: the API error (invalid token, exhausted rate limit, missing repository),
+the number of matched releases, the assets each checked release contains, and the filters that rejected them.
+
+```
+ Failed to download `rr` 
+Requested: version `any`, OS `linux`, architecture `amd64`, minimum stability `stable`, asset type `any`.
+Tried 1 repository(ies):
+  1) github `roadrunner-server/roadrunner`
+    GitHub API rejected the credentials (HTTP 401: Bad credentials).
+    The API token from the GITHUB_TOKEN environment variable is invalid, expired or revoked. Provide a valid
+    token or unset the variable to use anonymous access.
+
+1 of 1 download(s) failed.
+```
+
+Run with `-vvv` to also get stack traces and the full request log.
 
 ## Gitlab CI configuration
 

@@ -93,8 +93,8 @@ final class Manager
 
                 yield $task->resume();
             } catch (\Throwable $e) {
-                $this->logger->error($e->getMessage());
-                $this->logger->exception($e);
+                # The failure is delivered via the promise, so the caller decides how to report it
+                $this->logger->exception($e, important: false);
                 unset($this->tasks[$key]);
                 $deferred->reject($e);
                 yield $e;

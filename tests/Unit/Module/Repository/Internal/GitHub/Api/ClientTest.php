@@ -5,12 +5,16 @@ declare(strict_types=1);
 namespace Internal\DLoad\Tests\Unit\Module\Repository\Internal\GitHub\Api;
 
 use Internal\DLoad\Module\Config\Schema\GitHub;
+use Internal\DLoad\Module\Repository\Exception\AccessDeniedException;
+use Internal\DLoad\Module\Repository\Exception\ApiException;
+use Internal\DLoad\Module\Repository\Exception\AuthenticationException;
+use Internal\DLoad\Module\Repository\Exception\RateLimitException;
+use Internal\DLoad\Module\Repository\Exception\RepositoryNotFoundException;
 use Internal\DLoad\Module\Repository\Internal\GitHub\Api\Client;
-use Internal\DLoad\Module\Repository\Internal\GitHub\Exception\GitHubRateLimitException;
 use Internal\DLoad\Tests\Unit\Module\Repository\Internal\GitHub\Stub\ClientStub;
 use Internal\DLoad\Tests\Unit\Module\Repository\Internal\GitHub\Stub\GitHubConfigStub;
 use Internal\DLoad\Tests\Unit\Module\Repository\Internal\GitHub\Stub\HttpFactoryStub;
-use Internal\DLoad\Tests\Unit\Module\Repository\Internal\GitHub\Stub\ResponseStub;
+use Internal\DLoad\Tests\Unit\Module\Repository\Stub\ResponseStub;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -33,51 +37,96 @@ final class ClientTest extends TestCase
         yield 'override default headers' => [['accept' => 'application/json']];
     }
 
-    public static function provideRateLimitScenarios(): \Generator
+    /**
+     * @return \Generator<string, array{int, string, array<string, string[]>, class-string<\Throwable>|null}>
+     */
+    public static function provideErrorScenarios(): \Generator
     {
-        yield 'valid rate limit response' => [
+        yield 'legacy rate limit response' => [
             403,
             \json_encode([
-                'API rate limit exceeded for user ID 1234. Check the hourly limit for your plan at https://docs.github.com/rest/overview/resources-in-the-rest-api#rate-limiting',
+                'API rate limit exceeded for user ID 1234.',
                 'https://docs.github.com/rest/overview/resources-in-the-rest-api#rate-limiting',
             ]),
-            true,
+            [],
+            RateLimitException::class,
         ];
 
-        yield 'non-403 status code' => [
+        yield 'rate limit reported with 429' => [
             429,
-            \json_encode(['API rate limit exceeded', 'https://docs.github.com']),
-            false,
+            \json_encode(['message' => 'API rate limit exceeded', 'documentation_url' => 'https://docs.github.com']),
+            [],
+            RateLimitException::class,
         ];
 
-        yield '403 with invalid JSON' => [
+        yield 'rate limit detected by header' => [
+            403,
+            \json_encode(['message' => 'Request forbidden', 'documentation_url' => 'https://docs.github.com']),
+            ['x-ratelimit-remaining' => ['0']],
+            RateLimitException::class,
+        ];
+
+        yield 'secondary rate limit' => [
+            403,
+            \json_encode(['message' => 'You have exceeded a secondary rate limit.']),
+            [],
+            RateLimitException::class,
+        ];
+
+        yield 'invalid token' => [
+            401,
+            \json_encode(['message' => 'Bad credentials']),
+            [],
+            AuthenticationException::class,
+        ];
+
+        yield 'forbidden without rate limit' => [
+            403,
+            \json_encode(['message' => 'Resource not accessible by integration']),
+            [],
+            AccessDeniedException::class,
+        ];
+
+        yield 'non-JSON forbidden body' => [
             403,
             'invalid json response',
-            false,
+            [],
+            AccessDeniedException::class,
         ];
 
-        yield '403 with wrong array structure' => [
-            403,
-            \json_encode(['message' => 'Forbidden']),
-            false,
+        yield 'missing repository' => [
+            404,
+            \json_encode(['message' => 'Not Found']),
+            [],
+            RepositoryNotFoundException::class,
         ];
 
-        yield '403 with wrong array count' => [
-            403,
-            \json_encode(['API rate limit exceeded']),
-            false,
+        yield 'server error' => [
+            502,
+            'Bad Gateway',
+            [],
+            ApiException::class,
         ];
 
-        yield '403 with non-string elements' => [
-            403,
-            \json_encode([123, 456]),
-            false,
+        yield 'unprocessable entity' => [
+            422,
+            \json_encode(['message' => 'Validation Failed']),
+            [],
+            ApiException::class,
         ];
 
-        yield '403 without rate limit text' => [
-            403,
-            \json_encode(['Something else', 'https://docs.github.com']),
-            false,
+        yield 'successful response' => [
+            200,
+            '[]',
+            [],
+            null,
+        ];
+
+        yield 'redirect is not an error' => [
+            302,
+            '',
+            [],
+            null,
         ];
     }
 
@@ -151,68 +200,49 @@ final class ClientTest extends TestCase
         $this->client = new Client($this->httpFactory, $this->httpClient, $this->gitHubConfig);
 
         // Assert (before Act for exceptions)
-        $this->expectException(GitHubRateLimitException::class);
-        $this->expectExceptionMessage('API rate limit exceeded for user ID 1234');
+        $this->expectException(RateLimitException::class);
+        $this->expectExceptionMessage('rate limit exceeded');
 
         // Act
         $this->client->request($method, $uri);
     }
 
-    public function testDoesNotThrowExceptionForNon403Response(): void
+    public function testRateLimitMessageSuggestsTokenWhenThereIsNoToken(): void
     {
         // Arrange
-        $method = 'GET';
-        $uri = $this->createMock(UriInterface::class);
         $request = $this->createMock(RequestInterface::class);
-        $response = ResponseStub::ok();
+        $this->httpClient = $this->httpClient->withResponse($request, ResponseStub::githubRateLimit());
+        $this->client = new Client($this->httpFactory, $this->httpClient, $this->gitHubConfig);
 
-        $this->httpFactory = $this->httpFactory->withRequest($method, $uri, $request);
+        // Act
+        try {
+            $this->client->sendRequest($request);
+            self::fail('RateLimitException is expected.');
+        } catch (RateLimitException $e) {
+            // Assert
+            self::assertStringContainsString('GITHUB_TOKEN', $e->getMessage());
+            self::assertStringContainsString('No API token is configured', $e->getMessage());
+        }
+    }
+
+    public function testAuthenticationMessageMentionsConfiguredToken(): void
+    {
+        // Arrange
+        $request = $this->createMock(RequestInterface::class);
+        $response = new ResponseStub(401, [], \json_encode(['message' => 'Bad credentials']));
+
         $this->httpClient = $this->httpClient->withResponse($request, $response);
-        $this->client = new Client($this->httpFactory, $this->httpClient, $this->gitHubConfig);
+        $client = new Client($this->httpFactory, $this->httpClient, GitHubConfigStub::withToken('invalid-token'));
 
         // Act
-        $result = $this->client->request($method, $uri);
-
-        // Assert
-        self::assertSame($response, $result);
-    }
-
-    public function testDoesNotThrowExceptionForNonRateLimitError(): void
-    {
-        // Arrange
-        $method = 'GET';
-        $uri = $this->createMock(UriInterface::class);
-        $request = $this->createMock(RequestInterface::class);
-        $forbiddenResponse = ResponseStub::githubForbidden();
-
-        $this->httpFactory = $this->httpFactory->withRequest($method, $uri, $request);
-        $this->httpClient = $this->httpClient->withResponse($request, $forbiddenResponse);
-        $this->client = new Client($this->httpFactory, $this->httpClient, $this->gitHubConfig);
-
-        // Act
-        $result = $this->client->request($method, $uri);
-
-        // Assert
-        self::assertSame($forbiddenResponse, $result);
-    }
-
-    public function testDoesNotThrowExceptionForInvalidJsonResponse(): void
-    {
-        // Arrange
-        $method = 'GET';
-        $uri = $this->createMock(UriInterface::class);
-        $request = $this->createMock(RequestInterface::class);
-        $invalidJsonResponse = ResponseStub::invalidJson();
-
-        $this->httpFactory = $this->httpFactory->withRequest($method, $uri, $request);
-        $this->httpClient = $this->httpClient->withResponse($request, $invalidJsonResponse);
-        $this->client = new Client($this->httpFactory, $this->httpClient, $this->gitHubConfig);
-
-        // Act
-        $result = $this->client->request($method, $uri);
-
-        // Assert
-        self::assertSame($invalidJsonResponse, $result);
+        try {
+            $client->sendRequest($request);
+            self::fail('AuthenticationException is expected.');
+        } catch (AuthenticationException $e) {
+            // Assert
+            self::assertStringContainsString('Bad credentials', $e->getMessage());
+            self::assertStringContainsString('invalid, expired or revoked', $e->getMessage());
+        }
     }
 
     public function testSendRequestDelegatesToHttpClient(): void
@@ -231,23 +261,7 @@ final class ClientTest extends TestCase
         self::assertSame($response, $result);
     }
 
-    public function testSendRequestThrowsRateLimitExceptionOn403WithRateLimitJson(): void
-    {
-        // Arrange
-        $request = $this->createMock(RequestInterface::class);
-        $rateLimitResponse = ResponseStub::githubRateLimit();
-
-        $this->httpClient = $this->httpClient->withResponse($request, $rateLimitResponse);
-        $this->client = new Client($this->httpFactory, $this->httpClient, $this->gitHubConfig);
-
-        // Assert (before Act for exceptions)
-        $this->expectException(GitHubRateLimitException::class);
-
-        // Act
-        $this->client->sendRequest($request);
-    }
-
-    public function testSendRequestPropagatesClientExceptions(): void
+    public function testSendRequestWrapsClientExceptionsIntoApiException(): void
     {
         // Arrange
         $request = $this->createMock(RequestInterface::class);
@@ -256,11 +270,15 @@ final class ClientTest extends TestCase
         $this->httpClient = $this->httpClient->withException($request, $clientException);
         $this->client = new Client($this->httpFactory, $this->httpClient, $this->gitHubConfig);
 
-        // Assert (before Act for exceptions)
-        $this->expectException(ClientExceptionInterface::class);
-
         // Act
-        $this->client->sendRequest($request);
+        try {
+            $this->client->sendRequest($request);
+            self::fail('ApiException is expected.');
+        } catch (ApiException $e) {
+            // Assert
+            self::assertStringContainsString('Failed to reach GitHub API', $e->getMessage());
+            self::assertSame($clientException, $e->getPrevious());
+        }
     }
 
     #[DataProvider('provideRequestHeaders')]
@@ -283,29 +301,31 @@ final class ClientTest extends TestCase
         self::assertSame($response, $result);
     }
 
-    #[DataProvider('provideRateLimitScenarios')]
-    public function testRateLimitDetectionScenarios(
+    /**
+     * @param array<string, string[]> $headers
+     * @param class-string<\Throwable>|null $expectedException
+     */
+    #[DataProvider('provideErrorScenarios')]
+    public function testUnsuccessfulResponsesAreConvertedIntoExceptions(
         int $statusCode,
         string $responseBody,
-        bool $shouldThrowException,
+        array $headers,
+        ?string $expectedException,
     ): void {
         // Arrange
         $request = $this->createMock(RequestInterface::class);
-        $response = new ResponseStub($statusCode, [], $responseBody);
+        $response = new ResponseStub($statusCode, $headers, $responseBody);
 
         $this->httpClient = $this->httpClient->withResponse($request, $response);
         $this->client = new Client($this->httpFactory, $this->httpClient, $this->gitHubConfig);
 
-        if ($shouldThrowException) {
-            $this->expectException(GitHubRateLimitException::class);
-        }
+        $expectedException === null or $this->expectException($expectedException);
 
-        // Act & Assert
+        // Act
         $result = $this->client->sendRequest($request);
 
-        if (!$shouldThrowException) {
-            self::assertSame($response, $result);
-        }
+        // Assert
+        self::assertSame($response, $result);
     }
 
     protected function setUp(): void

@@ -15,12 +15,17 @@ use Internal\DLoad\Module\Config\Schema\Action\Download as DownloadConfig;
 use Internal\DLoad\Module\Config\Schema\Action\Type;
 use Internal\DLoad\Module\Config\Schema\Downloader as DownloaderConfig;
 use Internal\DLoad\Module\Config\Schema\Embed\Software;
+use Internal\DLoad\Module\Downloader\Exception\DownloadFailed;
 use Internal\DLoad\Module\Downloader\Exception\NotFound;
+use Internal\DLoad\Module\Downloader\Internal\Diagnostics\DownloadDiagnostics;
 use Internal\DLoad\Module\Downloader\Internal\DownloadContext;
 use Internal\DLoad\Module\Downloader\Task\DownloadResult;
 use Internal\DLoad\Module\Downloader\Task\DownloadTask;
 use Internal\DLoad\Module\Repository\AssetInterface;
 use Internal\DLoad\Module\Repository\Collection\AssetsCollection;
+use Internal\DLoad\Module\Repository\Collection\ReleasesCollection;
+use Internal\DLoad\Module\Repository\Exception\RateLimitException;
+use Internal\DLoad\Module\Repository\Exception\RepositoryException;
 use Internal\DLoad\Module\Repository\ReleaseInterface;
 use Internal\DLoad\Module\Repository\Repository;
 use Internal\DLoad\Module\Repository\RepositoryProvider;
@@ -51,6 +56,9 @@ use function React\Async\coroutine;
  */
 final class Downloader
 {
+    /** Number of release names collected for the failure report. */
+    private const FETCHED_RELEASES_LIMIT = 10;
+
     public function __construct(
         private readonly DownloaderConfig $config,
         private readonly Logger $logger,
@@ -83,6 +91,13 @@ final class Downloader
             onProgress: $onProgress,
             actionConfig: $actionConfig,
             tempDir: $this->getTempDirectory(),
+            diagnostics: new DownloadDiagnostics(
+                software: $software,
+                actionConfig: $actionConfig,
+                operatingSystem: $this->operatingSystem,
+                architecture: $this->architecture,
+                stability: $this->stability,
+            ),
         );
 
         $repositories = $software->repositories;
@@ -90,9 +105,17 @@ final class Downloader
             return coroutine(function () use ($repositories, $context) {
                 // Try every repo to load software.
                 start:
-                $repositories === [] and throw new NotFound('No relevant repository found.');
+                $repositories === [] and throw new DownloadFailed(
+                    software: $context->software->getId(),
+                    report: $context->diagnostics->render(),
+                );
                 $context->repoConfig = \array_shift($repositories);
                 $repository = $this->repositoryProvider->getByConfig($context->repoConfig);
+                $context->repositoryAttempt = $context->diagnostics->addRepository(
+                    type: $context->repoConfig->type,
+                    name: $repository->getName(),
+                    assetPattern: $context->repoConfig->assetPattern,
+                );
 
                 $this->logger->debug('Trying to load from repo `%s`', $repository->getName());
 
@@ -104,11 +127,18 @@ final class Downloader
                         version: $context->release->getVersion(),
                     );
                 } catch (NotFound $e) {
+                    // Nothing suitable in this repository: the reason is already in the diagnostics
                     $this->logger->debug($e->getMessage());
                     goto start;
+                } catch (RepositoryException $e) {
+                    // The repository is unusable (API error, invalid token, rate limit, etc.):
+                    // remember the reason and fall back to the next repository.
+                    $context->repositoryAttempt->error = $e;
+                    $this->logger->debug($e->getMessage());
+                    $this->logger->exception($e, important: false);
+                    goto start;
                 } catch (\Throwable $e) {
-                    $this->logger->error($e->getMessage());
-                    $this->logger->exception($e);
+                    $this->logger->exception($e, important: false);
                     throw $e;
                 } finally {
                     $repository instanceof Destroyable and $repository->destroy();
@@ -141,14 +171,15 @@ final class Downloader
                 $repository->getName(),
             );
 
+            $allReleases = $repository->getReleases();
             if ($context->actionConfig->version !== null) {
                 $constraint = Constraint::fromConstraintString($context->actionConfig->version);
                 // Filter by version if specified
-                $releasesCollection = $repository->getReleases()
+                $releasesCollection = $allReleases
                     ->minimumStability($constraint->minimumStability)
                     ->satisfies($constraint);
             } else {
-                $releasesCollection = $repository->getReleases()
+                $releasesCollection = $allReleases
                     ->minimumStability($this->stability);
             }
 
@@ -160,18 +191,29 @@ final class Downloader
             // Try without limit
             $releases === [] and $releases = $releasesCollection->limit(0)->toArray();
 
+            $context->repositoryAttempt->matchedReleases = \count($releases);
+
+            if ($releases === []) {
+                // Show what the repository actually offers: it explains version and stability mismatches
+                $context->repositoryAttempt->registerFetchedReleases($this->fetchReleaseNames($allReleases));
+
+                throw new NotFound('No relevant release found.');
+            }
+
             process_release:
             $releases === [] and throw new NotFound('No relevant release found.');
             $context->release = \array_shift($releases);
+            $context->releaseAttempt = $context->repositoryAttempt->addRelease($context->release->getName());
 
-            $this->logger->info('Loading release `%s`', $context->release->getName());
+            $this->logger->debug('Loading release `%s`', $context->release->getName());
 
             try {
                 await(coroutine($this->processRelease($context)));
                 return $context->release;
             } catch (NotFound $e) {
+                $context->releaseAttempt->reason ??= $e->getMessage();
                 $this->logger->debug($e->getMessage());
-                $this->logger->exception($e);
+                $this->logger->exception($e, important: false);
                 goto process_release;
             }
         };
@@ -188,13 +230,23 @@ final class Downloader
      */
     private function processRelease(DownloadContext $context): \Closure
     {
-        return fn(): AssetInterface => match (true) {
-            // Phar assets usually don't depend on OS or architecture, so we can use gradual filtering
-            $context->actionConfig->type === Type::Phar => $this->findAssetWithGradualFiltering($context),
-            // Use strict filtering when binary configuration exists
-            $context->software->binary !== null => $this->findAssetWithStrictFiltering($context),
-            // Use gradual filtering when no binary configuration exists
-            default => $this->findAssetWithGradualFiltering($context),
+        return function () use ($context): AssetInterface {
+            // Remember all the release assets: it makes a "nothing matched" report meaningful
+            $names = [];
+            foreach ($context->release->getAssets() as $asset) {
+                $names[] = $asset->getName();
+            }
+
+            $context->releaseAttempt->registerAssets($names);
+
+            return match (true) {
+                // Phar assets usually don't depend on OS or architecture, so we can use gradual filtering
+                $context->actionConfig->type === Type::Phar => $this->findAssetWithGradualFiltering($context),
+                // Use strict filtering when binary configuration exists
+                $context->software->binary !== null => $this->findAssetWithStrictFiltering($context),
+                // Use gradual filtering when no binary configuration exists
+                default => $this->findAssetWithGradualFiltering($context),
+            };
         };
     }
 
@@ -217,7 +269,15 @@ final class Downloader
         $allAssets = $this->addFormatFilter($assetsCollection, $context->actionConfig)->toArray();
         $this->logger->debug('%d matching assets found.', \count($allAssets));
 
-        $allAssets === [] and throw new NotFound('No relevant assets found.');
+        $allAssets === [] and throw new NotFound(
+            \sprintf(
+                'no asset matches OS `%s`, architecture `%s`, name pattern `%s`%s',
+                $this->operatingSystem->value,
+                $this->architecture->value,
+                $context->repoConfig->assetPattern,
+                $this->describeFormatFilter($context->actionConfig),
+            ),
+        );
 
         // Sort assets by priority and try to process them
         $sortedAssets = $this->sortAssetsByPriority($allAssets, $this->archiveService->getSupportedExtensions());
@@ -241,7 +301,13 @@ final class Downloader
         $supportedExtensions = $this->archiveService->getSupportedExtensions();
 
         // If we got here, no assets were found with any filter combination
-        \count($assetsCollection) === 0 and throw new NotFound('No relevant assets found.');
+        \count($assetsCollection) === 0 and throw new NotFound(
+            \sprintf(
+                'no asset matches name pattern `%s`%s',
+                $context->repoConfig->assetPattern,
+                $this->describeFormatFilter($context->actionConfig),
+            ),
+        );
 
         // Try #1: Filter by both OS and architecture (most specific)
         $filteredAssets = $assetsCollection
@@ -279,7 +345,7 @@ final class Downloader
             $sortedAssets = $this->sortAssetsByPriority($filteredAssets, $supportedExtensions);
             try {
                 return $this->tryProcessAssets($sortedAssets, $context);
-            } catch (\RuntimeException $e) {
+            } catch (NotFound $e) {
                 $this->logger->debug('Failed to process assets with OS-only filtering: %s', $e->getMessage());
                 // Continue to next filter strategy
             }
@@ -299,7 +365,7 @@ final class Downloader
             $sortedAssets = $this->sortAssetsByPriority($filteredAssets, $supportedExtensions);
             try {
                 return $this->tryProcessAssets($sortedAssets, $context);
-            } catch (\RuntimeException $e) {
+            } catch (NotFound $e) {
                 $this->logger->debug('Failed to process assets with architecture-only filtering: %s', $e->getMessage());
                 // Continue to next filter strategy
             }
@@ -327,16 +393,54 @@ final class Downloader
     private function tryProcessAssets(array $assets, DownloadContext $context): AssetInterface
     {
         process_asset:
-        $assets === [] and throw new NotFound('No relevant asset found.');
+        $assets === [] and throw new NotFound('none of the matching assets could be downloaded');
         $context->asset = \array_shift($assets);
         $this->logger->debug('Trying to load asset `%s`', $context->asset->getName());
         try {
             await(coroutine($this->processAsset($context)));
             return $context->asset;
+        } catch (RateLimitException $e) {
+            // Retrying other assets makes the situation worse: report the limit immediately
+            throw $e;
         } catch (\Throwable $e) {
-            $this->logger->exception($e);
+            $context->releaseAttempt->addFailure($context->asset->getName(), $e);
+            $this->logger->exception($e, important: false);
             goto process_asset;
         }
+    }
+
+    /**
+     * Collects names of the first releases available in the repository for a failure report.
+     *
+     * @return list<string>
+     */
+    private function fetchReleaseNames(ReleasesCollection $releases): array
+    {
+        $names = [];
+        foreach ($releases as $release) {
+            $names[] = $release->getName();
+
+            if (\count($names) >= self::FETCHED_RELEASES_LIMIT) {
+                break;
+            }
+        }
+
+        return $names;
+    }
+
+    /**
+     * Describes the asset format restriction for failure reports.
+     */
+    private function describeFormatFilter(Download $actionOptions): string
+    {
+        return match ($actionOptions->type) {
+            Type::Phar => ' and the `phar` extension',
+            Type::Archive => \sprintf(
+                ' and one of the archive extensions: %s',
+                \implode(', ', $this->archiveService->getSupportedExtensions()),
+            ),
+            default => '',
+        };
     }
 
     /**

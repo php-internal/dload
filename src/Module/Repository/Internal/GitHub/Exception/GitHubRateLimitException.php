@@ -4,32 +4,27 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Repository\Internal\GitHub\Exception;
 
+use Internal\DLoad\Module\Repository\Exception\RateLimitException;
+
 /**
  * Exception thrown when GitHub API rate limit is exceeded.
  *
  * @internal
- * @psalm-internal Internal\DLoad\Module\Repository\Internal\GitHub
+ * @psalm-internal Internal\DLoad\Module\Repository
  */
-final class GitHubRateLimitException extends \RuntimeException
+final class GitHubRateLimitException extends RateLimitException
 {
+    /**
+     * @param non-empty-string $message
+     * @param non-empty-string|null $repository Repository identifier, e.g. `owner/repo`.
+     */
     public function __construct(
-        public readonly string $documentationUrl,
         string $message = 'GitHub API rate limit exceeded. Check the GitHub Token or try again later.',
+        ?string $repository = null,
+        ?string $documentationUrl = null,
+        ?\DateTimeImmutable $resetAt = null,
         ?\Throwable $previous = null,
     ) {
-        parent::__construct($message, 0, $previous);
-    }
-
-    /**
-     * Creates exception from GitHub API response body.
-     *
-     * @param array{0: string, 1: string}|array{message: string, documentation_url: string} $responseData
-     */
-    public static function fromApiResponse(array $responseData): self
-    {
-        return new self(
-            documentationUrl: $responseData[1] ?? $responseData['documentation_url'],
-            message: $responseData[0] ?? $responseData['message'],
-        );
+        parent::__construct($message, $repository, $documentationUrl, $resetAt, $previous);
     }
 }

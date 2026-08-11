@@ -16,6 +16,7 @@ use Internal\DLoad\Module\Config\Schema\Embed\Binary as BinaryConfig;
 use Internal\DLoad\Module\Config\Schema\Embed\File;
 use Internal\DLoad\Module\Config\Schema\Embed\Software;
 use Internal\DLoad\Module\Downloader\Downloader;
+use Internal\DLoad\Module\Downloader\Exception\NothingExtracted;
 use Internal\DLoad\Module\Downloader\SoftwareCollection;
 use Internal\DLoad\Module\Downloader\Task\DownloadResult;
 use Internal\DLoad\Module\Downloader\Task\DownloadTask;
@@ -234,11 +235,14 @@ final class DLoad
             $extractor = $archive->extract();
             $this->logger->info('Extracting %s', $fileInfo->getFilename());
             $binaryPattern = $this->generateBinaryExtractionConfig($software->binary);
+            $extractionRules = $this->describeExtractionRules($software, $binaryPattern);
+            $archiveFiles = [];
 
             while ($extractor->valid()) {
                 $to = $rule = null;
                 $file = $extractor->current();
                 \assert($file instanceof \SplFileInfo);
+                $archiveFiles[] = $file->getFilename();
 
                 # Check if it's binary and should be extracted
                 $isBinary = false;
@@ -282,6 +286,13 @@ final class DLoad
                     $binaryPattern = null;
                 }
             }
+
+            # A downloaded asset without a single matching file means nothing was installed
+            $resultFiles === [] and throw new NothingExtracted(
+                assetName: $fileInfo->getFilename(),
+                rules: $extractionRules,
+                files: $archiveFiles,
+            );
 
             return new DloadResult($resultFiles, $resultBinary);
         } finally {
@@ -334,6 +345,24 @@ final class DLoad
     private function getDestinationPath(DownloadConfig $action): Path
     {
         return Path::create($this->configDestination->path ?? $action->extractPath ?? (string) \getcwd());
+    }
+
+    /**
+     * Lists the patterns applied to archive entries, to explain why nothing was extracted.
+     *
+     * @param File|null $binaryPattern Generated binary extraction rule
+     * @return list<string>
+     */
+    private function describeExtractionRules(Software $software, ?File $binaryPattern): array
+    {
+        $rules = [];
+        $binaryPattern === null or $rules[] = \sprintf('binary `%s`', $binaryPattern->pattern);
+
+        foreach ($software->files as $file) {
+            $rules[] = \sprintf('file `%s`', $file->pattern);
+        }
+
+        return $rules;
     }
 
     /**
