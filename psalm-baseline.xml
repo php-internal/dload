@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<files psalm-version="6.12.1@e71404b0465be25cf7f8a631b298c01c5ddd864f">
+<files psalm-version="6.16.1@f1f5de594dc76faf8784e02d3dc4716c91c6f6ac">
   <file src="src/Command/Base.php">
     <LessSpecificReturnStatement>
       <code><![CDATA[$config]]></code>
@@ -13,30 +13,9 @@
     </MoreSpecificReturnType>
   </file>
   <file src="src/Command/Get.php">
-    <ArgumentTypeCoercion>
-      <code><![CDATA[(string) $software]]></code>
-    </ArgumentTypeCoercion>
-    <LessSpecificReturnStatement>
-      <code><![CDATA[\array_map(
-            static fn(mixed $software): DownloadConfig => $toDownload[$software]
-                ?? DownloadConfig::fromSoftwareId((string) $software),
-            $input->getArgument(self::ARG_SOFTWARE),
-        )]]></code>
-    </LessSpecificReturnStatement>
-    <MixedArgument>
-      <code><![CDATA[$forceDownload]]></code>
-      <code><![CDATA[$input->getArgument(self::ARG_SOFTWARE)]]></code>
-    </MixedArgument>
-    <MixedArrayOffset>
-      <code><![CDATA[$toDownload[$software]]]></code>
-    </MixedArrayOffset>
     <MixedAssignment>
       <code><![CDATA[$argument]]></code>
-      <code><![CDATA[$forceDownload]]></code>
     </MixedAssignment>
-    <MoreSpecificReturnType>
-      <code><![CDATA[list<DownloadConfig>]]></code>
-    </MoreSpecificReturnType>
   </file>
   <file src="src/Command/Init.php">
     <ArgumentTypeCoercion>
@@ -142,14 +121,6 @@
       <code><![CDATA[$output[0]]]></code>
     </MixedArgument>
   </file>
-  <file src="src/Module/Common/FileSystem/Path.php">
-    <LessSpecificReturnStatement>
-      <code><![CDATA[$pos === false || $pos === 0 ? $name : \substr($name, 0, $pos)]]></code>
-    </LessSpecificReturnStatement>
-    <MoreSpecificReturnType>
-      <code><![CDATA[non-empty-string]]></code>
-    </MoreSpecificReturnType>
-  </file>
   <file src="src/Module/Common/Internal/Injection/ConfigLoader.php">
     <MixedMethodCall>
       <code><![CDATA[new $attribute->class()]]></code>
@@ -240,15 +211,6 @@
       <code><![CDATA[NyholmFactoryImpl]]></code>
     </ClassMustBeFinal>
   </file>
-  <file src="src/Module/Repository/Collection/CompositeRepository.php">
-    <InvalidArgument>
-      <code><![CDATA[function () {
-            foreach ($this->repositories as $repository) {
-                yield from $repository->getReleases();
-            }
-        }]]></code>
-    </InvalidArgument>
-  </file>
   <file src="src/Module/Repository/Collection/ReleasesCollection.php">
     <LessSpecificReturnStatement>
       <code><![CDATA[\ltrim(\str_replace(
@@ -281,19 +243,12 @@
     </MixedAssignment>
   </file>
   <file src="src/Module/Repository/Internal/Collection.php">
-    <DocblockTypeContradiction>
-      <code><![CDATA[$items instanceof \Closure => static::create($items())]]></code>
-    </DocblockTypeContradiction>
-    <InvalidFunctionCall>
-      <code><![CDATA[$items()]]></code>
-    </InvalidFunctionCall>
     <MissingClosureParamType>
       <code><![CDATA[$item]]></code>
     </MissingClosureParamType>
     <MixedArgument>
       <code><![CDATA[$item]]></code>
       <code><![CDATA[$item]]></code>
-      <code><![CDATA[$items()]]></code>
     </MixedArgument>
     <MixedArgumentTypeCoercion>
       <code><![CDATA[$items]]></code>
@@ -311,17 +266,6 @@
       <code><![CDATA[new static($items)]]></code>
       <code><![CDATA[new static(new CachedGenerator($items))]]></code>
     </UnsafeGenericInstantiation>
-  </file>
-  <file src="src/Module/Repository/Internal/GitHub/Api/Client.php">
-    <InvalidArgument>
-      <code><![CDATA[$decoded]]></code>
-    </InvalidArgument>
-    <RedundantCondition>
-      <code><![CDATA[\is_array($decoded)
-                && \count($decoded) === 2
-                && \is_string($decoded[0])
-                && \is_string($decoded[1])]]></code>
-    </RedundantCondition>
   </file>
   <file src="src/Module/Repository/Internal/GitHub/Api/Response/AssetInfo.php">
     <ArgumentTypeCoercion>
@@ -358,26 +302,6 @@
       <code><![CDATA[$org]]></code>
     </PossiblyUndefinedArrayOffset>
   </file>
-  <file src="src/Module/Repository/Internal/GitHub/GitHubAsset.php">
-    <LessSpecificImplementedReturnType>
-      <code><![CDATA[\Generator<int, string, mixed, void>]]></code>
-    </LessSpecificImplementedReturnType>
-  </file>
-  <file src="src/Module/Repository/Internal/GitHub/GitHubRelease.php">
-    <InvalidArgument>
-      <code><![CDATA[static function () use ($api, $result, $dto): \Generator {
-            foreach ($dto->assets as $assetDTO) {
-                yield GitHubAsset::fromDTO($api, $result, $assetDTO);
-            }
-        }]]></code>
-    </InvalidArgument>
-    <RedundantCondition>
-      <code><![CDATA[$this->assets === null]]></code>
-    </RedundantCondition>
-    <TypeDoesNotContainNull>
-      <code><![CDATA[$this->assets === null]]></code>
-    </TypeDoesNotContainNull>
-  </file>
   <file src="src/Module/Repository/Internal/Paginator.php">
     <PossiblyNullPropertyAssignmentValue>
       <code><![CDATA[$loader->valid() ? $loader->current() : []]]></code>
@@ -400,35 +324,13 @@
     <ArgumentTypeCoercion>
       <code><![CDATA[$path]]></code>
     </ArgumentTypeCoercion>
-    <MixedArgument>
-      <code><![CDATA[$sectionValue]]></code>
-    </MixedArgument>
     <MixedArgumentTypeCoercion>
       <code><![CDATA[$merged[$key]]]></code>
-      <code><![CDATA[$subValue]]></code>
-      <code><![CDATA[$value]]></code>
       <code><![CDATA[$value]]></code>
     </MixedArgumentTypeCoercion>
     <MixedAssignment>
-      <code><![CDATA[$item]]></code>
-      <code><![CDATA[$orderedSections[$sectionKey]]]></code>
-      <code><![CDATA[$orderedSections[$sectionKey]]]></code>
-      <code><![CDATA[$sectionValue]]></code>
-      <code><![CDATA[$sectionValue]]></code>
-      <code><![CDATA[$simpleValues[$key]]]></code>
-      <code><![CDATA[$simpleValues[$subKey]]]></code>
-      <code><![CDATA[$subValue]]></code>
-      <code><![CDATA[$value]]></code>
-      <code><![CDATA[$value]]></code>
-      <code><![CDATA[$value]]></code>
-      <code><![CDATA[$value]]></code>
-      <code><![CDATA[$value]]></code>
-      <code><![CDATA[$value]]></code>
       <code><![CDATA[$value]]></code>
     </MixedAssignment>
-    <PossiblyFalseOperand>
-      <code><![CDATA[\json_encode($item)]]></code>
-    </PossiblyFalseOperand>
   </file>
   <file src="src/Module/Version/Constraint.php">
     <ArgumentTypeCoercion>

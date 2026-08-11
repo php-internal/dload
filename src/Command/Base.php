@@ -46,11 +46,6 @@ abstract class Base extends Command
 
     public static function getCommandName(): ?string
     {
-        if (!\class_exists(AsCommand::class)) {
-            // Fall back on lower Symfony versions
-            return self::getDefaultName();
-        }
-
         if ($attributes = (new \ReflectionClass(static::class))->getAttributes(AsCommand::class)) {
             /** @var AsCommand $attribute */
             $attribute = $attributes[0]->newInstance();

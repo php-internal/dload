@@ -21,7 +21,7 @@ final class TomlData
     /**
      * Creates a new immutable TOML data container.
      *
-     * @param array<array-key, mixed> $data The configuration data array
+     * @param array<string, mixed> $data The configuration data array. TOML keys are always strings.
      */
     public function __construct(
         private readonly array $data = [],
@@ -38,7 +38,12 @@ final class TomlData
      */
     public static function fromString(string $toml): self
     {
-        return new self(Toml::parseToArray($toml));
+        # `Toml::parseToArray()` is declared as a bare `array`; a TOML document is a table, so its
+        # top-level keys are strings by construction.
+        /** @var array<string, mixed> $data */
+        $data = Toml::parseToArray($toml);
+
+        return new self($data);
     }
 
     /**

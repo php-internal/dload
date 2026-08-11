@@ -60,7 +60,9 @@ abstract class Collection implements \IteratorAggregate, \Countable
      *
      * @template TNew
      *
-     * @param iterable<TNew> $items Source of items
+     * @param iterable<TNew>|(\Closure(): iterable<TNew>)|mixed $items Source of items. A closure is
+     *        called once and its result converted, which lets a caller defer building the items.
+     *        Anything else throws, so the parameter stays `mixed` for the checks below.
      * @return static<TNew> New collection instance
      * @throws \InvalidArgumentException If the input cannot be converted to a collection
      */
