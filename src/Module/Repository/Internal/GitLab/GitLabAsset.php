@@ -7,6 +7,7 @@ namespace Internal\DLoad\Module\Repository\Internal\GitLab;
 use Internal\Destroy\Destroyable;
 use Internal\DLoad\Module\Common\Architecture;
 use Internal\DLoad\Module\Common\OperatingSystem;
+use Internal\DLoad\Module\HttpClient\StreamReader;
 use Internal\DLoad\Module\Repository\Internal\Asset;
 use Internal\DLoad\Module\Repository\Internal\GitLab\Api\Response\AssetInfo;
 use Internal\DLoad\Module\Repository\Internal\GitLab\Api\RepositoryApi;
@@ -60,23 +61,7 @@ final class GitLabAsset extends Asset implements Destroyable
     {
         $response = $this->api->downloadArtifact($this->release->getRepository()->getName(), $this->release->getName(), $this->getName());
 
-        $body = $response->getBody();
-        $size = $body->getSize();
-        $loaded = 0;
-
-        while (!$body->eof()) {
-            $chunk = $body->read(8192);
-
-            # A stream may report `eof()` as false and still yield nothing; treat that as the end
-            # rather than spinning, and keep the contract of non-empty chunks.
-            if ($chunk === '') {
-                break;
-            }
-
-            $loaded += \strlen($chunk);
-            $progress === null or $progress($loaded, $size, []);
-            yield $chunk;
-        }
+        yield from StreamReader::chunks($response->getBody(), $progress);
     }
 
     public function destroy(): void
