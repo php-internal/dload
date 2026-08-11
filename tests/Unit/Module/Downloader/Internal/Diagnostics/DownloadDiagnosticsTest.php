@@ -118,6 +118,24 @@ final class DownloadDiagnosticsTest extends TestCase
         self::assertStringContainsString('2) gitlab `group/app`', $report);
     }
 
+    public function testReleaseWithoutFetchedAssetListIsNotReportedAsEmpty(): void
+    {
+        // Arrange
+        $diagnostics = self::diagnostics();
+        $repository = $diagnostics->addRepository('github', 'owner/repo', '/^app-.*/');
+        $repository->matchedReleases = 1;
+
+        // An error interrupted the attempt before the asset list was fetched
+        $repository->addRelease('v1.2.0')->reason = 'GitHub API is unavailable: HTTP 502 Bad Gateway';
+
+        // Act
+        $report = $diagnostics->render();
+
+        // Assert
+        self::assertStringContainsString('- v1.2.0: asset list not loaded, GitHub API is unavailable', $report);
+        self::assertStringNotContainsString('0 asset(s)', $report);
+    }
+
     public function testReportLimitsTheNumberOfDescribedReleases(): void
     {
         // Arrange

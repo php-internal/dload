@@ -14,8 +14,8 @@ final class ReleaseAttempt
     /** Maximum number of asset names listed in the report. */
     private const ASSETS_LIMIT = 15;
 
-    /** @var int<0, max> Total number of assets in the release */
-    public int $assetsTotal = 0;
+    /** @var int<0, max>|null Total number of assets in the release, or null when the list was not fetched */
+    public ?int $assetsTotal = null;
 
     /** @var string|null Why the release was rejected */
     public ?string $reason = null;
@@ -61,9 +61,10 @@ final class ReleaseAttempt
     {
         $lines = [
             \sprintf(
-                '%s: %d asset(s)%s',
+                '%s: %s%s',
                 $this->name,
-                $this->assetsTotal,
+                // A missing asset list (an error before it was fetched) is not the same as an empty one
+                $this->assetsTotal === null ? 'asset list not loaded' : \sprintf('%d asset(s)', $this->assetsTotal),
                 $this->reason === null ? '' : ', ' . $this->reason,
             ),
         ];

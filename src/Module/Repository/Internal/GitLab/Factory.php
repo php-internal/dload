@@ -10,6 +10,7 @@ use Internal\DLoad\Module\HttpClient\Factory as HttpFactory;
 use Internal\DLoad\Module\Repository\Internal\GitLab\Api\Client;
 use Internal\DLoad\Module\Repository\Internal\GitLab\Api\RepositoryApi;
 use Internal\DLoad\Module\Repository\RepositoryFactory;
+use Internal\DLoad\Service\Logger;
 
 /**
  * Factory for creating GitLab repository instances.
@@ -28,6 +29,7 @@ final class Factory implements RepositoryFactory
     public function __construct(
         private readonly HttpFactory $httpFactory,
         GitLab $gitLabConfig,
+        private readonly Logger $logger,
     ) {
         $this->gitLabClient = new Client(
             $httpFactory,
@@ -46,7 +48,7 @@ final class Factory implements RepositoryFactory
         $uri = \parse_url($config->uri, PHP_URL_PATH) ?? $config->uri;
         $api = $this->createRepositoryApi($uri);
 
-        return new GitLabRepository($api, $uri);
+        return new GitLabRepository($api, $uri, $this->logger);
     }
 
     /**

@@ -244,7 +244,7 @@ final class Get extends Base
     {
         foreach ($failures as [$software, $error]) {
             $output->writeln('');
-            $output->writeln(\sprintf('<error> Failed to download `%s` </error>', $software));
+            $output->writeln(\sprintf('<error> Failed to download `%s` </error>', OutputFormatter::escape($software)));
             $output->writeln(OutputFormatter::escape(self::describeFailure($error)));
 
             $output->isVeryVerbose() and $this->logger->exception($error, important: true);

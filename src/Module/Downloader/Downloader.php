@@ -10,7 +10,6 @@ use Internal\DLoad\Module\Common\Architecture;
 use Internal\DLoad\Module\Common\FileSystem\FS;
 use Internal\DLoad\Module\Common\OperatingSystem;
 use Internal\DLoad\Module\Common\Stability;
-use Internal\DLoad\Module\Config\Schema\Action\Download;
 use Internal\DLoad\Module\Config\Schema\Action\Download as DownloadConfig;
 use Internal\DLoad\Module\Config\Schema\Action\Type;
 use Internal\DLoad\Module\Config\Schema\Downloader as DownloaderConfig;
@@ -431,7 +430,7 @@ final class Downloader
     /**
      * Describes the asset format restriction for failure reports.
      */
-    private function describeFormatFilter(Download $actionOptions): string
+    private function describeFormatFilter(DownloadConfig $actionOptions): string
     {
         return match ($actionOptions->type) {
             Type::Phar => ' and the `phar` extension',
@@ -538,10 +537,10 @@ final class Downloader
      * Adds format filter to the assets collection if specified in action options.
      *
      * @param AssetsCollection $collection Collection of assets to filter
-     * @param Download $actionOptions Download action options
+     * @param DownloadConfig $actionOptions Download action options
      * @return AssetsCollection Filtered collection
      */
-    private function addFormatFilter(AssetsCollection $collection, Download $actionOptions): AssetsCollection
+    private function addFormatFilter(AssetsCollection $collection, DownloadConfig $actionOptions): AssetsCollection
     {
         return match ($actionOptions->type) {
             Type::Phar => $collection->whereFileExtensions(['phar']),

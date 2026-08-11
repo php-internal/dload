@@ -406,8 +406,17 @@ abstract class ResponseValidator
     {
         $message = \trim(\preg_replace('/\s+/', ' ', $message) ?? $message);
 
-        return \strlen($message) > self::MESSAGE_MAX_LENGTH
-            ? \substr($message, 0, self::MESSAGE_MAX_LENGTH) . '…'
-            : $message;
+        if (\strlen($message) <= self::MESSAGE_MAX_LENGTH) {
+            return $message;
+        }
+
+        $cut = \substr($message, 0, self::MESSAGE_MAX_LENGTH);
+
+        // A byte-based cut may split a multibyte UTF-8 character: drop its leftover bytes
+        for ($i = 0; $i < 3 && $cut !== '' && \preg_match('//u', $cut) !== 1; ++$i) {
+            $cut = \substr($cut, 0, -1);
+        }
+
+        return $cut . '…';
     }
 }

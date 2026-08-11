@@ -6,6 +6,7 @@ namespace Internal\DLoad\Module\Repository\Internal\GitHub;
 
 use Internal\Destroy\Destroyable;
 use Internal\DLoad\Module\Repository\Collection\ReleasesCollection;
+use Internal\DLoad\Module\Repository\Exception\RateLimitException;
 use Internal\DLoad\Module\Repository\Internal\GitHub\Api\RepositoryApi;
 use Internal\DLoad\Module\Repository\Repository;
 use Internal\DLoad\Service\Logger;
@@ -82,6 +83,10 @@ final class GitHubRepository implements Repository, Destroyable
                     # The first page is mandatory: when it fails, there is nothing to download and the reason
                     # (invalid token, rate limit, missing repository, etc.) must reach the user.
                     $anyPageLoaded or throw $e;
+
+                    # A rate limit leaves the release list incomplete: hiding it would produce a report
+                    # that claims the repository has nothing more, so it must reach the user as well.
+                    $e instanceof RateLimitException and throw $e;
 
                     # Already loaded releases are enough to continue, so a failure of a subsequent page
                     # only stops the pagination.

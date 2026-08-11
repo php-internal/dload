@@ -173,6 +173,26 @@ final class ResponseValidatorTest extends TestCase
         self::assertSame('owner/repo', $exception->repository);
     }
 
+    public function testLongApiMessageIsTruncatedWithoutBreakingUtf8(): void
+    {
+        // Arrange
+        $validator = new ResponseValidator(authenticated: false);
+        // An ASCII prefix shifts the byte-based cut into the middle of a multibyte character
+        $apiMessage = 'x' . \str_repeat('я', 400);
+        $response = new ResponseStub(422, [], \json_encode(['message' => $apiMessage]));
+
+        // Act
+        try {
+            $validator->validate(self::releasesRequest(), $response);
+            self::fail('ApiException is expected.');
+        } catch (ApiException $e) {
+            // Assert
+            $message = $e->getMessage();
+            self::assertSame(1, \preg_match('//u', $message), 'The message must stay valid UTF-8.');
+            self::assertStringContainsString('…', $message);
+        }
+    }
+
     private static function releasesRequest(): RequestInterface
     {
         return new Request('GET', 'https://api.github.com/repos/owner/repo/releases?page=1');
