@@ -7,6 +7,9 @@ namespace Internal\DLoad\Module\Downloader\Internal;
 use Internal\DLoad\Module\Config\Schema\Action\Download as DownloadConfig;
 use Internal\DLoad\Module\Config\Schema\Embed\Repository;
 use Internal\DLoad\Module\Config\Schema\Embed\Software;
+use Internal\DLoad\Module\Downloader\Internal\Diagnostics\DownloadDiagnostics;
+use Internal\DLoad\Module\Downloader\Internal\Diagnostics\ReleaseAttempt;
+use Internal\DLoad\Module\Downloader\Internal\Diagnostics\RepositoryAttempt;
 use Internal\DLoad\Module\Repository\AssetInterface;
 use Internal\DLoad\Module\Repository\ReleaseInterface;
 use Internal\DLoad\Module\Task\Progress;
@@ -34,6 +37,12 @@ final class DownloadContext
     /** @var ReleaseInterface Current release being processed */
     public ReleaseInterface $release;
 
+    /** @var RepositoryAttempt Diagnostics of the repository being processed */
+    public RepositoryAttempt $repositoryAttempt;
+
+    /** @var ReleaseAttempt Diagnostics of the release being processed */
+    public ReleaseAttempt $releaseAttempt;
+
     /**
      * Creates a new download context.
      *
@@ -42,11 +51,13 @@ final class DownloadContext
      *        Exception thrown in this callback will stop and revert the task.
      * @param DownloadConfig $actionConfig Download action configuration
      * @param Path $tempDir Temporary directory for downloads
+     * @param DownloadDiagnostics $diagnostics Collector of failure reasons for the final report
      */
     public function __construct(
         public readonly Software $software,
         public readonly \Closure $onProgress,
         public readonly DownloadConfig $actionConfig,
         public readonly Path $tempDir,
+        public readonly DownloadDiagnostics $diagnostics,
     ) {}
 }

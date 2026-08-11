@@ -10,7 +10,7 @@ use Internal\DLoad\Module\Common\OperatingSystem;
 use Internal\DLoad\Module\Repository\Internal\Asset;
 use Internal\DLoad\Module\Repository\Internal\GitLab\Api\Response\AssetInfo;
 use Internal\DLoad\Module\Repository\Internal\GitLab\Api\RepositoryApi;
-use Psr\Http\Client\ClientExceptionInterface;
+use Internal\DLoad\Module\Repository\Exception\RepositoryException;
 
 /**
  * GitLab Asset class representing a downloadable asset from a GitLab release.
@@ -54,7 +54,7 @@ final class GitLabAsset extends Asset implements Destroyable
      *        it SHOULD be called on upload/download of data and at least 1/s
      *
      * @return \Generator<int, string, mixed, void>
-     * @throws ClientExceptionInterface
+     * @throws RepositoryException
      */
     public function download(?\Closure $progress = null): \Generator
     {

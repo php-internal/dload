@@ -7,7 +7,7 @@ namespace Internal\DLoad\Module\Repository\Internal\GitHub\Api;
 use Internal\DLoad\Module\Config\Schema\GitHub;
 use Internal\DLoad\Module\HttpClient\Factory as HttpFactory;
 use Internal\DLoad\Module\HttpClient\Method;
-use Internal\DLoad\Module\Repository\Internal\GitHub\Exception\GitHubRateLimitException;
+use Internal\DLoad\Module\Repository\Exception\RepositoryException;
 use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestInterface;
@@ -17,8 +17,8 @@ use Psr\Http\Message\UriInterface;
 /**
  * HTTP client wrapper with GitHub-specific error handling and authentication.
  *
- * Detects and handles GitHub Rate Limit responses automatically.
- * Adds GitHub API token authentication when available.
+ * Converts unsuccessful responses (rate limits, invalid token, missing repository, etc.)
+ * into exceptions with actionable messages. Adds GitHub API token authentication when available.
  *
  * @internal
  * @psalm-internal Internal\DLoad\Module\Repository\Internal\GitHub
@@ -32,6 +32,8 @@ final class Client
         'accept' => 'application/vnd.github.v3+json',
     ];
 
+    private readonly ResponseValidator $validator;
+
     public function __construct(
         private readonly HttpFactory $httpFactory,
         private readonly ClientInterface $client,
@@ -39,13 +41,14 @@ final class Client
     ) {
         // Add authorization header if token is available
         $this->gitHubConfig->token !== null and $this->defaultHeaders['authorization'] = 'Bearer ' . $this->gitHubConfig->token;
+
+        $this->validator = new ResponseValidator(authenticated: $this->gitHubConfig->token !== null);
     }
 
     /**
      * @param Method|non-empty-string $method
      * @param array<string, string> $headers
-     * @throws GitHubRateLimitException
-     * @throws ClientExceptionInterface
+     * @throws RepositoryException
      */
     public function request(Method|string $method, string|UriInterface $uri, array $headers = []): ResponseInterface
     {
@@ -55,45 +58,18 @@ final class Client
     }
 
     /**
-     * @throws GitHubRateLimitException
-     * @throws ClientExceptionInterface
+     * @throws RepositoryException
      */
     public function sendRequest(RequestInterface $request): ResponseInterface
     {
-        $response = $this->client->sendRequest($request);
+        try {
+            $response = $this->client->sendRequest($request);
+        } catch (ClientExceptionInterface $e) {
+            throw $this->validator->transportFailure($request, $e);
+        }
 
-        $this->checkForRateLimit($response);
+        $this->validator->validate($request, $response);
 
         return $response;
-    }
-
-    /**
-     * @throws GitHubRateLimitException
-     */
-    private function checkForRateLimit(ResponseInterface $response): void
-    {
-        // GitHub rate limit responses typically have 403 status
-        if ($response->getStatusCode() !== 403) {
-            return;
-        }
-
-        $body = $response->getBody()->__toString();
-
-        try {
-            /** @var mixed $decoded */
-            $decoded = \json_decode($body, true, 512, JSON_THROW_ON_ERROR);
-
-            // GitHub rate limit responses have format: ["API rate limit ...", "https://docs.github.com/..."]
-            if (\is_array($decoded)
-                && \count($decoded) === 2
-                && \is_string(\reset($decoded))
-                && \is_string(\next($decoded))
-                && \str_contains(\reset($decoded), 'API rate limit')
-            ) {
-                throw GitHubRateLimitException::fromApiResponse($decoded);
-            }
-        } catch (\JsonException) {
-            // Not a JSON response, continue without rate limit check
-        }
     }
 }

@@ -7,7 +7,7 @@ namespace Internal\DLoad\Module\Repository\Internal\GitLab\Api;
 use Internal\DLoad\Module\Config\Schema\GitLab;
 use Internal\DLoad\Module\HttpClient\Factory as HttpFactory;
 use Internal\DLoad\Module\HttpClient\Method;
-use Internal\DLoad\Module\Repository\Internal\GitLab\Exception\GitLabRateLimitException;
+use Internal\DLoad\Module\Repository\Exception\RepositoryException;
 use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestInterface;
@@ -17,8 +17,8 @@ use Psr\Http\Message\UriInterface;
 /**
  * HTTP client wrapper with GitLab-specific error handling and authentication.
  *
- * Detects and handles GitLab Rate Limit responses automatically.
- * Adds GitLab API token authentication when available.
+ * Converts unsuccessful responses (rate limits, invalid token, missing project, etc.)
+ * into exceptions with actionable messages. Adds GitLab API token authentication when available.
  *
  * @internal
  * @psalm-internal Internal\DLoad\Module\Repository\Internal\GitLab
@@ -32,6 +32,8 @@ final class Client
         'accept' => 'application/json',
     ];
 
+    private readonly ResponseValidator $validator;
+
     public function __construct(
         private readonly HttpFactory $httpFactory,
         private readonly ClientInterface $client,
@@ -39,11 +41,12 @@ final class Client
     ) {
         // Add authorization header if token is available
         $this->gitLabConfig->token !== null and $this->defaultHeaders['authorization'] = 'Bearer ' . $this->gitLabConfig->token;
+
+        $this->validator = new ResponseValidator(authenticated: $this->gitLabConfig->token !== null);
     }
 
     /**
-     * @throws GitLabRateLimitException
-     * @throws ClientExceptionInterface
+     * @throws RepositoryException
      */
     public function downloadArtifact(string|UriInterface $uri): ResponseInterface
     {
@@ -62,8 +65,7 @@ final class Client
     /**
      * @param Method|non-empty-string $method
      * @param array<string, string> $headers
-     * @throws GitLabRateLimitException
-     * @throws ClientExceptionInterface
+     * @throws RepositoryException
      */
     public function request(Method|string $method, string|UriInterface $uri, array $headers = []): ResponseInterface
     {
@@ -73,16 +75,17 @@ final class Client
     }
 
     /**
-     * @throws GitLabRateLimitException
-     * @throws ClientExceptionInterface
+     * @throws RepositoryException
      */
     public function sendRequest(RequestInterface $request): ResponseInterface
     {
-        $response = $this->client->sendRequest($request);
-
-        if ($response->getStatusCode() === 429) {
-            throw new GitLabRateLimitException();
+        try {
+            $response = $this->client->sendRequest($request);
+        } catch (ClientExceptionInterface $e) {
+            throw $this->validator->transportFailure($request, $e);
         }
+
+        $this->validator->validate($request, $response);
 
         return $response;
     }

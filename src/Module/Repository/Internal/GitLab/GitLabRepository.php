@@ -6,9 +6,10 @@ namespace Internal\DLoad\Module\Repository\Internal\GitLab;
 
 use Internal\Destroy\Destroyable;
 use Internal\DLoad\Module\Repository\Collection\ReleasesCollection;
+use Internal\DLoad\Module\Repository\Exception\RateLimitException;
 use Internal\DLoad\Module\Repository\Internal\GitLab\Api\RepositoryApi;
-use Internal\DLoad\Module\Repository\Internal\GitLab\Exception\GitLabRateLimitException;
 use Internal\DLoad\Module\Repository\Repository;
+use Internal\DLoad\Service\Logger;
 
 /**
  * GitLab Repository class representing a GitLab repository.
@@ -33,6 +34,7 @@ final class GitLabRepository implements Repository, Destroyable
     public function __construct(
         private readonly RepositoryApi $api,
         string $projectPath,
+        private readonly Logger $logger,
     ) {
         $this->name = $projectPath;
     }
@@ -50,6 +52,7 @@ final class GitLabRepository implements Repository, Destroyable
         // Create a generator function for lazy loading release pages
         $pageLoader = function (): \Generator {
             $page = 0;
+            $anyPageLoaded = false;
 
             do {
                 try {
@@ -69,12 +72,22 @@ final class GitLabRepository implements Repository, Destroyable
                         }
                     }
                     yield $toYield;
+                    $anyPageLoaded = true;
 
                     // Check if there are more pages by getting next page
                     $hasMorePages = $paginator->getNextPage() !== null;
-                } catch (GitLabRateLimitException $e) {
-                    throw $e;
-                } catch (\Throwable) {
+                } catch (\Throwable $e) {
+                    # The first page is mandatory: when it fails, there is nothing to download and the reason
+                    # (invalid token, rate limit, missing project, etc.) must reach the user.
+                    $anyPageLoaded or throw $e;
+
+                    # A rate limit leaves the release list incomplete: hiding it would produce a report
+                    # that claims the project has nothing more, so it must reach the user as well.
+                    $e instanceof RateLimitException and throw $e;
+
+                    # Already loaded releases are enough to continue, so a failure of a subsequent page
+                    # only stops the pagination.
+                    $this->logger->exception($e, important: false);
                     return;
                 }
             } while ($hasMorePages);

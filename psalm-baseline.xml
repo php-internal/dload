@@ -198,6 +198,8 @@
   </file>
   <file src="src/Module/Downloader/Downloader.php">
     <InternalMethod>
+      <code><![CDATA[$context->release->getAssets()]]></code>
+      <code><![CDATA[$releases]]></code>
       <code><![CDATA[limit]]></code>
       <code><![CDATA[limit]]></code>
       <code><![CDATA[toArray]]></code>
@@ -220,7 +222,9 @@
       <code><![CDATA[$asset]]></code>
       <code><![CDATA[$file]]></code>
       <code><![CDATA[$release]]></code>
+      <code><![CDATA[$releaseAttempt]]></code>
       <code><![CDATA[$repoConfig]]></code>
+      <code><![CDATA[$repositoryAttempt]]></code>
     </PropertyNotSetInConstructor>
   </file>
   <file src="src/Module/Downloader/SoftwareCollection.php">

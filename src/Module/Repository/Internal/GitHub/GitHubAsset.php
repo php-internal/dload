@@ -11,7 +11,7 @@ use Internal\DLoad\Module\HttpClient\Method;
 use Internal\DLoad\Module\Repository\Internal\Asset;
 use Internal\DLoad\Module\Repository\Internal\GitHub\Api\Response\AssetInfo;
 use Internal\DLoad\Module\Repository\Internal\GitHub\Api\RepositoryApi;
-use Psr\Http\Client\ClientExceptionInterface;
+use Internal\DLoad\Module\Repository\Exception\RepositoryException;
 
 /**
  * GitHub Asset class representing a downloadable asset from a GitHub release.
@@ -55,7 +55,7 @@ final class GitHubAsset extends Asset implements Destroyable
      *        it SHOULD be called on upload/download of data and at least 1/s
      *
      * @return \Generator<int, string, mixed, void>
-     * @throws ClientExceptionInterface
+     * @throws RepositoryException
      */
     public function download(?\Closure $progress = null): \Generator
     {

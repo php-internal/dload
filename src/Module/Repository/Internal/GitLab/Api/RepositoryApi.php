@@ -6,11 +6,11 @@ namespace Internal\DLoad\Module\Repository\Internal\GitLab\Api;
 
 use Internal\DLoad\Module\HttpClient\Factory as HttpFactory;
 use Internal\DLoad\Module\HttpClient\Method;
+use Internal\DLoad\Module\Repository\Exception\ApiException;
+use Internal\DLoad\Module\Repository\Exception\RepositoryException;
 use Internal\DLoad\Module\Repository\Internal\GitLab\Api\Response\ReleaseInfo;
 use Internal\DLoad\Module\Repository\Internal\GitLab\Api\Response\RepositoryInfo;
-use Internal\DLoad\Module\Repository\Internal\GitLab\Exception\GitLabRateLimitException;
 use Internal\DLoad\Module\Repository\Internal\Paginator;
-use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\UriInterface;
 
@@ -45,8 +45,7 @@ final class RepositoryApi
      * @param non-empty-string $repositoryPath
      * @param non-empty-string $releaseName
      * @param non-empty-string $fileName
-     * @throws GitLabRateLimitException
-     * @throws ClientExceptionInterface
+     * @throws RepositoryException
      */
     public function downloadArtifact(string $repositoryPath, string $releaseName, string $fileName): ResponseInterface
     {
@@ -57,8 +56,7 @@ final class RepositoryApi
     /**
      * @param Method|non-empty-string $method
      * @param array<string, string> $headers
-     * @throws GitLabRateLimitException
-     * @throws ClientExceptionInterface
+     * @throws RepositoryException
      */
     public function request(Method|string $method, string|UriInterface $uri, array $headers = []): ResponseInterface
     {
@@ -66,8 +64,7 @@ final class RepositoryApi
     }
 
     /**
-     * @throws GitLabRateLimitException
-     * @throws ClientExceptionInterface
+     * @throws RepositoryException
      */
     public function getRepository(): RepositoryInfo
     {
@@ -90,8 +87,7 @@ final class RepositoryApi
     /**
      * @param int<1, max> $page
      * @return Paginator<ReleaseInfo>
-     * @throws GitLabRateLimitException
-     * @throws ClientExceptionInterface
+     * @throws RepositoryException
      */
     public function getReleases(int $page = 1): Paginator
     {
@@ -99,50 +95,62 @@ final class RepositoryApi
             $currentPage = $page;
 
             do {
-                try {
-                    $response = $this->releasesRequest($currentPage);
+                $response = $this->releasesRequest($currentPage);
 
-                    /** @var array<array-key, array{
-                     *     name: non-empty-string|null,
-                     *     tag_name: non-empty-string,
-                     *     description: null|non-empty-string,
-                     *     created_at: non-empty-string,
-                     *     released_at: non-empty-string,
-                     *     assets: array{
-                     *         links: list<array{
-                     *             name: non-empty-string,
-                     *             url: non-empty-string,
-                     *             direct_asset_url?: non-empty-string,
-                     *             link_type: non-empty-string,
-                     *         }>
-                     *     },
-                     *     upcoming_release: bool
-                     * }> $data */
-                    $data = \json_decode($response->getBody()->__toString(), true, 512, JSON_THROW_ON_ERROR);
+                /** @var list<array{
+                 *     name: non-empty-string|null,
+                 *     tag_name: non-empty-string,
+                 *     description: null|non-empty-string,
+                 *     created_at: non-empty-string,
+                 *     released_at: non-empty-string,
+                 *     assets: array{
+                 *         links: list<array{
+                 *             name: non-empty-string,
+                 *             url: non-empty-string,
+                 *             direct_asset_url?: non-empty-string,
+                 *             link_type: non-empty-string,
+                 *         }>
+                 *     },
+                 *     upcoming_release: bool
+                 * }> $data */
+                $data = $this->decodeReleasesResponse($response);
 
-                    // If empty response, no more pages
-                    if ($data === []) {
-                        return;
-                    }
-
-                    $releases = [];
-                    foreach ($data as $releaseData) {
-                        try {
-                            $releases[] = ReleaseInfo::fromApiResponse($releaseData);
-                        } catch (\Throwable) {
-                            // Skip invalid releases
-                            continue;
-                        }
-                    }
-
-                    yield $releases;
-
-                    // Check if there are more pages
-                    $hasMorePages = $this->hasNextPage($response);
-                    $currentPage++;
-                } catch (ClientExceptionInterface) {
+                // If empty response, no more pages
+                if ($data === []) {
                     return;
                 }
+
+                $releases = [];
+                $failure = null;
+                foreach ($data as $releaseData) {
+                    try {
+                        $releases[] = ReleaseInfo::fromApiResponse($releaseData);
+                    } catch (\Throwable $e) {
+                        $failure ??= $e;
+                        // Skip invalid releases
+                        continue;
+                    }
+                }
+
+                // The whole page is unreadable: the response structure is not what we expect
+                if ($releases === [] && $failure !== null) {
+                    throw new ApiException(
+                        \sprintf(
+                            'GitLab API returned %d release(s) for project `%s`, but none of them could be read: %s',
+                            \count($data),
+                            $this->repositoryPath,
+                            $failure->getMessage(),
+                        ),
+                        $this->repositoryPath,
+                        $failure,
+                    );
+                }
+
+                yield $releases;
+
+                // Check if there are more pages
+                $hasMorePages = $this->hasNextPage($response);
+                $currentPage++;
             } while ($hasMorePages);
         };
 
@@ -150,9 +158,49 @@ final class RepositoryApi
     }
 
     /**
+     * Decodes a releases list response and validates its shape.
+     *
+     * @return list<array<string, mixed>>
+     * @throws ApiException When the response is not a list of releases.
+     */
+    private function decodeReleasesResponse(ResponseInterface $response): array
+    {
+        $body = $response->getBody()->__toString();
+
+        try {
+            /** @var mixed $data */
+            $data = \json_decode($body, true, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException $e) {
+            throw new ApiException(
+                \sprintf(
+                    'GitLab API returned a malformed response for project `%s`: %s',
+                    $this->repositoryPath,
+                    $e->getMessage(),
+                ),
+                $this->repositoryPath,
+                $e,
+            );
+        }
+
+        if (!\is_array($data) || !\array_is_list($data)) {
+            throw new ApiException(
+                \sprintf(
+                    'GitLab API returned an unexpected response for project `%s`: '
+                    . 'a list of releases is expected, got %s.',
+                    $this->repositoryPath,
+                    \is_array($data) ? 'an object: ' . \substr($body, 0, 200) : \get_debug_type($data),
+                ),
+                $this->repositoryPath,
+            );
+        }
+
+        /** @var list<array<string, mixed>> */
+        return $data;
+    }
+
+    /**
      * @param positive-int $page
-     * @throws GitLabRateLimitException
-     * @throws ClientExceptionInterface
+     * @throws RepositoryException
      */
     private function releasesRequest(int $page): ResponseInterface
     {
