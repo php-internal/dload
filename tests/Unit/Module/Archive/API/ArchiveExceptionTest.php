@@ -5,54 +5,48 @@ declare(strict_types=1);
 namespace Internal\DLoad\Tests\Unit\Module\Archive\API;
 
 use Internal\DLoad\Module\Archive\Exception\ArchiveException;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
+use Testo\Assert;
+use Testo\Codecov\Covers;
+use Testo\Test;
 
-#[CoversClass(ArchiveException::class)]
-final class ArchiveExceptionTest extends TestCase
+#[Covers(ArchiveException::class)]
+final class ArchiveExceptionTest
 {
-    public function testExceptionInheritsFromRuntimeException(): void
+    #[Test]
+    public function exceptionInheritsFromRuntimeException(): void
     {
-        // Arrange
         $exception = new ArchiveException('Test message');
 
-        // Assert
-        self::assertInstanceOf(\RuntimeException::class, $exception);
+        Assert::instanceOf($exception, \RuntimeException::class);
     }
 
-    public function testExceptionReturnsCorrectMessage(): void
+    #[Test]
+    public function exceptionReturnsCorrectMessage(): void
     {
-        // Arrange
         $message = 'Archive extraction failed: test reason';
 
-        // Act
         $exception = new ArchiveException($message);
 
-        // Assert
-        self::assertSame($message, $exception->getMessage());
+        Assert::same($exception->getMessage(), $message);
     }
 
-    public function testExceptionCanHaveCustomCode(): void
+    #[Test]
+    public function exceptionCanHaveCustomCode(): void
     {
-        // Arrange
         $code = 123;
 
-        // Act
         $exception = new ArchiveException('Test message', $code);
 
-        // Assert
-        self::assertSame($code, $exception->getCode());
+        Assert::same($exception->getCode(), $code);
     }
 
-    public function testExceptionCanHavePreviousException(): void
+    #[Test]
+    public function exceptionCanHavePreviousException(): void
     {
-        // Arrange
         $previous = new \Exception('Previous error');
 
-        // Act
         $exception = new ArchiveException('Test message', 0, $previous);
 
-        // Assert
-        self::assertSame($previous, $exception->getPrevious());
+        Assert::same($exception->getPrevious(), $previous);
     }
 }

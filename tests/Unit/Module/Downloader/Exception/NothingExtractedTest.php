@@ -5,46 +5,42 @@ declare(strict_types=1);
 namespace Internal\DLoad\Tests\Unit\Module\Downloader\Exception;
 
 use Internal\DLoad\Module\Downloader\Exception\NothingExtracted;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
+use Testo\Assert;
+use Testo\Codecov\Covers;
+use Testo\Test;
 
-#[CoversClass(NothingExtracted::class)]
-final class NothingExtractedTest extends TestCase
+#[Covers(NothingExtracted::class)]
+final class NothingExtractedTest
 {
-    public function testMessageListsRulesAndArchiveContent(): void
+    #[Test]
+    public function messageListsRulesAndArchiveContent(): void
     {
-        // Arrange
         $exception = new NothingExtracted(
             assetName: 'roadrunner-2025.1.15-windows-amd64.zip',
             rules: ['binary `/^roadrunner-.*/`'],
             files: ['CHANGELOG.md', 'LICENSE', 'rr.exe'],
         );
 
-        // Act
         $message = $exception->getMessage();
 
-        // Assert
-        self::assertStringContainsString(
+        Assert::string($message)->contains(
             'Nothing was extracted from `roadrunner-2025.1.15-windows-amd64.zip`: '
             . 'none of the 3 file(s) inside matches the extraction rules.',
-            $message,
         );
-        self::assertStringContainsString('Extraction rules: binary `/^roadrunner-.*/`', $message);
-        self::assertStringContainsString('Files in the asset: CHANGELOG.md, LICENSE, rr.exe', $message);
+        Assert::string($message)->contains('Extraction rules: binary `/^roadrunner-.*/`');
+        Assert::string($message)->contains('Files in the asset: CHANGELOG.md, LICENSE, rr.exe');
     }
 
-    public function testMessageTruncatesLongFileList(): void
+    #[Test]
+    public function messageTruncatesLongFileList(): void
     {
-        // Arrange
         $files = \array_map(static fn(int $i): string => "file-{$i}.txt", \range(1, 25));
 
-        // Act
         $message = (new NothingExtracted('archive.tar.gz', [], $files))->getMessage();
 
-        // Assert
-        self::assertStringContainsString('Extraction rules: none', $message);
-        self::assertStringContainsString('file-20.txt', $message);
-        self::assertStringNotContainsString('file-21.txt', $message);
-        self::assertStringContainsString('and 5 more', $message);
+        Assert::string($message)->contains('Extraction rules: none');
+        Assert::string($message)->contains('file-20.txt');
+        Assert::string($message)->notContains('file-21.txt');
+        Assert::string($message)->contains('and 5 more');
     }
 }

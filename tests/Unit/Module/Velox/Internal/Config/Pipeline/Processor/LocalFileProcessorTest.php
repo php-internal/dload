@@ -10,12 +10,16 @@ use Internal\DLoad\Module\Velox\Internal\Config\Pipeline\ConfigContext;
 use Internal\DLoad\Module\Velox\Internal\Config\Pipeline\Processor\LocalFileProcessor;
 use Internal\DLoad\Module\Velox\Internal\Config\Pipeline\TomlData;
 use Internal\Path;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\TestCase;
+use Testo\Assert;
+use Testo\Codecov\Covers;
+use Testo\Core\Exception\SkipTest;
+use Testo\Data\DataProvider;
+use Testo\Expect;
+use Testo\Lifecycle\BeforeTest;
+use Testo\Test;
 
-#[CoversClass(LocalFileProcessor::class)]
-final class LocalFileProcessorTest extends TestCase
+#[Covers(LocalFileProcessor::class)]
+final class LocalFileProcessorTest
 {
     private LocalFileProcessor $processor;
     private VeloxAction $veloxAction;
@@ -50,9 +54,9 @@ final class LocalFileProcessorTest extends TestCase
         ];
     }
 
-    public function testInvokeReturnsOriginalContextWhenConfigFileIsNull(): void
+    #[Test]
+    public function invokeReturnsOriginalContextWhenConfigFileIsNull(): void
     {
-        // Arrange
         $this->veloxAction->configFile = null;
         $originalContext = new ConfigContext(
             $this->veloxAction,
@@ -61,16 +65,14 @@ final class LocalFileProcessorTest extends TestCase
             ['initial' => 'metadata'],
         );
 
-        // Act
         $result = $this->processor->__invoke($originalContext);
 
-        // Assert
-        self::assertSame($originalContext, $result);
+        Assert::same($result, $originalContext);
     }
 
-    public function testInvokeThrowsExceptionWhenConfigFileDoesNotExist(): void
+    #[Test]
+    public function invokeThrowsExceptionWhenConfigFileDoesNotExist(): void
     {
-        // Arrange
         $configPath = '/non/existent/path.toml';
         $this->veloxAction->configFile = $configPath;
         $context = new ConfigContext(
@@ -80,22 +82,19 @@ final class LocalFileProcessorTest extends TestCase
             [],
         );
 
-        // Assert (before Act for exceptions)
-        $this->expectException(ConfigException::class);
-        $this->expectExceptionMessage("Local config file not found: {$configPath}");
+        Expect::exception(ConfigException::class)->withMessage("Local config file not found: {$configPath}");
 
-        // Act
         $this->processor->__invoke($context);
     }
 
-    public function testInvokeThrowsExceptionWhenFileCannotBeRead(): void
+    #[Test]
+    public function invokeThrowsExceptionWhenFileCannotBeRead(): void
     {
         // Skip this test on Windows as chmod doesn't work the same way
         if (PHP_OS_FAMILY === 'Windows') {
-            self::markTestSkipped('File permission tests are not reliable on Windows');
+            throw new SkipTest('File permission tests are not reliable on Windows');
         }
 
-        // Arrange
         $tempFile = $this->createTempFile('test content');
         $this->veloxAction->configFile = $tempFile;
         $context = new ConfigContext(
@@ -108,11 +107,8 @@ final class LocalFileProcessorTest extends TestCase
         // Make file unreadable by changing permissions
         \chmod($tempFile, 0000);
 
-        // Assert (before Act for exceptions)
-        $this->expectException(ConfigException::class);
-        $this->expectExceptionMessage("Failed to read local config file: {$tempFile}");
+        Expect::exception(ConfigException::class)->withMessageContaining("Failed to read local config file: {$tempFile}");
 
-        // Act
         try {
             $this->processor->__invoke($context);
         } finally {
@@ -122,9 +118,9 @@ final class LocalFileProcessorTest extends TestCase
         }
     }
 
-    public function testInvokeSuccessfullyProcessesValidTomlFile(): void
+    #[Test]
+    public function invokeSuccessfullyProcessesValidTomlFile(): void
     {
-        // Arrange
         $tomlContent = 'binary_name = "custom-roadrunner"' . "\n" .
                       '[github.plugins.logger]' . "\n" .
                       'ref = "master"';
@@ -139,28 +135,26 @@ final class LocalFileProcessorTest extends TestCase
             ['original' => 'metadata'],
         );
 
-        // Act
         $result = $this->processor->__invoke($context);
 
-        // Assert
-        self::assertNotSame($context, $result);
+        Assert::notSame($result, $context);
 
         $resultData = $result->tomlData->getData();
-        self::assertSame('base_data', $resultData['existing']);
-        self::assertSame('custom-roadrunner', $resultData['binary_name']);
-        self::assertSame('master', $resultData['github']['plugins']['logger']['ref']);
+        Assert::same($resultData['existing'], 'base_data');
+        Assert::same($resultData['binary_name'], 'custom-roadrunner');
+        Assert::same($resultData['github']['plugins']['logger']['ref'], 'master');
 
-        self::assertTrue($result->metadata['local_file_applied']);
-        self::assertSame(\str_replace('\\', '/', $tempFile), $result->metadata['local_file_path']);
-        self::assertSame('metadata', $result->metadata['original']);
+        Assert::true($result->metadata['local_file_applied']);
+        Assert::same($result->metadata['local_file_path'], \str_replace('\\', '/', $tempFile));
+        Assert::same($result->metadata['original'], 'metadata');
 
         // Clean up
         \unlink($tempFile);
     }
 
-    public function testInvokeMergesLocalDataWithExistingData(): void
+    #[Test]
+    public function invokeMergesLocalDataWithExistingData(): void
     {
-        // Arrange
         $tomlContent = '[roadrunner]' . "\n" .
                       'version = "2023.3.0"' . "\n" .
                       '[github.plugins.http]' . "\n" .
@@ -179,28 +173,26 @@ final class LocalFileProcessorTest extends TestCase
             [],
         );
 
-        // Act
         $result = $this->processor->__invoke($context);
 
-        // Assert
         $resultData = $result->tomlData->getData();
 
         // Verify merge behavior
-        self::assertSame('rr', $resultData['roadrunner']['binary']);
-        self::assertSame('2023.3.0', $resultData['roadrunner']['version']);
-        self::assertSame('v1.0.0', $resultData['github']['plugins']['logger']['ref']);
-        self::assertSame('v4.7.0', $resultData['github']['plugins']['http']['ref']);
+        Assert::same($resultData['roadrunner']['binary'], 'rr');
+        Assert::same($resultData['roadrunner']['version'], '2023.3.0');
+        Assert::same($resultData['github']['plugins']['logger']['ref'], 'v1.0.0');
+        Assert::same($resultData['github']['plugins']['http']['ref'], 'v4.7.0');
 
         // Clean up
         \unlink($tempFile);
     }
 
     #[DataProvider('provideValidTomlFiles')]
-    public function testInvokeHandlesVariousTomlFormats(
+    #[Test]
+    public function invokeHandlesVariousTomlFormats(
         string $tomlContent,
         array $expectedKeys,
     ): void {
-        // Arrange
         $tempFile = $this->createTempFile($tomlContent);
         $this->veloxAction->configFile = $tempFile;
         $context = new ConfigContext(
@@ -210,20 +202,18 @@ final class LocalFileProcessorTest extends TestCase
             [],
         );
 
-        // Act
         $result = $this->processor->__invoke($context);
 
-        // Assert
         $resultData = $result->tomlData->getData();
 
         if (\array_key_exists('_empty', $expectedKeys)) {
             // Special case for empty file test
-            self::assertEmpty($resultData);
+            Assert::blank($resultData);
         } else {
             foreach ($expectedKeys as $key => $expectedValue) {
-                self::assertArrayHasKey($key, $resultData);
+                Assert::array($resultData)->hasKeys($key);
                 if ($expectedValue !== null) {
-                    self::assertSame($expectedValue, $resultData[$key]);
+                    Assert::same($resultData[$key], $expectedValue);
                 }
             }
         }
@@ -232,9 +222,9 @@ final class LocalFileProcessorTest extends TestCase
         \unlink($tempFile);
     }
 
-    public function testInvokePreservesContextImmutability(): void
+    #[Test]
+    public function invokePreservesContextImmutability(): void
     {
-        // Arrange
         $tomlContent = 'new_key = "new_value"';
         $tempFile = $this->createTempFile($tomlContent);
 
@@ -248,28 +238,27 @@ final class LocalFileProcessorTest extends TestCase
             $originalMetadata,
         );
 
-        // Act
         $result = $this->processor->__invoke($originalContext);
 
         // Assert - Original context should remain unchanged
-        self::assertSame(['original' => 'data'], $originalContext->tomlData->getData());
-        self::assertSame(['original' => 'metadata'], $originalContext->metadata);
-        self::assertSame($this->veloxAction, $originalContext->action);
-        self::assertSame($this->buildDir, $originalContext->buildDir);
+        Assert::same($originalContext->tomlData->getData(), ['original' => 'data']);
+        Assert::same($originalContext->metadata, ['original' => 'metadata']);
+        Assert::same($originalContext->action, $this->veloxAction);
+        Assert::same($originalContext->buildDir, $this->buildDir);
 
         // Result should have new data
         $resultData = $result->tomlData->getData();
-        self::assertSame('data', $resultData['original']);
-        self::assertSame('new_value', $resultData['new_key']);
-        self::assertTrue($result->metadata['local_file_applied']);
+        Assert::same($resultData['original'], 'data');
+        Assert::same($resultData['new_key'], 'new_value');
+        Assert::true($result->metadata['local_file_applied']);
 
         // Clean up
         \unlink($tempFile);
     }
 
-    public function testInvokePreservesActionAndBuildDir(): void
+    #[Test]
+    public function invokePreservesActionAndBuildDir(): void
     {
-        // Arrange
         $tomlContent = 'test = "value"';
         $tempFile = $this->createTempFile($tomlContent);
 
@@ -281,20 +270,18 @@ final class LocalFileProcessorTest extends TestCase
             [],
         );
 
-        // Act
         $result = $this->processor->__invoke($context);
 
-        // Assert
-        self::assertSame($this->veloxAction, $result->action);
-        self::assertSame($this->buildDir, $result->buildDir);
+        Assert::same($result->action, $this->veloxAction);
+        Assert::same($result->buildDir, $this->buildDir);
 
         // Clean up
         \unlink($tempFile);
     }
 
-    public function testInvokeAddsCorrectMetadata(): void
+    #[Test]
+    public function invokeAddsCorrectMetadata(): void
     {
-        // Arrange
         $tomlContent = 'test_key = "test_value"';
         $tempFile = $this->createTempFile($tomlContent);
 
@@ -307,24 +294,22 @@ final class LocalFileProcessorTest extends TestCase
             $originalMetadata,
         );
 
-        // Act
         $result = $this->processor->__invoke($context);
 
-        // Assert
-        self::assertTrue($result->metadata['local_file_applied']);
-        self::assertSame(\str_replace('\\', '/', $tempFile), $result->metadata['local_file_path']);
+        Assert::true($result->metadata['local_file_applied']);
+        Assert::same($result->metadata['local_file_path'], \str_replace('\\', '/', $tempFile));
 
         // Verify existing metadata is preserved
-        self::assertSame('value', $result->metadata['existing']);
-        self::assertSame(42, $result->metadata['count']);
+        Assert::same($result->metadata['existing'], 'value');
+        Assert::same($result->metadata['count'], 42);
 
         // Clean up
         \unlink($tempFile);
     }
 
-    public function testInvokeWithRelativeConfigPath(): void
+    #[Test]
+    public function invokeWithRelativeConfigPath(): void
     {
-        // Arrange
         $tomlContent = 'relative_test = "success"';
         $tempFile = $this->createTempFile($tomlContent);
         $relativePath = \basename($tempFile);
@@ -341,22 +326,20 @@ final class LocalFileProcessorTest extends TestCase
             [],
         );
 
-        // Act
         $result = $this->processor->__invoke($context);
 
-        // Assert
         $resultData = $result->tomlData->getData();
-        self::assertSame('success', $resultData['relative_test']);
-        self::assertTrue($result->metadata['local_file_applied']);
+        Assert::same($resultData['relative_test'], 'success');
+        Assert::true($result->metadata['local_file_applied']);
 
         // Clean up
         \chdir($originalDir);
         \unlink($tempFile);
     }
 
-    protected function setUp(): void
+    #[BeforeTest]
+    protected function prepare(): void
     {
-        // Arrange (common setup)
         $this->processor = new LocalFileProcessor();
         $this->veloxAction = new VeloxAction();
         $this->buildDir = Path::create('/tmp/build');

@@ -11,12 +11,18 @@ use Internal\DLoad\Module\Archive\Internal\PharArchive;
 use Internal\DLoad\Module\Archive\Internal\TarPharArchive;
 use Internal\DLoad\Module\Archive\Internal\ZipPharArchive;
 use Internal\DLoad\Tests\Unit\Module\Archive\Stub\ArchiveFixtureGenerator;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\TestCase;
+use Testo\Assert;
+use Testo\Codecov\Covers;
+use Testo\Core\Exception\SkipTest;
+use Testo\Data\DataProvider;
+use Testo\Expect;
+use Testo\Lifecycle\AfterClass;
+use Testo\Lifecycle\BeforeClass;
+use Testo\Lifecycle\BeforeTest;
+use Testo\Test;
 
-#[CoversClass(ArchiveFactory::class)]
-final class ArchiveFactoryTest extends TestCase
+#[Covers(ArchiveFactory::class)]
+final class ArchiveFactoryTest
 {
     private ArchiveFactory $factory;
     private static string $fixturesDir;
@@ -37,129 +43,8 @@ final class ArchiveFactoryTest extends TestCase
         yield 'phar file' => ['archive.phar', PharArchive::class];
     }
 
-    #[DataProvider('provideDefaultSupportedExtensions')]
-    public function testGetSupportedExtensionsReturnsDefaultExtensions(string $extension): void
-    {
-        // Act
-        $extensions = $this->factory->getSupportedExtensions();
-
-        // Assert
-        self::assertContains($extension, $extensions);
-    }
-
-    #[DataProvider('provideArchiveFiles')]
-    public function testCreateReturnsCorrectArchiveTypeForExtension(
-        string $filename,
-        string $expectedClass,
-    ): void {
-        // Skip test if the fixture wasn't created
-        $extension = \pathinfo($filename, PATHINFO_EXTENSION);
-        if ($extension === 'gz') {
-            $extension = 'tar.gz';
-        }
-
-        if (!isset(self::$archiveFixtures[$extension])) {
-            self::markTestSkipped("Archive fixture for {$extension} could not be created");
-        }
-
-        // Arrange - use actual file
-        $filePath = self::$archiveFixtures[$extension];
-        $file = new \SplFileInfo($filePath);
-
-        // Act
-        $archive = $this->factory->create($file);
-
-        // Assert
-        self::assertInstanceOf($expectedClass, $archive);
-    }
-
-    public function testExtendAddsCustomMatcher(): void
-    {
-        // Arrange
-        $mockArchive = $this->createMock(Archive::class);
-        $customExtension = 'custom';
-
-        $this->factory->extend(
-            static fn(\SplFileInfo $file) =>
-                \str_ends_with($file->getFilename(), '.custom') ? $mockArchive : null,
-            [$customExtension],
-        );
-
-        $file = $this->createFileInfoMock('test.custom');
-
-        // Act
-        $result = $this->factory->create($file);
-        $extensions = $this->factory->getSupportedExtensions();
-
-        // Assert
-        self::assertSame($mockArchive, $result);
-        self::assertContains($customExtension, $extensions);
-    }
-
-    public function testCreateReturnsNullArchiveForNonArchiveFile(): void
-    {
-        // Arrange
-        $file = $this->createFileInfoMock('binary-executable');
-
-        // Act
-        $archive = $this->factory->create($file);
-
-        // Assert
-        self::assertInstanceOf(NullArchive::class, $archive);
-    }
-
-    public function testCreateThrowsExceptionForInvalidFile(): void
-    {
-        // Arrange
-        $file = $this->createMock(\SplFileInfo::class);
-        $file->method('getFilename')->willReturn('invalid-file');
-        $file->method('isFile')->willReturn(false);
-
-        // Assert
-        $this->expectException(\InvalidArgumentException::class);
-
-        // Act
-        $this->factory->create($file);
-    }
-
-    public function testExtendPrioritizesNewMatchersOverExisting(): void
-    {
-        // Arrange
-        $mockArchive = $this->createMock(Archive::class);
-        $zipFile = $this->createFileInfoMock('test.zip');
-
-        // Override the default zip handler
-        $this->factory->extend(
-            static fn(\SplFileInfo $file) =>
-                \str_ends_with($file->getFilename(), '.zip') ? $mockArchive : null,
-            [],
-        );
-
-        // Act
-        $result = $this->factory->create($zipFile);
-
-        // Assert
-        self::assertSame($mockArchive, $result);
-    }
-
-    public function testNullArchiveUsedAsLastResort(): void
-    {
-        // Arrange - create custom matcher that always returns null
-        $this->factory->extend(
-            static fn(\SplFileInfo $file) => null,
-            [],
-        );
-
-        $file = $this->createFileInfoMock('unknown-file-type');
-
-        // Act
-        $archive = $this->factory->create($file);
-
-        // Assert - should fall back to NullArchive
-        self::assertInstanceOf(NullArchive::class, $archive);
-    }
-
-    public static function setUpBeforeClass(): void
+    #[BeforeClass]
+    public static function prepareClass(): void
     {
         // Define project's test runtime directory
         $projectRoot = \dirname(__DIR__, 5); // Five levels up from this file
@@ -170,7 +55,8 @@ final class ArchiveFactoryTest extends TestCase
         self::$archiveFixtures = self::$fixtureGenerator->generateArchives();
     }
 
-    public static function tearDownAfterClass(): void
+    #[AfterClass]
+    public static function cleanupClass(): void
     {
         // Clean up fixtures
         if (self::$fixtureGenerator !== null) {
@@ -178,9 +64,121 @@ final class ArchiveFactoryTest extends TestCase
         }
     }
 
-    protected function setUp(): void
+    #[DataProvider('provideDefaultSupportedExtensions')]
+    #[Test]
+    public function getSupportedExtensionsReturnsDefaultExtensions(string $extension): void
     {
-        // Arrange
+        $extensions = $this->factory->getSupportedExtensions();
+
+        Assert::contains($extensions, $extension);
+    }
+
+    #[DataProvider('provideArchiveFiles')]
+    #[Test]
+    public function createReturnsCorrectArchiveTypeForExtension(
+        string $filename,
+        string $expectedClass,
+    ): void {
+        // Skip test if the fixture wasn't created
+        $extension = \pathinfo($filename, PATHINFO_EXTENSION);
+        if ($extension === 'gz') {
+            $extension = 'tar.gz';
+        }
+
+        if (!isset(self::$archiveFixtures[$extension])) {
+            throw new SkipTest("Archive fixture for {$extension} could not be created");
+        }
+
+        // Arrange - use actual file
+        $filePath = self::$archiveFixtures[$extension];
+        $file = new \SplFileInfo($filePath);
+
+        $archive = $this->factory->create($file);
+
+        Assert::instanceOf($archive, $expectedClass);
+    }
+
+    #[Test]
+    public function extendAddsCustomMatcher(): void
+    {
+        $mockArchive = \Mockery::mock(Archive::class);
+        $customExtension = 'custom';
+
+        $this->factory->extend(
+            static fn(\SplFileInfo $file) =>
+                \str_ends_with($file->getFilename(), '.custom') ? $mockArchive : null,
+            [$customExtension],
+        );
+
+        $file = $this->createFileInfoMock('test.custom');
+
+        $result = $this->factory->create($file);
+        $extensions = $this->factory->getSupportedExtensions();
+
+        Assert::same($result, $mockArchive);
+        Assert::contains($extensions, $customExtension);
+    }
+
+    #[Test]
+    public function createReturnsNullArchiveForNonArchiveFile(): void
+    {
+        $file = $this->createFileInfoMock('binary-executable');
+
+        $archive = $this->factory->create($file);
+
+        Assert::instanceOf($archive, NullArchive::class);
+    }
+
+    #[Test]
+    public function createThrowsExceptionForInvalidFile(): void
+    {
+        $file = \Mockery::mock(\SplFileInfo::class);
+        $file->allows('getFilename')->andReturn('invalid-file');
+        $file->allows('isFile')->andReturn(false);
+
+        Expect::exception(\InvalidArgumentException::class);
+
+        $this->factory->create($file);
+    }
+
+    #[Test]
+    public function extendPrioritizesNewMatchersOverExisting(): void
+    {
+        $mockArchive = \Mockery::mock(Archive::class);
+        $zipFile = $this->createFileInfoMock('test.zip');
+
+        // Override the default zip handler
+        $this->factory->extend(
+            static fn(\SplFileInfo $file) =>
+                \str_ends_with($file->getFilename(), '.zip') ? $mockArchive : null,
+            [],
+        );
+
+        $result = $this->factory->create($zipFile);
+
+        Assert::same($result, $mockArchive);
+    }
+
+    #[Test]
+    public function nullArchiveUsedAsLastResort(): void
+    {
+        // Arrange - create custom matcher that always returns null
+        $this->factory->extend(
+            static fn(\SplFileInfo $file) => null,
+            [],
+        );
+
+        $file = $this->createFileInfoMock('unknown-file-type');
+
+        $archive = $this->factory->create($file);
+
+        // Assert - should fall back to NullArchive
+        Assert::instanceOf($archive, NullArchive::class);
+    }
+
+    #[BeforeTest]
+    protected function prepare(): void
+    {
         $this->factory = new ArchiveFactory();
     }
 
@@ -190,11 +188,11 @@ final class ArchiveFactoryTest extends TestCase
      */
     private function createFileInfoMock(string $filename): \SplFileInfo
     {
-        $file = $this->createMock(\SplFileInfo::class);
-        $file->method('getFilename')->willReturn($filename);
-        $file->method('isFile')->willReturn(true);
-        $file->method('isReadable')->willReturn(true);
-        $file->method('getPathname')->willReturn('/path/to/' . $filename);
+        $file = \Mockery::mock(\SplFileInfo::class);
+        $file->allows('getFilename')->andReturn($filename);
+        $file->allows('isFile')->andReturn(true);
+        $file->allows('isReadable')->andReturn(true);
+        $file->allows('getPathname')->andReturn('/path/to/' . $filename);
 
         return $file;
     }

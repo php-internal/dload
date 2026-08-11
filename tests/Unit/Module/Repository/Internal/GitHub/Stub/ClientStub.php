@@ -57,8 +57,13 @@ final class ClientStub implements ClientInterface
         return ResponseStub::ok();
     }
 
+    /**
+     * Keyed on the request instance rather than on `getMethod()`/`getUri()`: a bare test double has
+     * no meaningful method or URI, so deriving the key from them would collapse every unconfigured
+     * request into one bucket.
+     */
     private function createRequestKey(RequestInterface $request): string
     {
-        return $request->getMethod() . '|' . (string) $request->getUri();
+        return (string) \spl_object_id($request);
     }
 }

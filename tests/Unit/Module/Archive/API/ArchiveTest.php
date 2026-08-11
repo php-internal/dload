@@ -7,12 +7,15 @@ namespace Internal\DLoad\Tests\Unit\Module\Archive\API;
 use Internal\DLoad\Module\Archive\Archive;
 use Internal\DLoad\Module\Archive\Exception\ArchiveException;
 use Internal\DLoad\Tests\Unit\Module\Archive\Stub\TestArchive;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\TestCase;
+use Testo\Assert;
+use Testo\Codecov\Covers;
+use Testo\Data\DataProvider;
+use Testo\Expect;
+use Testo\Lifecycle\BeforeTest;
+use Testo\Test;
 
-#[CoversClass(Archive::class)]
-final class ArchiveTest extends TestCase
+#[Covers(Archive::class)]
+final class ArchiveTest
 {
     private \SplFileInfo $archiveFile;
 
@@ -31,9 +34,9 @@ final class ArchiveTest extends TestCase
         yield 'non-existent extension' => [$files, 'jpg', 0];
     }
 
-    public function testExtractYieldsFilesFromArchive(): void
+    #[Test]
+    public function extractYieldsFilesFromArchive(): void
     {
-        // Arrange
         $file1 = new \SplFileInfo('/path/to/file1.txt');
         $file2 = new \SplFileInfo('/path/to/file2.txt');
 
@@ -41,64 +44,56 @@ final class ArchiveTest extends TestCase
         $archive->addFile('file1.txt', $file1);
         $archive->addFile('file2.txt', $file2);
 
-        // Act
         $result = [];
         foreach ($archive->extract() as $path => $fileInfo) {
             $result[$path] = $fileInfo;
         }
 
-        // Assert
-        self::assertCount(2, $result);
-        self::assertSame($file1, $result['file1.txt']);
-        self::assertSame($file2, $result['file2.txt']);
+        Assert::count($result, 2);
+        Assert::same($result['file1.txt'], $file1);
+        Assert::same($result['file2.txt'], $file2);
     }
 
-    public function testExtractThrowsArchiveException(): void
+    #[Test]
+    public function extractThrowsArchiveException(): void
     {
-        // Arrange
         $archive = new TestArchive($this->archiveFile);
         $archive->throwExceptionOnExtract('Custom error message');
 
-        // Assert
-        $this->expectException(ArchiveException::class);
-        $this->expectExceptionMessage('Custom error message');
+        Expect::exception(ArchiveException::class)->withMessage('Custom error message');
 
-        // Act
         \iterator_to_array($archive->extract());
     }
 
-    public function testExtractReturnsDestinationFileWhenRequested(): void
+    #[Test]
+    public function extractReturnsDestinationFileWhenRequested(): void
     {
-        // Arrange
         $sourceFile = new \SplFileInfo('/path/to/source.txt');
         $destinationFile = new \SplFileInfo('/path/to/destination.txt');
 
         $archive = new TestArchive($this->archiveFile);
         $archive->addFile('source.txt', $sourceFile);
 
-        // Act
         $generator = $archive->extract();
         $path = $generator->key();
         $info = $generator->current();
         $result = $generator->send($destinationFile);
 
-        // Assert
-        self::assertSame('source.txt', $path);
-        self::assertSame($sourceFile, $info);
-        self::assertSame($destinationFile, $result);
+        Assert::same($path, 'source.txt');
+        Assert::same($info, $sourceFile);
+        Assert::same($result, $destinationFile);
     }
 
     #[DataProvider('provideFileTypes')]
-    public function testExtractFilteringByFileType(array $files, string $extension, int $expectedCount): void
+    #[Test]
+    public function extractFilteringByFileType(array $files, string $extension, int $expectedCount): void
     {
-        // Arrange
         $archive = new TestArchive($this->archiveFile);
 
         foreach ($files as $path => $fileInfo) {
             $archive->addFile($path, $fileInfo);
         }
 
-        // Act
         $extracted = [];
         foreach ($archive->extract() as $path => $fileInfo) {
             // Filter files by extension
@@ -107,13 +102,12 @@ final class ArchiveTest extends TestCase
             }
         }
 
-        // Assert
-        self::assertCount($expectedCount, $extracted);
+        Assert::count($extracted, $expectedCount);
     }
 
-    protected function setUp(): void
+    #[BeforeTest]
+    protected function prepare(): void
     {
-        // Arrange
         $this->archiveFile = new \SplFileInfo(__FILE__); // Use this file as a valid file
     }
 }

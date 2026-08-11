@@ -6,12 +6,13 @@ namespace Internal\DLoad\Tests\Unit\Module\Repository\Internal;
 
 use Internal\DLoad\Module\Repository\Internal\Collection;
 use Internal\DLoad\Module\Repository\Internal\Paginator;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\TestCase;
+use Testo\Assert;
+use Testo\Codecov\Covers;
+use Testo\Data\DataProvider;
+use Testo\Test;
 
-#[CoversClass(Collection::class)]
-final class CollectionTest extends TestCase
+#[Covers(Collection::class)]
+final class CollectionTest
 {
     public static function provideLimitCases(): \Generator
     {
@@ -36,14 +37,15 @@ final class CollectionTest extends TestCase
         ];
     }
 
-    public function testCollectionWithIterable(): void
+    #[Test]
+    public function collectionWithIterable(): void
     {
         // Create a test collection class
         $testCollection = new class([]) extends Collection {};
 
         // Test with array
         $arrayCollection = $testCollection::create(['item1', 'item2', 'item3']);
-        $this->assertEquals(['item1', 'item2', 'item3'], $arrayCollection->toArray());
+        Assert::equals($arrayCollection->toArray(), ['item1', 'item2', 'item3']);
 
         // Test with generator
         $generator = static function () {
@@ -52,10 +54,11 @@ final class CollectionTest extends TestCase
         };
 
         $generatorCollection = $testCollection::create($generator());
-        $this->assertEquals(['gen1', 'gen2'], $generatorCollection->toArray());
+        Assert::equals($generatorCollection->toArray(), ['gen1', 'gen2']);
     }
 
-    public function testCollectionWithPaginator(): void
+    #[Test]
+    public function collectionWithPaginator(): void
     {
         // Create a test collection class
         $testCollection = new class([]) extends Collection {};
@@ -72,13 +75,11 @@ final class CollectionTest extends TestCase
         $collection = $testCollection::create($paginator);
 
         // Test toArray() loads all pages
-        $this->assertEquals(
-            ['page1-item1', 'page1-item2', 'page2-item1', 'page2-item2'],
-            $collection->toArray(),
-        );
+        Assert::equals($collection->toArray(), ['page1-item1', 'page1-item2', 'page2-item1', 'page2-item2']);
     }
 
-    public function testFilterChaining(): void
+    #[Test]
+    public function filterChaining(): void
     {
         // Create a test collection class
         $testCollection = new class([]) extends Collection {};
@@ -93,10 +94,11 @@ final class CollectionTest extends TestCase
             ->filter(static fn($item) => $item % 2 === 0);
 
         // Check result
-        $this->assertEquals([4, 6], $filtered->toArray());
+        Assert::equals($filtered->toArray(), [4, 6]);
     }
 
-    public function testFilterWithPaginator(): void
+    #[Test]
+    public function filterWithPaginator(): void
     {
         // Create a test collection class
         $testCollection = new class([]) extends Collection {};
@@ -119,10 +121,11 @@ final class CollectionTest extends TestCase
             ->filter(static fn($item) => $item % 2 === 0);
 
         // Check result
-        $this->assertEquals([4, 6, 8], $filtered->toArray());
+        Assert::equals($filtered->toArray(), [4, 6, 8]);
     }
 
-    public function testFirst(): void
+    #[Test]
+    public function first(): void
     {
         // Create a test collection class
         $testCollection = new class([]) extends Collection {};
@@ -143,7 +146,7 @@ final class CollectionTest extends TestCase
 
         $paginator = Paginator::createFromGenerator($pageLoader(), null);
         // It always starts the generator when the closure is called
-        $this->assertTrue($pagesLoaded[0]);
+        Assert::true($pagesLoaded[0]);
 
         // Create collection with paginator
         $collection = $testCollection::create($paginator);
@@ -152,60 +155,55 @@ final class CollectionTest extends TestCase
         $filtered = $collection->filter(static fn($item) => $item->num < 7);
 
         // At this point, no pages should be loaded
-        $this->assertFalse($pagesLoaded[1]);
-        $this->assertFalse($pagesLoaded[2]);
+        Assert::false($pagesLoaded[1]);
+        Assert::false($pagesLoaded[2]);
 
         // Get first matching item
         $first = $filtered->first();
-        self::assertSame(0, $first->num);
+        Assert::same($first->num, 0);
         // We got '0' from the 0-page, so we need to load the next pages
-        $this->assertFalse($pagesLoaded[1]);
-        $this->assertFalse($pagesLoaded[2]);
-
+        Assert::false($pagesLoaded[1]);
+        Assert::false($pagesLoaded[2]);
 
         // Now the 1st page should be loaded to get "1" value
         $first = $filtered->first(static fn($item) => $item->num > 0);
-        self::assertSame(1, $first->num);
-        $this->assertTrue($pagesLoaded[1]);
-        $this->assertFalse($pagesLoaded[2]);
+        Assert::same($first->num, 1);
+        Assert::true($pagesLoaded[1]);
+        Assert::false($pagesLoaded[2]);
     }
 
     #[DataProvider('provideLimitCases')]
-    public function testLimit(array $sourceItems, int $limit, array $expectedItems): void
+    #[Test]
+    public function limit(array $sourceItems, int $limit, array $expectedItems): void
     {
-        // Arrange
         $testCollection = new class([]) extends Collection {};
         $collection = $testCollection::create($sourceItems);
 
-        // Act
         $limited = $collection->limit($limit);
 
-        // Assert
-        self::assertEquals($expectedItems, $limited->toArray());
+        Assert::equals($limited->toArray(), $expectedItems);
 
         // Check count matches expected
-        self::assertCount(\count($expectedItems), $limited);
+        Assert::count($limited, \count($expectedItems));
     }
 
-    public function testLimitWithFilter(): void
+    #[Test]
+    public function limitWithFilter(): void
     {
-        // Arrange
         $testCollection = new class([]) extends Collection {};
         $collection = $testCollection::create([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
 
-        // Act
         $filtered = $collection
             ->filter(static fn($item) => $item > 3)
             ->limit(2);
 
-        // Assert
-        self::assertEquals([4, 5], $filtered->toArray());
-        self::assertCount(2, $filtered);
+        Assert::equals($filtered->toArray(), [4, 5]);
+        Assert::count($filtered, 2);
     }
 
-    public function testLimitWithPaginator(): void
+    #[Test]
+    public function limitWithPaginator(): void
     {
-        // Arrange
         $testCollection = new class([]) extends Collection {};
 
         $pageLoader = static function (): \Generator {
@@ -217,34 +215,32 @@ final class CollectionTest extends TestCase
         $paginator = Paginator::createFromGenerator($pageLoader(), null);
         $collection = $testCollection::create($paginator);
 
-        // Act
         $limited = $collection->limit(4);
 
-        // Assert
-        self::assertEquals([1, 2, 3, 4], $limited->toArray());
-        self::assertCount(4, $limited);
+        Assert::equals($limited->toArray(), [1, 2, 3, 4]);
+        Assert::count($limited, 4);
     }
 
-    public function testLimitWithZeroCountResetsLimit(): void
+    #[Test]
+    public function limitWithZeroCountResetsLimit(): void
     {
-        // Arrange
         $testCollection = new class([]) extends Collection {};
         $collection = $testCollection::create([1, 2, 3, 4, 5]);
         $limitedCollection = $collection->limit(2);
 
         // Verify the limit was applied
-        self::assertEquals([1, 2], $limitedCollection->toArray());
+        Assert::equals($limitedCollection->toArray(), [1, 2]);
 
         // Act - apply zero limit to reset the limit
         $resetCollection = $limitedCollection->limit(0);
 
         // Assert - should have all items
-        self::assertEquals([1, 2, 3, 4, 5], $resetCollection->toArray());
+        Assert::equals($resetCollection->toArray(), [1, 2, 3, 4, 5]);
     }
 
-    public function testLimitResetWithFilteredCollection(): void
+    #[Test]
+    public function limitResetWithFilteredCollection(): void
     {
-        // Arrange
         $testCollection = new class([]) extends Collection {};
         $collection = $testCollection::create([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
 
@@ -254,40 +250,37 @@ final class CollectionTest extends TestCase
             ->limit(2);
 
         // Verify initial state
-        self::assertEquals([4, 5], $filtered->toArray());
+        Assert::equals($filtered->toArray(), [4, 5]);
 
         // Act - reset limit
         $resetLimited = $filtered->limit(0);
 
         // Assert - filter should still be applied, but not the limit
-        self::assertEquals([4, 5, 6, 7, 8, 9, 10], $resetLimited->toArray());
+        Assert::equals($resetLimited->toArray(), [4, 5, 6, 7, 8, 9, 10]);
     }
 
-    public function testCountWithLimit(): void
+    #[Test]
+    public function countWithLimit(): void
     {
-        // Arrange
         $testCollection = new class([]) extends Collection {};
         $collection = $testCollection::create([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
 
-        // Act
         $limited = $collection->limit(3);
 
-        // Assert
-        self::assertCount(3, $limited);
+        Assert::count($limited, 3);
     }
 
-    public function testEmptyWithLimit(): void
+    #[Test]
+    public function emptyWithLimit(): void
     {
-        // Arrange
         $testCollection = new class([]) extends Collection {};
         $collection = $testCollection::create([1, 2, 3]);
 
-        // Act & Assert
-        self::assertFalse($collection->limit(1)->empty());
-        self::assertFalse($collection->limit(0)->empty());
+        Assert::false($collection->limit(1)->empty());
+        Assert::false($collection->limit(0)->empty());
 
         // With an empty source collection
         $emptyCollection = $testCollection::create([]);
-        self::assertTrue($emptyCollection->limit(5)->empty());
+        Assert::true($emptyCollection->limit(5)->empty());
     }
 }

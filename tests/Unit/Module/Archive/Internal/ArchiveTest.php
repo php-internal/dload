@@ -5,55 +5,49 @@ declare(strict_types=1);
 namespace Internal\DLoad\Tests\Unit\Module\Archive\Internal;
 
 use Internal\DLoad\Module\Archive\Internal\Archive;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
+use Testo\Assert;
+use Testo\Codecov\Covers;
+use Testo\Expect;
+use Testo\Test;
 
-#[CoversClass(Archive::class)]
-final class ArchiveTest extends TestCase
+#[Covers(Archive::class)]
+final class ArchiveTest
 {
-    public function testConstructorThrowsExceptionWhenFileDoesNotExist(): void
+    #[Test]
+    public function constructorThrowsExceptionWhenFileDoesNotExist(): void
     {
-        // Arrange
-        $file = $this->createMock(\SplFileInfo::class);
-        $file->method('isFile')->willReturn(false);
-        $file->method('getFilename')->willReturn('non-existent.zip');
+        $file = \Mockery::mock(\SplFileInfo::class);
+        $file->allows('isFile')->andReturn(false);
+        $file->allows('getFilename')->andReturn('non-existent.zip');
 
-        // Assert
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Archive "non-existent.zip" is not a file.');
+        Expect::exception(\InvalidArgumentException::class)->withMessage('Archive "non-existent.zip" is not a file.');
 
-        // Act
         $this->createArchiveInstance($file);
     }
 
-    public function testConstructorThrowsExceptionWhenFileIsNotReadable(): void
+    #[Test]
+    public function constructorThrowsExceptionWhenFileIsNotReadable(): void
     {
-        // Arrange
-        $file = $this->createMock(\SplFileInfo::class);
-        $file->method('isFile')->willReturn(true);
-        $file->method('isReadable')->willReturn(false);
-        $file->method('getFilename')->willReturn('unreadable.zip');
+        $file = \Mockery::mock(\SplFileInfo::class);
+        $file->allows('isFile')->andReturn(true);
+        $file->allows('isReadable')->andReturn(false);
+        $file->allows('getFilename')->andReturn('unreadable.zip');
 
-        // Assert
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Archive file "unreadable.zip" is not readable.');
+        Expect::exception(\InvalidArgumentException::class)->withMessage('Archive file "unreadable.zip" is not readable.');
 
-        // Act
         $this->createArchiveInstance($file);
     }
 
-    public function testConstructorSucceedsWithValidFile(): void
+    #[Test]
+    public function constructorSucceedsWithValidFile(): void
     {
-        // Arrange
-        $file = $this->createMock(\SplFileInfo::class);
-        $file->method('isFile')->willReturn(true);
-        $file->method('isReadable')->willReturn(true);
+        $file = \Mockery::mock(\SplFileInfo::class);
+        $file->allows('isFile')->andReturn(true);
+        $file->allows('isReadable')->andReturn(true);
 
-        // Act
         $archive = $this->createArchiveInstance($file);
 
-        // Assert
-        self::assertInstanceOf(Archive::class, $archive);
+        Assert::instanceOf($archive, Archive::class);
     }
 
     /**

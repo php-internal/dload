@@ -11,12 +11,14 @@ use Internal\DLoad\Module\Version\Version;
 use Internal\DLoad\Tests\Unit\Module\Repository\Stub\AssetStub;
 use Internal\DLoad\Tests\Unit\Module\Repository\Stub\ReleaseStub;
 use Internal\DLoad\Tests\Unit\Module\Repository\Stub\RepositoryStub;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\TestCase;
+use Testo\Assert;
+use Testo\Codecov\Covers;
+use Testo\Data\DataProvider;
+use Testo\Lifecycle\BeforeTest;
+use Testo\Test;
 
-#[CoversClass(AssetsCollection::class)]
-final class AssetsCollectionTest extends TestCase
+#[Covers(AssetsCollection::class)]
+final class AssetsCollectionTest
 {
     private RepositoryStub $repository;
     private ReleaseStub $release;
@@ -61,42 +63,39 @@ final class AssetsCollectionTest extends TestCase
         ];
     }
 
-    public function testWhereOperatingSystemFiltersAssetsByOs(): void
+    #[Test]
+    public function whereOperatingSystemFiltersAssetsByOs(): void
     {
-        // Act
         $result = $this->collection->whereOperatingSystem(OperatingSystem::Linux);
 
-        // Assert
-        self::assertCount(2, $result);
+        Assert::count($result, 2);
 
         foreach ($result as $asset) {
-            self::assertSame(OperatingSystem::Linux, $asset->getOperatingSystem());
+            Assert::same($asset->getOperatingSystem(), OperatingSystem::Linux);
         }
     }
 
-    public function testWhereArchitectureFiltersAssetsByArchitecture(): void
+    #[Test]
+    public function whereArchitectureFiltersAssetsByArchitecture(): void
     {
-        // Act
         $result = $this->collection->whereArchitecture(Architecture::ARM_64);
 
-        // Assert
-        self::assertCount(3, $result);
+        Assert::count($result, 3);
 
         foreach ($result as $asset) {
-            self::assertSame(Architecture::ARM_64, $asset->getArchitecture());
+            Assert::same($asset->getArchitecture(), Architecture::ARM_64);
         }
     }
 
     #[DataProvider('provideNamePatterns')]
-    public function testWhereNameMatchesFiltersAssetsByNamePattern(
+    #[Test]
+    public function whereNameMatchesFiltersAssetsByNamePattern(
         string $pattern,
         array $expectedMatches,
     ): void {
-        // Act
         $result = $this->collection->whereNameMatches($pattern);
 
-        // Assert
-        self::assertCount(\count($expectedMatches), $result);
+        Assert::count($result, \count($expectedMatches));
 
         $actualNames = \array_map(
             static fn($asset) => $asset->getName(),
@@ -104,68 +103,64 @@ final class AssetsCollectionTest extends TestCase
         );
 
         foreach ($expectedMatches as $expectedName) {
-            self::assertContains($expectedName, $actualNames);
+            Assert::contains($actualNames, $expectedName);
         }
     }
 
-    public function testWhereNameMatchesWithInvalidPattern(): void
+    #[Test]
+    public function whereNameMatchesWithInvalidPattern(): void
     {
-        // Act
         $new = $this->collection->whereNameMatches('/invalid[pattern/');
 
-        // Assert
-        self::assertCount(0, $new);
+        Assert::count($new, 0);
     }
 
-    public function testChainedFiltersWorkCorrectly(): void
+    #[Test]
+    public function chainedFiltersWorkCorrectly(): void
     {
-        // Act
         $result = $this->collection
             ->whereOperatingSystem(OperatingSystem::Linux)
             ->whereArchitecture(Architecture::ARM_64);
 
-        // Assert
-        self::assertCount(1, $result);
+        Assert::count($result, 1);
         $asset = $result->first();
-        self::assertSame('package-1.2.3-linux-arm64.tar.gz', $asset->getName());
+        Assert::same($asset->getName(), 'package-1.2.3-linux-arm64.tar.gz');
     }
 
-    public function testFirstReturnsFirstAssetOrNull(): void
+    #[Test]
+    public function firstReturnsFirstAssetOrNull(): void
     {
         // Act with non-empty collection
         $first = $this->collection->first();
 
-        // Assert
-        self::assertNotNull($first);
-        self::assertSame('package-1.2.3-linux-x64.tar.gz', $first->getName());
+        Assert::notNull($first);
+        Assert::same($first->getName(), 'package-1.2.3-linux-x64.tar.gz');
 
         // Act with empty collection
         $empty = new AssetsCollection([]);
         $result = $empty->first();
 
-        // Assert
-        self::assertNull($result);
+        Assert::null($result);
     }
 
-    public function testEmptyReturnsTrueForEmptyCollection(): void
+    #[Test]
+    public function emptyReturnsTrueForEmptyCollection(): void
     {
         // Act with non-empty collection
         $resultNonEmpty = $this->collection->empty();
 
-        // Assert
-        self::assertFalse($resultNonEmpty);
+        Assert::false($resultNonEmpty);
 
         // Act with empty collection
         $empty = new AssetsCollection([]);
         $resultEmpty = $empty->empty();
 
-        // Assert
-        self::assertTrue($resultEmpty);
+        Assert::true($resultEmpty);
     }
 
-    protected function setUp(): void
+    #[BeforeTest]
+    protected function prepare(): void
     {
-        // Arrange
         $this->repository = new RepositoryStub('vendor/package');
         $this->release = new ReleaseStub(
             $this->repository,

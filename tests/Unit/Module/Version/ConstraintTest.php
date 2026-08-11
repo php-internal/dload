@@ -7,12 +7,14 @@ namespace Internal\DLoad\Tests\Unit\Module\Version;
 use Internal\DLoad\Module\Common\Stability;
 use Internal\DLoad\Module\Version\Constraint;
 use Internal\DLoad\Module\Version\Version;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\TestCase;
+use Testo\Assert;
+use Testo\Codecov\Covers;
+use Testo\Data\DataProvider;
+use Testo\Expect;
+use Testo\Test;
 
-#[CoversClass(Constraint::class)]
-final class ConstraintTest extends TestCase
+#[Covers(Constraint::class)]
+final class ConstraintTest
 {
     public static function provideValidConstraints(): \Generator
     {
@@ -306,80 +308,70 @@ final class ConstraintTest extends TestCase
     }
 
     #[DataProvider('provideValidConstraints')]
-    public function testFromConstraintStringWithValidInput(
+    #[Test]
+    public function fromConstraintStringWithValidInput(
         string $constraint,
         string $expectedBaseVersion,
         ?string $expectedFeatureSuffix,
         Stability $expectedStability,
         string $description,
     ): void {
-        // Act
         $result = Constraint::fromConstraintString($constraint);
 
-        // Assert
-        self::assertSame($expectedBaseVersion, $result->versionConstraint, "Base version for: {$description}");
-        self::assertSame($expectedFeatureSuffix, $result->featureSuffix, "Feature suffix for: {$description}");
-        self::assertSame($expectedStability, $result->minimumStability, "Stability for: {$description}");
+        Assert::same($result->versionConstraint, $expectedBaseVersion, "Base version for: {$description}");
+        Assert::same($result->featureSuffix, $expectedFeatureSuffix, "Feature suffix for: {$description}");
+        Assert::same($result->minimumStability, $expectedStability, "Stability for: {$description}");
     }
 
     #[DataProvider('provideInvalidConstraints')]
-    public function testFromConstraintStringWithInvalidInput(
+    #[Test]
+    public function fromConstraintStringWithInvalidInput(
         string $constraint,
         string $expectedExceptionMessage,
         string $description,
     ): void {
-        // Assert
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage($expectedExceptionMessage);
+        Expect::exception(\InvalidArgumentException::class)->withMessageContaining($expectedExceptionMessage);
 
-        // Act
         Constraint::fromConstraintString($constraint);
     }
 
-    public function testGetBaseConstraint(): void
+    #[Test]
+    public function getBaseConstraint(): void
     {
-        // Arrange
         $constraint = Constraint::fromConstraintString('^2.12.0', 'feature', Stability::Beta);
 
-        // Assert
-        self::assertSame('^2.12.0', $constraint->versionConstraint);
+        Assert::same($constraint->versionConstraint, '^2.12.0');
     }
 
-    public function testToStringWithBaseVersionOnly(): void
+    #[Test]
+    public function toStringWithBaseVersionOnly(): void
     {
-        // Arrange
         $constraint = Constraint::fromConstraintString('^2.12.0', null, Stability::Stable);
 
-        // Act
         $result = (string) $constraint;
 
-        // Assert
-        self::assertSame('^2.12.0', $result);
+        Assert::same($result, '^2.12.0');
     }
 
-    public function testToStringWithFeatureSuffixAndCustomStability(): void
+    #[Test]
+    public function toStringWithFeatureSuffixAndCustomStability(): void
     {
-        // Arrange
         $constraint = Constraint::fromConstraintString('^2.12.0-feature@beta');
 
-        // Act
         $result = (string) $constraint;
 
-        // Assert
-        self::assertSame('^2.12.0-feature@beta', $result);
+        Assert::same($result, '^2.12.0-feature@beta');
     }
 
     #[DataProvider('provideComparableConstraints')]
-    public function testIsSatisfiedBy(string $constraint, string $version, bool $expected): void
+    #[Test]
+    public function isSatisfiedBy(string $constraint, string $version, bool $expected): void
     {
-        // Arrange
         $constraintObj = Constraint::fromConstraintString($constraint);
         $versionObj = Version::fromVersionString($version);
 
-        // Act
         $result = $constraintObj->isSatisfiedBy($versionObj);
 
-        // Assert
-        self::assertSame($expected, $result, "Constraint: {$constraint}, Version: {$version}");
+        Assert::same($result, $expected, "Constraint: {$constraint}, Version: {$version}");
     }
 }

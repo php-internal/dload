@@ -6,12 +6,13 @@ namespace Internal\DLoad\Tests\Unit\Module\Repository\Internal;
 
 use Generator;
 use Internal\DLoad\Module\Repository\Internal\CachedGenerator;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\TestCase;
+use Testo\Assert;
+use Testo\Codecov\Covers;
+use Testo\Data\DataProvider;
+use Testo\Test;
 
-#[CoversClass(CachedGenerator::class)]
-final class CachedGeneratorTest extends TestCase
+#[Covers(CachedGenerator::class)]
+final class CachedGeneratorTest
 {
     /**
      * Data provider for traversable types test.
@@ -36,9 +37,9 @@ final class CachedGeneratorTest extends TestCase
     /**
      * Tests that the generator correctly caches items as they are yielded.
      */
-    public function testIterationCachesYieldedItems(): void
+    #[Test]
+    public function iterationCachesYieldedItems(): void
     {
-        // Arrange
         $generator = $this->createGenerator(5);
         $cachedGenerator = new CachedGenerator($generator);
 
@@ -56,134 +57,119 @@ final class CachedGeneratorTest extends TestCase
         // Get all items using a new iteration
         $allItems = \iterator_to_array($cachedGenerator);
 
-        // Assert
-        self::assertCount(3, $iteratedItems);
-        self::assertSame([0, 1, 2], $iteratedItems);
+        Assert::count($iteratedItems, 3);
+        Assert::same($iteratedItems, [0, 1, 2]);
         // self::assertCount(5, $allItems);
-        self::assertSame([0, 1, 2, 3, 4], $allItems);
+        Assert::same($allItems, [0, 1, 2, 3, 4]);
     }
 
     /**
      * Tests that first() returns the first element from the generator.
      */
-    public function testFirstReturnsFirstElement(): void
+    #[Test]
+    public function firstReturnsFirstElement(): void
     {
-        // Arrange
         $generator = $this->createGenerator(3);
         $cachedGenerator = new CachedGenerator($generator);
 
-        // Act
         $firstItem = $cachedGenerator->first();
 
-        // Assert
-        self::assertSame(0, $firstItem);
+        Assert::same($firstItem, 0);
     }
 
     /**
      * Tests that first() returns null when the generator is empty.
      */
-    public function testFirstReturnsNullForEmptyGenerator(): void
+    #[Test]
+    public function firstReturnsNullForEmptyGenerator(): void
     {
-        // Arrange
         $generator = $this->createGenerator(0);
         $cachedGenerator = new CachedGenerator($generator);
 
-        // Act
         $firstItem = $cachedGenerator->first();
 
-        // Assert
-        self::assertNull($firstItem);
+        Assert::null($firstItem);
     }
 
     /**
      * Tests that first() can retrieve the first item without affecting future iterations.
      */
-    public function testFirstDoesNotConsumeItemFromIteration(): void
+    #[Test]
+    public function firstDoesNotConsumeItemFromIteration(): void
     {
-        // Arrange
         $generator = $this->createGenerator(3);
         $cachedGenerator = new CachedGenerator($generator);
 
-        // Act
         $firstItem = $cachedGenerator->first();
         $allItems = \iterator_to_array($cachedGenerator);
 
-        // Assert
-        self::assertSame(0, $firstItem);
-        self::assertCount(3, $allItems);
-        self::assertSame([0, 1, 2], $allItems);
+        Assert::same($firstItem, 0);
+        Assert::count($allItems, 3);
+        Assert::same($allItems, [0, 1, 2]);
     }
 
     /**
      * Tests that isEmpty() correctly identifies empty generators.
      */
-    public function testIsEmptyReturnsTrueForEmptyGenerator(): void
+    #[Test]
+    public function isEmptyReturnsTrueForEmptyGenerator(): void
     {
-        // Arrange
         $generator = $this->createGenerator(0);
         $cachedGenerator = new CachedGenerator($generator);
 
-        // Act
         $isEmpty = $cachedGenerator->isEmpty();
 
-        // Assert
-        self::assertTrue($isEmpty);
+        Assert::true($isEmpty);
     }
 
     /**
      * Tests that isEmpty() correctly identifies non-empty generators.
      */
-    public function testIsEmptyReturnsFalseForNonEmptyGenerator(): void
+    #[Test]
+    public function isEmptyReturnsFalseForNonEmptyGenerator(): void
     {
-        // Arrange
         $generator = $this->createGenerator(1);
         $cachedGenerator = new CachedGenerator($generator);
 
-        // Act
         $isEmpty = $cachedGenerator->isEmpty();
 
-        // Assert
-        self::assertFalse($isEmpty);
+        Assert::false($isEmpty);
     }
 
     /**
      * Tests that count() correctly returns the number of items in the generator.
      */
-    public function testCountReturnsCorrectItemCount(): void
+    #[Test]
+    public function countReturnsCorrectItemCount(): void
     {
-        // Arrange
         $generator = $this->createGenerator(5);
         $cachedGenerator = new CachedGenerator($generator);
 
-        // Act
         $count = $cachedGenerator->count();
 
-        // Assert
-        self::assertSame(5, $count);
+        Assert::same($count, 5);
     }
 
     /**
      * Tests that count() returns zero for an empty generator.
      */
-    public function testCountReturnsZeroForEmptyGenerator(): void
+    #[Test]
+    public function countReturnsZeroForEmptyGenerator(): void
     {
-        // Arrange
         $generator = $this->createGenerator(0);
         $cachedGenerator = new CachedGenerator($generator);
 
-        // Act
         $count = $cachedGenerator->count();
 
-        // Assert
-        self::assertSame(0, $count);
+        Assert::same($count, 0);
     }
 
     /**
      * Tests that partial iteration followed by count() returns the correct total count.
      */
-    public function testPartialIterationFollowedByCountReturnsCorrectTotal(): void
+    #[Test]
+    public function partialIterationFollowedByCountReturnsCorrectTotal(): void
     {
-        // Arrange
         $generator = $this->createGenerator(5);
         $cachedGenerator = new CachedGenerator($generator);
 
@@ -198,16 +184,15 @@ final class CachedGeneratorTest extends TestCase
         // Get count
         $count = $cachedGenerator->count();
 
-        // Assert
-        self::assertSame(5, $count);
+        Assert::same($count, 5);
     }
 
     /**
      * Tests that the cache persists after a complete iteration.
      */
-    public function testCachePersistsAfterCompleteIteration(): void
+    #[Test]
+    public function cachePersistsAfterCompleteIteration(): void
     {
-        // Arrange
         $generator = $this->createGenerator(3);
         $cachedGenerator = new CachedGenerator($generator);
 
@@ -217,9 +202,8 @@ final class CachedGeneratorTest extends TestCase
         // Second iteration should use cache
         $secondIteration = \iterator_to_array($cachedGenerator);
 
-        // Assert
-        self::assertSame($firstIteration, $secondIteration);
-        self::assertSame([0, 1, 2], $firstIteration);
+        Assert::same($secondIteration, $firstIteration);
+        Assert::same($firstIteration, [0, 1, 2]);
     }
 
     /**
@@ -229,24 +213,22 @@ final class CachedGeneratorTest extends TestCase
      * @param array $expected The expected result
      */
     #[DataProvider('provideTraversables')]
-    public function testHandlesVariousTraversableTypes(\Traversable $traversable, array $expected): void
+    #[Test]
+    public function handlesVariousTraversableTypes(\Traversable $traversable, array $expected): void
     {
-        // Arrange
         $cachedGenerator = new CachedGenerator($traversable);
 
-        // Act
         $result = \iterator_to_array($cachedGenerator);
 
-        // Assert
-        self::assertSame($expected, $result);
+        Assert::same($result, $expected);
     }
 
     /**
      * Tests that cached generator works correctly with nested generators.
      */
-    public function testHandlesNestedGenerators(): void
+    #[Test]
+    public function handlesNestedGenerators(): void
     {
-        // Arrange
         $nestedGenerator = function () {
             yield from $this->createGenerator(2);
             yield from $this->createGenerator(2, 10);
@@ -254,23 +236,20 @@ final class CachedGeneratorTest extends TestCase
 
         $cachedGenerator = new CachedGenerator($nestedGenerator());
 
-        // Act
         $result = \iterator_to_array($cachedGenerator);
 
-        // Assert
-        self::assertSame([0, 1, 10, 11], $result);
+        Assert::same($result, [0, 1, 10, 11]);
     }
 
     /**
      * Tests behavior with large datasets to ensure memory effectiveness.
      */
-    public function testHandlesLargeDatasets(): void
+    #[Test]
+    public function handlesLargeDatasets(): void
     {
-        // Arrange
         $largeGenerator = $this->createGenerator(1000);
         $cachedGenerator = new CachedGenerator($largeGenerator);
 
-        // Act
         $firstAccess = $cachedGenerator->first();
 
         // Partially iterate
@@ -286,10 +265,9 @@ final class CachedGeneratorTest extends TestCase
         // Get count without completing iteration
         $totalCount = $cachedGenerator->count();
 
-        // Assert
-        self::assertSame(0, $firstAccess);
-        self::assertCount(10, $partialIteration);
-        self::assertSame(1000, $totalCount);
+        Assert::same($firstAccess, 0);
+        Assert::count($partialIteration, 10);
+        Assert::same($totalCount, 1000);
     }
 
     /**

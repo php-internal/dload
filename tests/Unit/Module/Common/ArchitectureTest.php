@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace Internal\DLoad\Tests\Unit\Module\Common;
 
 use Internal\DLoad\Module\Common\Architecture;
-use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\TestCase;
+use Testo\Assert;
+use Testo\Data\DataProvider;
+use Testo\Test;
 
-class ArchitectureTest extends TestCase
+class ArchitectureTest
 {
     public static function provideBuildNames(): iterable
     {
@@ -23,8 +24,9 @@ class ArchitectureTest extends TestCase
     }
 
     #[DataProvider('provideBuildNames')]
-    public function testTryFromBuildName(string $name, ?Architecture $expected): void
+    #[Test]
+    public function tryFromBuildName(string $name, ?Architecture $expected): void
     {
-        self::assertSame($expected, Architecture::tryFromBuildName($name));
+        Assert::same(Architecture::tryFromBuildName($name), $expected);
     }
 }

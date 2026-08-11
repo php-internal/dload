@@ -6,37 +6,36 @@ namespace Internal\DLoad\Tests\Unit\Module\Archive\Internal;
 
 use Internal\DLoad\Module\Archive\Exception\ArchiveException;
 use Internal\DLoad\Module\Archive\Internal\PharAwareArchive;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
+use Testo\Codecov\Covers;
+use Testo\Expect;
+use Testo\Lifecycle\BeforeTest;
+use Testo\Test;
 
-#[CoversClass(PharAwareArchive::class)]
-final class PharAwareArchiveTest extends TestCase
+#[Covers(PharAwareArchive::class)]
+final class PharAwareArchiveTest
 {
     private \SplFileInfo $fileInfo;
 
-    public function testExtractThrowsExceptionWhenArchiveIsNotReadable(): void
+    #[Test]
+    public function extractThrowsExceptionWhenArchiveIsNotReadable(): void
     {
-        // Arrange
-        $pharData = $this->createMock(\PharData::class);
-        $pharData->method('isReadable')->willReturn(false);
-        $pharData->method('getPathname')->willReturn('unreadable.phar');
+        $pharData = \Mockery::mock(\PharData::class);
+        $pharData->allows('isReadable')->andReturn(false);
+        $pharData->allows('getPathname')->andReturn('unreadable.phar');
 
         $archive = $this->createPharAwareArchive($pharData);
 
-        // Assert
-        $this->expectException(ArchiveException::class);
-        $this->expectExceptionMessage('Could not open "unreadable.phar" for reading.');
+        Expect::exception(ArchiveException::class)->withMessage('Could not open "unreadable.phar" for reading.');
 
-        // Act
         \iterator_to_array($archive->extract());
     }
 
-    protected function setUp(): void
+    #[BeforeTest]
+    protected function prepare(): void
     {
-        // Arrange
-        $this->fileInfo = $this->createMock(\SplFileInfo::class);
-        $this->fileInfo->method('isFile')->willReturn(true);
-        $this->fileInfo->method('isReadable')->willReturn(true);
+        $this->fileInfo = \Mockery::mock(\SplFileInfo::class);
+        $this->fileInfo->allows('isFile')->andReturn(true);
+        $this->fileInfo->allows('isReadable')->andReturn(true);
     }
 
     /**

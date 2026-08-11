@@ -5,24 +5,22 @@ declare(strict_types=1);
 namespace Internal\DLoad\Tests\Unit\Module\Archive\Internal;
 
 use Internal\DLoad\Module\Archive\Internal\ZipPharArchive;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
+use Testo\Codecov\Covers;
+use Testo\Expect;
+use Testo\Test;
 
-#[CoversClass(ZipPharArchive::class)]
-final class ZipPharArchiveTest extends TestCase
+#[Covers(ZipPharArchive::class)]
+final class ZipPharArchiveTest
 {
-    public function testConstructorValidatesFile(): void
+    #[Test]
+    public function constructorValidatesFile(): void
     {
-        // Arrange
-        $file = $this->createMock(\SplFileInfo::class);
-        $file->method('isFile')->willReturn(false);
-        $file->method('getFilename')->willReturn('invalid.zip');
+        $file = \Mockery::mock(\SplFileInfo::class);
+        $file->allows('isFile')->andReturn(false);
+        $file->allows('getFilename')->andReturn('invalid.zip');
 
-        // Assert
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Archive "invalid.zip" is not a file.');
+        Expect::exception(\InvalidArgumentException::class)->withMessage('Archive "invalid.zip" is not a file.');
 
-        // Act
         new ZipPharArchive($file);
     }
 }

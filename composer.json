@@ -20,7 +20,7 @@
         }
     ],
     "require": {
-        "php": ">=8.1",
+        "php": ">=8.2",
         "composer/semver": "^3.4",
         "internal/destroy": "^1.0",
         "internal/path": "^1.2",
@@ -37,11 +37,13 @@
     "require-dev": {
         "buggregator/trap": "^1.15",
         "dereuromark/composer-prefer-lowest": "^0.1.10",
-        "phpunit/phpunit": "^10.5",
+        "llm/skills": "^1.9",
         "roxblnfk/unpoly": "^1.8.1",
-        "spiral/code-style": "^2.2.2",
-        "ta-tikoma/phpunit-architecture-test": "^0.8.5",
-        "vimeo/psalm": "^6.10"
+        "spiral/code-style": "^2.3.1",
+        "testo/bridge-mockery": "^0.1.2",
+        "testo/bridge-rector": "^0.2.2",
+        "testo/testo": "^0.10.40",
+        "vimeo/psalm": "^6.10 || ^7.0"
     },
     "suggest": {
         "ext-simplexml": "to support XML configs parsing"
@@ -64,7 +66,8 @@
     "config": {
         "allow-plugins": {
             "ergebnis/composer-normalize": true,
-            "infection/extension-installer": true
+            "infection/extension-installer": true,
+            "llm/skills": true
         },
         "audit": {
             "abandoned": "report"
@@ -93,23 +96,20 @@
         "refactor": "rector process --config=rector.php",
         "refactor:ci": "rector process --config=rector.php --dry-run --ansi",
         "test": [
-            "phpunit --color=always --no-coverage"
+            "testo --ansi --no-coverage"
         ],
         "test:unit": [
-            "@putenv XDEBUG_MODE=coverage",
-            "phpunit --color=always --testsuite=Unit"
+            "testo --ansi --no-coverage --suite=Unit"
         ],
-        "test:arch": [
-            "@putenv XDEBUG_MODE=coverage",
-            "phpunit --color=always --testsuite=Arch"
+        "test:integration": [
+            "testo --ansi --no-coverage --suite=Integration"
         ],
         "test:acc": [
-            "@putenv XDEBUG_MODE=coverage",
-            "phpunit --color=always --testsuite=Acceptance"
+            "testo --ansi --no-coverage --suite=Acceptance"
         ],
         "test:cc": [
             "@putenv XDEBUG_MODE=coverage",
-            "phpunit --coverage-clover=runtime/phpunit/logs/clover.xml --color=always"
+            "testo --ansi --coverage-clover=runtime/coverage/clover.xml"
         ]
     }
 }

@@ -10,44 +10,42 @@ use Internal\DLoad\Module\Velox\Internal\Config\Pipeline\ConfigPipeline;
 use Internal\DLoad\Module\Velox\Internal\Config\Pipeline\ConfigProcessor;
 use Internal\DLoad\Module\Velox\Internal\Config\Pipeline\TomlData;
 use Internal\Path;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
+use Testo\Assert;
+use Testo\Codecov\Covers;
+use Testo\Lifecycle\BeforeTest;
+use Testo\Test;
 
-#[CoversClass(ConfigPipeline::class)]
-final class ConfigPipelineTest extends TestCase
+#[Covers(ConfigPipeline::class)]
+final class ConfigPipelineTest
 {
     private VeloxAction $veloxAction;
     private Path $buildDir;
 
-    public function testConstructorCreatesInstanceWithProcessors(): void
+    #[Test]
+    public function constructorCreatesInstanceWithProcessors(): void
     {
-        // Arrange
-        $processor1 = $this->createMock(ConfigProcessor::class);
-        $processor2 = $this->createMock(ConfigProcessor::class);
+        $processor1 = \Mockery::mock(ConfigProcessor::class);
+        $processor2 = \Mockery::mock(ConfigProcessor::class);
         $processors = [$processor1, $processor2];
 
-        // Act
         $pipeline = new ConfigPipeline($processors);
 
-        // Assert
-        self::assertInstanceOf(ConfigPipeline::class, $pipeline);
+        Assert::instanceOf($pipeline, ConfigPipeline::class);
     }
 
-    public function testConstructorCreatesInstanceWithEmptyProcessors(): void
+    #[Test]
+    public function constructorCreatesInstanceWithEmptyProcessors(): void
     {
-        // Arrange
         $processors = [];
 
-        // Act
         $pipeline = new ConfigPipeline($processors);
 
-        // Assert
-        self::assertInstanceOf(ConfigPipeline::class, $pipeline);
+        Assert::instanceOf($pipeline, ConfigPipeline::class);
     }
 
-    public function testProcessWithEmptyProcessorsReturnsOriginalContext(): void
+    #[Test]
+    public function processWithEmptyProcessorsReturnsOriginalContext(): void
     {
-        // Arrange
         $processors = [];
         $pipeline = new ConfigPipeline($processors);
         $originalContext = new ConfigContext(
@@ -57,17 +55,15 @@ final class ConfigPipelineTest extends TestCase
             ['metadata' => 'test'],
         );
 
-        // Act
         $result = $pipeline->process($originalContext);
 
-        // Assert
-        self::assertSame($originalContext, $result);
+        Assert::same($result, $originalContext);
     }
 
-    public function testProcessWithSingleProcessorCallsProcessor(): void
+    #[Test]
+    public function processWithSingleProcessorCallsProcessor(): void
     {
-        // Arrange
-        $processor = $this->createMock(ConfigProcessor::class);
+        $processor = \Mockery::mock(ConfigProcessor::class);
         $originalContext = new ConfigContext(
             $this->veloxAction,
             $this->buildDir,
@@ -81,27 +77,25 @@ final class ConfigPipelineTest extends TestCase
             [],
         );
 
-        $processor->expects(self::once())
-            ->method('__invoke')
+        $processor->expects('__invoke')
+            ->once()
             ->with($originalContext)
-            ->willReturn($modifiedContext);
+            ->andReturn($modifiedContext);
 
         $pipeline = new ConfigPipeline([$processor]);
 
-        // Act
         $result = $pipeline->process($originalContext);
 
-        // Assert
-        self::assertSame($modifiedContext, $result);
-        self::assertNotSame($originalContext, $result);
+        Assert::same($result, $modifiedContext);
+        Assert::notSame($result, $originalContext);
     }
 
-    public function testProcessWithMultipleProcessorsCallsThemInSequence(): void
+    #[Test]
+    public function processWithMultipleProcessorsCallsThemInSequence(): void
     {
-        // Arrange
-        $processor1 = $this->createMock(ConfigProcessor::class);
-        $processor2 = $this->createMock(ConfigProcessor::class);
-        $processor3 = $this->createMock(ConfigProcessor::class);
+        $processor1 = \Mockery::mock(ConfigProcessor::class);
+        $processor2 = \Mockery::mock(ConfigProcessor::class);
+        $processor3 = \Mockery::mock(ConfigProcessor::class);
 
         $originalContext = new ConfigContext(
             $this->veloxAction,
@@ -129,36 +123,34 @@ final class ConfigPipelineTest extends TestCase
         );
 
         // Set up expectations for sequential processing
-        $processor1->expects(self::once())
-            ->method('__invoke')
+        $processor1->expects('__invoke')
+            ->once()
             ->with($originalContext)
-            ->willReturn($context1);
+            ->andReturn($context1);
 
-        $processor2->expects(self::once())
-            ->method('__invoke')
+        $processor2->expects('__invoke')
+            ->once()
             ->with($context1)
-            ->willReturn($context2);
+            ->andReturn($context2);
 
-        $processor3->expects(self::once())
-            ->method('__invoke')
+        $processor3->expects('__invoke')
+            ->once()
             ->with($context2)
-            ->willReturn($finalContext);
+            ->andReturn($finalContext);
 
         $pipeline = new ConfigPipeline([$processor1, $processor2, $processor3]);
 
-        // Act
         $result = $pipeline->process($originalContext);
 
-        // Assert
-        self::assertSame($finalContext, $result);
-        self::assertSame(['step' => '3'], $result->tomlData->getData());
+        Assert::same($result, $finalContext);
+        Assert::same($result->tomlData->getData(), ['step' => '3']);
     }
 
-    public function testProcessPassesThroughComplexContextChanges(): void
+    #[Test]
+    public function processPassesThroughComplexContextChanges(): void
     {
-        // Arrange
-        $processor1 = $this->createMock(ConfigProcessor::class);
-        $processor2 = $this->createMock(ConfigProcessor::class);
+        $processor1 = \Mockery::mock(ConfigProcessor::class);
+        $processor2 = \Mockery::mock(ConfigProcessor::class);
 
         $originalTomlData = new TomlData(['initial' => 'data']);
         $originalMetadata = ['version' => '1.0'];
@@ -187,31 +179,29 @@ final class ConfigPipelineTest extends TestCase
             $finalMetadata,
         );
 
-        $processor1->expects(self::once())
-            ->method('__invoke')
+        $processor1->expects('__invoke')
+            ->once()
             ->with($originalContext)
-            ->willReturn($intermediateContext);
+            ->andReturn($intermediateContext);
 
-        $processor2->expects(self::once())
-            ->method('__invoke')
+        $processor2->expects('__invoke')
+            ->once()
             ->with($intermediateContext)
-            ->willReturn($finalContext);
+            ->andReturn($finalContext);
 
         $pipeline = new ConfigPipeline([$processor1, $processor2]);
 
-        // Act
         $result = $pipeline->process($originalContext);
 
-        // Assert
-        self::assertSame($finalContext, $result);
-        self::assertSame(['initial' => 'data', 'added_by_p1' => 'value1'], $result->tomlData->getData());
-        self::assertSame(['version' => '1.0', 'processed_by' => 'p2'], $result->metadata);
+        Assert::same($result, $finalContext);
+        Assert::same($result->tomlData->getData(), ['initial' => 'data', 'added_by_p1' => 'value1']);
+        Assert::same($result->metadata, ['version' => '1.0', 'processed_by' => 'p2']);
     }
 
-    public function testProcessPreservesContextImmutability(): void
+    #[Test]
+    public function processPreservesContextImmutability(): void
     {
-        // Arrange
-        $processor = $this->createMock(ConfigProcessor::class);
+        $processor = \Mockery::mock(ConfigProcessor::class);
         $originalTomlData = new TomlData(['original' => 'data']);
         $originalMetadata = ['original' => 'metadata'];
         $originalContext = new ConfigContext(
@@ -228,31 +218,30 @@ final class ConfigPipelineTest extends TestCase
             ['modified' => 'metadata'],
         );
 
-        $processor->expects(self::once())
-            ->method('__invoke')
+        $processor->expects('__invoke')
+            ->once()
             ->with($originalContext)
-            ->willReturn($modifiedContext);
+            ->andReturn($modifiedContext);
 
         $pipeline = new ConfigPipeline([$processor]);
 
-        // Act
         $result = $pipeline->process($originalContext);
 
         // Assert - Original context should remain unchanged
-        self::assertSame(['original' => 'data'], $originalContext->tomlData->getData());
-        self::assertSame(['original' => 'metadata'], $originalContext->metadata);
+        Assert::same($originalContext->tomlData->getData(), ['original' => 'data']);
+        Assert::same($originalContext->metadata, ['original' => 'metadata']);
 
         // Result should have modified data
-        self::assertSame(['modified' => 'data'], $result->tomlData->getData());
-        self::assertSame(['modified' => 'metadata'], $result->metadata);
+        Assert::same($result->tomlData->getData(), ['modified' => 'data']);
+        Assert::same($result->metadata, ['modified' => 'metadata']);
     }
 
-    public function testProcessWithProcessorThatReturnsUnchangedContext(): void
+    #[Test]
+    public function processWithProcessorThatReturnsUnchangedContext(): void
     {
-        // Arrange
-        $processor1 = $this->createMock(ConfigProcessor::class);
-        $processor2 = $this->createMock(ConfigProcessor::class);
-        $processor3 = $this->createMock(ConfigProcessor::class);
+        $processor1 = \Mockery::mock(ConfigProcessor::class);
+        $processor2 = \Mockery::mock(ConfigProcessor::class);
+        $processor3 = \Mockery::mock(ConfigProcessor::class);
 
         $originalContext = new ConfigContext(
             $this->veloxAction,
@@ -276,37 +265,35 @@ final class ConfigPipelineTest extends TestCase
         );
 
         // First processor modifies context
-        $processor1->expects(self::once())
-            ->method('__invoke')
+        $processor1->expects('__invoke')
+            ->once()
             ->with($originalContext)
-            ->willReturn($modifiedContext);
+            ->andReturn($modifiedContext);
 
         // Second processor returns context unchanged (simulating conditional processing)
-        $processor2->expects(self::once())
-            ->method('__invoke')
+        $processor2->expects('__invoke')
+            ->once()
             ->with($modifiedContext)
-            ->willReturn($modifiedContext);
+            ->andReturn($modifiedContext);
 
         // Third processor modifies context again
-        $processor3->expects(self::once())
-            ->method('__invoke')
+        $processor3->expects('__invoke')
+            ->once()
             ->with($modifiedContext)
-            ->willReturn($finalContext);
+            ->andReturn($finalContext);
 
         $pipeline = new ConfigPipeline([$processor1, $processor2, $processor3]);
 
-        // Act
         $result = $pipeline->process($originalContext);
 
-        // Assert
-        self::assertSame($finalContext, $result);
-        self::assertSame(['data' => 'modified_by_p3'], $result->tomlData->getData());
+        Assert::same($result, $finalContext);
+        Assert::same($result->tomlData->getData(), ['data' => 'modified_by_p3']);
     }
 
-    public function testProcessMaintainsActionAndBuildDirThroughPipeline(): void
+    #[Test]
+    public function processMaintainsActionAndBuildDirThroughPipeline(): void
     {
-        // Arrange
-        $processor = $this->createMock(ConfigProcessor::class);
+        $processor = \Mockery::mock(ConfigProcessor::class);
         $originalContext = new ConfigContext(
             $this->veloxAction,
             $this->buildDir,
@@ -322,37 +309,35 @@ final class ConfigPipelineTest extends TestCase
             ['modified' => 'metadata'],
         );
 
-        $processor->expects(self::once())
-            ->method('__invoke')
+        $processor->expects('__invoke')
+            ->once()
             ->with($originalContext)
-            ->willReturn($modifiedContext);
+            ->andReturn($modifiedContext);
 
         $pipeline = new ConfigPipeline([$processor]);
 
-        // Act
         $result = $pipeline->process($originalContext);
 
-        // Assert
-        self::assertSame($this->veloxAction, $result->action);
-        self::assertSame($this->buildDir, $result->buildDir);
-        self::assertSame(['modified' => 'data'], $result->tomlData->getData());
-        self::assertSame(['modified' => 'metadata'], $result->metadata);
+        Assert::same($result->action, $this->veloxAction);
+        Assert::same($result->buildDir, $this->buildDir);
+        Assert::same($result->tomlData->getData(), ['modified' => 'data']);
+        Assert::same($result->metadata, ['modified' => 'metadata']);
     }
 
-    public function testProcessHandlesLargeNumberOfProcessors(): void
+    #[Test]
+    public function processHandlesLargeNumberOfProcessors(): void
     {
-        // Arrange
         $processors = [];
         $expectedValue = 0;
 
         // Create 10 processors that each increment a counter in the TOML data
         for ($i = 0; $i < 10; $i++) {
-            $processor = $this->createMock(ConfigProcessor::class);
+            $processor = \Mockery::mock(ConfigProcessor::class);
             $expectedValue = $i + 1;
 
-            $processor->expects(self::once())
-                ->method('__invoke')
-                ->willReturnCallback(static function (ConfigContext $context) use ($expectedValue): ConfigContext {
+            $processor->expects('__invoke')
+                ->once()
+                ->andReturnUsing(static function (ConfigContext $context) use ($expectedValue): ConfigContext {
                     return $context->withTomlData(new TomlData(['counter' => $expectedValue]));
                 });
 
@@ -368,14 +353,13 @@ final class ConfigPipelineTest extends TestCase
 
         $pipeline = new ConfigPipeline($processors);
 
-        // Act
         $result = $pipeline->process($originalContext);
 
-        // Assert
-        self::assertSame(['counter' => 10], $result->tomlData->getData());
+        Assert::same($result->tomlData->getData(), ['counter' => 10]);
     }
 
-    protected function setUp(): void
+    #[BeforeTest]
+    protected function prepare(): void
     {
         $this->veloxAction = new VeloxAction();
         $this->buildDir = Path::create('/tmp/build');
