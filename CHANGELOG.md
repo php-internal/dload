@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.14.1](https://github.com/php-internal/dload/compare/1.14.0...1.14.1) (2026-08-11)
+
+
+### Bug Fixes
+
+* **get:** return a non-zero exit code when a download fails ([#110](https://github.com/php-internal/dload/issues/110)) ([0f52a0f](https://github.com/php-internal/dload/commit/0f52a0f439058ac3e32a4dde3998727f637a4272))
+* **repository:** turn API errors into actionable messages instead of an empty release list ([0f52a0f](https://github.com/php-internal/dload/commit/0f52a0f439058ac3e32a4dde3998727f637a4272))
+* **schema:** remove unimplemented version-path attribute and velox download type ([330c22c](https://github.com/php-internal/dload/commit/330c22c87199ba19ddff615e670c334a5d2490e5))
+
+
+### Documentation
+
+* **skills:** drop dead version-path, velox and dload-example.xml references ([330c22c](https://github.com/php-internal/dload/commit/330c22c87199ba19ddff615e670c334a5d2490e5))
+
 ## [1.14.0](https://github.com/php-internal/dload/compare/1.13.1...1.14.0) (2026-07-03)
 
 
