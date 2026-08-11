@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Unit\Module\Repository\Internal\GitLab\Api;
 
-use Testo\Assert;
-use Testo\Codecov\Covers;
-use Testo\Test;
 use Internal\DLoad\Module\Repository\Exception\RateLimitException;
 use Internal\DLoad\Module\Repository\Exception\RepositoryNotFoundException;
 use Internal\DLoad\Module\Repository\Internal\GitLab\Api\ResponseValidator;
 use Internal\DLoad\Tests\Unit\Module\Repository\Stub\ResponseStub;
 use Nyholm\Psr7\Request;
+use Testo\Assert;
+use Testo\Codecov\Covers;
+use Testo\Test;
 
 #[Covers(ResponseValidator::class)]
 final class ResponseValidatorTest
@@ -28,8 +28,8 @@ final class ResponseValidatorTest
             Assert::fail('RepositoryNotFoundException is expected.');
         } catch (RepositoryNotFoundException $e) {
             Assert::same($e->repository, 'group/project');
-            self::assertStringContainsString('project `group/project`', $e->getMessage());
-            self::assertStringContainsString('GITLAB_TOKEN', $e->getMessage());
+            Assert::string($e->getMessage())->contains('project `group/project`');
+            Assert::string($e->getMessage())->contains('GITLAB_TOKEN');
         }
     }
 
@@ -44,8 +44,8 @@ final class ResponseValidatorTest
             $validator->validate($request, $response);
             Assert::fail('RateLimitException is expected.');
         } catch (RateLimitException $e) {
-            self::assertStringContainsString('GitLab API rate limit exceeded', $e->getMessage());
-            self::assertStringContainsString('GITLAB_TOKEN', $e->getMessage());
+            Assert::string($e->getMessage())->contains('GitLab API rate limit exceeded');
+            Assert::string($e->getMessage())->contains('GITLAB_TOKEN');
             Assert::notNull($e->resetAt);
         }
     }

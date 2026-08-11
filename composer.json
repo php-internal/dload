@@ -40,6 +40,7 @@
         "llm/skills": "^1.9",
         "roxblnfk/unpoly": "^1.8.1",
         "spiral/code-style": "^2.3.1",
+        "testo/bridge-mockery": "^0.1.2",
         "testo/bridge-rector": "^0.2.2",
         "testo/testo": "^0.10.40",
         "vimeo/psalm": "^6.10 || ^7.0"

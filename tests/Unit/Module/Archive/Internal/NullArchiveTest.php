@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Unit\Module\Archive\Internal;
 
+use Internal\DLoad\Module\Archive\Internal\NullArchive;
 use Testo\Assert;
 use Testo\Codecov\Covers;
+use Testo\Core\Exception\SkipTest;
 use Testo\Expect;
 use Testo\Test;
-use Internal\DLoad\Module\Archive\Internal\NullArchive;
 
 #[Covers(NullArchive::class)]
 final class NullArchiveTest
@@ -16,10 +17,10 @@ final class NullArchiveTest
     #[Test]
     public function constructorValidatesFile(): void
     {
-        $file = $this->createMock(\SplFileInfo::class);
-        $file->method('isFile')->willReturn(false);
-        $file->method('isReadable')->willReturn(true); // Must return true for parent constructor
-        $file->method('getFilename')->willReturn('not-a-file');
+        $file = \Mockery::mock(\SplFileInfo::class);
+        $file->allows('isFile')->andReturn(false);
+        $file->allows('isReadable')->andReturn(true); // Must return true for parent constructor
+        $file->allows('getFilename')->andReturn('not-a-file');
 
         Expect::exception(\InvalidArgumentException::class)->withMessage('Archive "not-a-file" is not a file.');
 
@@ -29,17 +30,16 @@ final class NullArchiveTest
     #[Test]
     public function extractYieldsFileAsItself(): void
     {
-        $sourceFile = $this->createMock(\SplFileInfo::class);
-        $sourceFile->method('isFile')->willReturn(true);
-        $sourceFile->method('isReadable')->willReturn(true);
-        $sourceFile->method('getPathname')->willReturn('/path/to/source-file');
-        $sourceFile->method('getFilename')->willReturn('source-file');
+        $sourceFile = \Mockery::mock(\SplFileInfo::class);
+        $sourceFile->allows('isFile')->andReturn(true);
+        $sourceFile->allows('isReadable')->andReturn(true);
+        $sourceFile->allows('getPathname')->andReturn('/path/to/source-file');
+        $sourceFile->allows('getFilename')->andReturn('source-file');
 
         $archive = new NullArchive($sourceFile);
 
         $generator = $archive->extract();
 
-        // Assert - Check the file is yielded
         $key = $generator->key();
         $value = $generator->current();
 
@@ -48,13 +48,9 @@ final class NullArchiveTest
     }
 
     #[Test]
-    public function extractCopiesFileWhenDestinationProvided(): void
+    public function extractCopiesFileWhenDestinationProvided(): never
     {
-        // This test would require mocking the global copy function
-        // In a real-world scenario, I'd use a package like mockery/php-overload, but for now,
-        // I'll focus on the unit tests that don't require global function mocking
-
-        // Instead, we'll verify the behavior through the integration test
-        $this->addToAssertionCount(1);
+        // Copying goes through the global `copy()` function, which cannot be stubbed here.
+        throw new SkipTest('Covered by ArchiveIntegrationTest.');
     }
 }

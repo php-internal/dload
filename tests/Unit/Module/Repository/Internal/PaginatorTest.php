@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Unit\Module\Repository\Internal;
 
+use Internal\DLoad\Module\Repository\Internal\Paginator;
 use Testo\Assert;
 use Testo\Expect;
 use Testo\Test;
-use Internal\DLoad\Module\Repository\Internal\Paginator;
 
 final class PaginatorTest
 {

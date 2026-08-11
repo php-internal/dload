@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Unit\Module\Archive\Internal;
 
+use Internal\DLoad\Module\Archive\Internal\Archive;
 use Testo\Assert;
 use Testo\Codecov\Covers;
 use Testo\Expect;
 use Testo\Test;
-use Internal\DLoad\Module\Archive\Internal\Archive;
 
 #[Covers(Archive::class)]
 final class ArchiveTest
@@ -16,9 +16,9 @@ final class ArchiveTest
     #[Test]
     public function constructorThrowsExceptionWhenFileDoesNotExist(): void
     {
-        $file = $this->createMock(\SplFileInfo::class);
-        $file->method('isFile')->willReturn(false);
-        $file->method('getFilename')->willReturn('non-existent.zip');
+        $file = \Mockery::mock(\SplFileInfo::class);
+        $file->allows('isFile')->andReturn(false);
+        $file->allows('getFilename')->andReturn('non-existent.zip');
 
         Expect::exception(\InvalidArgumentException::class)->withMessage('Archive "non-existent.zip" is not a file.');
 
@@ -28,10 +28,10 @@ final class ArchiveTest
     #[Test]
     public function constructorThrowsExceptionWhenFileIsNotReadable(): void
     {
-        $file = $this->createMock(\SplFileInfo::class);
-        $file->method('isFile')->willReturn(true);
-        $file->method('isReadable')->willReturn(false);
-        $file->method('getFilename')->willReturn('unreadable.zip');
+        $file = \Mockery::mock(\SplFileInfo::class);
+        $file->allows('isFile')->andReturn(true);
+        $file->allows('isReadable')->andReturn(false);
+        $file->allows('getFilename')->andReturn('unreadable.zip');
 
         Expect::exception(\InvalidArgumentException::class)->withMessage('Archive file "unreadable.zip" is not readable.');
 
@@ -41,9 +41,9 @@ final class ArchiveTest
     #[Test]
     public function constructorSucceedsWithValidFile(): void
     {
-        $file = $this->createMock(\SplFileInfo::class);
-        $file->method('isFile')->willReturn(true);
-        $file->method('isReadable')->willReturn(true);
+        $file = \Mockery::mock(\SplFileInfo::class);
+        $file->allows('isFile')->andReturn(true);
+        $file->allows('isReadable')->andReturn(true);
 
         $archive = $this->createArchiveInstance($file);
 

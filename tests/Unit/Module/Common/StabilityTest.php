@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Unit\Module\Common;
 
+use Internal\DLoad\Module\Common\Input\Build;
+use Internal\DLoad\Module\Common\Stability;
 use Testo\Assert;
 use Testo\Codecov\Covers;
 use Testo\Data\DataProvider;
 use Testo\Test;
-use Internal\DLoad\Module\Common\Input\Build;
-use Internal\DLoad\Module\Common\Stability;
 
 #[Covers(Stability::class)]
 final class StabilityTest
@@ -211,7 +211,7 @@ final class StabilityTest
         $cases = Stability::cases();
 
         foreach ($cases as $case) {
-            self::assertIsString($case->value, "Stability case {$case->name} should have a string value");
+            Assert::true(\is_string($case->value), "Stability case {$case->name} should have a string value");
         }
     }
 

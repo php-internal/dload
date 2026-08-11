@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Unit\Module\Common;
 
+use Internal\DLoad\Module\Common\OperatingSystem;
 use Testo\Assert;
 use Testo\Data\DataProvider;
 use Testo\Test;
-use Internal\DLoad\Module\Common\OperatingSystem;
 
 class OperatingSystemTest
 {

@@ -4,6 +4,12 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Integration\Module\Archive;
 
+use Internal\DLoad\Module\Archive\Archive;
+use Internal\DLoad\Module\Archive\ArchiveFactory;
+use Internal\DLoad\Module\Archive\Internal\NullArchive;
+use Internal\DLoad\Module\Archive\Internal\PharArchive;
+use Internal\DLoad\Module\Archive\Internal\TarPharArchive;
+use Internal\DLoad\Module\Archive\Internal\ZipPharArchive;
 use Testo\Assert;
 use Testo\Core\Exception\SkipTest;
 use Testo\Data\DataProvider;
@@ -11,11 +17,6 @@ use Testo\Filter\Group;
 use Testo\Lifecycle\AfterTest;
 use Testo\Lifecycle\BeforeTest;
 use Testo\Test;
-use Internal\DLoad\Module\Archive\ArchiveFactory;
-use Internal\DLoad\Module\Archive\Internal\NullArchive;
-use Internal\DLoad\Module\Archive\Internal\PharArchive;
-use Internal\DLoad\Module\Archive\Internal\TarPharArchive;
-use Internal\DLoad\Module\Archive\Internal\ZipPharArchive;
 
 /**
  * Integration tests for Archive module
@@ -48,24 +49,20 @@ final class ArchiveIntegrationTest
             throw new SkipTest("Class $className not available");
         }
 
-        // Arrange - create mock file with extension
-        $file = $this->createMock(\SplFileInfo::class);
-        $file->method('getFilename')->willReturn('test.' . $extension);
-        $file->method('isFile')->willReturn(true);
-        $file->method('isReadable')->willReturn(true);
+        $file = \Mockery::mock(\SplFileInfo::class);
+        $file->allows('getFilename')->andReturn('test.' . $extension);
+        $file->allows('isFile')->andReturn(true);
+        $file->allows('isReadable')->andReturn(true);
 
-        // Act - create archive handler
         $archive = $this->factory->create($file);
 
-        // Assert - check implementation type
         Assert::instanceOf($archive, $className);
     }
 
     #[Test]
     public function factoryExtendWithCustomImplementation(): void
     {
-        // Arrange - create custom archive mock
-        $customArchive = $this->createMock('Internal\DLoad\Module\Archive\Archive');
+        $customArchive = \Mockery::mock(Archive::class);
 
         // Register custom implementation for .custom extension
         $this->factory->extend(
@@ -74,11 +71,10 @@ final class ArchiveIntegrationTest
             ['custom'],
         );
 
-        // Create mock file with custom extension
-        $file = $this->createMock(\SplFileInfo::class);
-        $file->method('getFilename')->willReturn('test.custom');
-        $file->method('isFile')->willReturn(true);
-        $file->method('isReadable')->willReturn(true);
+        $file = \Mockery::mock(\SplFileInfo::class);
+        $file->allows('getFilename')->andReturn('test.custom');
+        $file->allows('isFile')->andReturn(true);
+        $file->allows('isReadable')->andReturn(true);
 
         $archive = $this->factory->create($file);
 

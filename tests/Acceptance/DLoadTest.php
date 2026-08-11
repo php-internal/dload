@@ -4,11 +4,6 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Acceptance;
 
-use Testo\Assert;
-use Testo\Codecov\Covers;
-use Testo\Lifecycle\AfterTest;
-use Testo\Lifecycle\BeforeTest;
-use Testo\Test;
 use Internal\DLoad\Bootstrap;
 use Internal\DLoad\DLoad;
 use Internal\DLoad\Module\Common\OperatingSystem;
@@ -22,6 +17,11 @@ use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\StyleInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use Testo\Assert;
+use Testo\Codecov\Covers;
+use Testo\Lifecycle\AfterTest;
+use Testo\Lifecycle\BeforeTest;
+use Testo\Test;
 
 /**
  * Acceptance tests for DLoad class.
@@ -51,10 +51,10 @@ final class DLoadTest
 
         // Assert - Check that trap.phar was downloaded
         $expectedPharPath = (string) $this->destinationDir->join('trap.phar');
-        self::assertFileExists($expectedPharPath, 'Trap PHAR should be downloaded to destination directory');
+        Assert::true(\file_exists($expectedPharPath), 'Trap PHAR should be downloaded to destination directory');
 
         // Verify the file is not empty
-        self::assertGreaterThan(1024, \filesize($expectedPharPath), 'Downloaded PHAR should have substantial size');
+        Assert::int(\filesize($expectedPharPath))->greaterThan(1024, 'Downloaded PHAR should have substantial size');
 
         // Verify file permissions (should be executable)
         if (PHP_OS_FAMILY !== 'Windows') {
@@ -78,10 +78,10 @@ final class DLoadTest
 
         // Assert - Check that trap.phar was downloaded
         $expectedPharPath = (string) $this->destinationDir->join('trap.phar');
-        self::assertFileExists($expectedPharPath, 'Trap PHAR should be downloaded to destination directory');
+        Assert::true(\file_exists($expectedPharPath), 'Trap PHAR should be downloaded to destination directory');
 
         // Verify the file is not empty
-        self::assertGreaterThan(1024, \filesize($expectedPharPath), 'Downloaded PHAR should have substantial size');
+        Assert::int(\filesize($expectedPharPath))->greaterThan(1024, 'Downloaded PHAR should have substantial size');
 
         // Verify file permissions (should be executable)
         if (PHP_OS_FAMILY !== 'Windows') {
@@ -105,8 +105,8 @@ final class DLoadTest
         // Assert - Check that toml-test binary was downloaded and extracted from .gz
         $os = OperatingSystem::fromGlobals();
         $expectedPath = (string) $this->destinationDir->join('toml-test' . $os->getBinaryExtension());
-        self::assertFileExists($expectedPath, 'toml-test binary should be downloaded and extracted from .gz archive');
-        self::assertGreaterThan(1024, \filesize($expectedPath), 'Downloaded binary should have substantial size');
+        Assert::true(\file_exists($expectedPath), 'toml-test binary should be downloaded and extracted from .gz archive');
+        Assert::int(\filesize($expectedPath))->greaterThan(1024, 'Downloaded binary should have substantial size');
 
         if (\PHP_OS_FAMILY !== 'Windows') {
             Assert::true(\is_executable($expectedPath), 'Binary file should be executable');
@@ -128,10 +128,10 @@ final class DLoadTest
         // Assert - Check that Trap binary was downloaded and extracted
         $os = OperatingSystem::fromGlobals();
         $expectedPharPath = (string) $this->destinationDir->join('trap' . $os->getBinaryExtension());
-        self::assertFileExists($expectedPharPath, 'Trap binary should be downloaded to destination directory');
+        Assert::true(\file_exists($expectedPharPath), 'Trap binary should be downloaded to destination directory');
 
         // Verify the file is not empty
-        self::assertGreaterThan(1024, \filesize($expectedPharPath), 'Downloaded binary should have substantial size');
+        Assert::int(\filesize($expectedPharPath))->greaterThan(1024, 'Downloaded binary should have substantial size');
 
         Assert::true(\is_executable($expectedPharPath), 'Binary file should be executable');
     }

@@ -4,6 +4,13 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Unit\Module\Archive\API;
 
+use Internal\DLoad\Module\Archive\Archive;
+use Internal\DLoad\Module\Archive\ArchiveFactory;
+use Internal\DLoad\Module\Archive\Internal\NullArchive;
+use Internal\DLoad\Module\Archive\Internal\PharArchive;
+use Internal\DLoad\Module\Archive\Internal\TarPharArchive;
+use Internal\DLoad\Module\Archive\Internal\ZipPharArchive;
+use Internal\DLoad\Tests\Unit\Module\Archive\Stub\ArchiveFixtureGenerator;
 use Testo\Assert;
 use Testo\Codecov\Covers;
 use Testo\Core\Exception\SkipTest;
@@ -13,13 +20,6 @@ use Testo\Lifecycle\AfterClass;
 use Testo\Lifecycle\BeforeClass;
 use Testo\Lifecycle\BeforeTest;
 use Testo\Test;
-use Internal\DLoad\Module\Archive\Archive;
-use Internal\DLoad\Module\Archive\ArchiveFactory;
-use Internal\DLoad\Module\Archive\Internal\NullArchive;
-use Internal\DLoad\Module\Archive\Internal\PharArchive;
-use Internal\DLoad\Module\Archive\Internal\TarPharArchive;
-use Internal\DLoad\Module\Archive\Internal\ZipPharArchive;
-use Internal\DLoad\Tests\Unit\Module\Archive\Stub\ArchiveFixtureGenerator;
 
 #[Covers(ArchiveFactory::class)]
 final class ArchiveFactoryTest
@@ -41,6 +41,27 @@ final class ArchiveFactoryTest
         yield 'zip file' => ['archive.zip', ZipPharArchive::class];
         yield 'tar.gz file' => ['archive.tar.gz', TarPharArchive::class];
         yield 'phar file' => ['archive.phar', PharArchive::class];
+    }
+
+    #[BeforeClass]
+    public static function prepareClass(): void
+    {
+        // Define project's test runtime directory
+        $projectRoot = \dirname(__DIR__, 5); // Five levels up from this file
+        self::$fixturesDir = $projectRoot . '/runtime/tests/archive-fixtures';
+
+        // Create archive fixtures
+        self::$fixtureGenerator = new ArchiveFixtureGenerator(self::$fixturesDir);
+        self::$archiveFixtures = self::$fixtureGenerator->generateArchives();
+    }
+
+    #[AfterClass]
+    public static function cleanupClass(): void
+    {
+        // Clean up fixtures
+        if (self::$fixtureGenerator !== null) {
+            self::$fixtureGenerator->cleanup();
+        }
     }
 
     #[DataProvider('provideDefaultSupportedExtensions')]
@@ -80,7 +101,7 @@ final class ArchiveFactoryTest
     #[Test]
     public function extendAddsCustomMatcher(): void
     {
-        $mockArchive = $this->createMock(Archive::class);
+        $mockArchive = \Mockery::mock(Archive::class);
         $customExtension = 'custom';
 
         $this->factory->extend(
@@ -111,9 +132,9 @@ final class ArchiveFactoryTest
     #[Test]
     public function createThrowsExceptionForInvalidFile(): void
     {
-        $file = $this->createMock(\SplFileInfo::class);
-        $file->method('getFilename')->willReturn('invalid-file');
-        $file->method('isFile')->willReturn(false);
+        $file = \Mockery::mock(\SplFileInfo::class);
+        $file->allows('getFilename')->andReturn('invalid-file');
+        $file->allows('isFile')->andReturn(false);
 
         Expect::exception(\InvalidArgumentException::class);
 
@@ -123,7 +144,7 @@ final class ArchiveFactoryTest
     #[Test]
     public function extendPrioritizesNewMatchersOverExisting(): void
     {
-        $mockArchive = $this->createMock(Archive::class);
+        $mockArchive = \Mockery::mock(Archive::class);
         $zipFile = $this->createFileInfoMock('test.zip');
 
         // Override the default zip handler
@@ -155,27 +176,6 @@ final class ArchiveFactoryTest
         Assert::instanceOf($archive, NullArchive::class);
     }
 
-    #[BeforeClass]
-    public static function prepareClass(): void
-    {
-        // Define project's test runtime directory
-        $projectRoot = \dirname(__DIR__, 5); // Five levels up from this file
-        self::$fixturesDir = $projectRoot . '/runtime/tests/archive-fixtures';
-
-        // Create archive fixtures
-        self::$fixtureGenerator = new ArchiveFixtureGenerator(self::$fixturesDir);
-        self::$archiveFixtures = self::$fixtureGenerator->generateArchives();
-    }
-
-    #[AfterClass]
-    public static function cleanupClass(): void
-    {
-        // Clean up fixtures
-        if (self::$fixtureGenerator !== null) {
-            self::$fixtureGenerator->cleanup();
-        }
-    }
-
     #[BeforeTest]
     protected function prepare(): void
     {
@@ -188,11 +188,11 @@ final class ArchiveFactoryTest
      */
     private function createFileInfoMock(string $filename): \SplFileInfo
     {
-        $file = $this->createMock(\SplFileInfo::class);
-        $file->method('getFilename')->willReturn($filename);
-        $file->method('isFile')->willReturn(true);
-        $file->method('isReadable')->willReturn(true);
-        $file->method('getPathname')->willReturn('/path/to/' . $filename);
+        $file = \Mockery::mock(\SplFileInfo::class);
+        $file->allows('getFilename')->andReturn($filename);
+        $file->allows('isFile')->andReturn(true);
+        $file->allows('isReadable')->andReturn(true);
+        $file->allows('getPathname')->andReturn('/path/to/' . $filename);
 
         return $file;
     }

@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Unit\Module\Velox\Internal\Config\Pipeline;
 
+use Internal\DLoad\Module\Velox\Internal\Config\Pipeline\TomlData;
 use Testo\Assert;
 use Testo\Codecov\Covers;
 use Testo\Data\DataProvider;
 use Testo\Test;
-use Internal\DLoad\Module\Velox\Internal\Config\Pipeline\TomlData;
 
 #[Covers(TomlData::class)]
 final class TomlDataTest

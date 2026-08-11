@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Unit\Module\Velox\Internal\Config\Pipeline;
 
-use Testo\Assert;
-use Testo\Codecov\Covers;
-use Testo\Lifecycle\BeforeTest;
-use Testo\Test;
 use Internal\DLoad\Module\Config\Schema\Action\Velox as VeloxAction;
 use Internal\DLoad\Module\Velox\Internal\Config\Pipeline\ConfigContext;
 use Internal\DLoad\Module\Velox\Internal\Config\Pipeline\ConfigPipeline;
 use Internal\DLoad\Module\Velox\Internal\Config\Pipeline\ConfigProcessor;
 use Internal\DLoad\Module\Velox\Internal\Config\Pipeline\TomlData;
 use Internal\Path;
+use Testo\Assert;
+use Testo\Codecov\Covers;
+use Testo\Lifecycle\BeforeTest;
+use Testo\Test;
 
 #[Covers(ConfigPipeline::class)]
 final class ConfigPipelineTest
@@ -24,8 +24,8 @@ final class ConfigPipelineTest
     #[Test]
     public function constructorCreatesInstanceWithProcessors(): void
     {
-        $processor1 = $this->createMock(ConfigProcessor::class);
-        $processor2 = $this->createMock(ConfigProcessor::class);
+        $processor1 = \Mockery::mock(ConfigProcessor::class);
+        $processor2 = \Mockery::mock(ConfigProcessor::class);
         $processors = [$processor1, $processor2];
 
         $pipeline = new ConfigPipeline($processors);
@@ -63,7 +63,7 @@ final class ConfigPipelineTest
     #[Test]
     public function processWithSingleProcessorCallsProcessor(): void
     {
-        $processor = $this->createMock(ConfigProcessor::class);
+        $processor = \Mockery::mock(ConfigProcessor::class);
         $originalContext = new ConfigContext(
             $this->veloxAction,
             $this->buildDir,
@@ -77,10 +77,10 @@ final class ConfigPipelineTest
             [],
         );
 
-        $processor->expects(self::once())
-            ->method('__invoke')
+        $processor->expects('__invoke')
+            ->once()
             ->with($originalContext)
-            ->willReturn($modifiedContext);
+            ->andReturn($modifiedContext);
 
         $pipeline = new ConfigPipeline([$processor]);
 
@@ -93,9 +93,9 @@ final class ConfigPipelineTest
     #[Test]
     public function processWithMultipleProcessorsCallsThemInSequence(): void
     {
-        $processor1 = $this->createMock(ConfigProcessor::class);
-        $processor2 = $this->createMock(ConfigProcessor::class);
-        $processor3 = $this->createMock(ConfigProcessor::class);
+        $processor1 = \Mockery::mock(ConfigProcessor::class);
+        $processor2 = \Mockery::mock(ConfigProcessor::class);
+        $processor3 = \Mockery::mock(ConfigProcessor::class);
 
         $originalContext = new ConfigContext(
             $this->veloxAction,
@@ -123,20 +123,20 @@ final class ConfigPipelineTest
         );
 
         // Set up expectations for sequential processing
-        $processor1->expects(self::once())
-            ->method('__invoke')
+        $processor1->expects('__invoke')
+            ->once()
             ->with($originalContext)
-            ->willReturn($context1);
+            ->andReturn($context1);
 
-        $processor2->expects(self::once())
-            ->method('__invoke')
+        $processor2->expects('__invoke')
+            ->once()
             ->with($context1)
-            ->willReturn($context2);
+            ->andReturn($context2);
 
-        $processor3->expects(self::once())
-            ->method('__invoke')
+        $processor3->expects('__invoke')
+            ->once()
             ->with($context2)
-            ->willReturn($finalContext);
+            ->andReturn($finalContext);
 
         $pipeline = new ConfigPipeline([$processor1, $processor2, $processor3]);
 
@@ -149,8 +149,8 @@ final class ConfigPipelineTest
     #[Test]
     public function processPassesThroughComplexContextChanges(): void
     {
-        $processor1 = $this->createMock(ConfigProcessor::class);
-        $processor2 = $this->createMock(ConfigProcessor::class);
+        $processor1 = \Mockery::mock(ConfigProcessor::class);
+        $processor2 = \Mockery::mock(ConfigProcessor::class);
 
         $originalTomlData = new TomlData(['initial' => 'data']);
         $originalMetadata = ['version' => '1.0'];
@@ -179,15 +179,15 @@ final class ConfigPipelineTest
             $finalMetadata,
         );
 
-        $processor1->expects(self::once())
-            ->method('__invoke')
+        $processor1->expects('__invoke')
+            ->once()
             ->with($originalContext)
-            ->willReturn($intermediateContext);
+            ->andReturn($intermediateContext);
 
-        $processor2->expects(self::once())
-            ->method('__invoke')
+        $processor2->expects('__invoke')
+            ->once()
             ->with($intermediateContext)
-            ->willReturn($finalContext);
+            ->andReturn($finalContext);
 
         $pipeline = new ConfigPipeline([$processor1, $processor2]);
 
@@ -201,7 +201,7 @@ final class ConfigPipelineTest
     #[Test]
     public function processPreservesContextImmutability(): void
     {
-        $processor = $this->createMock(ConfigProcessor::class);
+        $processor = \Mockery::mock(ConfigProcessor::class);
         $originalTomlData = new TomlData(['original' => 'data']);
         $originalMetadata = ['original' => 'metadata'];
         $originalContext = new ConfigContext(
@@ -218,10 +218,10 @@ final class ConfigPipelineTest
             ['modified' => 'metadata'],
         );
 
-        $processor->expects(self::once())
-            ->method('__invoke')
+        $processor->expects('__invoke')
+            ->once()
             ->with($originalContext)
-            ->willReturn($modifiedContext);
+            ->andReturn($modifiedContext);
 
         $pipeline = new ConfigPipeline([$processor]);
 
@@ -239,9 +239,9 @@ final class ConfigPipelineTest
     #[Test]
     public function processWithProcessorThatReturnsUnchangedContext(): void
     {
-        $processor1 = $this->createMock(ConfigProcessor::class);
-        $processor2 = $this->createMock(ConfigProcessor::class);
-        $processor3 = $this->createMock(ConfigProcessor::class);
+        $processor1 = \Mockery::mock(ConfigProcessor::class);
+        $processor2 = \Mockery::mock(ConfigProcessor::class);
+        $processor3 = \Mockery::mock(ConfigProcessor::class);
 
         $originalContext = new ConfigContext(
             $this->veloxAction,
@@ -265,22 +265,22 @@ final class ConfigPipelineTest
         );
 
         // First processor modifies context
-        $processor1->expects(self::once())
-            ->method('__invoke')
+        $processor1->expects('__invoke')
+            ->once()
             ->with($originalContext)
-            ->willReturn($modifiedContext);
+            ->andReturn($modifiedContext);
 
         // Second processor returns context unchanged (simulating conditional processing)
-        $processor2->expects(self::once())
-            ->method('__invoke')
+        $processor2->expects('__invoke')
+            ->once()
             ->with($modifiedContext)
-            ->willReturn($modifiedContext);
+            ->andReturn($modifiedContext);
 
         // Third processor modifies context again
-        $processor3->expects(self::once())
-            ->method('__invoke')
+        $processor3->expects('__invoke')
+            ->once()
             ->with($modifiedContext)
-            ->willReturn($finalContext);
+            ->andReturn($finalContext);
 
         $pipeline = new ConfigPipeline([$processor1, $processor2, $processor3]);
 
@@ -293,7 +293,7 @@ final class ConfigPipelineTest
     #[Test]
     public function processMaintainsActionAndBuildDirThroughPipeline(): void
     {
-        $processor = $this->createMock(ConfigProcessor::class);
+        $processor = \Mockery::mock(ConfigProcessor::class);
         $originalContext = new ConfigContext(
             $this->veloxAction,
             $this->buildDir,
@@ -309,10 +309,10 @@ final class ConfigPipelineTest
             ['modified' => 'metadata'],
         );
 
-        $processor->expects(self::once())
-            ->method('__invoke')
+        $processor->expects('__invoke')
+            ->once()
             ->with($originalContext)
-            ->willReturn($modifiedContext);
+            ->andReturn($modifiedContext);
 
         $pipeline = new ConfigPipeline([$processor]);
 
@@ -332,12 +332,12 @@ final class ConfigPipelineTest
 
         // Create 10 processors that each increment a counter in the TOML data
         for ($i = 0; $i < 10; $i++) {
-            $processor = $this->createMock(ConfigProcessor::class);
+            $processor = \Mockery::mock(ConfigProcessor::class);
             $expectedValue = $i + 1;
 
-            $processor->expects(self::once())
-                ->method('__invoke')
-                ->willReturnCallback(static function (ConfigContext $context) use ($expectedValue): ConfigContext {
+            $processor->expects('__invoke')
+                ->once()
+                ->andReturnUsing(static function (ConfigContext $context) use ($expectedValue): ConfigContext {
                     return $context->withTomlData(new TomlData(['counter' => $expectedValue]));
                 });
 

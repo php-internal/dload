@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Unit\Module\Version;
 
+use Internal\DLoad\Module\Common\Stability;
+use Internal\DLoad\Module\Version\Version;
 use Testo\Assert;
 use Testo\Codecov\Covers;
 use Testo\Data\DataProvider;
 use Testo\Expect;
 use Testo\Test;
-use Internal\DLoad\Module\Common\Stability;
-use Internal\DLoad\Module\Version\Version;
 
 #[Covers(Version::class)]
 final class VersionTest

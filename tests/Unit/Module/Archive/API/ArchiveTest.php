@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Unit\Module\Archive\API;
 
+use Internal\DLoad\Module\Archive\Archive;
+use Internal\DLoad\Module\Archive\Exception\ArchiveException;
+use Internal\DLoad\Tests\Unit\Module\Archive\Stub\TestArchive;
 use Testo\Assert;
 use Testo\Codecov\Covers;
 use Testo\Data\DataProvider;
 use Testo\Expect;
 use Testo\Lifecycle\BeforeTest;
 use Testo\Test;
-use Internal\DLoad\Module\Archive\Archive;
-use Internal\DLoad\Module\Archive\Exception\ArchiveException;
-use Internal\DLoad\Tests\Unit\Module\Archive\Stub\TestArchive;
 
 #[Covers(Archive::class)]
 final class ArchiveTest

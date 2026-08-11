@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Unit\Module\Repository\Internal;
 
+use Internal\DLoad\Module\Repository\Internal\Collection;
+use Internal\DLoad\Module\Repository\Internal\Paginator;
 use Testo\Assert;
 use Testo\Codecov\Covers;
 use Testo\Data\DataProvider;
 use Testo\Test;
-use Internal\DLoad\Module\Repository\Internal\Collection;
-use Internal\DLoad\Module\Repository\Internal\Paginator;
 
 #[Covers(Collection::class)]
 final class CollectionTest

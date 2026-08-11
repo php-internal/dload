@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Unit\Module\Repository\Internal;
 
+use Generator;
+use Internal\DLoad\Module\Repository\Internal\CachedGenerator;
 use Testo\Assert;
 use Testo\Codecov\Covers;
 use Testo\Data\DataProvider;
 use Testo\Test;
-use Generator;
-use Internal\DLoad\Module\Repository\Internal\CachedGenerator;
 
 #[Covers(CachedGenerator::class)]
 final class CachedGeneratorTest

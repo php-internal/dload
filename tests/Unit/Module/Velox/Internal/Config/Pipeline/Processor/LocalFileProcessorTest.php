@@ -4,6 +4,12 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Unit\Module\Velox\Internal\Config\Pipeline\Processor;
 
+use Internal\DLoad\Module\Config\Schema\Action\Velox as VeloxAction;
+use Internal\DLoad\Module\Velox\Exception\Config as ConfigException;
+use Internal\DLoad\Module\Velox\Internal\Config\Pipeline\ConfigContext;
+use Internal\DLoad\Module\Velox\Internal\Config\Pipeline\Processor\LocalFileProcessor;
+use Internal\DLoad\Module\Velox\Internal\Config\Pipeline\TomlData;
+use Internal\Path;
 use Testo\Assert;
 use Testo\Codecov\Covers;
 use Testo\Core\Exception\SkipTest;
@@ -11,12 +17,6 @@ use Testo\Data\DataProvider;
 use Testo\Expect;
 use Testo\Lifecycle\BeforeTest;
 use Testo\Test;
-use Internal\DLoad\Module\Config\Schema\Action\Velox as VeloxAction;
-use Internal\DLoad\Module\Velox\Exception\Config as ConfigException;
-use Internal\DLoad\Module\Velox\Internal\Config\Pipeline\ConfigContext;
-use Internal\DLoad\Module\Velox\Internal\Config\Pipeline\Processor\LocalFileProcessor;
-use Internal\DLoad\Module\Velox\Internal\Config\Pipeline\TomlData;
-use Internal\Path;
 
 #[Covers(LocalFileProcessor::class)]
 final class LocalFileProcessorTest
@@ -208,10 +208,10 @@ final class LocalFileProcessorTest
 
         if (\array_key_exists('_empty', $expectedKeys)) {
             // Special case for empty file test
-            self::assertEmpty($resultData);
+            Assert::blank($resultData);
         } else {
             foreach ($expectedKeys as $key => $expectedValue) {
-                self::assertArrayHasKey($key, $resultData);
+                Assert::array($resultData)->hasKeys($key);
                 if ($expectedValue !== null) {
                     Assert::same($resultData[$key], $expectedValue);
                 }

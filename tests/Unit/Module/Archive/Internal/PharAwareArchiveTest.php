@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Unit\Module\Archive\Internal;
 
+use Internal\DLoad\Module\Archive\Exception\ArchiveException;
+use Internal\DLoad\Module\Archive\Internal\PharAwareArchive;
 use Testo\Codecov\Covers;
 use Testo\Expect;
 use Testo\Lifecycle\BeforeTest;
 use Testo\Test;
-use Internal\DLoad\Module\Archive\Exception\ArchiveException;
-use Internal\DLoad\Module\Archive\Internal\PharAwareArchive;
 
 #[Covers(PharAwareArchive::class)]
 final class PharAwareArchiveTest
@@ -19,9 +19,9 @@ final class PharAwareArchiveTest
     #[Test]
     public function extractThrowsExceptionWhenArchiveIsNotReadable(): void
     {
-        $pharData = $this->createMock(\PharData::class);
-        $pharData->method('isReadable')->willReturn(false);
-        $pharData->method('getPathname')->willReturn('unreadable.phar');
+        $pharData = \Mockery::mock(\PharData::class);
+        $pharData->allows('isReadable')->andReturn(false);
+        $pharData->allows('getPathname')->andReturn('unreadable.phar');
 
         $archive = $this->createPharAwareArchive($pharData);
 
@@ -33,9 +33,9 @@ final class PharAwareArchiveTest
     #[BeforeTest]
     protected function prepare(): void
     {
-        $this->fileInfo = $this->createMock(\SplFileInfo::class);
-        $this->fileInfo->method('isFile')->willReturn(true);
-        $this->fileInfo->method('isReadable')->willReturn(true);
+        $this->fileInfo = \Mockery::mock(\SplFileInfo::class);
+        $this->fileInfo->allows('isFile')->andReturn(true);
+        $this->fileInfo->allows('isReadable')->andReturn(true);
     }
 
     /**

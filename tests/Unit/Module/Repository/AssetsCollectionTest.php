@@ -4,11 +4,6 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Unit\Module\Repository;
 
-use Testo\Assert;
-use Testo\Codecov\Covers;
-use Testo\Data\DataProvider;
-use Testo\Lifecycle\BeforeTest;
-use Testo\Test;
 use Internal\DLoad\Module\Common\Architecture;
 use Internal\DLoad\Module\Common\OperatingSystem;
 use Internal\DLoad\Module\Repository\Collection\AssetsCollection;
@@ -16,6 +11,11 @@ use Internal\DLoad\Module\Version\Version;
 use Internal\DLoad\Tests\Unit\Module\Repository\Stub\AssetStub;
 use Internal\DLoad\Tests\Unit\Module\Repository\Stub\ReleaseStub;
 use Internal\DLoad\Tests\Unit\Module\Repository\Stub\RepositoryStub;
+use Testo\Assert;
+use Testo\Codecov\Covers;
+use Testo\Data\DataProvider;
+use Testo\Lifecycle\BeforeTest;
+use Testo\Test;
 
 #[Covers(AssetsCollection::class)]
 final class AssetsCollectionTest

@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Unit\Module\Common\FileSystem;
 
+use Internal\Path;
 use Testo\Assert;
 use Testo\Codecov\Covers;
 use Testo\Core\Exception\SkipTest;
 use Testo\Data\DataProvider;
 use Testo\Expect;
 use Testo\Test;
-use Internal\Path;
 
 #[Covers(Path::class)]
 final class PathTest
@@ -91,7 +91,7 @@ final class PathTest
     #[Test]
     public function createThrowsExceptionForInvalidParentNavigation(): void
     {
-        Expect::exception(\LogicException::class)->withMessage('Cannot go up from root');
+        Expect::exception(\LogicException::class)->withMessageContaining('Cannot go up from root');
 
         Path::create('/test/../..');
     }
@@ -122,7 +122,7 @@ final class PathTest
         $path = Path::create('base/path');
         $additionalPath = Path::create('additional/path');
 
-        Expect::exception(\LogicException::class)->withMessage('Joining an absolute path is not allowed');
+        Expect::exception(\LogicException::class)->withMessageContaining('Joining an absolute path is not allowed');
 
         // Using an absolute Path object which should throw
         $path->join($additionalPath->absolute());
@@ -144,7 +144,7 @@ final class PathTest
     {
         $path = Path::create('base/path');
 
-        Expect::exception(\LogicException::class)->withMessage('Joining an absolute path is not allowed');
+        Expect::exception(\LogicException::class)->withMessageContaining('Joining an absolute path is not allowed');
 
         $path->join('/absolute/path');
     }
@@ -292,7 +292,7 @@ final class PathTest
     public function exists(): void
     {
         $tempFile = \tempnam(\sys_get_temp_dir(), 'path_test_');
-        self::assertIsString($tempFile, 'Failed to create temp file');
+        Assert::true(\is_string($tempFile), 'Failed to create temp file');
 
         $path = Path::create($tempFile);
         $nonExistingPath = Path::create('non/existing/path/file.txt');
@@ -335,7 +335,7 @@ final class PathTest
 
         // Create a temporary file to test with
         $tempFile = \tempnam(\sys_get_temp_dir(), 'path_test_');
-        self::assertIsString($tempFile, 'Failed to create temp file');
+        Assert::true(\is_string($tempFile), 'Failed to create temp file');
         $realFilePath = Path::create($tempFile);
 
         try {

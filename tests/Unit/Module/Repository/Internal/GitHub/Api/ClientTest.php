@@ -4,12 +4,6 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Unit\Module\Repository\Internal\GitHub\Api;
 
-use Testo\Assert;
-use Testo\Codecov\Covers;
-use Testo\Data\DataProvider;
-use Testo\Expect;
-use Testo\Lifecycle\BeforeTest;
-use Testo\Test;
 use Internal\DLoad\Module\Config\Schema\GitHub;
 use Internal\DLoad\Module\Repository\Exception\AccessDeniedException;
 use Internal\DLoad\Module\Repository\Exception\ApiException;
@@ -17,13 +11,20 @@ use Internal\DLoad\Module\Repository\Exception\AuthenticationException;
 use Internal\DLoad\Module\Repository\Exception\RateLimitException;
 use Internal\DLoad\Module\Repository\Exception\RepositoryNotFoundException;
 use Internal\DLoad\Module\Repository\Internal\GitHub\Api\Client;
+use Internal\DLoad\Tests\Unit\Module\Repository\Internal\GitHub\Stub\ClientExceptionStub;
 use Internal\DLoad\Tests\Unit\Module\Repository\Internal\GitHub\Stub\ClientStub;
 use Internal\DLoad\Tests\Unit\Module\Repository\Internal\GitHub\Stub\GitHubConfigStub;
 use Internal\DLoad\Tests\Unit\Module\Repository\Internal\GitHub\Stub\HttpFactoryStub;
 use Internal\DLoad\Tests\Unit\Module\Repository\Stub\ResponseStub;
-use Psr\Http\Client\ClientExceptionInterface;
+use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\UriInterface;
+use Testo\Assert;
+use Testo\Codecov\Covers;
+use Testo\Data\DataProvider;
+use Testo\Expect;
+use Testo\Lifecycle\BeforeTest;
+use Testo\Test;
 
 #[Covers(Client::class)]
 final class ClientTest
@@ -137,8 +138,8 @@ final class ClientTest
     public function requestAddsDefaultHeaders(): void
     {
         $method = 'GET';
-        $uri = $this->createMock(UriInterface::class);
-        $request = $this->createMock(RequestInterface::class);
+        $uri = \Mockery::mock(UriInterface::class)->shouldIgnoreMissing();
+        $request = \Mockery::mock(RequestInterface::class)->shouldIgnoreMissing();
         $response = ResponseStub::ok();
 
         $this->httpFactory = $this->httpFactory->withRequest($method, $uri, $request);
@@ -155,8 +156,8 @@ final class ClientTest
     {
         $token = 'github_pat_test_token_123';
         $method = 'GET';
-        $uri = $this->createMock(UriInterface::class);
-        $request = $this->createMock(RequestInterface::class);
+        $uri = \Mockery::mock(UriInterface::class)->shouldIgnoreMissing();
+        $request = \Mockery::mock(RequestInterface::class)->shouldIgnoreMissing();
         $response = ResponseStub::ok();
 
         $gitHubConfigWithToken = GitHubConfigStub::withToken($token);
@@ -173,8 +174,8 @@ final class ClientTest
     public function requestWithoutTokenDoesNotAddAuthorizationHeader(): void
     {
         $method = 'GET';
-        $uri = $this->createMock(UriInterface::class);
-        $request = $this->createMock(RequestInterface::class);
+        $uri = \Mockery::mock(UriInterface::class)->shouldIgnoreMissing();
+        $request = \Mockery::mock(RequestInterface::class)->shouldIgnoreMissing();
         $response = ResponseStub::ok();
 
         $this->httpClient = $this->httpClient->withResponse($request, $response);
@@ -188,15 +189,15 @@ final class ClientTest
     public function detectsRateLimitResponseAndThrowsException(): void
     {
         $method = 'GET';
-        $uri = $this->createMock(UriInterface::class);
-        $request = $this->createMock(RequestInterface::class);
+        $uri = \Mockery::mock(UriInterface::class)->shouldIgnoreMissing();
+        $request = \Mockery::mock(RequestInterface::class)->shouldIgnoreMissing();
         $rateLimitResponse = ResponseStub::githubRateLimit();
 
         $this->httpFactory = $this->httpFactory->withRequest($method, $uri, $request);
         $this->httpClient = $this->httpClient->withResponse($request, $rateLimitResponse);
         $this->client = new Client($this->httpFactory, $this->httpClient, $this->gitHubConfig);
 
-        Expect::exception(RateLimitException::class)->withMessage('rate limit exceeded');
+        Expect::exception(RateLimitException::class)->withMessageContaining('rate limit exceeded');
 
         $this->client->request($method, $uri);
     }
@@ -204,7 +205,7 @@ final class ClientTest
     #[Test]
     public function rateLimitMessageSuggestsTokenWhenThereIsNoToken(): void
     {
-        $request = $this->createMock(RequestInterface::class);
+        $request = \Mockery::mock(RequestInterface::class)->shouldIgnoreMissing();
         $this->httpClient = $this->httpClient->withResponse($request, ResponseStub::githubRateLimit());
         $this->client = new Client($this->httpFactory, $this->httpClient, $this->gitHubConfig);
 
@@ -212,15 +213,15 @@ final class ClientTest
             $this->client->sendRequest($request);
             Assert::fail('RateLimitException is expected.');
         } catch (RateLimitException $e) {
-            self::assertStringContainsString('GITHUB_TOKEN', $e->getMessage());
-            self::assertStringContainsString('No API token is configured', $e->getMessage());
+            Assert::string($e->getMessage())->contains('GITHUB_TOKEN');
+            Assert::string($e->getMessage())->contains('No API token is configured');
         }
     }
 
     #[Test]
     public function authenticationMessageMentionsConfiguredToken(): void
     {
-        $request = $this->createMock(RequestInterface::class);
+        $request = \Mockery::mock(RequestInterface::class)->shouldIgnoreMissing();
         $response = new ResponseStub(401, [], \json_encode(['message' => 'Bad credentials']));
 
         $this->httpClient = $this->httpClient->withResponse($request, $response);
@@ -230,15 +231,15 @@ final class ClientTest
             $client->sendRequest($request);
             Assert::fail('AuthenticationException is expected.');
         } catch (AuthenticationException $e) {
-            self::assertStringContainsString('Bad credentials', $e->getMessage());
-            self::assertStringContainsString('invalid, expired or revoked', $e->getMessage());
+            Assert::string($e->getMessage())->contains('Bad credentials');
+            Assert::string($e->getMessage())->contains('invalid, expired or revoked');
         }
     }
 
     #[Test]
     public function sendRequestDelegatesToHttpClient(): void
     {
-        $request = $this->createMock(RequestInterface::class);
+        $request = \Mockery::mock(RequestInterface::class)->shouldIgnoreMissing();
         $response = ResponseStub::ok();
 
         $this->httpClient = $this->httpClient->withResponse($request, $response);
@@ -252,8 +253,8 @@ final class ClientTest
     #[Test]
     public function sendRequestWrapsClientExceptionsIntoApiException(): void
     {
-        $request = $this->createMock(RequestInterface::class);
-        $clientException = $this->createMock(ClientExceptionInterface::class);
+        $request = \Mockery::mock(RequestInterface::class)->shouldIgnoreMissing();
+        $clientException = new ClientExceptionStub('connection reset');
 
         $this->httpClient = $this->httpClient->withException($request, $clientException);
         $this->client = new Client($this->httpFactory, $this->httpClient, $this->gitHubConfig);
@@ -262,7 +263,7 @@ final class ClientTest
             $this->client->sendRequest($request);
             Assert::fail('ApiException is expected.');
         } catch (ApiException $e) {
-            self::assertStringContainsString('Failed to reach GitHub API', $e->getMessage());
+            Assert::string($e->getMessage())->contains('Failed to reach GitHub API');
             Assert::same($e->getPrevious(), $clientException);
         }
     }
@@ -272,8 +273,8 @@ final class ClientTest
     public function requestMergesHeadersCorrectly(array $additionalHeaders): void
     {
         $method = 'POST';
-        $uri = $this->createMock(UriInterface::class);
-        $request = $this->createMock(RequestInterface::class);
+        $uri = \Mockery::mock(UriInterface::class)->shouldIgnoreMissing();
+        $request = \Mockery::mock(RequestInterface::class)->shouldIgnoreMissing();
         $response = ResponseStub::ok();
 
         $this->httpFactory = $this->httpFactory->withRequest($method, $uri, $request);
@@ -297,13 +298,13 @@ final class ClientTest
         array $headers,
         ?string $expectedException,
     ): void {
-        $request = $this->createMock(RequestInterface::class);
+        $request = \Mockery::mock(RequestInterface::class)->shouldIgnoreMissing();
         $response = new ResponseStub($statusCode, $headers, $responseBody);
 
         $this->httpClient = $this->httpClient->withResponse($request, $response);
         $this->client = new Client($this->httpFactory, $this->httpClient, $this->gitHubConfig);
 
-        $expectedException === null or $this->expectException($expectedException);
+        $expectedException === null or Expect::exception($expectedException);
 
         $result = $this->client->sendRequest($request);
 
@@ -314,9 +315,9 @@ final class ClientTest
     protected function prepare(): void
     {
         $this->httpFactory = new HttpFactoryStub(
-            uriFactory: fn() => $this->createMock(UriInterface::class),
-            requestFactory: fn() => $this->createMock(RequestInterface::class),
-            clientFactory: fn() => $this->createMock(\Psr\Http\Client\ClientInterface::class),
+            uriFactory: static fn() => \Mockery::mock(UriInterface::class)->shouldIgnoreMissing(),
+            requestFactory: static fn() => \Mockery::mock(RequestInterface::class)->shouldIgnoreMissing(),
+            clientFactory: static fn() => \Mockery::mock(ClientInterface::class)->shouldIgnoreMissing(),
         );
         $this->httpClient = new ClientStub();
         $this->gitHubConfig = GitHubConfigStub::withoutToken();

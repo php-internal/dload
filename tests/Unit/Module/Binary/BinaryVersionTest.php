@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Unit\Module\Binary;
 
+use Internal\DLoad\Module\Binary\BinaryVersion;
 use Testo\Assert;
 use Testo\Codecov\Covers;
 use Testo\Data\DataProvider;
 use Testo\Test;
-use Internal\DLoad\Module\Binary\BinaryVersion;
 
 #[Covers(BinaryVersion::class)]
 final class BinaryVersionTest

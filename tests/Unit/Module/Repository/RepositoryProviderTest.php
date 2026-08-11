@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Unit\Module\Repository;
 
+use Internal\DLoad\Module\Config\Schema\Embed\Repository as RepositoryConfig;
+use Internal\DLoad\Module\Repository\Repository;
+use Internal\DLoad\Module\Repository\RepositoryFactory;
+use Internal\DLoad\Module\Repository\RepositoryProvider;
 use Testo\Assert;
 use Testo\Codecov\Covers;
 use Testo\Data\DataProvider;
 use Testo\Expect;
 use Testo\Lifecycle\BeforeTest;
 use Testo\Test;
-use Internal\DLoad\Module\Config\Schema\Embed\Repository as RepositoryConfig;
-use Internal\DLoad\Module\Repository\Repository;
-use Internal\DLoad\Module\Repository\RepositoryFactory;
-use Internal\DLoad\Module\Repository\RepositoryProvider;
 
 #[Covers(RepositoryProvider::class)]
 final class RepositoryProviderTest
@@ -43,7 +43,7 @@ final class RepositoryProviderTest
     #[Test]
     public function addRepositoryFactoryReturnsSelf(): void
     {
-        $factory = $this->createMock(RepositoryFactory::class);
+        $factory = \Mockery::mock(RepositoryFactory::class);
 
         $result = $this->repositoryProvider->addRepositoryFactory($factory);
 
@@ -57,15 +57,15 @@ final class RepositoryProviderTest
         $config->type = 'github';
         $config->uri = 'vendor/package';
 
-        $repository = $this->createMock(Repository::class);
+        $repository = \Mockery::mock(Repository::class);
 
-        $unsupportedFactory = $this->createMock(RepositoryFactory::class);
-        $unsupportedFactory->method('supports')->with($config)->willReturn(false);
-        $unsupportedFactory->expects(self::never())->method('create');
+        $unsupportedFactory = \Mockery::mock(RepositoryFactory::class);
+        $unsupportedFactory->allows('supports')->with($config)->andReturn(false);
+        $unsupportedFactory->shouldNotReceive('create');
 
-        $supportedFactory = $this->createMock(RepositoryFactory::class);
-        $supportedFactory->method('supports')->with($config)->willReturn(true);
-        $supportedFactory->method('create')->with($config)->willReturn($repository);
+        $supportedFactory = \Mockery::mock(RepositoryFactory::class);
+        $supportedFactory->allows('supports')->with($config)->andReturn(true);
+        $supportedFactory->allows('create')->with($config)->andReturn($repository);
 
         // Add factories to provider (order matters - first unsupported, then supported)
         $this->repositoryProvider->addRepositoryFactory($unsupportedFactory);
@@ -83,16 +83,16 @@ final class RepositoryProviderTest
         $config->type = 'github';
         $config->uri = 'vendor/package';
 
-        $repository1 = $this->createMock(Repository::class);
-        $repository2 = $this->createMock(Repository::class);
+        $repository1 = \Mockery::mock(Repository::class);
+        $repository2 = \Mockery::mock(Repository::class);
 
-        $firstFactory = $this->createMock(RepositoryFactory::class);
-        $firstFactory->method('supports')->with($config)->willReturn(true);
-        $firstFactory->method('create')->with($config)->willReturn($repository1);
+        $firstFactory = \Mockery::mock(RepositoryFactory::class);
+        $firstFactory->allows('supports')->with($config)->andReturn(true);
+        $firstFactory->allows('create')->with($config)->andReturn($repository1);
 
-        $secondFactory = $this->createMock(RepositoryFactory::class);
-        $secondFactory->method('supports')->with($config)->willReturn(true);
-        $secondFactory->expects(self::never())->method('create');
+        $secondFactory = \Mockery::mock(RepositoryFactory::class);
+        $secondFactory->allows('supports')->with($config)->andReturn(true);
+        $secondFactory->shouldNotReceive('create');
 
         // Add both factories (both support the config, but first one should be used)
         $this->repositoryProvider->addRepositoryFactory($firstFactory);
@@ -110,8 +110,8 @@ final class RepositoryProviderTest
         $config->type = 'unsupported';
         $config->uri = 'vendor/package';
 
-        $factory = $this->createMock(RepositoryFactory::class);
-        $factory->method('supports')->with($config)->willReturn(false);
+        $factory = \Mockery::mock(RepositoryFactory::class);
+        $factory->allows('supports')->with($config)->andReturn(false);
         $this->repositoryProvider->addRepositoryFactory($factory);
 
         Expect::exception(\RuntimeException::class)->withMessage("No factory found for repository type `unsupported`.");
@@ -123,13 +123,13 @@ final class RepositoryProviderTest
     #[Test]
     public function getByConfigWithVariousConfigs(RepositoryConfig $config, bool $factorySupports): void
     {
-        $repository = $this->createMock(Repository::class);
+        $repository = \Mockery::mock(Repository::class);
 
-        $factory = $this->createMock(RepositoryFactory::class);
-        $factory->method('supports')->with($config)->willReturn($factorySupports);
+        $factory = \Mockery::mock(RepositoryFactory::class);
+        $factory->allows('supports')->with($config)->andReturn($factorySupports);
 
         if ($factorySupports) {
-            $factory->method('create')->with($config)->willReturn($repository);
+            $factory->allows('create')->with($config)->andReturn($repository);
         }
 
         $this->repositoryProvider->addRepositoryFactory($factory);

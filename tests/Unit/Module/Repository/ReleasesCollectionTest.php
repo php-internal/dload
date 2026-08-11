@@ -4,10 +4,6 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Unit\Module\Repository;
 
-use Testo\Assert;
-use Testo\Codecov\Covers;
-use Testo\Lifecycle\BeforeTest;
-use Testo\Test;
 use Internal\DLoad\Module\Common\Architecture;
 use Internal\DLoad\Module\Common\OperatingSystem;
 use Internal\DLoad\Module\Common\Stability;
@@ -18,6 +14,10 @@ use Internal\DLoad\Module\Version\Version;
 use Internal\DLoad\Tests\Unit\Module\Repository\Stub\AssetStub;
 use Internal\DLoad\Tests\Unit\Module\Repository\Stub\ReleaseStub;
 use Internal\DLoad\Tests\Unit\Module\Repository\Stub\RepositoryStub;
+use Testo\Assert;
+use Testo\Codecov\Covers;
+use Testo\Lifecycle\BeforeTest;
+use Testo\Test;
 
 #[Covers(ReleasesCollection::class)]
 final class ReleasesCollectionTest
@@ -43,7 +43,7 @@ final class ReleasesCollectionTest
 
         Assert::contains($versions, '1.0.0');
         Assert::contains($versions, '1.5.0');
-        self::assertNotContains('2.0.0', $versions);
+        Assert::iterable($versions)->notContains('2.0.0');
     }
 
     #[Test]
@@ -51,9 +51,9 @@ final class ReleasesCollectionTest
     {
         $result = $this->collection->notSatisfies(Constraint::fromConstraintString('^1.0.0'));
 
-        self::assertGreaterThan(0, $result->count());
-        self::assertNotContains('1.0.0', $this->getVersionsFromCollection($result));
-        self::assertNotContains('1.5.0', $this->getVersionsFromCollection($result));
+        Assert::int($result->count())->greaterThan(0);
+        Assert::iterable($this->getVersionsFromCollection($result))->notContains('1.0.0');
+        Assert::iterable($this->getVersionsFromCollection($result))->notContains('1.5.0');
         Assert::contains($this->getVersionsFromCollection($result), '2.0.0');
     }
 
@@ -90,8 +90,8 @@ final class ReleasesCollectionTest
 
         Assert::contains($stabilities, Stability::Stable);
         Assert::contains($stabilities, Stability::RC);
-        self::assertNotContains(Stability::Beta, $stabilities);
-        self::assertNotContains(Stability::Alpha, $stabilities);
+        Assert::iterable($stabilities)->notContains(Stability::Beta);
+        Assert::iterable($stabilities)->notContains(Stability::Alpha);
     }
 
     #[Test]

@@ -6,7 +6,7 @@ namespace Internal\DLoad\Tests\Unit\Module\Repository\Internal\GitHub\Stub;
 
 use Internal\DLoad\Module\HttpClient\Factory;
 use Internal\DLoad\Module\HttpClient\Method;
-use PHPUnit\Framework\MockObject\MockObject;
+use Mockery\MockInterface;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\UriInterface;
@@ -14,7 +14,7 @@ use Psr\Http\Message\UriInterface;
 /**
  * HTTP Factory stub for GitHub API tests.
  *
- * Provides controllable URI and request creation for testing using PHPUnit mocks.
+ * Provides controllable URI and request creation for testing using Mockery mocks.
  */
 final class HttpFactoryStub implements Factory
 {
@@ -29,9 +29,9 @@ final class HttpFactoryStub implements Factory
     private array $predefinedRequests = [];
 
     /**
-     * @param callable(): MockObject $uriFactory
-     * @param callable(): MockObject $requestFactory
-     * @param callable(): MockObject $clientFactory
+     * @param callable(): (UriInterface&MockInterface) $uriFactory
+     * @param callable(): (RequestInterface&MockInterface) $requestFactory
+     * @param callable(): (ClientInterface&MockInterface) $clientFactory
      */
     public function __construct(
         private readonly mixed $uriFactory,
@@ -59,9 +59,9 @@ final class HttpFactoryStub implements Factory
             return $this->predefinedUris[$path];
         }
 
-        /** @var MockObject&UriInterface $uri */
+        /** @var UriInterface&MockInterface $uri */
         $uri = ($this->uriFactory)();
-        $uri->method('__toString')->willReturn("https://api.github.com{$path}");
+        $uri->allows('__toString')->andReturn("https://api.github.com{$path}");
 
         return $uri;
     }
@@ -78,18 +78,18 @@ final class HttpFactoryStub implements Factory
             return $this->predefinedRequests[$requestKey];
         }
 
-        /** @var MockObject&RequestInterface $request */
+        /** @var RequestInterface&MockInterface $request */
         $request = ($this->requestFactory)();
-        $request->method('getMethod')->willReturn($methodString);
-        $request->method('getUri')->willReturn($uri);
-        $request->method('getHeaders')->willReturn($headers);
+        $request->allows('getMethod')->andReturn($methodString);
+        $request->allows('getUri')->andReturn($uri);
+        $request->allows('getHeaders')->andReturn($headers);
 
         return $request;
     }
 
     public function client(): ClientInterface
     {
-        /** @var MockObject&ClientInterface $client */
+        /** @var ClientInterface&MockInterface $client */
         $client = ($this->clientFactory)();
 
         return $client;

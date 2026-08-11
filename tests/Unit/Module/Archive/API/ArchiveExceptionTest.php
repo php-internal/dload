@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Unit\Module\Archive\API;
 
+use Internal\DLoad\Module\Archive\Exception\ArchiveException;
 use Testo\Assert;
 use Testo\Codecov\Covers;
 use Testo\Test;
-use Internal\DLoad\Module\Archive\Exception\ArchiveException;
 
 #[Covers(ArchiveException::class)]
 final class ArchiveExceptionTest
