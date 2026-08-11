@@ -144,9 +144,8 @@ Useful `<download>` attributes:
 |---|---|
 | `software` | Alias or name of the tool (built-in or inline). Required. |
 | `version` | Composer-style constraint: `^2025.1`, `~1.0.0`, `^2.12.0-feature`, `^2.12.0@beta`, `^2.12.0-hotfix@rc`. Omit for latest stable. |
-| `version-path` | Pull version from a JSON file: `composer.json@require.temporal/sdk`. |
 | `extract-path` | Override target directory (default: project root). |
-| `type` | `binary` (default for executables), `archive`, `phar`, `velox`. Set when the tool isn't a plain executable — required for PHAR. |
+| `type` | `binary` (default for executables), `archive`, `phar`. Set when the tool isn't a plain executable — required for PHAR. |
 
 Stability suffixes (`@alpha`, `@beta`, `@RC`, `@stable`) follow Composer's ordering, with `stable` as the default.
 
@@ -187,7 +186,6 @@ curl -s "https://api.github.com/repos/<owner>/<repo>/releases?per_page=20" \
 
 - Release is `prerelease: true` but `version` demands stable → lower the stability (`@beta`/`@RC`/`@alpha`).
 - Release is `draft: true` → not visible to the API yet.
-- `version-path` resolved an unexpected constraint → echo the resolved value and re-check.
 
 ### Stage 2 — asset filtering
 
@@ -237,5 +235,4 @@ Compare the asset names with the patterns in your registry entry and the OS/arch
 ## Reference
 
 - Authoritative XML schema: `https://raw.githubusercontent.com/php-internal/dload/refs/heads/main/dload.xsd` (also in your `vendor/internal/dload/dload.xsd`).
-- Working example with comments: `vendor/internal/dload/dload-example.xml`.
 - List of built-in tools and aliases: `./vendor/bin/dload software`.

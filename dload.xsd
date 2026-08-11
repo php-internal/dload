@@ -39,11 +39,6 @@
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:attribute>
-                                    <xs:attribute name="version-path" type="xs:string">
-                                        <xs:annotation>
-                                            <xs:documentation>Path to extract version from (e.g. composer.json@require.package/name)</xs:documentation>
-                                        </xs:annotation>
-                                    </xs:attribute>
                                     <xs:attribute name="extract-path" type="xs:string">
                                         <xs:annotation>
                                             <xs:documentation>Custom path where to unpack downloaded asset</xs:documentation>
@@ -58,7 +53,6 @@
                                                 <xs:enumeration value="binary"/>
                                                 <xs:enumeration value="archive"/>
                                                 <xs:enumeration value="phar"/>
-                                                <xs:enumeration value="velox"/>
                                             </xs:restriction>
                                         </xs:simpleType>
                                     </xs:attribute>
