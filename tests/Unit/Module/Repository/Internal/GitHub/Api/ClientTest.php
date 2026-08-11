@@ -4,6 +4,12 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Unit\Module\Repository\Internal\GitHub\Api;
 
+use Testo\Assert;
+use Testo\Codecov\Covers;
+use Testo\Data\DataProvider;
+use Testo\Expect;
+use Testo\Lifecycle\BeforeTest;
+use Testo\Test;
 use Internal\DLoad\Module\Config\Schema\GitHub;
 use Internal\DLoad\Module\Repository\Exception\AccessDeniedException;
 use Internal\DLoad\Module\Repository\Exception\ApiException;
@@ -15,14 +21,11 @@ use Internal\DLoad\Tests\Unit\Module\Repository\Internal\GitHub\Stub\ClientStub;
 use Internal\DLoad\Tests\Unit\Module\Repository\Internal\GitHub\Stub\GitHubConfigStub;
 use Internal\DLoad\Tests\Unit\Module\Repository\Internal\GitHub\Stub\HttpFactoryStub;
 use Internal\DLoad\Tests\Unit\Module\Repository\Stub\ResponseStub;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\TestCase;
 use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\UriInterface;
 
-#[\Testo\Codecov\Covers(Client::class)]
+#[Covers(Client::class)]
 final class ClientTest
 {
     private HttpFactoryStub $httpFactory;
@@ -130,10 +133,9 @@ final class ClientTest
         ];
     }
 
-    #[\Testo\Test]
-    public function testRequestAddsDefaultHeaders(): void
+    #[Test]
+    public function requestAddsDefaultHeaders(): void
     {
-        // Arrange
         $method = 'GET';
         $uri = $this->createMock(UriInterface::class);
         $request = $this->createMock(RequestInterface::class);
@@ -143,17 +145,14 @@ final class ClientTest
         $this->httpClient = $this->httpClient->withResponse($request, $response);
         $this->client = new Client($this->httpFactory, $this->httpClient, $this->gitHubConfig);
 
-        // Act
         $result = $this->client->request($method, $uri);
 
-        // Assert
-        \Testo\Assert::same($result, $response);
+        Assert::same($result, $response);
     }
 
-    #[\Testo\Test]
-    public function testRequestWithAuthTokenAddsAuthorizationHeader(): void
+    #[Test]
+    public function requestWithAuthTokenAddsAuthorizationHeader(): void
     {
-        // Arrange
         $token = 'github_pat_test_token_123';
         $method = 'GET';
         $uri = $this->createMock(UriInterface::class);
@@ -165,17 +164,14 @@ final class ClientTest
 
         $clientWithToken = new Client($this->httpFactory, $this->httpClient, $gitHubConfigWithToken);
 
-        // Act
         $result = $clientWithToken->request($method, $uri);
 
-        // Assert
-        \Testo\Assert::equals($result, $response);
+        Assert::equals($result, $response);
     }
 
-    #[\Testo\Test]
-    public function testRequestWithoutTokenDoesNotAddAuthorizationHeader(): void
+    #[Test]
+    public function requestWithoutTokenDoesNotAddAuthorizationHeader(): void
     {
-        // Arrange
         $method = 'GET';
         $uri = $this->createMock(UriInterface::class);
         $request = $this->createMock(RequestInterface::class);
@@ -183,17 +179,14 @@ final class ClientTest
 
         $this->httpClient = $this->httpClient->withResponse($request, $response);
 
-        // Act
         $result = $this->client->request($method, $uri);
 
-        // Assert
-        \Testo\Assert::equals($result, $response);
+        Assert::equals($result, $response);
     }
 
-    #[\Testo\Test]
-    public function testDetectsRateLimitResponseAndThrowsException(): void
+    #[Test]
+    public function detectsRateLimitResponseAndThrowsException(): void
     {
-        // Arrange
         $method = 'GET';
         $uri = $this->createMock(UriInterface::class);
         $request = $this->createMock(RequestInterface::class);
@@ -203,96 +196,81 @@ final class ClientTest
         $this->httpClient = $this->httpClient->withResponse($request, $rateLimitResponse);
         $this->client = new Client($this->httpFactory, $this->httpClient, $this->gitHubConfig);
 
-        // Assert (before Act for exceptions)
-        \Testo\Expect::exception(RateLimitException::class)->withMessage('rate limit exceeded');
+        Expect::exception(RateLimitException::class)->withMessage('rate limit exceeded');
 
-        // Act
         $this->client->request($method, $uri);
     }
 
-    #[\Testo\Test]
-    public function testRateLimitMessageSuggestsTokenWhenThereIsNoToken(): void
+    #[Test]
+    public function rateLimitMessageSuggestsTokenWhenThereIsNoToken(): void
     {
-        // Arrange
         $request = $this->createMock(RequestInterface::class);
         $this->httpClient = $this->httpClient->withResponse($request, ResponseStub::githubRateLimit());
         $this->client = new Client($this->httpFactory, $this->httpClient, $this->gitHubConfig);
 
-        // Act
         try {
             $this->client->sendRequest($request);
-            \Testo\Assert::fail('RateLimitException is expected.');
+            Assert::fail('RateLimitException is expected.');
         } catch (RateLimitException $e) {
-            // Assert
             self::assertStringContainsString('GITHUB_TOKEN', $e->getMessage());
             self::assertStringContainsString('No API token is configured', $e->getMessage());
         }
     }
 
-    #[\Testo\Test]
-    public function testAuthenticationMessageMentionsConfiguredToken(): void
+    #[Test]
+    public function authenticationMessageMentionsConfiguredToken(): void
     {
-        // Arrange
         $request = $this->createMock(RequestInterface::class);
         $response = new ResponseStub(401, [], \json_encode(['message' => 'Bad credentials']));
 
         $this->httpClient = $this->httpClient->withResponse($request, $response);
         $client = new Client($this->httpFactory, $this->httpClient, GitHubConfigStub::withToken('invalid-token'));
 
-        // Act
         try {
             $client->sendRequest($request);
-            \Testo\Assert::fail('AuthenticationException is expected.');
+            Assert::fail('AuthenticationException is expected.');
         } catch (AuthenticationException $e) {
-            // Assert
             self::assertStringContainsString('Bad credentials', $e->getMessage());
             self::assertStringContainsString('invalid, expired or revoked', $e->getMessage());
         }
     }
 
-    #[\Testo\Test]
-    public function testSendRequestDelegatesToHttpClient(): void
+    #[Test]
+    public function sendRequestDelegatesToHttpClient(): void
     {
-        // Arrange
         $request = $this->createMock(RequestInterface::class);
         $response = ResponseStub::ok();
 
         $this->httpClient = $this->httpClient->withResponse($request, $response);
         $this->client = new Client($this->httpFactory, $this->httpClient, $this->gitHubConfig);
 
-        // Act
         $result = $this->client->sendRequest($request);
 
-        // Assert
-        \Testo\Assert::same($result, $response);
+        Assert::same($result, $response);
     }
 
-    #[\Testo\Test]
-    public function testSendRequestWrapsClientExceptionsIntoApiException(): void
+    #[Test]
+    public function sendRequestWrapsClientExceptionsIntoApiException(): void
     {
-        // Arrange
         $request = $this->createMock(RequestInterface::class);
         $clientException = $this->createMock(ClientExceptionInterface::class);
 
         $this->httpClient = $this->httpClient->withException($request, $clientException);
         $this->client = new Client($this->httpFactory, $this->httpClient, $this->gitHubConfig);
 
-        // Act
         try {
             $this->client->sendRequest($request);
-            \Testo\Assert::fail('ApiException is expected.');
+            Assert::fail('ApiException is expected.');
         } catch (ApiException $e) {
-            // Assert
             self::assertStringContainsString('Failed to reach GitHub API', $e->getMessage());
-            \Testo\Assert::same($e->getPrevious(), $clientException);
+            Assert::same($e->getPrevious(), $clientException);
         }
     }
 
-    #[\Testo\Data\DataProvider('provideRequestHeaders')]
-    #[\Testo\Test]
-    public function testRequestMergesHeadersCorrectly(array $additionalHeaders): void
+    #[DataProvider('provideRequestHeaders')]
+    #[Test]
+    public function requestMergesHeadersCorrectly(array $additionalHeaders): void
     {
-        // Arrange
         $method = 'POST';
         $uri = $this->createMock(UriInterface::class);
         $request = $this->createMock(RequestInterface::class);
@@ -302,26 +280,23 @@ final class ClientTest
         $this->httpClient = $this->httpClient->withResponse($request, $response);
         $this->client = new Client($this->httpFactory, $this->httpClient, $this->gitHubConfig);
 
-        // Act
         $result = $this->client->request($method, $uri, $additionalHeaders);
 
-        // Assert
-        \Testo\Assert::same($result, $response);
+        Assert::same($result, $response);
     }
 
     /**
      * @param array<string, string[]> $headers
      * @param class-string<\Throwable>|null $expectedException
      */
-    #[\Testo\Data\DataProvider('provideErrorScenarios')]
-    #[\Testo\Test]
-    public function testUnsuccessfulResponsesAreConvertedIntoExceptions(
+    #[DataProvider('provideErrorScenarios')]
+    #[Test]
+    public function unsuccessfulResponsesAreConvertedIntoExceptions(
         int $statusCode,
         string $responseBody,
         array $headers,
         ?string $expectedException,
     ): void {
-        // Arrange
         $request = $this->createMock(RequestInterface::class);
         $response = new ResponseStub($statusCode, $headers, $responseBody);
 
@@ -330,17 +305,14 @@ final class ClientTest
 
         $expectedException === null or $this->expectException($expectedException);
 
-        // Act
         $result = $this->client->sendRequest($request);
 
-        // Assert
-        \Testo\Assert::same($result, $response);
+        Assert::same($result, $response);
     }
 
-    #[\Testo\Lifecycle\BeforeTest]
-    protected function setUp(): void
+    #[BeforeTest]
+    protected function prepare(): void
     {
-        // Arrange (common setup)
         $this->httpFactory = new HttpFactoryStub(
             uriFactory: fn() => $this->createMock(UriInterface::class),
             requestFactory: fn() => $this->createMock(RequestInterface::class),

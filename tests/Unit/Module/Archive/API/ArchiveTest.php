@@ -4,14 +4,17 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Unit\Module\Archive\API;
 
+use Testo\Assert;
+use Testo\Codecov\Covers;
+use Testo\Data\DataProvider;
+use Testo\Expect;
+use Testo\Lifecycle\BeforeTest;
+use Testo\Test;
 use Internal\DLoad\Module\Archive\Archive;
 use Internal\DLoad\Module\Archive\Exception\ArchiveException;
 use Internal\DLoad\Tests\Unit\Module\Archive\Stub\TestArchive;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\TestCase;
 
-#[\Testo\Codecov\Covers(Archive::class)]
+#[Covers(Archive::class)]
 final class ArchiveTest
 {
     private \SplFileInfo $archiveFile;
@@ -31,10 +34,9 @@ final class ArchiveTest
         yield 'non-existent extension' => [$files, 'jpg', 0];
     }
 
-    #[\Testo\Test]
-    public function testExtractYieldsFilesFromArchive(): void
+    #[Test]
+    public function extractYieldsFilesFromArchive(): void
     {
-        // Arrange
         $file1 = new \SplFileInfo('/path/to/file1.txt');
         $file2 = new \SplFileInfo('/path/to/file2.txt');
 
@@ -42,66 +44,56 @@ final class ArchiveTest
         $archive->addFile('file1.txt', $file1);
         $archive->addFile('file2.txt', $file2);
 
-        // Act
         $result = [];
         foreach ($archive->extract() as $path => $fileInfo) {
             $result[$path] = $fileInfo;
         }
 
-        // Assert
-        \Testo\Assert::count($result, 2);
-        \Testo\Assert::same($result['file1.txt'], $file1);
-        \Testo\Assert::same($result['file2.txt'], $file2);
+        Assert::count($result, 2);
+        Assert::same($result['file1.txt'], $file1);
+        Assert::same($result['file2.txt'], $file2);
     }
 
-    #[\Testo\Test]
-    public function testExtractThrowsArchiveException(): void
+    #[Test]
+    public function extractThrowsArchiveException(): void
     {
-        // Arrange
         $archive = new TestArchive($this->archiveFile);
         $archive->throwExceptionOnExtract('Custom error message');
 
-        // Assert
-        \Testo\Expect::exception(ArchiveException::class)->withMessage('Custom error message');
+        Expect::exception(ArchiveException::class)->withMessage('Custom error message');
 
-        // Act
         \iterator_to_array($archive->extract());
     }
 
-    #[\Testo\Test]
-    public function testExtractReturnsDestinationFileWhenRequested(): void
+    #[Test]
+    public function extractReturnsDestinationFileWhenRequested(): void
     {
-        // Arrange
         $sourceFile = new \SplFileInfo('/path/to/source.txt');
         $destinationFile = new \SplFileInfo('/path/to/destination.txt');
 
         $archive = new TestArchive($this->archiveFile);
         $archive->addFile('source.txt', $sourceFile);
 
-        // Act
         $generator = $archive->extract();
         $path = $generator->key();
         $info = $generator->current();
         $result = $generator->send($destinationFile);
 
-        // Assert
-        \Testo\Assert::same($path, 'source.txt');
-        \Testo\Assert::same($info, $sourceFile);
-        \Testo\Assert::same($result, $destinationFile);
+        Assert::same($path, 'source.txt');
+        Assert::same($info, $sourceFile);
+        Assert::same($result, $destinationFile);
     }
 
-    #[\Testo\Data\DataProvider('provideFileTypes')]
-    #[\Testo\Test]
-    public function testExtractFilteringByFileType(array $files, string $extension, int $expectedCount): void
+    #[DataProvider('provideFileTypes')]
+    #[Test]
+    public function extractFilteringByFileType(array $files, string $extension, int $expectedCount): void
     {
-        // Arrange
         $archive = new TestArchive($this->archiveFile);
 
         foreach ($files as $path => $fileInfo) {
             $archive->addFile($path, $fileInfo);
         }
 
-        // Act
         $extracted = [];
         foreach ($archive->extract() as $path => $fileInfo) {
             // Filter files by extension
@@ -110,14 +102,12 @@ final class ArchiveTest
             }
         }
 
-        // Assert
-        \Testo\Assert::count($extracted, $expectedCount);
+        Assert::count($extracted, $expectedCount);
     }
 
-    #[\Testo\Lifecycle\BeforeTest]
-    protected function setUp(): void
+    #[BeforeTest]
+    protected function prepare(): void
     {
-        // Arrange
         $this->archiveFile = new \SplFileInfo(__FILE__); // Use this file as a valid file
     }
 }

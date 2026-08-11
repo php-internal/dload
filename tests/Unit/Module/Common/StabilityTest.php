@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Unit\Module\Common;
 
+use Testo\Assert;
+use Testo\Codecov\Covers;
+use Testo\Data\DataProvider;
+use Testo\Test;
 use Internal\DLoad\Module\Common\Input\Build;
 use Internal\DLoad\Module\Common\Stability;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\TestCase;
 
-#[\Testo\Codecov\Covers(Stability::class)]
+#[Covers(Stability::class)]
 final class StabilityTest
 {
     public static function provideStabilityCasesWithExpectedWeights(): \Generator
@@ -92,195 +93,162 @@ final class StabilityTest
         ];
     }
 
-    #[\Testo\Test]
-    public function testAllCasesHaveUniqueValues(): void
+    #[Test]
+    public function allCasesHaveUniqueValues(): void
     {
-        // Arrange
         $cases = Stability::cases();
         $values = \array_map(static fn(Stability $case): string => $case->value, $cases);
 
-        // Act
         $uniqueValues = \array_unique($values);
 
-        // Assert
-        \Testo\Assert::count($uniqueValues, \count($values), 'All stability cases should have unique values');
+        Assert::count($uniqueValues, \count($values), 'All stability cases should have unique values');
     }
 
-    #[\Testo\Data\DataProvider('provideStabilityCasesWithExpectedWeights')]
-    #[\Testo\Test]
-    public function testGetWeightReturnsExpectedValue(Stability $stability, int $expectedWeight): void
+    #[DataProvider('provideStabilityCasesWithExpectedWeights')]
+    #[Test]
+    public function getWeightReturnsExpectedValue(Stability $stability, int $expectedWeight): void
     {
-        // Act
         $weight = $stability->getWeight();
 
-        // Assert
-        \Testo\Assert::same($weight, $expectedWeight);
+        Assert::same($weight, $expectedWeight);
     }
 
-    #[\Testo\Test]
-    public function testWeightsAreInDescendingOrder(): void
+    #[Test]
+    public function weightsAreInDescendingOrder(): void
     {
-        // Arrange
         $cases = Stability::cases();
         $weights = \array_map(static fn(Stability $case): int => $case->getWeight(), $cases);
 
-        // Act
         $sortedWeights = $weights;
         \rsort($sortedWeights);
 
-        // Assert
-        \Testo\Assert::same($weights, $sortedWeights, 'Stability weights should be in descending order in the enum definition');
+        Assert::same($weights, $sortedWeights, 'Stability weights should be in descending order in the enum definition');
     }
 
-    #[\Testo\Data\DataProvider('provideStabilityMeetsMinimumScenarios')]
-    #[\Testo\Test]
-    public function testMeetsMinimumComparesStabilityLevelsCorrectly(
+    #[DataProvider('provideStabilityMeetsMinimumScenarios')]
+    #[Test]
+    public function meetsMinimumComparesStabilityLevelsCorrectly(
         Stability $current,
         Stability $minimum,
         bool $expectedResult,
     ): void {
-        // Act
         $result = $current->meetsMinimum($minimum);
 
-        // Assert
-        \Testo\Assert::same($result, $expectedResult);
+        Assert::same($result, $expectedResult);
     }
 
-    #[\Testo\Test]
-    public function testFromGlobalsReturnsStable(): void
+    #[Test]
+    public function fromGlobalsReturnsStable(): void
     {
-        // Act
         $stability = Stability::fromGlobals();
 
-        // Assert
-        \Testo\Assert::same($stability, Stability::Stable);
+        Assert::same($stability, Stability::Stable);
     }
 
-    #[\Testo\Data\DataProvider('provideValidStabilityStrings')]
-    #[\Testo\Test]
-    public function testFromStringReturnsCorrectStabilityForValidStrings(string $input, Stability $expected): void
+    #[DataProvider('provideValidStabilityStrings')]
+    #[Test]
+    public function fromStringReturnsCorrectStabilityForValidStrings(string $input, Stability $expected): void
     {
-        // Act
         $result = Stability::fromString($input);
 
-        // Assert
-        \Testo\Assert::same($result, $expected);
+        Assert::same($result, $expected);
     }
 
-    #[\Testo\Data\DataProvider('provideInvalidStabilityStrings')]
-    #[\Testo\Test]
-    public function testFromStringReturnsNullForInvalidStrings(string $input): void
+    #[DataProvider('provideInvalidStabilityStrings')]
+    #[Test]
+    public function fromStringReturnsNullForInvalidStrings(string $input): void
     {
-        // Act
         $result = Stability::fromString($input);
 
-        // Assert
-        \Testo\Assert::null($result);
+        Assert::null($result);
     }
 
-    #[\Testo\Data\DataProvider('provideBuildConfigurationsForCreate')]
-    #[\Testo\Test]
-    public function testCreateReturnsCorrectStabilityFromBuildConfig(
+    #[DataProvider('provideBuildConfigurationsForCreate')]
+    #[Test]
+    public function createReturnsCorrectStabilityFromBuildConfig(
         ?string $buildStability,
         Stability $expectedStability,
     ): void {
-        // Arrange
         $build = new Build();
         $build->stability = $buildStability;
 
-        // Act
         $result = Stability::create($build);
 
-        // Assert
-        \Testo\Assert::same($result, $expectedStability);
+        Assert::same($result, $expectedStability);
     }
 
-    #[\Testo\Test]
-    public function testCreateWithNullBuildStabilityUsesFromGlobals(): void
+    #[Test]
+    public function createWithNullBuildStabilityUsesFromGlobals(): void
     {
-        // Arrange
         $build = new Build();
         $build->stability = null;
 
-        // Act
         $result = Stability::create($build);
 
-        // Assert
-        \Testo\Assert::same($result, Stability::fromGlobals());
+        Assert::same($result, Stability::fromGlobals());
     }
 
-    #[\Testo\Test]
-    public function testCreateWithInvalidBuildStabilityUsesFromGlobals(): void
+    #[Test]
+    public function createWithInvalidBuildStabilityUsesFromGlobals(): void
     {
-        // Arrange
         $build = new Build();
         $build->stability = 'completely-invalid-stability';
 
-        // Act
         $result = Stability::create($build);
 
-        // Assert
-        \Testo\Assert::same($result, Stability::fromGlobals());
+        Assert::same($result, Stability::fromGlobals());
     }
 
-    #[\Testo\Test]
-    public function testEnumImplementsFactoriableInterface(): void
+    #[Test]
+    public function enumImplementsFactoriableInterface(): void
     {
-        // Assert
-        \Testo\Assert::contains(\class_implements(Stability::class), 'Internal\DLoad\Service\Factoriable');
+        Assert::contains(\class_implements(Stability::class), 'Internal\DLoad\Service\Factoriable');
     }
 
-    #[\Testo\Test]
-    public function testAllEnumValuesAreStrings(): void
+    #[Test]
+    public function allEnumValuesAreStrings(): void
     {
-        // Arrange
         $cases = Stability::cases();
 
-        // Act & Assert
         foreach ($cases as $case) {
             self::assertIsString($case->value, "Stability case {$case->name} should have a string value");
         }
     }
 
-    #[\Testo\Data\DataProvider('provideStabilityTransitivityScenarios')]
-    #[\Testo\Test]
-    public function testMeetsMinimumTransitivity(
+    #[DataProvider('provideStabilityTransitivityScenarios')]
+    #[Test]
+    public function meetsMinimumTransitivity(
         Stability $first,
         Stability $second,
         Stability $third,
         bool $expectedResult,
     ): void {
-        // Arrange
         $firstMeetsSecond = $first->meetsMinimum($second);
         $secondMeetsThird = $second->meetsMinimum($third);
 
-        // Act
         $firstMeetsThird = $first->meetsMinimum($third);
 
-        // Assert
         if ($firstMeetsSecond && $secondMeetsThird) {
-            \Testo\Assert::same($firstMeetsThird, $expectedResult, 'If A meets B and B meets C, then A should meet C (transitivity)');
+            Assert::same($firstMeetsThird, $expectedResult, 'If A meets B and B meets C, then A should meet C (transitivity)');
         } else {
             // If the premise is false, we can't test transitivity
-            \Testo\Assert::true(true, 'Transitivity test skipped due to false premise');
+            Assert::true(true, 'Transitivity test skipped due to false premise');
         }
     }
 
-    #[\Testo\Test]
-    public function testStabilityOrderingIsConsistent(): void
+    #[Test]
+    public function stabilityOrderingIsConsistent(): void
     {
-        // Arrange
         $cases = Stability::cases();
 
-        // Act & Assert
         for ($i = 0; $i < \count($cases) - 1; $i++) {
             for ($j = $i + 1; $j < \count($cases); $j++) {
                 $higher = $cases[$i];
                 $lower = $cases[$j];
 
-                \Testo\Assert::true($higher->meetsMinimum($lower), "Stability {$higher->name} should meet minimum {$lower->name} based on enum order");
+                Assert::true($higher->meetsMinimum($lower), "Stability {$higher->name} should meet minimum {$lower->name} based on enum order");
 
-                \Testo\Assert::false($lower->meetsMinimum($higher), "Stability {$lower->name} should not meet minimum {$higher->name} based on enum order");
+                Assert::false($lower->meetsMinimum($higher), "Stability {$lower->name} should not meet minimum {$higher->name} based on enum order");
             }
         }
     }

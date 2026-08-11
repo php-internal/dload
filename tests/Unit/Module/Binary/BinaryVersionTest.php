@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Unit\Module\Binary;
 
+use Testo\Assert;
+use Testo\Codecov\Covers;
+use Testo\Data\DataProvider;
+use Testo\Test;
 use Internal\DLoad\Module\Binary\BinaryVersion;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\TestCase;
 
-#[\Testo\Codecov\Covers(BinaryVersion::class)]
+#[Covers(BinaryVersion::class)]
 final class BinaryVersionTest
 {
     /**
@@ -131,45 +132,38 @@ final class BinaryVersionTest
     /**
      * Tests that the resolver correctly extracts semantic versions.
      */
-    #[\Testo\Data\DataProvider('provideSemanticVersionOutputs')]
-    #[\Testo\Test]
-    public function testResolveVersionExtractsSemanticVersions(string $output, string $string, ?string $number): void
+    #[DataProvider('provideSemanticVersionOutputs')]
+    #[Test]
+    public function resolveVersionExtractsSemanticVersions(string $output, string $string, ?string $number): void
     {
-        // Act
         $result = BinaryVersion::fromBinaryOutput($output);
 
-        // Assert
-        \Testo\Assert::same($result->string, $string);
-        \Testo\Assert::same($result->number, $number ?? $string);
+        Assert::same($result->string, $string);
+        Assert::same($result->number, $number ?? $string);
     }
 
     /**
      * Tests that the resolver correctly extracts versions using fallback patterns.
      */
-    #[\Testo\Data\DataProvider('provideFallbackVersionOutputs')]
-    #[\Testo\Test]
-    public function testResolveVersionExtractsVersionsWithFallbacks(string $output, ?string $number): void
+    #[DataProvider('provideFallbackVersionOutputs')]
+    #[Test]
+    public function resolveVersionExtractsVersionsWithFallbacks(string $output, ?string $number): void
     {
-        // Act
         $result = BinaryVersion::fromBinaryOutput($output);
 
-        // Assert
-        \Testo\Assert::same($result->number, $number);
+        Assert::same($result->number, $number);
     }
 
     /**
      * Tests that the resolver returns null when no version can be extracted.
      */
-    #[\Testo\Test]
-    public function testResolveVersionReturnsNullWhenNoVersionFound(): void
+    #[Test]
+    public function resolveVersionReturnsNullWhenNoVersionFound(): void
     {
-        // Arrange
         $output = 'This output contains no version information.';
 
-        // Act
         $result = BinaryVersion::fromBinaryOutput($output);
 
-        // Assert
-        \Testo\Assert::null($result->number);
+        Assert::null($result->number);
     }
 }

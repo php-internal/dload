@@ -4,15 +4,18 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Unit\Module\Repository;
 
+use Testo\Assert;
+use Testo\Codecov\Covers;
+use Testo\Data\DataProvider;
+use Testo\Expect;
+use Testo\Lifecycle\BeforeTest;
+use Testo\Test;
 use Internal\DLoad\Module\Config\Schema\Embed\Repository as RepositoryConfig;
 use Internal\DLoad\Module\Repository\Repository;
 use Internal\DLoad\Module\Repository\RepositoryFactory;
 use Internal\DLoad\Module\Repository\RepositoryProvider;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\TestCase;
 
-#[\Testo\Codecov\Covers(RepositoryProvider::class)]
+#[Covers(RepositoryProvider::class)]
 final class RepositoryProviderTest
 {
     private RepositoryProvider $repositoryProvider;
@@ -37,23 +40,19 @@ final class RepositoryProviderTest
         yield 'custom config without support' => [$customConfig, false];
     }
 
-    #[\Testo\Test]
-    public function testAddRepositoryFactoryReturnsSelf(): void
+    #[Test]
+    public function addRepositoryFactoryReturnsSelf(): void
     {
-        // Arrange
         $factory = $this->createMock(RepositoryFactory::class);
 
-        // Act
         $result = $this->repositoryProvider->addRepositoryFactory($factory);
 
-        // Assert
-        \Testo\Assert::same($result, $this->repositoryProvider);
+        Assert::same($result, $this->repositoryProvider);
     }
 
-    #[\Testo\Test]
-    public function testGetByConfigReturnsRepositoryFromSupportingFactory(): void
+    #[Test]
+    public function getByConfigReturnsRepositoryFromSupportingFactory(): void
     {
-        // Arrange
         $config = new RepositoryConfig();
         $config->type = 'github';
         $config->uri = 'vendor/package';
@@ -72,17 +71,14 @@ final class RepositoryProviderTest
         $this->repositoryProvider->addRepositoryFactory($unsupportedFactory);
         $this->repositoryProvider->addRepositoryFactory($supportedFactory);
 
-        // Act
         $result = $this->repositoryProvider->getByConfig($config);
 
-        // Assert
-        \Testo\Assert::same($result, $repository);
+        Assert::same($result, $repository);
     }
 
-    #[\Testo\Test]
-    public function testGetByConfigUsesFirstSupportingFactory(): void
+    #[Test]
+    public function getByConfigUsesFirstSupportingFactory(): void
     {
-        // Arrange
         $config = new RepositoryConfig();
         $config->type = 'github';
         $config->uri = 'vendor/package';
@@ -102,17 +98,14 @@ final class RepositoryProviderTest
         $this->repositoryProvider->addRepositoryFactory($firstFactory);
         $this->repositoryProvider->addRepositoryFactory($secondFactory);
 
-        // Act
         $result = $this->repositoryProvider->getByConfig($config);
 
-        // Assert
-        \Testo\Assert::same($result, $repository1);
+        Assert::same($result, $repository1);
     }
 
-    #[\Testo\Test]
-    public function testGetByConfigThrowsExceptionWhenNoFactorySupportsConfig(): void
+    #[Test]
+    public function getByConfigThrowsExceptionWhenNoFactorySupportsConfig(): void
     {
-        // Arrange
         $config = new RepositoryConfig();
         $config->type = 'unsupported';
         $config->uri = 'vendor/package';
@@ -121,18 +114,15 @@ final class RepositoryProviderTest
         $factory->method('supports')->with($config)->willReturn(false);
         $this->repositoryProvider->addRepositoryFactory($factory);
 
-        // Assert (before Act for exceptions)
-        \Testo\Expect::exception(\RuntimeException::class)->withMessage("No factory found for repository type `unsupported`.");
+        Expect::exception(\RuntimeException::class)->withMessage("No factory found for repository type `unsupported`.");
 
-        // Act
         $this->repositoryProvider->getByConfig($config);
     }
 
-    #[\Testo\Data\DataProvider('provideRepositoryConfigs')]
-    #[\Testo\Test]
-    public function testGetByConfigWithVariousConfigs(RepositoryConfig $config, bool $factorySupports): void
+    #[DataProvider('provideRepositoryConfigs')]
+    #[Test]
+    public function getByConfigWithVariousConfigs(RepositoryConfig $config, bool $factorySupports): void
     {
-        // Arrange
         $repository = $this->createMock(Repository::class);
 
         $factory = $this->createMock(RepositoryFactory::class);
@@ -146,22 +136,20 @@ final class RepositoryProviderTest
 
         // Assert expectation for exception if no factory supports
         if (!$factorySupports) {
-            \Testo\Expect::exception(\RuntimeException::class)->withMessage("No factory found for repository type `{$config->type}`.");
+            Expect::exception(\RuntimeException::class)->withMessage("No factory found for repository type `{$config->type}`.");
         }
 
-        // Act
         $result = $this->repositoryProvider->getByConfig($config);
 
         // Assert result if factory supports
         if ($factorySupports) {
-            \Testo\Assert::same($result, $repository);
+            Assert::same($result, $repository);
         }
     }
 
-    #[\Testo\Lifecycle\BeforeTest]
-    protected function setUp(): void
+    #[BeforeTest]
+    protected function prepare(): void
     {
-        // Arrange (common setup)
         $this->repositoryProvider = new RepositoryProvider();
     }
 }

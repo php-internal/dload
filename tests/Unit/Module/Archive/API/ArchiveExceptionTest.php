@@ -4,59 +4,49 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Unit\Module\Archive\API;
 
+use Testo\Assert;
+use Testo\Codecov\Covers;
+use Testo\Test;
 use Internal\DLoad\Module\Archive\Exception\ArchiveException;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
 
-#[\Testo\Codecov\Covers(ArchiveException::class)]
+#[Covers(ArchiveException::class)]
 final class ArchiveExceptionTest
 {
-    #[\Testo\Test]
-    public function testExceptionInheritsFromRuntimeException(): void
+    #[Test]
+    public function exceptionInheritsFromRuntimeException(): void
     {
-        // Arrange
         $exception = new ArchiveException('Test message');
 
-        // Assert
-        \Testo\Assert::instanceOf($exception, \RuntimeException::class);
+        Assert::instanceOf($exception, \RuntimeException::class);
     }
 
-    #[\Testo\Test]
-    public function testExceptionReturnsCorrectMessage(): void
+    #[Test]
+    public function exceptionReturnsCorrectMessage(): void
     {
-        // Arrange
         $message = 'Archive extraction failed: test reason';
 
-        // Act
         $exception = new ArchiveException($message);
 
-        // Assert
-        \Testo\Assert::same($exception->getMessage(), $message);
+        Assert::same($exception->getMessage(), $message);
     }
 
-    #[\Testo\Test]
-    public function testExceptionCanHaveCustomCode(): void
+    #[Test]
+    public function exceptionCanHaveCustomCode(): void
     {
-        // Arrange
         $code = 123;
 
-        // Act
         $exception = new ArchiveException('Test message', $code);
 
-        // Assert
-        \Testo\Assert::same($exception->getCode(), $code);
+        Assert::same($exception->getCode(), $code);
     }
 
-    #[\Testo\Test]
-    public function testExceptionCanHavePreviousException(): void
+    #[Test]
+    public function exceptionCanHavePreviousException(): void
     {
-        // Arrange
         $previous = new \Exception('Previous error');
 
-        // Act
         $exception = new ArchiveException('Test message', 0, $previous);
 
-        // Assert
-        \Testo\Assert::same($exception->getPrevious(), $previous);
+        Assert::same($exception->getPrevious(), $previous);
     }
 }

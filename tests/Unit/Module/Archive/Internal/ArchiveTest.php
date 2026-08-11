@@ -4,57 +4,50 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Unit\Module\Archive\Internal;
 
+use Testo\Assert;
+use Testo\Codecov\Covers;
+use Testo\Expect;
+use Testo\Test;
 use Internal\DLoad\Module\Archive\Internal\Archive;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
 
-#[\Testo\Codecov\Covers(Archive::class)]
+#[Covers(Archive::class)]
 final class ArchiveTest
 {
-    #[\Testo\Test]
-    public function testConstructorThrowsExceptionWhenFileDoesNotExist(): void
+    #[Test]
+    public function constructorThrowsExceptionWhenFileDoesNotExist(): void
     {
-        // Arrange
         $file = $this->createMock(\SplFileInfo::class);
         $file->method('isFile')->willReturn(false);
         $file->method('getFilename')->willReturn('non-existent.zip');
 
-        // Assert
-        \Testo\Expect::exception(\InvalidArgumentException::class)->withMessage('Archive "non-existent.zip" is not a file.');
+        Expect::exception(\InvalidArgumentException::class)->withMessage('Archive "non-existent.zip" is not a file.');
 
-        // Act
         $this->createArchiveInstance($file);
     }
 
-    #[\Testo\Test]
-    public function testConstructorThrowsExceptionWhenFileIsNotReadable(): void
+    #[Test]
+    public function constructorThrowsExceptionWhenFileIsNotReadable(): void
     {
-        // Arrange
         $file = $this->createMock(\SplFileInfo::class);
         $file->method('isFile')->willReturn(true);
         $file->method('isReadable')->willReturn(false);
         $file->method('getFilename')->willReturn('unreadable.zip');
 
-        // Assert
-        \Testo\Expect::exception(\InvalidArgumentException::class)->withMessage('Archive file "unreadable.zip" is not readable.');
+        Expect::exception(\InvalidArgumentException::class)->withMessage('Archive file "unreadable.zip" is not readable.');
 
-        // Act
         $this->createArchiveInstance($file);
     }
 
-    #[\Testo\Test]
-    public function testConstructorSucceedsWithValidFile(): void
+    #[Test]
+    public function constructorSucceedsWithValidFile(): void
     {
-        // Arrange
         $file = $this->createMock(\SplFileInfo::class);
         $file->method('isFile')->willReturn(true);
         $file->method('isReadable')->willReturn(true);
 
-        // Act
         $archive = $this->createArchiveInstance($file);
 
-        // Assert
-        \Testo\Assert::instanceOf($archive, Archive::class);
+        Assert::instanceOf($archive, Archive::class);
     }
 
     /**

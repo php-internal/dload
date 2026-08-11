@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Unit\Module\Common;
 
+use Testo\Assert;
+use Testo\Data\DataProvider;
+use Testo\Test;
 use Internal\DLoad\Module\Common\OperatingSystem;
-use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\TestCase;
 
 class OperatingSystemTest
 {
@@ -22,10 +23,10 @@ class OperatingSystemTest
         yield ['temporal-test-server_1.33.0_macOS_arm64.tar.gz', OperatingSystem::Darwin];
     }
 
-    #[\Testo\Data\DataProvider('provideBuildNames')]
-    #[\Testo\Test]
-    public function testTryFromBuildName(string $name, ?OperatingSystem $expected): void
+    #[DataProvider('provideBuildNames')]
+    #[Test]
+    public function tryFromBuildName(string $name, ?OperatingSystem $expected): void
     {
-        \Testo\Assert::same(OperatingSystem::tryFromBuildName($name), $expected);
+        Assert::same(OperatingSystem::tryFromBuildName($name), $expected);
     }
 }

@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Unit\Module\Common;
 
+use Testo\Assert;
+use Testo\Data\DataProvider;
+use Testo\Test;
 use Internal\DLoad\Module\Common\Architecture;
-use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\TestCase;
 
 class ArchitectureTest
 {
@@ -22,10 +23,10 @@ class ArchitectureTest
         yield ['temporal-test-server_1.33.0_macOS_arm64.tar.gz', Architecture::ARM_64];
     }
 
-    #[\Testo\Data\DataProvider('provideBuildNames')]
-    #[\Testo\Test]
-    public function testTryFromBuildName(string $name, ?Architecture $expected): void
+    #[DataProvider('provideBuildNames')]
+    #[Test]
+    public function tryFromBuildName(string $name, ?Architecture $expected): void
     {
-        \Testo\Assert::same(Architecture::tryFromBuildName($name), $expected);
+        Assert::same(Architecture::tryFromBuildName($name), $expected);
     }
 }

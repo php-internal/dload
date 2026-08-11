@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Unit\Module\Velox\Internal\Config\Pipeline;
 
+use Testo\Assert;
+use Testo\Codecov\Covers;
+use Testo\Data\DataProvider;
+use Testo\Test;
 use Internal\DLoad\Module\Velox\Internal\Config\Pipeline\TomlData;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\TestCase;
 
-#[\Testo\Codecov\Covers(TomlData::class)]
+#[Covers(TomlData::class)]
 final class TomlDataTest
 {
     public static function provideSetPathData(): \Generator
@@ -66,50 +67,41 @@ final class TomlDataTest
         ];
     }
 
-    #[\Testo\Test]
-    public function testConstructorCreatesEmptyInstance(): void
+    #[Test]
+    public function constructorCreatesEmptyInstance(): void
     {
-        // Act
         $tomlData = new TomlData();
 
-        // Assert
-        \Testo\Assert::same($tomlData->getData(), []);
+        Assert::same($tomlData->getData(), []);
     }
 
-    #[\Testo\Test]
-    public function testConstructorCreatesInstanceWithData(): void
+    #[Test]
+    public function constructorCreatesInstanceWithData(): void
     {
-        // Arrange
         $data = ['key' => 'value', 'section' => ['nested' => 'data']];
 
-        // Act
         $tomlData = new TomlData($data);
 
-        // Assert
-        \Testo\Assert::same($tomlData->getData(), $data);
+        Assert::same($tomlData->getData(), $data);
     }
 
-    #[\Testo\Test]
-    public function testFromStringCreatesInstanceFromTomlString(): void
+    #[Test]
+    public function fromStringCreatesInstanceFromTomlString(): void
     {
-        // Arrange
         $toml = "key = \"value\"\n\n[section]\nnested = \"data\"";
         $expectedData = [
             'key' => 'value',
             'section' => ['nested' => 'data'],
         ];
 
-        // Act
         $tomlData = TomlData::fromString($toml);
 
-        // Assert
-        \Testo\Assert::same($tomlData->getData(), $expectedData);
+        Assert::same($tomlData->getData(), $expectedData);
     }
 
-    #[\Testo\Test]
-    public function testMergeCreatesNewInstanceWithMergedData(): void
+    #[Test]
+    public function mergeCreatesNewInstanceWithMergedData(): void
     {
-        // Arrange
         $data1 = ['key1' => 'value1', 'section' => ['nested1' => 'data1']];
         $data2 = ['key2' => 'value2', 'section' => ['nested2' => 'data2']];
         $tomlData1 = new TomlData($data1);
@@ -123,19 +115,16 @@ final class TomlDataTest
             ],
         ];
 
-        // Act
         $merged = $tomlData1->merge($tomlData2);
 
-        // Assert
-        \Testo\Assert::notSame($merged, $tomlData1);
-        \Testo\Assert::notSame($merged, $tomlData2);
-        \Testo\Assert::equals($merged->getData(), $expectedMerged);
+        Assert::notSame($merged, $tomlData1);
+        Assert::notSame($merged, $tomlData2);
+        Assert::equals($merged->getData(), $expectedMerged);
     }
 
-    #[\Testo\Test]
-    public function testMergeOverwritesExistingKeys(): void
+    #[Test]
+    public function mergeOverwritesExistingKeys(): void
     {
-        // Arrange
         $data1 = ['key' => 'original', 'section' => ['nested' => 'original']];
         $data2 = ['key' => 'updated', 'section' => ['nested' => 'updated']];
         $tomlData1 = new TomlData($data1);
@@ -145,17 +134,14 @@ final class TomlDataTest
             'section' => ['nested' => 'updated'],
         ];
 
-        // Act
         $merged = $tomlData1->merge($tomlData2);
 
-        // Assert
-        \Testo\Assert::same($merged->getData(), $expectedMerged);
+        Assert::same($merged->getData(), $expectedMerged);
     }
 
-    #[\Testo\Test]
-    public function testMergeHandlesNestedArrays(): void
+    #[Test]
+    public function mergeHandlesNestedArrays(): void
     {
-        // Arrange
         $data1 = ['section' => ['key1' => 'value1', 'nested' => ['deep1' => 'data1']]];
         $data2 = ['section' => ['key2' => 'value2', 'nested' => ['deep2' => 'data2']]];
         $tomlData1 = new TomlData($data1);
@@ -171,34 +157,28 @@ final class TomlDataTest
             ],
         ];
 
-        // Act
         $merged = $tomlData1->merge($tomlData2);
 
-        // Assert
-        \Testo\Assert::equals($merged->getData(), $expectedMerged);
+        Assert::equals($merged->getData(), $expectedMerged);
     }
 
-    #[\Testo\Data\DataProvider('provideSetPathData')]
-    #[\Testo\Test]
-    public function testSetCreatesNewInstanceWithUpdatedValue(string $path, mixed $value, array $expectedData): void
+    #[DataProvider('provideSetPathData')]
+    #[Test]
+    public function setCreatesNewInstanceWithUpdatedValue(string $path, mixed $value, array $expectedData): void
     {
-        // Arrange
         $initialData = ['existing' => 'value'];
         $tomlData = new TomlData($initialData);
 
-        // Act
         $updated = $tomlData->set($path, $value);
 
-        // Assert
-        \Testo\Assert::notSame($updated, $tomlData);
-        \Testo\Assert::same($updated->getData(), $expectedData);
-        \Testo\Assert::same($tomlData->getData(), $initialData); // Original unchanged
+        Assert::notSame($updated, $tomlData);
+        Assert::same($updated->getData(), $expectedData);
+        Assert::same($tomlData->getData(), $initialData); // Original unchanged
     }
 
-    #[\Testo\Test]
-    public function testToTomlConvertsDataToTomlString(): void
+    #[Test]
+    public function toTomlConvertsDataToTomlString(): void
     {
-        // Arrange
         $data = [
             'key1' => 'value1',
             'key2' => 'value2',
@@ -218,17 +198,14 @@ final class TomlDataTest
 
             TOML;
 
-        // Act
         $result = $tomlData->toToml();
 
-        // Assert
-        \Testo\Assert::same($result, $expectedToml);
+        Assert::same($result, $expectedToml);
     }
 
-    #[\Testo\Test]
-    public function testToTomlHandlesNestedSections(): void
+    #[Test]
+    public function toTomlHandlesNestedSections(): void
     {
-        // Arrange
         $data = [
             'github' => [
                 'plugins' => [
@@ -240,17 +217,14 @@ final class TomlDataTest
         $tomlData = new TomlData($data);
         $expectedToml = "[github.plugins]\nlogger = 'enabled'\ncache = 'disabled'\n";
 
-        // Act
         $result = $tomlData->toToml();
 
-        // Assert
-        \Testo\Assert::same($result, $expectedToml);
+        Assert::same($result, $expectedToml);
     }
 
-    #[\Testo\Test]
-    public function testToTomlHandlesMixedSectionTypes(): void
+    #[Test]
+    public function toTomlHandlesMixedSectionTypes(): void
     {
-        // Arrange
         $data = [
             'roadrunner' => [
                 'simple' => 'value',
@@ -266,85 +240,69 @@ final class TomlDataTest
 
             TOML;
 
-        // Act
         $result = $tomlData->toToml();
 
-        // Assert
-        \Testo\Assert::same($result, $expectedToml);
+        Assert::same($result, $expectedToml);
     }
 
-    #[\Testo\Test]
-    public function testToTomlHandlesEmptyData(): void
+    #[Test]
+    public function toTomlHandlesEmptyData(): void
     {
-        // Arrange
         $tomlData = new TomlData();
 
-        // Act
         $result = $tomlData->toToml();
 
-        // Assert
-        \Testo\Assert::same($result, '');
+        Assert::same($result, '');
     }
 
-    #[\Testo\Test]
-    public function testRoundTripConversion(): void
+    #[Test]
+    public function roundTripConversion(): void
     {
-        // Arrange
         $originalToml = "key = \"value\"\n\n[section]\nnested = \"data\"";
 
-        // Act
         $tomlData = TomlData::fromString($originalToml);
         $convertedToml = $tomlData->toToml();
         $roundTripData = TomlData::fromString($convertedToml);
 
-        // Assert
-        \Testo\Assert::same($roundTripData->getData(), $tomlData->getData());
+        Assert::same($roundTripData->getData(), $tomlData->getData());
     }
 
-    #[\Testo\Data\DataProvider('provideQuotedValues')]
-    #[\Testo\Test]
-    public function testFromStringHandlesQuotedValues(string $toml, array $expectedData): void
+    #[DataProvider('provideQuotedValues')]
+    #[Test]
+    public function fromStringHandlesQuotedValues(string $toml, array $expectedData): void
     {
-        // Act
         $tomlData = TomlData::fromString($toml);
 
-        // Assert
-        \Testo\Assert::same($tomlData->getData(), $expectedData);
+        Assert::same($tomlData->getData(), $expectedData);
     }
 
-    #[\Testo\Test]
-    public function testImmutabilityOfOriginalData(): void
+    #[Test]
+    public function immutabilityOfOriginalData(): void
     {
-        // Arrange
         $originalData = ['key' => 'value'];
         $tomlData = new TomlData($originalData);
 
-        // Act
         $tomlData->set('newkey', 'newvalue');
         $tomlData->merge(new TomlData(['otherkey' => 'othervalue']));
 
         // Assert - original data and instance should be unchanged
-        \Testo\Assert::same($tomlData->getData(), ['key' => 'value']);
-        \Testo\Assert::same($originalData, ['key' => 'value']);
+        Assert::same($tomlData->getData(), ['key' => 'value']);
+        Assert::same($originalData, ['key' => 'value']);
     }
 
-    #[\Testo\Test]
-    public function testGetDataReturnsReadOnlyArray(): void
+    #[Test]
+    public function getDataReturnsReadOnlyArray(): void
     {
-        // Arrange
         $tomlData = new TomlData(['key' => 'value']);
 
-        // Act
         $data = $tomlData->getData();
 
-        // Assert
-        \Testo\Assert::same($data, ['key' => 'value']);
+        Assert::same($data, ['key' => 'value']);
     }
 
-    #[\Testo\Test]
-    public function testToTomlHandlesDeeplyNestedSections(): void
+    #[Test]
+    public function toTomlHandlesDeeplyNestedSections(): void
     {
-        // Arrange
         $data = [
             'github' => [
                 'plugins' => [
@@ -375,17 +333,14 @@ final class TomlDataTest
 
             TOML;
 
-        // Act
         $result = $tomlData->toToml();
 
-        // Assert
-        \Testo\Assert::same($result, $expectedToml);
+        Assert::same($result, $expectedToml);
     }
 
-    #[\Testo\Test]
-    public function testToTomlHandlesInlineArrays(): void
+    #[Test]
+    public function toTomlHandlesInlineArrays(): void
     {
-        // Arrange
         $data = [
             'features' => ['logging', 'caching', 'metrics'],
             'ports' => [8080, 9090, 3000],
@@ -397,17 +352,14 @@ final class TomlDataTest
 
             TOML;
 
-        // Act
         $result = $tomlData->toToml();
 
-        // Assert
-        \Testo\Assert::same($result, $expectedToml);
+        Assert::same($result, $expectedToml);
     }
 
-    #[\Testo\Test]
-    public function testToTomlHandlesMixedTopLevelAndNestedStructures(): void
+    #[Test]
+    public function toTomlHandlesMixedTopLevelAndNestedStructures(): void
     {
-        // Arrange
         $data = [
             'roadrunner' => [
                 'ref' => 'v2025.1.1',
@@ -448,15 +400,13 @@ final class TomlDataTest
 
             TOML;
 
-        // Act
         $result = $tomlData->toToml();
 
-        // Assert
-        \Testo\Assert::same($result, $expectedToml);
+        Assert::same($result, $expectedToml);
     }
 
-    #[\Testo\Test]
-    public function testFromStringAndToTomlRoundTripWithNestedArrays(): void
+    #[Test]
+    public function fromStringAndToTomlRoundTripWithNestedArrays(): void
     {
         // Arrange - This mimics the structure from velox.toml
         $originalToml = <<<TOML
@@ -481,19 +431,16 @@ final class TomlDataTest
             repository = "server"
             TOML;
 
-        // Act
         $tomlData = TomlData::fromString($originalToml);
         $convertedToml = $tomlData->toToml();
         $roundTripData = TomlData::fromString($convertedToml);
 
-        // Assert
-        \Testo\Assert::same($roundTripData->getData(), $tomlData->getData());
+        Assert::same($roundTripData->getData(), $tomlData->getData());
     }
 
-    #[\Testo\Test]
-    public function testParseTomlWithComplexNestedStructure(): void
+    #[Test]
+    public function parseTomlWithComplexNestedStructure(): void
     {
-        // Arrange
         $toml = <<<TOML
             [roadrunner]
             ref = "v2025.1.1"
@@ -527,10 +474,8 @@ final class TomlDataTest
             ],
         ];
 
-        // Act
         $tomlData = TomlData::fromString($toml);
 
-        // Assert
-        \Testo\Assert::same($tomlData->getData(), $expectedData);
+        Assert::same($tomlData->getData(), $expectedData);
     }
 }

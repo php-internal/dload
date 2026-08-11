@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Unit\Module\Repository\Internal;
 
+use Testo\Assert;
+use Testo\Expect;
+use Testo\Test;
 use Internal\DLoad\Module\Repository\Internal\Paginator;
-use PHPUnit\Framework\TestCase;
 
 final class PaginatorTest
 {
-    #[\Testo\Test]
-    public function testCreateFromGenerator(): void
+    #[Test]
+    public function createFromGenerator(): void
     {
         // Create a generator that yields arrays of items for each page
         $loader = static function (): \Generator {
@@ -22,28 +24,28 @@ final class PaginatorTest
         $paginator = Paginator::createFromGenerator($loader(), null);
 
         // Test that we get the first page items
-        \Testo\Assert::equals($paginator->getPageItems(), ['Item 1', 'Item 2']);
-        \Testo\Assert::equals($paginator->getPageNumber(), 1);
+        Assert::equals($paginator->getPageItems(), ['Item 1', 'Item 2']);
+        Assert::equals($paginator->getPageNumber(), 1);
 
         // Test getting next page
         $page2 = $paginator->getNextPage();
-        \Testo\Assert::notNull($page2);
-        \Testo\Assert::equals($page2->getPageItems(), ['Item 3', 'Item 4']);
-        \Testo\Assert::equals($page2->getPageNumber(), 2);
+        Assert::notNull($page2);
+        Assert::equals($page2->getPageItems(), ['Item 3', 'Item 4']);
+        Assert::equals($page2->getPageNumber(), 2);
 
         // Test getting third page
         $page3 = $page2->getNextPage();
-        \Testo\Assert::notNull($page3);
-        \Testo\Assert::equals($page3->getPageItems(), ['Item 5']);
-        \Testo\Assert::equals($page3->getPageNumber(), 3);
+        Assert::notNull($page3);
+        Assert::equals($page3->getPageItems(), ['Item 5']);
+        Assert::equals($page3->getPageNumber(), 3);
 
         // Test that there's no fourth page
         $page4 = $page3->getNextPage();
-        \Testo\Assert::null($page4);
+        Assert::null($page4);
     }
 
-    #[\Testo\Test]
-    public function testIteration(): void
+    #[Test]
+    public function iteration(): void
     {
         // Create a generator that yields arrays of items for each page
         $loader = static function (): \Generator {
@@ -55,11 +57,11 @@ final class PaginatorTest
 
         // Test iterating through all items
         $items = \iterator_to_array($paginator);
-        \Testo\Assert::equals($items, ['Item 1', 'Item 2', 'Item 3', 'Item 4']);
+        Assert::equals($items, ['Item 1', 'Item 2', 'Item 3', 'Item 4']);
     }
 
-    #[\Testo\Test]
-    public function testCountWithCounter(): void
+    #[Test]
+    public function countWithCounter(): void
     {
         // Create a generator
         $loader = static function (): \Generator {
@@ -73,11 +75,11 @@ final class PaginatorTest
         $paginator = Paginator::createFromGenerator($loader(), $counter);
 
         // Test count()
-        \Testo\Assert::equals($paginator->count(), 4);
+        Assert::equals($paginator->count(), 4);
     }
 
-    #[\Testo\Test]
-    public function testCountWithoutCounter(): void
+    #[Test]
+    public function countWithoutCounter(): void
     {
         // Create a generator
         $loader = static function (): \Generator {
@@ -87,7 +89,7 @@ final class PaginatorTest
         $paginator = Paginator::createFromGenerator($loader(), null);
 
         // Test that count() throws an exception when no counter is provided
-        \Testo\Expect::exception(\LogicException::class);
+        Expect::exception(\LogicException::class);
         $paginator->count();
     }
 }

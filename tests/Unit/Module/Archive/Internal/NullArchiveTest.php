@@ -4,33 +4,31 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Unit\Module\Archive\Internal;
 
+use Testo\Assert;
+use Testo\Codecov\Covers;
+use Testo\Expect;
+use Testo\Test;
 use Internal\DLoad\Module\Archive\Internal\NullArchive;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
 
-#[\Testo\Codecov\Covers(NullArchive::class)]
+#[Covers(NullArchive::class)]
 final class NullArchiveTest
 {
-    #[\Testo\Test]
-    public function testConstructorValidatesFile(): void
+    #[Test]
+    public function constructorValidatesFile(): void
     {
-        // Arrange
         $file = $this->createMock(\SplFileInfo::class);
         $file->method('isFile')->willReturn(false);
         $file->method('isReadable')->willReturn(true); // Must return true for parent constructor
         $file->method('getFilename')->willReturn('not-a-file');
 
-        // Assert
-        \Testo\Expect::exception(\InvalidArgumentException::class)->withMessage('Archive "not-a-file" is not a file.');
+        Expect::exception(\InvalidArgumentException::class)->withMessage('Archive "not-a-file" is not a file.');
 
-        // Act
         new NullArchive($file);
     }
 
-    #[\Testo\Test]
-    public function testExtractYieldsFileAsItself(): void
+    #[Test]
+    public function extractYieldsFileAsItself(): void
     {
-        // Arrange
         $sourceFile = $this->createMock(\SplFileInfo::class);
         $sourceFile->method('isFile')->willReturn(true);
         $sourceFile->method('isReadable')->willReturn(true);
@@ -39,19 +37,18 @@ final class NullArchiveTest
 
         $archive = new NullArchive($sourceFile);
 
-        // Act
         $generator = $archive->extract();
 
         // Assert - Check the file is yielded
         $key = $generator->key();
         $value = $generator->current();
 
-        \Testo\Assert::same($key, '/path/to/source-file');
-        \Testo\Assert::same($value, $sourceFile);
+        Assert::same($key, '/path/to/source-file');
+        Assert::same($value, $sourceFile);
     }
 
-    #[\Testo\Test]
-    public function testExtractCopiesFileWhenDestinationProvided(): void
+    #[Test]
+    public function extractCopiesFileWhenDestinationProvided(): void
     {
         // This test would require mocking the global copy function
         // In a real-world scenario, I'd use a package like mockery/php-overload, but for now,

@@ -4,37 +4,35 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Unit\Module\Archive\Internal;
 
+use Testo\Codecov\Covers;
+use Testo\Expect;
+use Testo\Lifecycle\BeforeTest;
+use Testo\Test;
 use Internal\DLoad\Module\Archive\Exception\ArchiveException;
 use Internal\DLoad\Module\Archive\Internal\PharAwareArchive;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
 
-#[\Testo\Codecov\Covers(PharAwareArchive::class)]
+#[Covers(PharAwareArchive::class)]
 final class PharAwareArchiveTest
 {
     private \SplFileInfo $fileInfo;
 
-    #[\Testo\Test]
-    public function testExtractThrowsExceptionWhenArchiveIsNotReadable(): void
+    #[Test]
+    public function extractThrowsExceptionWhenArchiveIsNotReadable(): void
     {
-        // Arrange
         $pharData = $this->createMock(\PharData::class);
         $pharData->method('isReadable')->willReturn(false);
         $pharData->method('getPathname')->willReturn('unreadable.phar');
 
         $archive = $this->createPharAwareArchive($pharData);
 
-        // Assert
-        \Testo\Expect::exception(ArchiveException::class)->withMessage('Could not open "unreadable.phar" for reading.');
+        Expect::exception(ArchiveException::class)->withMessage('Could not open "unreadable.phar" for reading.');
 
-        // Act
         \iterator_to_array($archive->extract());
     }
 
-    #[\Testo\Lifecycle\BeforeTest]
-    protected function setUp(): void
+    #[BeforeTest]
+    protected function prepare(): void
     {
-        // Arrange
         $this->fileInfo = $this->createMock(\SplFileInfo::class);
         $this->fileInfo->method('isFile')->willReturn(true);
         $this->fileInfo->method('isReadable')->willReturn(true);

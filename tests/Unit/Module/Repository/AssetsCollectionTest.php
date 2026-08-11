@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Unit\Module\Repository;
 
+use Testo\Assert;
+use Testo\Codecov\Covers;
+use Testo\Data\DataProvider;
+use Testo\Lifecycle\BeforeTest;
+use Testo\Test;
 use Internal\DLoad\Module\Common\Architecture;
 use Internal\DLoad\Module\Common\OperatingSystem;
 use Internal\DLoad\Module\Repository\Collection\AssetsCollection;
@@ -11,11 +16,8 @@ use Internal\DLoad\Module\Version\Version;
 use Internal\DLoad\Tests\Unit\Module\Repository\Stub\AssetStub;
 use Internal\DLoad\Tests\Unit\Module\Repository\Stub\ReleaseStub;
 use Internal\DLoad\Tests\Unit\Module\Repository\Stub\RepositoryStub;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\TestCase;
 
-#[\Testo\Codecov\Covers(AssetsCollection::class)]
+#[Covers(AssetsCollection::class)]
 final class AssetsCollectionTest
 {
     private RepositoryStub $repository;
@@ -61,45 +63,39 @@ final class AssetsCollectionTest
         ];
     }
 
-    #[\Testo\Test]
-    public function testWhereOperatingSystemFiltersAssetsByOs(): void
+    #[Test]
+    public function whereOperatingSystemFiltersAssetsByOs(): void
     {
-        // Act
         $result = $this->collection->whereOperatingSystem(OperatingSystem::Linux);
 
-        // Assert
-        \Testo\Assert::count($result, 2);
+        Assert::count($result, 2);
 
         foreach ($result as $asset) {
-            \Testo\Assert::same($asset->getOperatingSystem(), OperatingSystem::Linux);
+            Assert::same($asset->getOperatingSystem(), OperatingSystem::Linux);
         }
     }
 
-    #[\Testo\Test]
-    public function testWhereArchitectureFiltersAssetsByArchitecture(): void
+    #[Test]
+    public function whereArchitectureFiltersAssetsByArchitecture(): void
     {
-        // Act
         $result = $this->collection->whereArchitecture(Architecture::ARM_64);
 
-        // Assert
-        \Testo\Assert::count($result, 3);
+        Assert::count($result, 3);
 
         foreach ($result as $asset) {
-            \Testo\Assert::same($asset->getArchitecture(), Architecture::ARM_64);
+            Assert::same($asset->getArchitecture(), Architecture::ARM_64);
         }
     }
 
-    #[\Testo\Data\DataProvider('provideNamePatterns')]
-    #[\Testo\Test]
-    public function testWhereNameMatchesFiltersAssetsByNamePattern(
+    #[DataProvider('provideNamePatterns')]
+    #[Test]
+    public function whereNameMatchesFiltersAssetsByNamePattern(
         string $pattern,
         array $expectedMatches,
     ): void {
-        // Act
         $result = $this->collection->whereNameMatches($pattern);
 
-        // Assert
-        \Testo\Assert::count($result, \count($expectedMatches));
+        Assert::count($result, \count($expectedMatches));
 
         $actualNames = \array_map(
             static fn($asset) => $asset->getName(),
@@ -107,73 +103,64 @@ final class AssetsCollectionTest
         );
 
         foreach ($expectedMatches as $expectedName) {
-            \Testo\Assert::contains($actualNames, $expectedName);
+            Assert::contains($actualNames, $expectedName);
         }
     }
 
-    #[\Testo\Test]
-    public function testWhereNameMatchesWithInvalidPattern(): void
+    #[Test]
+    public function whereNameMatchesWithInvalidPattern(): void
     {
-        // Act
         $new = $this->collection->whereNameMatches('/invalid[pattern/');
 
-        // Assert
-        \Testo\Assert::count($new, 0);
+        Assert::count($new, 0);
     }
 
-    #[\Testo\Test]
-    public function testChainedFiltersWorkCorrectly(): void
+    #[Test]
+    public function chainedFiltersWorkCorrectly(): void
     {
-        // Act
         $result = $this->collection
             ->whereOperatingSystem(OperatingSystem::Linux)
             ->whereArchitecture(Architecture::ARM_64);
 
-        // Assert
-        \Testo\Assert::count($result, 1);
+        Assert::count($result, 1);
         $asset = $result->first();
-        \Testo\Assert::same($asset->getName(), 'package-1.2.3-linux-arm64.tar.gz');
+        Assert::same($asset->getName(), 'package-1.2.3-linux-arm64.tar.gz');
     }
 
-    #[\Testo\Test]
-    public function testFirstReturnsFirstAssetOrNull(): void
+    #[Test]
+    public function firstReturnsFirstAssetOrNull(): void
     {
         // Act with non-empty collection
         $first = $this->collection->first();
 
-        // Assert
-        \Testo\Assert::notNull($first);
-        \Testo\Assert::same($first->getName(), 'package-1.2.3-linux-x64.tar.gz');
+        Assert::notNull($first);
+        Assert::same($first->getName(), 'package-1.2.3-linux-x64.tar.gz');
 
         // Act with empty collection
         $empty = new AssetsCollection([]);
         $result = $empty->first();
 
-        // Assert
-        \Testo\Assert::null($result);
+        Assert::null($result);
     }
 
-    #[\Testo\Test]
-    public function testEmptyReturnsTrueForEmptyCollection(): void
+    #[Test]
+    public function emptyReturnsTrueForEmptyCollection(): void
     {
         // Act with non-empty collection
         $resultNonEmpty = $this->collection->empty();
 
-        // Assert
-        \Testo\Assert::false($resultNonEmpty);
+        Assert::false($resultNonEmpty);
 
         // Act with empty collection
         $empty = new AssetsCollection([]);
         $resultEmpty = $empty->empty();
 
-        // Assert
-        \Testo\Assert::true($resultEmpty);
+        Assert::true($resultEmpty);
     }
 
-    #[\Testo\Lifecycle\BeforeTest]
-    protected function setUp(): void
+    #[BeforeTest]
+    protected function prepare(): void
     {
-        // Arrange
         $this->repository = new RepositoryStub('vendor/package');
         $this->release = new ReleaseStub(
             $this->repository,

@@ -4,54 +4,49 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Unit\Module\Repository\Internal\GitLab\Api;
 
+use Testo\Assert;
+use Testo\Codecov\Covers;
+use Testo\Test;
 use Internal\DLoad\Module\Repository\Exception\RateLimitException;
 use Internal\DLoad\Module\Repository\Exception\RepositoryNotFoundException;
 use Internal\DLoad\Module\Repository\Internal\GitLab\Api\ResponseValidator;
 use Internal\DLoad\Tests\Unit\Module\Repository\Stub\ResponseStub;
 use Nyholm\Psr7\Request;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
 
-#[\Testo\Codecov\Covers(ResponseValidator::class)]
+#[Covers(ResponseValidator::class)]
 final class ResponseValidatorTest
 {
-    #[\Testo\Test]
-    public function testProjectPathIsDecodedFromApiUrl(): void
+    #[Test]
+    public function projectPathIsDecodedFromApiUrl(): void
     {
-        // Arrange
         $validator = new ResponseValidator(authenticated: false);
         $request = new Request('GET', 'https://gitlab.com/api/v4/projects/group%2Fproject/releases?page=1');
         $response = new ResponseStub(404, [], \json_encode(['message' => '404 Project Not Found']));
 
-        // Act
         try {
             $validator->validate($request, $response);
-            \Testo\Assert::fail('RepositoryNotFoundException is expected.');
+            Assert::fail('RepositoryNotFoundException is expected.');
         } catch (RepositoryNotFoundException $e) {
-            // Assert
-            \Testo\Assert::same($e->repository, 'group/project');
+            Assert::same($e->repository, 'group/project');
             self::assertStringContainsString('project `group/project`', $e->getMessage());
             self::assertStringContainsString('GITLAB_TOKEN', $e->getMessage());
         }
     }
 
-    #[\Testo\Test]
-    public function testTooManyRequestsIsReportedAsRateLimit(): void
+    #[Test]
+    public function tooManyRequestsIsReportedAsRateLimit(): void
     {
-        // Arrange
         $validator = new ResponseValidator(authenticated: false);
         $request = new Request('GET', 'https://gitlab.com/api/v4/projects/group%2Fproject/releases');
         $response = new ResponseStub(429, ['retry-after' => ['30']], '');
 
-        // Act
         try {
             $validator->validate($request, $response);
-            \Testo\Assert::fail('RateLimitException is expected.');
+            Assert::fail('RateLimitException is expected.');
         } catch (RateLimitException $e) {
-            // Assert
             self::assertStringContainsString('GitLab API rate limit exceeded', $e->getMessage());
             self::assertStringContainsString('GITLAB_TOKEN', $e->getMessage());
-            \Testo\Assert::notNull($e->resetAt);
+            Assert::notNull($e->resetAt);
         }
     }
 }

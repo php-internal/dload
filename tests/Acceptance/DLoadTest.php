@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Acceptance;
 
+use Testo\Assert;
+use Testo\Codecov\Covers;
+use Testo\Lifecycle\AfterTest;
+use Testo\Lifecycle\BeforeTest;
+use Testo\Test;
 use Internal\DLoad\Bootstrap;
 use Internal\DLoad\DLoad;
 use Internal\DLoad\Module\Common\OperatingSystem;
@@ -11,8 +16,6 @@ use Internal\DLoad\Module\Config\Schema\Action\Download as DownloadConfig;
 use Internal\DLoad\Module\Config\Schema\Action\Type;
 use Internal\DLoad\Service\Logger;
 use Internal\Path;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Input\ArgvInput;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\BufferedOutput;
@@ -26,7 +29,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
  * Tests the complete download workflow using real repositories and file extraction.
  * Requires internet connectivity to download actual software packages.
  */
-#[\Testo\Codecov\Covers(DLoad::class)]
+#[Covers(DLoad::class)]
 final class DLoadTest
 {
     private Path $testRuntimeDir;
@@ -34,17 +37,15 @@ final class DLoadTest
     private Path $destinationDir;
     private DLoad $dload;
 
-    #[\Testo\Test]
-    public function testDownloadsTrapPharSuccessfully(): void
+    #[Test]
+    public function downloadsTrapPharSuccessfully(): void
     {
-        // Arrange
         $downloadConfig = new DownloadConfig();
         $downloadConfig->software = 'trap';
         $downloadConfig->version = '1.13.16';
         $downloadConfig->type = Type::Phar;
         $downloadConfig->extractPath = (string) $this->destinationDir;
 
-        // Act
         $this->dload->addTask($downloadConfig);
         $this->dload->run();
 
@@ -57,21 +58,19 @@ final class DLoadTest
 
         // Verify file permissions (should be executable)
         if (PHP_OS_FAMILY !== 'Windows') {
-            \Testo\Assert::true(\is_executable($expectedPharPath), 'PHAR file should be executable');
+            Assert::true(\is_executable($expectedPharPath), 'PHAR file should be executable');
         }
     }
 
-    #[\Testo\Test]
-    public function testDownloadsTrapPharSuccessfullyWithForceOption(): void
+    #[Test]
+    public function downloadsTrapPharSuccessfullyWithForceOption(): void
     {
-        // Arrange
         $downloadConfig = new DownloadConfig();
         $downloadConfig->software = 'trap';
         $downloadConfig->version = '1.13.16';
         $downloadConfig->type = Type::Phar;
         $downloadConfig->extractPath = (string) $this->destinationDir;
 
-        // Act
         $this->dload->addTask($downloadConfig);
         $this->dload->run();
         $this->dload->addTask($downloadConfig, true);
@@ -86,14 +85,13 @@ final class DLoadTest
 
         // Verify file permissions (should be executable)
         if (PHP_OS_FAMILY !== 'Windows') {
-            \Testo\Assert::true(\is_executable($expectedPharPath), 'PHAR file should be executable');
+            Assert::true(\is_executable($expectedPharPath), 'PHAR file should be executable');
         }
     }
 
-    #[\Testo\Test]
-    public function testDownloadsTomlTestGzBinary(): void
+    #[Test]
+    public function downloadsTomlTestGzBinary(): void
     {
-        // Arrange
         $dload = $this->buildDLoad($this->createTomlTestXmlConfig());
         $downloadConfig = new DownloadConfig();
         $downloadConfig->software = 'toml-test';
@@ -101,7 +99,6 @@ final class DLoadTest
         $downloadConfig->type = Type::Binary;
         $downloadConfig->extractPath = (string) $this->destinationDir;
 
-        // Act
         $dload->addTask($downloadConfig);
         $dload->run();
 
@@ -112,21 +109,19 @@ final class DLoadTest
         self::assertGreaterThan(1024, \filesize($expectedPath), 'Downloaded binary should have substantial size');
 
         if (\PHP_OS_FAMILY !== 'Windows') {
-            \Testo\Assert::true(\is_executable($expectedPath), 'Binary file should be executable');
+            Assert::true(\is_executable($expectedPath), 'Binary file should be executable');
         }
     }
 
-    #[\Testo\Test]
-    public function testDownloadsTrapBinary(): void
+    #[Test]
+    public function downloadsTrapBinary(): void
     {
-        // Arrange
         $downloadConfig = new DownloadConfig();
         $downloadConfig->software = 'trap';
         $downloadConfig->version = '1.13.16';
         $downloadConfig->type = Type::Binary;
         $downloadConfig->extractPath = (string) $this->destinationDir;
 
-        // Act
         $this->dload->addTask($downloadConfig);
         $this->dload->run();
 
@@ -138,11 +133,11 @@ final class DLoadTest
         // Verify the file is not empty
         self::assertGreaterThan(1024, \filesize($expectedPharPath), 'Downloaded binary should have substantial size');
 
-        \Testo\Assert::true(\is_executable($expectedPharPath), 'Binary file should be executable');
+        Assert::true(\is_executable($expectedPharPath), 'Binary file should be executable');
     }
 
-    #[\Testo\Lifecycle\BeforeTest]
-    protected function setUp(): void
+    #[BeforeTest]
+    protected function prepare(): void
     {
         // Set up test directory structure
         $projectRoot = Path::create(\dirname(__DIR__, 2));
@@ -153,8 +148,8 @@ final class DLoadTest
         $this->dload = $this->buildDLoad($this->createTrapXmlConfig());
     }
 
-    #[\Testo\Lifecycle\AfterTest]
-    protected function tearDown(): void
+    #[AfterTest]
+    protected function cleanup(): void
     {
         // Clean up test directories
         if ($this->testRuntimeDir->isDir()) {

@@ -4,14 +4,18 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Integration\Module\Archive;
 
+use Testo\Assert;
+use Testo\Core\Exception\SkipTest;
+use Testo\Data\DataProvider;
+use Testo\Filter\Group;
+use Testo\Lifecycle\AfterTest;
+use Testo\Lifecycle\BeforeTest;
+use Testo\Test;
 use Internal\DLoad\Module\Archive\ArchiveFactory;
 use Internal\DLoad\Module\Archive\Internal\NullArchive;
 use Internal\DLoad\Module\Archive\Internal\PharArchive;
 use Internal\DLoad\Module\Archive\Internal\TarPharArchive;
 use Internal\DLoad\Module\Archive\Internal\ZipPharArchive;
-use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\Attributes\Group;
-use PHPUnit\Framework\TestCase;
 
 /**
  * Integration tests for Archive module
@@ -19,7 +23,7 @@ use PHPUnit\Framework\TestCase;
  * These tests verify that the Archive module components work together correctly.
  * They require the phar extension to be enabled and temporary files to be created.
  */
-#[\Testo\Filter\Group('integration')]
+#[Group('integration')]
 final class ArchiveIntegrationTest
 {
     private string $tempDir;
@@ -33,15 +37,15 @@ final class ArchiveIntegrationTest
         yield 'exe' => ['exe', NullArchive::class];
     }
 
-    #[\Testo\Data\DataProvider('provideArchiveTypes')]
-    #[\Testo\Test]
-    public function testFactoryCreateReturnsCorrectImplementation(
+    #[DataProvider('provideArchiveTypes')]
+    #[Test]
+    public function factoryCreateReturnsCorrectImplementation(
         string $extension,
         string $className,
     ): void {
         // Skip if we can't verify the implementation type
         if (!\class_exists($className)) {
-            throw new \Testo\Core\Exception\SkipTest("Class $className not available");
+            throw new SkipTest("Class $className not available");
         }
 
         // Arrange - create mock file with extension
@@ -54,11 +58,11 @@ final class ArchiveIntegrationTest
         $archive = $this->factory->create($file);
 
         // Assert - check implementation type
-        \Testo\Assert::instanceOf($archive, $className);
+        Assert::instanceOf($archive, $className);
     }
 
-    #[\Testo\Test]
-    public function testFactoryExtendWithCustomImplementation(): void
+    #[Test]
+    public function factoryExtendWithCustomImplementation(): void
     {
         // Arrange - create custom archive mock
         $customArchive = $this->createMock('Internal\DLoad\Module\Archive\Archive');
@@ -76,19 +80,17 @@ final class ArchiveIntegrationTest
         $file->method('isFile')->willReturn(true);
         $file->method('isReadable')->willReturn(true);
 
-        // Act
         $archive = $this->factory->create($file);
 
-        // Assert
-        \Testo\Assert::same($archive, $customArchive);
+        Assert::same($archive, $customArchive);
     }
 
-    #[\Testo\Lifecycle\BeforeTest]
-    protected function setUp(): void
+    #[BeforeTest]
+    protected function prepare(): void
     {
         // Skip tests if phar extension is not available
         if (!\class_exists(\PharData::class)) {
-            throw new \Testo\Core\Exception\SkipTest('Phar extension is not available');
+            throw new SkipTest('Phar extension is not available');
         }
 
         // Create temporary directory for test files in project runtime
@@ -100,8 +102,8 @@ final class ArchiveIntegrationTest
         $this->factory = new ArchiveFactory();
     }
 
-    #[\Testo\Lifecycle\AfterTest]
-    protected function tearDown(): void
+    #[AfterTest]
+    protected function cleanup(): void
     {
         // Clean up temporary directory
         if (\is_dir($this->tempDir)) {
