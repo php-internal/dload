@@ -12,16 +12,19 @@ name: 📦 Create release
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   release:
     runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
       - name: 🎉 Create release
         uses: googleapis/release-please-action@v4
         id: release
         with:
-          token: ${{ secrets.RELEASE_TOKEN }}
           config-file: .github/.release-please-config.json
           manifest-file: resources/version.json
           target-branch: 1.x
@@ -35,10 +38,6 @@ jobs:
         with:
           ref: ${{ fromJSON(steps.release.outputs.pr).headBranchName }}
           fetch-depth: 0 # the action needs the full git history
-          # Use the release PAT so the badge push below is authenticated as the
-          # PR author. The default GITHUB_TOKEN (github-actions[bot]) is denied
-          # push access to the release branch.
-          token: ${{ secrets.RELEASE_TOKEN }}
 
       - name: ✨ Update Vibe Index badge
         if: ${{ steps.release.outputs.prs_created == 'true' }}
@@ -57,4 +56,29 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -am "chore: update Vibe Index badge"
           git push
+
+  # The asset builds are called directly instead of listening for
+  # `release: published`. A release cut by GITHUB_TOKEN emits no such event, so
+  # a workflow triggered by it would never start.
+  phar:
+    name: 📦 PHAR
+    needs: release
+    if: ${{ needs.release.outputs.release_created == 'true' }}
+    permissions:
+      contents: write
+    uses: ./.github/workflows/build-phar-release.yml
+    with:
+      tag: ${{ needs.release.outputs.tag_name }}
+    secrets: inherit
+
+  binaries:
+    name: 📦 Binaries
+    needs: release
+    if: ${{ needs.release.outputs.release_created == 'true' }}
+    permissions:
+      contents: write
+    uses: ./.github/workflows/buld-bin-release.yml
+    with:
+      tag: ${{ needs.release.outputs.tag_name }}
+    secrets: inherit
 ...

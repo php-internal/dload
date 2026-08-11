@@ -6,6 +6,17 @@ on: # yamllint disable-line rule:truthy
   release:
     types:
       - published
+  workflow_call:
+    inputs:
+      tag:
+        description: Tag of the release the binaries are attached to.
+        required: true
+        type: string
+
+env:
+  # Set from the input when called by the release workflow, from the event
+  # payload when a release is published by hand.
+  RELEASE_TAG: ${{ inputs.tag || github.event.release.tag_name }}
 
 jobs:
   build-unix:
@@ -35,13 +46,7 @@ jobs:
       - name: Extract version from tag
         id: get_version
         run: |
-          if [[ "$GITHUB_REF_NAME" == refs/pull/* ]]; then
-            # For pull requests, use "dev" as version
-            VERSION="dev"
-          else
-            # For releases, extract version from tag (remove 'v' prefix if present)
-            VERSION=${GITHUB_REF_NAME#v}
-          fi
+          VERSION=${RELEASE_TAG#v}
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "{\"version\": \"$VERSION\", \"type\":\"bin\"}" > version.json
 
@@ -76,9 +81,8 @@ jobs:
 
       - name: 📤 Upload release assets
         uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
         with:
-          token: "${{ secrets.RELEASE_TOKEN }}"
+          tag_name: ${{ env.RELEASE_TAG }}
           files: |
             ./dload-${{ env.VERSION }}-${{ matrix.platform.os }}-${{ matrix.platform.arch }}.tar.gz
 
@@ -98,19 +102,11 @@ jobs:
           extensions: mbstring, xml, sockets, curl
           coverage: none
 
-      - name: Extract version from tag or set dev version
+      - name: Extract version from tag
         id: get_version
         shell: bash
         run: |
-          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" && -n "${{ github.event.inputs.version }}" ]]; then
-            VERSION="${{ github.event.inputs.version }}"
-          elif [[ "$GITHUB_REF" == refs/pull/* || "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
-            # For pull requests or manual triggers without version, use "dev" as version
-            VERSION="dev"
-          else
-            # For releases, extract version from tag (remove 'v' prefix if present)
-            VERSION=${GITHUB_REF_NAME#v}
-          fi
+          VERSION=${RELEASE_TAG#v}
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "{\"version\": \"$VERSION\", \"type\":\"bin\"}" > version.json
 
@@ -135,7 +131,7 @@ jobs:
           export SPC_SKIP_BREW_INSTALL=1
           .build/bin/spc download micro --for-extensions=ctype,dom,filter,libxml,mbstring,phar,simplexml,sockets,curl,tokenizer,xml,xmlwriter --with-php=8.4 --prefer-pre-built
         env:
-          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Verify environment is ready
         run: |
@@ -170,9 +166,8 @@ jobs:
 
       - name: 📤 Upload release assets
         uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
         with:
-          token: "${{ secrets.RELEASE_TOKEN }}"
+          tag_name: ${{ env.RELEASE_TAG }}
           files: |
             ./dload-${{ env.VERSION }}-darwin-arm64.tar.gz
 
@@ -192,19 +187,11 @@ jobs:
           extensions: mbstring, xml, sockets, curl
           coverage: none
 
-      - name: Extract version from tag or set dev version
+      - name: Extract version from tag
         id: get_version
         shell: bash
         run: |
-          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" && -n "${{ github.event.inputs.version }}" ]]; then
-            VERSION="${{ github.event.inputs.version }}"
-          elif [[ "$GITHUB_REF" == refs/pull/* || "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
-            # For pull requests or manual triggers without version, use "dev" as version
-            VERSION="dev"
-          else
-            # For releases, extract version from tag (remove 'v' prefix if present)
-            VERSION=${GITHUB_REF_NAME#v}
-          fi
+          VERSION=${RELEASE_TAG#v}
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "{\"version\": \"$VERSION\", \"type\":\"bin\"}" > version.json
 
@@ -238,7 +225,7 @@ jobs:
           export PATH="/usr/local/bin:$PATH"
           .build/bin/spc download micro --for-extensions=ctype,dom,filter,libxml,mbstring,phar,simplexml,sockets,curl,tokenizer,xml,xmlwriter --with-php=8.4 --prefer-pre-built
         env:
-          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Verify environment is ready
         run: |
@@ -273,9 +260,8 @@ jobs:
 
       - name: 📤 Upload release assets
         uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
         with:
-          token: "${{ secrets.RELEASE_TOKEN }}"
+          tag_name: ${{ env.RELEASE_TAG }}
           files: |
             ./dload-${{ env.VERSION }}-darwin-amd64.tar.gz
 
@@ -293,17 +279,11 @@ jobs:
           extensions: mbstring, xml, sockets, curl
           coverage: none
 
-      - name: Extract version from tag or set dev version
+      - name: Extract version from tag
         id: get_version
         shell: bash
         run: |
-          if [[ "$GITHUB_REF" == refs/pull/* ]]; then
-            # For pull requests, use "dev" as version
-            VERSION="dev"
-          else
-            # For releases, extract version from tag (remove 'v' prefix if present)
-            VERSION=${GITHUB_REF_NAME#v}
-          fi
+          VERSION=${RELEASE_TAG#v}
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "{\"version\": \"$VERSION\", \"type\":\"bin\"}" > version.json
 
@@ -354,8 +334,7 @@ jobs:
 
       - name: 📤 Upload release assets
         uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
         with:
-          token: "${{ secrets.RELEASE_TOKEN }}"
+          tag_name: ${{ env.RELEASE_TAG }}
           files: |
             ./dload-${{ env.VERSION }}-windows-amd64.tar.gz
