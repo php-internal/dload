@@ -35,7 +35,7 @@ final class AssetInfo
     {
         return new self(
             name: $data['name'],
-            downloadUrl: !empty($data['direct_asset_url']) ? $data['direct_asset_url'] : $data['url'],
+            downloadUrl: $data['direct_asset_url'] ?? $data['url'],
             linkType: $data['link_type'] ?? null,
         );
     }

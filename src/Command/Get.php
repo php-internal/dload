@@ -170,14 +170,22 @@ final class Get extends Base
             $toDownload[$action->software] = $action;
         }
 
-        $destinationPath = $input->getOption('path');
+        /** @var mixed $path */
+        $path = $input->getOption('path');
+        $destinationPath = \is_string($path) && $path !== '' ? $path : null;
+
+        /** @var list<non-empty-string> $names */
+        $names = \array_values(\array_filter(
+            (array) $input->getArgument(self::ARG_SOFTWARE),
+            static fn(mixed $name): bool => \is_string($name) && $name !== '',
+        ));
 
         return \array_map(
             static fn(string $software): DownloadConfig => $toDownload[$software] ?? self::parseSoftware(
                 $software,
                 $destinationPath,
             ),
-            (array) $input->getArgument(self::ARG_SOFTWARE),
+            $names,
         );
     }
 

@@ -54,7 +54,7 @@ final class GitHubAsset extends Asset implements Destroyable
      *        it MUST be called on DNS resolution, on arrival of headers and on completion;
      *        it SHOULD be called on upload/download of data and at least 1/s
      *
-     * @return \Generator<int, string, mixed, void>
+     * @return \Generator<int, non-empty-string, mixed, void>
      * @throws RepositoryException
      */
     public function download(?\Closure $progress = null): \Generator
@@ -67,6 +67,13 @@ final class GitHubAsset extends Asset implements Destroyable
 
         while (!$body->eof()) {
             $chunk = $body->read(8192);
+
+            # A stream may report `eof()` as false and still yield nothing; treat that as the end
+            # rather than spinning, and keep the contract of non-empty chunks.
+            if ($chunk === '') {
+                break;
+            }
+
             $loaded += \strlen($chunk);
             $progress === null or $progress($loaded, $size, []);
             yield $chunk;

@@ -47,9 +47,15 @@ final class GitLabRelease extends Release implements Destroyable
         return $result;
     }
 
+    /**
+     * `Destroyable` requires this to be idempotent, and the `unset()` below leaves `$assets`
+     * uninitialized — a state Psalm does not model for a typed property, hence the suppression.
+     *
+     * @psalm-suppress RedundantPropertyInitializationCheck
+     */
     public function destroy(): void
     {
-        $this->assets === null or $this->assets->map(
+        isset($this->assets) and $this->assets->map(
             static fn(object $asset) => $asset instanceof Destroyable and $asset->destroy(),
         );
 

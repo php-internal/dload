@@ -16,6 +16,9 @@ use Internal\DLoad\Module\Archive\Exception\ArchiveException;
  */
 final class GzArchive extends Archive
 {
+    /**
+     * @return \Generator<non-empty-string, \SplFileInfo, \SplFileInfo|null, void>
+     */
     public function extract(): \Generator
     {
         $sourcePath = $this->asset->getRealPath() ?: $this->asset->getPathname();
@@ -27,7 +30,8 @@ final class GzArchive extends Archive
 
         try {
             // Derive output filename by stripping .gz extension
-            $outputName = \preg_replace('/\.gz$/i', '', $this->asset->getFilename());
+            $fileName = $this->asset->getFilename();
+            $outputName = \preg_replace('/\.gz$/i', '', $fileName) ?? $fileName;
             $tempPath = \sys_get_temp_dir() . \DIRECTORY_SEPARATOR . $outputName;
 
             $out = \fopen($tempPath, 'wb');
@@ -50,7 +54,7 @@ final class GzArchive extends Archive
             $fileInfo = new \SplFileInfo($tempPath);
 
             /** @var \SplFileInfo|null $fileTo */
-            $fileTo = yield $fileInfo->getPathname() => $fileInfo;
+            $fileTo = yield $tempPath => $fileInfo;
 
             if ($fileTo instanceof \SplFileInfo) {
                 \copy($tempPath, $fileTo->getRealPath() ?: $fileTo->getPathname());
