@@ -237,6 +237,23 @@
                 "name": "yiipress",
                 "version-command": "--version"
             }
+        },
+        {
+            "name": "Rapira",
+            "alias": "rapira",
+            "description": "PHP application server written in Rust that embeds PHP via the embed SAPI",
+            "homepage": "https://rapira.rs",
+            "repositories": [
+                {
+                    "type": "github",
+                    "uri": "rapira-rs/rapira",
+                    "asset-pattern": "/^rapira-.*/"
+                }
+            ],
+            "binary": {
+                "name": "rapira",
+                "version-command": "--version"
+            }
         }
     ]
 }
