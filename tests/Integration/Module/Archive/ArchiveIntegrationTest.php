@@ -185,13 +185,22 @@ final class ArchiveIntegrationTest
             return $path;
         }
 
+        // Build the tar from real on-disk files: `PharData::addFromString()` on a tar can produce
+        // entries that read back empty once the archive is gzip-compressed and reopened on Linux.
+        $sourceDir = $this->tempDir . '/nested-src';
+        foreach (self::NESTED_LAYOUT as $entry => $content) {
+            $file = $sourceDir . '/' . $entry;
+            \is_dir(\dirname($file)) or \mkdir(\dirname($file), 0777, true);
+            \file_put_contents($file, $content);
+        }
+
         $tarPath = $this->tempDir . '/nested.tar';
         $phar = new \PharData($tarPath);
-        foreach (self::NESTED_LAYOUT as $entry => $content) {
-            $phar->addFromString($entry, $content);
-        }
+        $phar->buildFromDirectory($sourceDir);
         $phar->compress(\Phar::GZ);
         unset($phar);
+        // Drop the intermediate uncompressed tar so only the .tar.gz remains.
+        \is_file($tarPath) and \unlink($tarPath);
 
         return $tarPath . '.gz';
     }
