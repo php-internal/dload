@@ -247,7 +247,7 @@
                 {
                     "type": "github",
                     "uri": "rapira-rs/rapira",
-                    "asset-pattern": "/^rapira-.*/"
+                    "asset-pattern": "/^rapira-v.*-php8\\.5-.*/"
                 }
             ],
             "binary": {
