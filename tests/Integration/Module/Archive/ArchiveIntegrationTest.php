@@ -27,6 +27,16 @@ use Testo\Test;
 #[Group('integration')]
 final class ArchiveIntegrationTest
 {
+    /**
+     * Files of a nested archive layout, mimicking a self-contained tool
+     * (a binary that resolves a shared library through a relative path).
+     */
+    private const NESTED_LAYOUT = [
+        'pkg-1.0/bin/app' => "binary\n",
+        'pkg-1.0/lib/app/libphp.so' => "shared library\n",
+        'pkg-1.0/share/app/VERSION.txt' => "1.0\n",
+    ];
+
     private string $tempDir;
     private ArchiveFactory $factory;
 
@@ -36,6 +46,12 @@ final class ArchiveIntegrationTest
         yield 'tar.gz' => ['tar.gz', TarPharArchive::class];
         yield 'phar' => ['phar', PharArchive::class];
         yield 'exe' => ['exe', NullArchive::class];
+    }
+
+    public static function provideNestedArchiveTypes(): \Generator
+    {
+        yield 'zip' => ['zip'];
+        yield 'tar.gz' => ['tar.gz'];
     }
 
     #[DataProvider('provideArchiveTypes')]
@@ -81,6 +97,44 @@ final class ArchiveIntegrationTest
         Assert::same($archive, $customArchive);
     }
 
+    #[DataProvider('provideNestedArchiveTypes')]
+    #[Test]
+    public function extractKeysEntriesByTheirArchiveRelativePath(string $type): void
+    {
+        $archive = $this->factory->create(new \SplFileInfo($this->createNestedArchive($type)));
+
+        $keys = [];
+        foreach ($archive->extract() as $relativePath => $_) {
+            $keys[] = $relativePath;
+        }
+
+        \sort($keys);
+        Assert::same($keys, \array_keys(self::NESTED_LAYOUT));
+    }
+
+    #[DataProvider('provideNestedArchiveTypes')]
+    #[Test]
+    public function extractPreservesTheNestedDirectoryStructure(string $type): void
+    {
+        $archive = $this->factory->create(new \SplFileInfo($this->createNestedArchive($type)));
+        $target = $this->tempDir . '/extracted';
+
+        $extractor = $archive->extract();
+        while ($extractor->valid()) {
+            $relativePath = $extractor->key();
+            $destination = $target . '/' . $relativePath;
+            \is_dir(\dirname($destination)) or \mkdir(\dirname($destination), 0777, true);
+            // `send()` extracts the current entry and advances the generator on its own.
+            $extractor->send(new \SplFileInfo($destination));
+        }
+
+        foreach (self::NESTED_LAYOUT as $relativePath => $content) {
+            $path = $target . '/' . $relativePath;
+            Assert::true(\is_file($path), "Entry `{$relativePath}` should be extracted preserving its path");
+            Assert::same(\file_get_contents($path), $content);
+        }
+    }
+
     #[BeforeTest]
     protected function prepare(): void
     {
@@ -105,6 +159,41 @@ final class ArchiveIntegrationTest
         if (\is_dir($this->tempDir)) {
             $this->removeDirectory($this->tempDir);
         }
+    }
+
+    /**
+     * Builds a real archive of the given type with a nested directory layout.
+     *
+     * @param non-empty-string $type Either `zip` or `tar.gz`
+     * @return non-empty-string Path to the created archive
+     */
+    private function createNestedArchive(string $type): string
+    {
+        if ($type === 'zip') {
+            if (!\class_exists(\ZipArchive::class)) {
+                throw new SkipTest('Zip extension is not available');
+            }
+
+            $path = $this->tempDir . '/nested.zip';
+            $zip = new \ZipArchive();
+            $zip->open($path, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
+            foreach (self::NESTED_LAYOUT as $entry => $content) {
+                $zip->addFromString($entry, $content);
+            }
+            $zip->close();
+
+            return $path;
+        }
+
+        $tarPath = $this->tempDir . '/nested.tar';
+        $phar = new \PharData($tarPath);
+        foreach (self::NESTED_LAYOUT as $entry => $content) {
+            $phar->addFromString($entry, $content);
+        }
+        $phar->compress(\Phar::GZ);
+        unset($phar);
+
+        return $tarPath . '.gz';
     }
 
     /**

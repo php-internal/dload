@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Internal\DLoad;
 
+use Internal\DLoad\Module\Archive\ArchiveEntryPath;
 use Internal\DLoad\Module\Archive\ArchiveFactory;
 use Internal\DLoad\Module\Binary\BinaryProvider;
 use Internal\DLoad\Module\Common\DloadResult;
@@ -218,6 +219,12 @@ final class DLoad
                 return new DloadResult([$toFile]);
             }
 
+            # Archive type: unpack the whole archive into the destination, preserving the
+            # internal directory structure instead of flattening matched files into one folder.
+            if ($action->type === Type::Archive) {
+                return $this->extractArchive($downloadResult, $software, $destination);
+            }
+
             # If no extraction rules are defined, do not extract anything
             # and just copy the file to the destination
             if ($software->files === [] && $software->binary === null) {
@@ -335,6 +342,134 @@ final class DLoad
         }
 
         return [null, null];
+    }
+
+    /**
+     * Extracts the whole archive into the destination, preserving the internal directory structure.
+     *
+     * Unlike the flat extraction used for single-binary tools, this keeps relative paths intact,
+     * which is required for archives whose files reference each other by relative path
+     * (e.g. a binary resolving a shared library via an `$ORIGIN/../lib` rpath).
+     *
+     * When a single top-level directory wraps the whole archive, it is stripped (like
+     * `tar --strip-components=1`). When `<file>` rules are defined, they act as an include filter
+     * (matched by file name); otherwise every entry is extracted. A configured `<binary>` is only
+     * used to locate the executable inside the extracted tree for version checks — it is not moved.
+     *
+     * @return DloadResult Result of the extraction process containing extracted files and binary
+     * @throws NothingExtracted When the archive turned out to be empty or nothing matched the filters
+     */
+    private function extractArchive(
+        DownloadResult $downloadResult,
+        Software $software,
+        Path $destination,
+    ): DloadResult {
+        $fileInfo = $downloadResult->file;
+        $archive = $this->archiveFactory->create($fileInfo);
+        $this->logger->info('Extracting %s (preserving structure)', $fileInfo->getFilename());
+
+        # First pass: collect entry paths to detect a single wrapping directory to strip
+        $entries = [];
+        foreach ($archive->extract() as $relativePath => $_) {
+            $entries[] = $relativePath;
+        }
+        $stripPrefix = ArchiveEntryPath::commonTopLevelDirectory($entries);
+
+        $binaryRule = $this->generateBinaryExtractionConfig($software->binary);
+        $hasFilters = $software->files !== [];
+
+        $resultFiles = [];
+        $resultBinary = null;
+
+        # Second pass: extract entries to their relative destinations
+        $extractor = $archive->extract();
+        while ($extractor->valid()) {
+            $relativePath = $extractor->key();
+            $file = $extractor->current();
+            \assert($file instanceof \SplFileInfo);
+
+            $target = $this->resolveArchiveTarget($relativePath, $stripPrefix, $destination);
+            if ($target === null) {
+                $this->logger->debug('Skipping archive entry `%s`.', $relativePath);
+                $extractor->next();
+                continue;
+            }
+
+            $isBinary = $binaryRule !== null && \preg_match($binaryRule->pattern, $file->getFilename()) === 1;
+            $matchedFilter = $hasFilters ? $this->matchFileRule($file, $software->files) : null;
+
+            # With explicit <file> rules, extract only matching entries (the binary is always kept)
+            if ($hasFilters && $matchedFilter === null && !$isBinary) {
+                $this->logger->debug('Skipping file `%s`.', $relativePath);
+                $extractor->next();
+                continue;
+            }
+
+            $this->logger->debug('Extracting %s to %s...', $relativePath, (string) $target);
+            FS::mkdir($target->parent());
+            # `send()` performs the extraction and already advances the generator to the next entry,
+            # so this branch must not call `next()` afterwards.
+            $extractor->send(new \SplFileInfo((string) $target));
+
+            # Binaries get the executable bit; files honor their configured chmod
+            $chmod = $isBinary ? 0o755 : $matchedFilter?->chmod;
+            $chmod === null or @\chmod((string) $target, $chmod);
+
+            $resultFiles[] = $target;
+
+            if ($isBinary && $resultBinary === null && $software->binary !== null) {
+                # Locate the binary inside the extracted tree for version checks; keep it in place
+                $resultBinary = $this->binaryProvider->getLocalBinary($target->parent(), $software->binary);
+            }
+        }
+
+        $resultFiles === [] and throw new NothingExtracted(
+            assetName: $fileInfo->getFilename(),
+            rules: $this->describeExtractionRules($software, $binaryRule),
+            files: $entries,
+        );
+
+        $this->output->writeln(
+            \sprintf(
+                '<comment>%d</comment> file(s) from <comment>%s</comment> have been installed into <info>%s</info>',
+                \count($resultFiles),
+                $downloadResult->version,
+                (string) $destination,
+            ),
+        );
+
+        return new DloadResult($resultFiles, $resultBinary);
+    }
+
+    /**
+     * Resolves the extraction target for an archive entry, stripping the common wrapping directory
+     * and guarding against path traversal (zip-slip).
+     *
+     * @param non-empty-string $relativePath Entry path relative to the archive root (forward slashes)
+     * @param string $stripPrefix Leading directory to remove (e.g. `package-1.0/`), or an empty string
+     * @return Path|null Target path, or null when the entry should be skipped
+     */
+    private function resolveArchiveTarget(string $relativePath, string $stripPrefix, Path $destination): ?Path
+    {
+        $relative = ArchiveEntryPath::relative($relativePath, $stripPrefix);
+
+        return $relative === null ? null : $destination->join($relative);
+    }
+
+    /**
+     * Finds the first `<file>` rule whose pattern matches the given archive entry by its file name.
+     *
+     * @param list<File> $filters File mapping configurations
+     */
+    private function matchFileRule(\SplFileInfo $file, array $filters): ?File
+    {
+        foreach ($filters as $filter) {
+            if (\preg_match($filter->pattern, $file->getFilename()) === 1) {
+                return $filter;
+            }
+        }
+
+        return null;
     }
 
     /**

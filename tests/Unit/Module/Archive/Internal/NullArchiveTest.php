@@ -43,7 +43,7 @@ final class NullArchiveTest
         $key = $generator->key();
         $value = $generator->current();
 
-        Assert::same($key, '/path/to/source-file');
+        Assert::same($key, 'source-file');
         Assert::same($value, $sourceFile);
     }
 

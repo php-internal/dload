@@ -25,8 +25,8 @@ use Internal\DLoad\Module\Archive\Exception\ArchiveException;
  * // Usage
  * $archive = new CustomPharArchive(new \SplFileInfo('archive.custom'));
  * foreach ($archive->extract() as $path => $fileInfo) {
- *     // Extract to destination
- *     yield new \SplFileInfo('/path/to/extract/' . basename($path));
+ *     // Extract to destination, keeping the archive layout ($path is relative)
+ *     yield new \SplFileInfo('/path/to/extract/' . $path);
  * }
  * ```
  *
@@ -55,10 +55,15 @@ abstract class PharAwareArchive extends Archive
             \sprintf('Could not open "%s" for reading.', $archive->getPathname()),
         );
 
+        $iterator = new \RecursiveIteratorIterator($archive);
+
         /** @var \PharFileInfo $file */
-        foreach (new \RecursiveIteratorIterator($archive) as $file) {
+        foreach ($iterator as $file) {
+            // Path of the entry relative to the archive root, using forward slashes.
+            $relativePath = \str_replace('\\', '/', $iterator->getSubPathname());
+
             /** @var \SplFileInfo|null $fileTo */
-            $fileTo = yield $file->getPathname() => $file;
+            $fileTo = yield $relativePath => $file;
             $fileTo instanceof \SplFileInfo and \copy(
                 $file->getPathname(),
                 $fileTo->getRealPath() ?: $fileTo->getPathname(),

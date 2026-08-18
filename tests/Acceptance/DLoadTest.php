@@ -136,6 +136,36 @@ final class DLoadTest
         Assert::true(\is_executable($expectedPharPath), 'Binary file should be executable');
     }
 
+    #[Test]
+    public function extractsArchivePreservingStructureAndStrippingTopLevelDir(): void
+    {
+        $dload = $this->buildDLoad($this->createRoadRunnerXmlConfig());
+        $dload->useMock = true;
+
+        $downloadConfig = new DownloadConfig();
+        $downloadConfig->software = 'rr';
+        $downloadConfig->type = Type::Archive;
+        $downloadConfig->extractPath = (string) $this->destinationDir;
+
+        $dload->addTask($downloadConfig);
+        $dload->run();
+
+        $os = OperatingSystem::fromGlobals();
+
+        // The single wrapping directory (roadrunner-2024.1.5-windows-amd64/) is stripped,
+        // so its contents land directly in the destination, keeping their relative layout.
+        $binaryPath = $this->destinationDir->join('rr' . $os->getBinaryExtension());
+        Assert::true($binaryPath->isFile(), 'Binary should be extracted into the destination root');
+        Assert::true($this->destinationDir->join('README.md')->isFile(), 'Sibling files should be extracted too');
+        Assert::true($this->destinationDir->join('LICENSE')->isFile(), 'Sibling files should be extracted too');
+
+        // The wrapping version directory must not be recreated inside the destination.
+        Assert::false(
+            $this->destinationDir->join('roadrunner-2024.1.5-windows-amd64')->exists(),
+            'The stripped top-level directory should not be present',
+        );
+    }
+
     #[BeforeTest]
     protected function prepare(): void
     {
@@ -212,6 +242,26 @@ final class DLoadTest
             </dload>
             XML;
 
+    }
+
+    /**
+     * @return non-empty-string
+     */
+    private function createRoadRunnerXmlConfig(): string
+    {
+        return <<<XML
+            <?xml version="1.0"?>
+            <dload temp-dir="{$this->tempDir}" >
+                <registry overwrite="false">
+                    <software name="RoadRunner" alias="rr">
+                        <repository type="github" uri="roadrunner-server/roadrunner"
+                            asset-pattern="/^roadrunner-.*/"
+                        />
+                        <binary name="rr" version-command="--version" />
+                    </software>
+                </registry>
+            </dload>
+            XML;
     }
 
     private function removeDirectory(Path $dir): void

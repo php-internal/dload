@@ -18,8 +18,8 @@ use Internal\DLoad\Module\Archive\Archive as ArchiveInterface;
  *     public function extract(): \Generator
  *     {
  *         // Implementation for custom archive extraction
- *         foreach ($files as $file) {
- *             $fileTo = yield $file->getPathname() => $file;
+ *         foreach ($files as $relativePath => $file) {
+ *             $fileTo = yield $relativePath => $file;
  *             // Extract file if requested
  *         }
  *     }

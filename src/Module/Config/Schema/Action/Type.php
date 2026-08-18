@@ -24,8 +24,14 @@ enum Type: string
     /**
      * Archive extraction type.
      *
-     * Downloads and extracts entire archive contents to specified directory.
-     * Used for distributing multiple files, documentation, or project assets.
+     * Downloads and extracts the entire archive into the destination directory, preserving the
+     * internal directory structure. A single top-level directory wrapping the whole archive is
+     * stripped (like `tar --strip-components=1`).
+     *
+     * Unlike {@see self::Binary}, matched files are not flattened — this suits multi-file tools
+     * whose files reference each other by relative path (e.g. a binary resolving a shared library
+     * via an `$ORIGIN/../lib` rpath). When `<file>` rules are given they act as an include filter;
+     * a configured `<binary>` is only used to locate the executable for version checks, not moved.
      */
     case Archive = 'archive';
 
