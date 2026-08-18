@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.15.0](https://github.com/php-internal/dload/compare/1.14.1...1.15.0) (2026-08-18)
+
+
+### Features
+
+* Add Rapira ([c553864](https://github.com/php-internal/dload/commit/c553864477e481644211874e97505719d2dd8988))
+* unpack `type="archive"` preserving arch directory structure ([#114](https://github.com/php-internal/dload/issues/114)) ([453e5cd](https://github.com/php-internal/dload/commit/453e5cd9121bc87046281c01070a0dddcfe06fae))
+
+
+### Bug Fixes
+
+* **ci:** call the asset builds from the release workflow ([81d9a12](https://github.com/php-internal/dload/commit/81d9a129a656e329de74c4ecc495131fa30f61f8))
+* **registry:** narrow the built-in rapira asset-pattern to php8.5 builds ([453e5cd](https://github.com/php-internal/dload/commit/453e5cd9121bc87046281c01070a0dddcfe06fae))
+
+
+### Documentation
+
+* document structure-preserving archive extraction in the README and skill ([453e5cd](https://github.com/php-internal/dload/commit/453e5cd9121bc87046281c01070a0dddcfe06fae))
+
 ## [1.14.1](https://github.com/php-internal/dload/compare/1.14.0...1.14.1) (2026-08-11)
 
 
