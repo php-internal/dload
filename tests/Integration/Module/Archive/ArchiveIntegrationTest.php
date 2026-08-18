@@ -101,7 +101,7 @@ final class ArchiveIntegrationTest
     #[Test]
     public function extractKeysEntriesByTheirArchiveRelativePath(string $type): void
     {
-        $archive = $this->factory->create(new \SplFileInfo($this->createNestedArchive($type)));
+        $archive = $this->factory->create(new \SplFileInfo($this->nestedArchiveFixture($type)));
 
         $keys = [];
         foreach ($archive->extract() as $relativePath => $_) {
@@ -116,7 +116,7 @@ final class ArchiveIntegrationTest
     #[Test]
     public function extractPreservesTheNestedDirectoryStructure(string $type): void
     {
-        $archive = $this->factory->create(new \SplFileInfo($this->createNestedArchive($type)));
+        $archive = $this->factory->create(new \SplFileInfo($this->nestedArchiveFixture($type)));
         $target = $this->tempDir . '/extracted';
 
         $extractor = $archive->extract();
@@ -162,47 +162,18 @@ final class ArchiveIntegrationTest
     }
 
     /**
-     * Builds a real archive of the given type with a nested directory layout.
+     * Returns the path to a committed archive fixture with a nested directory layout.
+     *
+     * The fixtures are pre-built and committed rather than created in-process: a tar.gz created
+     * and reopened within the same process reads its entries back as empty on Linux, so building
+     * the fixture on the fly is unreliable across platforms.
      *
      * @param non-empty-string $type Either `zip` or `tar.gz`
-     * @return non-empty-string Path to the created archive
+     * @return non-empty-string Path to the fixture archive
      */
-    private function createNestedArchive(string $type): string
+    private function nestedArchiveFixture(string $type): string
     {
-        if ($type === 'zip') {
-            if (!\class_exists(\ZipArchive::class)) {
-                throw new SkipTest('Zip extension is not available');
-            }
-
-            $path = $this->tempDir . '/nested.zip';
-            $zip = new \ZipArchive();
-            $zip->open($path, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
-            foreach (self::NESTED_LAYOUT as $entry => $content) {
-                $zip->addFromString($entry, $content);
-            }
-            $zip->close();
-
-            return $path;
-        }
-
-        // Build the tar from real on-disk files: `PharData::addFromString()` on a tar can produce
-        // entries that read back empty once the archive is gzip-compressed and reopened on Linux.
-        $sourceDir = $this->tempDir . '/nested-src';
-        foreach (self::NESTED_LAYOUT as $entry => $content) {
-            $file = $sourceDir . '/' . $entry;
-            \is_dir(\dirname($file)) or \mkdir(\dirname($file), 0777, true);
-            \file_put_contents($file, $content);
-        }
-
-        $tarPath = $this->tempDir . '/nested.tar';
-        $phar = new \PharData($tarPath);
-        $phar->buildFromDirectory($sourceDir);
-        $phar->compress(\Phar::GZ);
-        unset($phar);
-        // Drop the intermediate uncompressed tar so only the .tar.gz remains.
-        \is_file($tarPath) and \unlink($tarPath);
-
-        return $tarPath . '.gz';
+        return __DIR__ . '/Fixture/nested.' . $type;
     }
 
     /**
