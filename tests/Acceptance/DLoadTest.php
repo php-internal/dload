@@ -167,6 +167,44 @@ final class DLoadTest
         );
     }
 
+    #[Test]
+    public function extractsArchiveWithBinaryAndFileFilterPreservingStructure(): void
+    {
+        $dload = $this->buildDLoad($this->createNestedToolXmlConfig());
+        $dload->useMock = true;
+        // A nested layout: pkg-1.0/{bin/app, lib/app/libphp.so, share/app/VERSION.txt}
+        $dload->mockArchive = new \SplFileInfo(
+            \dirname(__DIR__) . '/Integration/Module/Archive/Fixture/nested.zip',
+        );
+
+        $downloadConfig = new DownloadConfig();
+        $downloadConfig->software = 'nested';
+        $downloadConfig->type = Type::Archive;
+        $downloadConfig->extractPath = (string) $this->destinationDir;
+
+        $dload->addTask($downloadConfig);
+        $dload->run();
+
+        // The wrapping pkg-1.0/ directory is stripped; the binary and the matched library keep
+        // their nested layout, while the unmatched VERSION.txt is filtered out by the <file> rules.
+        Assert::true(
+            $this->destinationDir->join('bin', 'app')->isFile(),
+            'Binary should be extracted keeping its bin/ subdirectory',
+        );
+        Assert::true(
+            $this->destinationDir->join('lib', 'app', 'libphp.so')->isFile(),
+            'File matched by a <file> rule should be extracted keeping its subdirectory',
+        );
+        Assert::false(
+            $this->destinationDir->join('share', 'app', 'VERSION.txt')->exists(),
+            'Files not matched by any rule should be skipped',
+        );
+        Assert::false(
+            $this->destinationDir->join('pkg-1.0')->exists(),
+            'The stripped top-level directory should not be present',
+        );
+    }
+
     #[BeforeTest]
     protected function prepare(): void
     {
@@ -259,6 +297,25 @@ final class DLoadTest
                             asset-pattern="/^roadrunner-.*/"
                         />
                         <binary name="rr" version-command="--version" />
+                    </software>
+                </registry>
+            </dload>
+            XML;
+    }
+
+    /**
+     * @return non-empty-string
+     */
+    private function createNestedToolXmlConfig(): string
+    {
+        return <<<XML
+            <?xml version="1.0"?>
+            <dload temp-dir="{$this->tempDir}" >
+                <registry overwrite="false">
+                    <software name="Nested Tool" alias="nested">
+                        <repository type="github" uri="example/nested" asset-pattern="/^nested-.*/" />
+                        <binary name="app" pattern="/^app$/" />
+                        <file pattern="/^libphp\.(so|dylib)$/" />
                     </software>
                 </registry>
             </dload>

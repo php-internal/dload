@@ -51,6 +51,9 @@ final class DLoad
     /** @var bool Flag to use mock data instead of actual downloads for testing */
     public bool $useMock = false;
 
+    /** @var \SplFileInfo|null Overrides the asset returned when {@see self::$useMock} is set (tests only) */
+    public ?\SplFileInfo $mockArchive = null;
+
     public function __construct(
         private readonly Logger $logger,
         private readonly Manager $taskManager,
@@ -169,18 +172,20 @@ final class DLoad
      */
     private function prepareDownloadTask(Software $software, DownloadConfig $action): DownloadTask
     {
-        return $this->useMock
-            ? new DownloadTask(
-                $software,
-                static fn() => null,
-                static fn(): PromiseInterface => resolve(
-                    new DownloadResult(
-                        new \SplFileInfo(Info::ROOT_DIR . '/resources/mock/roadrunner-2024.1.5-windows-amd64.zip'),
-                        Version::fromVersionString('2024.1.5'),
-                    ),
-                ),
-            )
-            : $this->downloader->download($software, $action, static fn() => null);
+        if (!$this->useMock) {
+            return $this->downloader->download($software, $action, static fn() => null);
+        }
+
+        $mockFile = $this->mockArchive
+            ?? new \SplFileInfo(Info::ROOT_DIR . '/resources/mock/roadrunner-2024.1.5-windows-amd64.zip');
+
+        return new DownloadTask(
+            $software,
+            static fn() => null,
+            static fn(): PromiseInterface => resolve(
+                new DownloadResult($mockFile, Version::fromVersionString('2024.1.5')),
+            ),
+        );
     }
 
     /**
