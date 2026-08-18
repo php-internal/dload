@@ -283,13 +283,33 @@ Cuando no se especifica `type`, DLoad automáticamente usa todos los manejadores
 
 | Tipo      | Comportamiento                                                     | Caso de Uso                       |
 |-----------|-------------------------------------------------------------------|----------------------------------|
-| `binary`  | Verificación de binarios, validación de versión, permisos de ejecución  | Herramientas CLI, ejecutables         |
+| `binary`  | Extrae el ejecutable/archivos coincidentes, aplanándolos en el directorio de destino  | Herramientas CLI, ejecutables         |
 | `phar`    | Descarga archivos `.phar` como ejecutables **sin extraer** | Herramientas PHP como Psalm, PHPStan  |
-| `archive` | **Fuerza la extracción incluso para archivos .phar**                    | Cuando necesitas el contenido del archivo |
+| `archive` | **Descomprime el asset completo, preservando su estructura de directorios** | Herramientas multiarchivo, paquetes de frontend, documentación |
 
 > [!NOTE]
 > Usa `type="phar"` para herramientas PHP que deben mantenerse como archivos `.phar`.
 > Usar `type="archive"` extraerá incluso archivos `.phar`.
+
+#### Extracción de Archivos (Preservando la Estructura)
+
+`type="archive"` descomprime el asset **completo** en `extract-path`, manteniendo la estructura interna de directorios del archivo en lugar de aplanar los archivos coincidentes en una sola carpeta:
+
+- Un único directorio de nivel superior que envuelve todo el archivo se elimina, como `tar --strip-components=1` (así `pkg-1.2.3/bin/app` queda como `bin/app`).
+- Los elementos `<file>`, cuando están presentes, actúan como un **filtro de inclusión** (coincidencia por nombre de archivo); omítelos para extraer todo.
+- Un `<binary>`, si está configurado, se usa **solo para localizar** el ejecutable dentro del árbol extraído (para la comprobación de versión) y marcar su bit de ejecución — no se saca de su subdirectorio.
+
+Esto es necesario cuando los archivos se referencian entre sí por ruta relativa — por ejemplo, un binario que resuelve una biblioteca compartida a través de un rpath `$ORIGIN/../lib`. El aplanamiento rompería ese enlace; la extracción que preserva la estructura mantiene `bin/` y `lib/` en su lugar relativo.
+
+```xml
+<!-- Una herramienta autónoma: un binario más su biblioteca compartida, anidados bajo ./runtime -->
+<software name="Rapira" alias="rapira" description="Servidor de aplicaciones PHP" homepage="https://rapira.rs/">
+    <repository type="github" uri="rapira-rs/rapira" asset-pattern="/^rapira-v.*-linux-.*/" />
+    <binary name="rapira" />
+</software>
+
+<download software="rapira" type="archive" extract-path="./runtime" />
+```
 
 ### Restricciones de Versión
 

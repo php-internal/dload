@@ -285,13 +285,33 @@ When `type` is not specified, DLoad automatically uses all available handlers:
 
 | Type      | Behavior                                                     | Use Case                       |
 |-----------|--------------------------------------------------------------|--------------------------------|
-| `binary`  | Binary checking, version validation, executable permissions  | CLI tools, executables         |
+| `binary`  | Extracts the matched executable/files, flattened into the destination | CLI tools, executables |
 | `phar`    | Downloads `.phar` files as executables **without unpacking** | PHP tools like Psalm, PHPStan  |
-| `archive` | **Forces unpacking even for .phar files**                    | When you need archive contents |
+| `archive` | **Unpacks the whole asset, preserving its directory structure** | Multi-file tools, frontend bundles, docs |
 
 > [!NOTE]
 > Use `type="phar"` for PHP tools that should remain as `.phar` files.
 > Using `type="archive"` will unpack even `.phar` archives.
+
+#### Archive Extraction (Preserving Structure)
+
+`type="archive"` unpacks the **entire** asset into `extract-path`, keeping the archive's internal directory layout instead of flattening matched files into a single folder:
+
+- A single top-level directory wrapping the whole archive is stripped, like `tar --strip-components=1` (so `pkg-1.2.3/bin/app` lands as `bin/app`).
+- `<file>` elements, when present, act as an **include filter** (matched by file name); omit them to extract everything.
+- A `<binary>`, if configured, is used **only to locate** the executable inside the extracted tree (for the version check) and to set its executable bit — it is not moved out of its subdirectory.
+
+This is required when files reference each other by relative path — for example a binary that resolves a shared library through an `$ORIGIN/../lib` rpath. Flattening would break that link; structure-preserving extraction keeps `bin/` and `lib/` in place relative to each other.
+
+```xml
+<!-- A self-contained tool: a binary plus its shared library, kept nested under ./runtime -->
+<software name="Rapira" alias="rapira" description="PHP application server" homepage="https://rapira.rs/">
+    <repository type="github" uri="rapira-rs/rapira" asset-pattern="/^rapira-v.*-linux-.*/" />
+    <binary name="rapira" />
+</software>
+
+<download software="rapira" type="archive" extract-path="./runtime" />
+```
 
 ### Version Constraints
 

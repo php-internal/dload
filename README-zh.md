@@ -283,13 +283,33 @@ DLoad 支持三种下载类型，它们决定了资源的处理方式：
 
 | 类型      | 行为                                                     | 适用场景                       |
 |-----------|--------------------------------------------------------------|--------------------------------|
-| `binary`  | 二进制检查、版本验证、可执行权限  | CLI 工具、可执行文件         |
+| `binary`  | 提取匹配的可执行文件/文件，并平铺到目标目录中  | CLI 工具、可执行文件         |
 | `phar`    | 下载 `.phar` 文件作为可执行文件**但不解包** | PHP 工具如 Psalm、PHPStan  |
-| `archive` | **强制解包即使是 .phar 文件**                    | 当你需要压缩包内容时 |
+| `archive` | **解包整个资源，保留其目录结构**                    | 多文件工具、前端产物、文档 |
 
 > [!NOTE]
 > 对于应该保持为 `.phar` 文件的 PHP 工具，使用 `type="phar"`。
 > 使用 `type="archive"` 会解包甚至 `.phar` 压缩包。
+
+#### 解包压缩包（保留结构）
+
+`type="archive"` 会将**整个**资源解包到 `extract-path`，保留压缩包内部的目录结构，而不是把匹配的文件平铺到单个目录中：
+
+- 包裹整个压缩包的单个顶层目录会被剥离，类似 `tar --strip-components=1`（因此 `pkg-1.2.3/bin/app` 会落到 `bin/app`）。
+- `<file>` 元素若存在，则作为**包含过滤器**（按文件名匹配）；省略它们即可提取全部内容。
+- `<binary>` 若已配置，仅用于**定位**解包后目录树中的可执行文件（用于版本检查）并设置其可执行位——它不会被移出所在的子目录。
+
+当文件之间通过相对路径相互引用时，这一点是必需的——例如某个二进制文件通过 `$ORIGIN/../lib` 的 rpath 解析共享库。平铺会破坏该引用；保留结构的解包会让 `bin/` 与 `lib/` 保持彼此相对的位置。
+
+```xml
+<!-- 自包含工具：一个二进制文件及其共享库，在 ./runtime 下保持嵌套 -->
+<software name="Rapira" alias="rapira" description="用 PHP 编写的应用服务器" homepage="https://rapira.rs/">
+    <repository type="github" uri="rapira-rs/rapira" asset-pattern="/^rapira-v.*-linux-.*/" />
+    <binary name="rapira" />
+</software>
+
+<download software="rapira" type="archive" extract-path="./runtime" />
+```
 
 ### 版本约束
 
