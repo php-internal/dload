@@ -46,7 +46,7 @@
                                     </xs:attribute>
                                     <xs:attribute name="type">
                                         <xs:annotation>
-                                            <xs:documentation>Download type determining how the asset is processed: binary (executable from archive), phar (PHP archive, no extraction), archive (extract all contents)</xs:documentation>
+                                            <xs:documentation>Download type determining how the asset is processed: binary (extract matched executable/files, flattened into the destination), phar (PHP archive, no extraction), archive (extract the whole asset preserving its internal directory structure; a single wrapping top-level directory is stripped, and an optional &lt;binary&gt; is only used to locate the executable for version checks)</xs:documentation>
                                         </xs:annotation>
                                         <xs:simpleType>
                                             <xs:restriction base="xs:string">

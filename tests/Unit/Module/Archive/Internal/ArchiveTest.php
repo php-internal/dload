@@ -61,6 +61,11 @@ final class ArchiveTest
                 // Minimal implementation for testing the constructor
                 yield 'test' => new \SplFileInfo('test');
             }
+
+            public function entries(): array
+            {
+                return ['test'];
+            }
         };
     }
 }

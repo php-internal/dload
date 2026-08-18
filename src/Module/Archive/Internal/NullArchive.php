@@ -31,7 +31,7 @@ final class NullArchive extends Archive
      * "Extracts" the file by yielding it as-is
      *
      * Treats the file as if it were the only item in an archive.
-     * The key of the yielded value is the file's path.
+     * The key of the yielded value is the file name (its archive-relative path).
      *
      * @return \Generator<non-empty-string, \SplFileInfo, \SplFileInfo|null, void>
      * @throws ArchiveException
@@ -43,7 +43,7 @@ final class NullArchive extends Archive
         );
 
         /** @var \SplFileInfo|null $fileTo */
-        $fileTo = yield $this->file->getPathname() => $this->file;
+        $fileTo = yield $this->file->getFilename() => $this->file;
 
         if ($fileTo instanceof \SplFileInfo) {
             $sourcePath = $this->file->getRealPath() ?: $this->file->getPathname();
@@ -51,5 +51,13 @@ final class NullArchive extends Archive
 
             \copy($sourcePath, $destPath);
         }
+    }
+
+    public function entries(): array
+    {
+        $name = $this->file->getFilename();
+        \assert($name !== '');
+
+        return [$name];
     }
 }

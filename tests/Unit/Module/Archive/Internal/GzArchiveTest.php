@@ -40,13 +40,22 @@ final class GzArchiveTest
     }
 
     #[Test]
-    public function extractKeysTheFileByItsOwnPath(): void
+    public function extractKeysTheFileByItsArchiveRelativeName(): void
     {
         $archive = $this->gzArchive('payload.txt.gz', 'compressed content');
 
         $generator = $archive->extract();
 
-        Assert::same($generator->key(), $generator->current()->getPathname());
+        Assert::same($generator->key(), $generator->current()->getFilename());
+        Assert::same($generator->key(), 'payload.txt');
+    }
+
+    #[Test]
+    public function entriesReturnsTheDecompressedNameWithoutTouchingTheStream(): void
+    {
+        $archive = $this->gzArchive('payload.txt.gz', 'compressed content');
+
+        Assert::same($archive->entries(), ['payload.txt']);
     }
 
     #[DataProvider('provideArchiveNames')]

@@ -113,9 +113,28 @@ A PHAR is one platform-independent `.phar` file — no extraction, no OS/arch ma
 
 On the `<download>` side, always set `type="phar"` so dload skips archive-extraction logic (see Step 3).
 
-### Other non-binary assets
+### Archive mode — extract many files, keeping their layout
 
-Frontend bundles, configs, anything that isn't executable — use the `<file>` element instead of `<binary>` in the inline definition, and `type="archive"` on `<download>`.
+`type="archive"` unpacks the **whole** asset into `extract-path`, preserving the archive's internal directory structure instead of flattening matched files into one folder. Use it for anything that ships more than a single executable: frontend bundles, docs, or a binary that depends on sibling files by relative path.
+
+- A single top-level directory that wraps the whole archive is stripped, like `tar --strip-components=1` (so `pkg-1.2.3/bin/app` lands as `bin/app`).
+- `<file>` rules, when present, act as an **include filter** (matched by file name) — omit them to extract everything.
+- A `<binary>`, if given, is used **only to locate** the executable inside the extracted tree (for the version check) and to mark it executable — it is not moved out of its subdirectory.
+
+```xml
+<!-- registry: a self-contained tool (a binary plus its shared library) -->
+<software name="Rapira" alias="rapira" description="…" homepage="https://rapira.rs/">
+    <repository type="github" uri="rapira-rs/rapira" asset-pattern="/^rapira-v.*-linux-.*/" />
+    <binary name="rapira" />
+</software>
+
+<!-- action: keep bin/, lib/ nested under ./runtime -->
+<download software="rapira" type="archive" extract-path="./runtime" />
+```
+
+This matters when files reference each other by relative path — e.g. a binary that resolves a shared library through an `$ORIGIN/../lib` rpath. Flattening would break that link; structure-preserving extraction keeps `bin/` and `lib/` in place relative to each other.
+
+> Need only a couple of files dropped side by side instead of the whole tree? Don't set `type="archive"` — leave the type at its default and list `<binary>`/`<file>` rules. The default (flat) extraction pulls just the matched files, by file name, and places them directly in `extract-path`.
 
 ## Step 3 — add the `<download>` action
 
@@ -145,7 +164,7 @@ Useful `<download>` attributes:
 | `software` | Alias or name of the tool (built-in or inline). Required. |
 | `version` | Composer-style constraint: `^2025.1`, `~1.0.0`, `^2.12.0-feature`, `^2.12.0@beta`, `^2.12.0-hotfix@rc`. Omit for latest stable. |
 | `extract-path` | Override target directory (default: project root). |
-| `type` | `binary` (default for executables), `archive`, `phar`. Set when the tool isn't a plain executable — required for PHAR. |
+| `type` | `binary` (default for executables), `archive` (unpack the whole asset keeping its folder layout — see [Archive mode](#archive-mode--extract-many-files-keeping-their-layout)), `phar` (required for PHAR). |
 
 Stability suffixes (`@alpha`, `@beta`, `@RC`, `@stable`) follow Composer's ordering, with `stable` as the default.
 

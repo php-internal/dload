@@ -43,8 +43,21 @@ final class NullArchiveTest
         $key = $generator->key();
         $value = $generator->current();
 
-        Assert::same($key, '/path/to/source-file');
+        Assert::same($key, 'source-file');
         Assert::same($value, $sourceFile);
+    }
+
+    #[Test]
+    public function entriesReturnsTheFileName(): void
+    {
+        $sourceFile = \Mockery::mock(\SplFileInfo::class);
+        $sourceFile->allows('isFile')->andReturn(true);
+        $sourceFile->allows('isReadable')->andReturn(true);
+        $sourceFile->allows('getFilename')->andReturn('source-file');
+
+        $archive = new NullArchive($sourceFile);
+
+        Assert::same($archive->entries(), ['source-file']);
     }
 
     #[Test]

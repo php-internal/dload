@@ -25,8 +25,8 @@ use Internal\DLoad\Module\Archive\Exception\ArchiveException;
  * // Usage
  * $archive = new CustomPharArchive(new \SplFileInfo('archive.custom'));
  * foreach ($archive->extract() as $path => $fileInfo) {
- *     // Extract to destination
- *     yield new \SplFileInfo('/path/to/extract/' . basename($path));
+ *     // Extract to destination, keeping the archive layout ($path is relative)
+ *     yield new \SplFileInfo('/path/to/extract/' . $path);
  * }
  * ```
  *
@@ -55,15 +55,43 @@ abstract class PharAwareArchive extends Archive
             \sprintf('Could not open "%s" for reading.', $archive->getPathname()),
         );
 
+        $iterator = new \RecursiveIteratorIterator($archive);
+
         /** @var \PharFileInfo $file */
-        foreach (new \RecursiveIteratorIterator($archive) as $file) {
+        foreach ($iterator as $file) {
+            // Path of the entry relative to the archive root, using forward slashes.
+            $relativePath = \str_replace('\\', '/', $iterator->getSubPathname());
+
             /** @var \SplFileInfo|null $fileTo */
-            $fileTo = yield $file->getPathname() => $file;
-            $fileTo instanceof \SplFileInfo and \copy(
-                $file->getPathname(),
-                $fileTo->getRealPath() ?: $fileTo->getPathname(),
-            );
+            $fileTo = yield $relativePath => $file;
+
+            if ($fileTo instanceof \SplFileInfo) {
+                $destination = $fileTo->getRealPath() ?: $fileTo->getPathname();
+                // Read the entry via PharFileInfo::getContent(): unlike copy() over the phar://
+                // stream, it reliably decompresses tar.gz/zip entries across platforms.
+                $file instanceof \PharFileInfo
+                    ? \file_put_contents($destination, $file->getContent())
+                    : \copy($file->getPathname(), $destination);
+            }
         }
+    }
+
+    public function entries(): array
+    {
+        $archive = $this->open($this->asset);
+        $archive->isReadable() or throw new ArchiveException(
+            \sprintf('Could not open "%s" for reading.', $archive->getPathname()),
+        );
+
+        // Reading the manifest names does not decompress the entries' contents.
+        $entries = [];
+        $iterator = new \RecursiveIteratorIterator($archive);
+        foreach ($iterator as $_) {
+            $relativePath = \str_replace('\\', '/', $iterator->getSubPathname());
+            $relativePath === '' or $entries[] = $relativePath;
+        }
+
+        return $entries;
     }
 
     /**
