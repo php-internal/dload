@@ -150,12 +150,13 @@ final class DLoadTest
         $dload->addTask($downloadConfig);
         $dload->run();
 
-        $os = OperatingSystem::fromGlobals();
-
-        // The single wrapping directory (roadrunner-2024.1.5-windows-amd64/) is stripped,
-        // so its contents land directly in the destination, keeping their relative layout.
-        $binaryPath = $this->destinationDir->join('rr' . $os->getBinaryExtension());
-        Assert::true($binaryPath->isFile(), 'Binary should be extracted into the destination root');
+        // The single wrapping directory (roadrunner-2024.1.5-windows-amd64/) is stripped, so its
+        // contents land directly in the destination, keeping their relative layout. Archive mode
+        // never renames entries, so the files keep their in-archive names regardless of host OS.
+        Assert::true(
+            $this->destinationDir->join('rr.exe')->isFile(),
+            'Binary should be extracted into the destination root',
+        );
         Assert::true($this->destinationDir->join('README.md')->isFile(), 'Sibling files should be extracted too');
         Assert::true($this->destinationDir->join('LICENSE')->isFile(), 'Sibling files should be extracted too');
 

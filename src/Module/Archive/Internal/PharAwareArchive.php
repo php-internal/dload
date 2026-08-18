@@ -64,10 +64,15 @@ abstract class PharAwareArchive extends Archive
 
             /** @var \SplFileInfo|null $fileTo */
             $fileTo = yield $relativePath => $file;
-            $fileTo instanceof \SplFileInfo and \copy(
-                $file->getPathname(),
-                $fileTo->getRealPath() ?: $fileTo->getPathname(),
-            );
+
+            if ($fileTo instanceof \SplFileInfo) {
+                $destination = $fileTo->getRealPath() ?: $fileTo->getPathname();
+                // Read the entry via PharFileInfo::getContent(): unlike copy() over the phar://
+                // stream, it reliably decompresses tar.gz/zip entries across platforms.
+                $file instanceof \PharFileInfo
+                    ? \file_put_contents($destination, $file->getContent())
+                    : \copy($file->getPathname(), $destination);
+            }
         }
     }
 
