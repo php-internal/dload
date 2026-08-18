@@ -29,13 +29,7 @@ final class GzArchive extends Archive
         );
 
         try {
-            // Derive output filename by stripping .gz extension
-            $fileName = $this->asset->getFilename();
-            \assert($fileName !== '');
-            $outputName = \preg_replace('/\.gz$/i', '', $fileName);
-            if ($outputName === null || $outputName === '') {
-                $outputName = $fileName;
-            }
+            $outputName = $this->outputName();
             $tempPath = \sys_get_temp_dir() . \DIRECTORY_SEPARATOR . $outputName;
 
             $out = \fopen($tempPath, 'wb');
@@ -67,5 +61,25 @@ final class GzArchive extends Archive
         } finally {
             \gzclose($gz);
         }
+    }
+
+    public function entries(): array
+    {
+        // The single decompressed file name — derived without touching the gzip stream.
+        return [$this->outputName()];
+    }
+
+    /**
+     * Derives the decompressed file name by stripping the `.gz` extension.
+     *
+     * @return non-empty-string
+     */
+    private function outputName(): string
+    {
+        $fileName = $this->asset->getFilename();
+        \assert($fileName !== '');
+        $outputName = \preg_replace('/\.gz$/i', '', $fileName);
+
+        return $outputName === null || $outputName === '' ? $fileName : $outputName;
     }
 }

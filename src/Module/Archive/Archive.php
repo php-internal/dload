@@ -39,4 +39,16 @@ interface Archive
      * @throws ArchiveException
      */
     public function extract(): \Generator;
+
+    /**
+     * List the paths of all entries in the archive, relative to its root, without extracting them.
+     *
+     * Cheaper than iterating {@see self::extract()} when only the layout is needed (e.g. to detect
+     * a common wrapping directory before extraction): single-file archives such as gzip or a
+     * non-archived file return the entry name without decompressing anything.
+     *
+     * @return list<non-empty-string> Entry paths relative to the archive root (forward slashes)
+     * @throws ArchiveException
+     */
+    public function entries(): array;
 }

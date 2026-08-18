@@ -52,4 +52,12 @@ final class NullArchive extends Archive
             \copy($sourcePath, $destPath);
         }
     }
+
+    public function entries(): array
+    {
+        $name = $this->file->getFilename();
+        \assert($name !== '');
+
+        return [$name];
+    }
 }

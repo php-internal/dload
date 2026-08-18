@@ -368,11 +368,8 @@ final class DLoad
         $archive = $this->archiveFactory->create($fileInfo);
         $this->logger->info('Extracting %s (preserving structure)', $fileInfo->getFilename());
 
-        # First pass: collect entry paths to detect a single wrapping directory to strip
-        $entries = [];
-        foreach ($archive->extract() as $relativePath => $_) {
-            $entries[] = $relativePath;
-        }
+        # List entry paths (without extracting) to detect a single wrapping directory to strip
+        $entries = $archive->entries();
         $stripPrefix = ArchiveEntryPath::commonTopLevelDirectory($entries);
 
         $binaryRule = $this->generateBinaryExtractionConfig($software->binary);
@@ -381,7 +378,7 @@ final class DLoad
         $resultFiles = [];
         $resultBinary = null;
 
-        # Second pass: extract entries to their relative destinations
+        # Extract entries to their relative destinations
         $extractor = $archive->extract();
         while ($extractor->valid()) {
             $relativePath = $extractor->key();

@@ -50,6 +50,14 @@ final class GzArchiveTest
         Assert::same($generator->key(), 'payload.txt');
     }
 
+    #[Test]
+    public function entriesReturnsTheDecompressedNameWithoutTouchingTheStream(): void
+    {
+        $archive = $this->gzArchive('payload.txt.gz', 'compressed content');
+
+        Assert::same($archive->entries(), ['payload.txt']);
+    }
+
     #[DataProvider('provideArchiveNames')]
     #[Test]
     public function extractStripsTheGzExtensionFromTheOutputName(string $archiveName, string $expectedName): void

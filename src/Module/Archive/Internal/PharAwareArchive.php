@@ -76,6 +76,24 @@ abstract class PharAwareArchive extends Archive
         }
     }
 
+    public function entries(): array
+    {
+        $archive = $this->open($this->asset);
+        $archive->isReadable() or throw new ArchiveException(
+            \sprintf('Could not open "%s" for reading.', $archive->getPathname()),
+        );
+
+        // Reading the manifest names does not decompress the entries' contents.
+        $entries = [];
+        $iterator = new \RecursiveIteratorIterator($archive);
+        foreach ($iterator as $_) {
+            $relativePath = \str_replace('\\', '/', $iterator->getSubPathname());
+            $relativePath === '' or $entries[] = $relativePath;
+        }
+
+        return $entries;
+    }
+
     /**
      * Opens archive with specific format
      *

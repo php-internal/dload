@@ -48,6 +48,19 @@ final class NullArchiveTest
     }
 
     #[Test]
+    public function entriesReturnsTheFileName(): void
+    {
+        $sourceFile = \Mockery::mock(\SplFileInfo::class);
+        $sourceFile->allows('isFile')->andReturn(true);
+        $sourceFile->allows('isReadable')->andReturn(true);
+        $sourceFile->allows('getFilename')->andReturn('source-file');
+
+        $archive = new NullArchive($sourceFile);
+
+        Assert::same($archive->entries(), ['source-file']);
+    }
+
+    #[Test]
     public function extractCopiesFileWhenDestinationProvided(): never
     {
         // Copying goes through the global `copy()` function, which cannot be stubbed here.

@@ -44,6 +44,16 @@ class TestArchive implements Archive
         return $this;
     }
 
+    public function entries(): array
+    {
+        if ($this->throwsException) {
+            throw new ArchiveException($this->exceptionMessage);
+        }
+
+        /** @var list<non-empty-string> */
+        return \array_keys($this->files);
+    }
+
     public function extract(): \Generator
     {
         if ($this->throwsException) {

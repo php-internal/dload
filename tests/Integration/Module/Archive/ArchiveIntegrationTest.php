@@ -114,6 +114,18 @@ final class ArchiveIntegrationTest
 
     #[DataProvider('provideNestedArchiveTypes')]
     #[Test]
+    public function entriesListsArchiveRelativePaths(string $type): void
+    {
+        $archive = $this->factory->create(new \SplFileInfo($this->nestedArchiveFixture($type)));
+
+        $entries = $archive->entries();
+        \sort($entries);
+
+        Assert::same($entries, \array_keys(self::NESTED_LAYOUT));
+    }
+
+    #[DataProvider('provideNestedArchiveTypes')]
+    #[Test]
     public function extractPreservesTheNestedDirectoryStructure(string $type): void
     {
         $archive = $this->factory->create(new \SplFileInfo($this->nestedArchiveFixture($type)));
