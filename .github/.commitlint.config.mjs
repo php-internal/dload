@@ -39,6 +39,7 @@ export default {
                 'build',    // Changes that affect the build system
                 'chore',    // Other changes that don't modify src or test files
                 'security', // Security improvements
+                'maintenance', // Maintenance changes (bumps a patch version)
             ],
         ],
     },

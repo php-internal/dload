@@ -41,6 +41,11 @@
             "hidden": false
         },
         {
+            "type": "maintenance",
+            "section": "Maintenance",
+            "hidden": false
+        },
+        {
             "type": "test",
             "section": "Tests",
             "hidden": true

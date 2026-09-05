@@ -28,7 +28,8 @@ module.exports = {
         { value: 'revert', name: 'revert:    Reverts a previous commit', emoji: ':rewind:' },
         { value: 'build', name: 'build:     Changes that affect the build system or external dependencies', emoji: ':package:' },
         { value: 'chore', name: 'chore:     Other changes that don\'t modify src or test files', emoji: ':hammer:' },
-        { value: 'security', name: 'security:  A code change that fixes a security issue', emoji: ':lock:' }
+        { value: 'security', name: 'security:  A code change that fixes a security issue', emoji: ':lock:' },
+        { value: 'maintenance', name: 'maintenance: Maintenance changes that bump a patch version', emoji: ':wrench:' }
     ],
     useEmoji: false,
     emojiAlign: 'center',
