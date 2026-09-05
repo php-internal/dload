@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.15.1](https://github.com/php-internal/dload/compare/1.15.0...1.15.1) (2026-09-05)
+
+
+### Maintenance
+
+* Add Windows repository for Rapira ([f09b6d9](https://github.com/php-internal/dload/commit/f09b6d931ea42695a8cfa7892803c871e8eed8ea))
+
 ## [1.15.0](https://github.com/php-internal/dload/compare/1.14.1...1.15.0) (2026-08-18)
 
 
