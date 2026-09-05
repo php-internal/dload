@@ -248,6 +248,11 @@
                     "type": "github",
                     "uri": "rapira-rs/rapira",
                     "asset-pattern": "/^rapira-v.*-php8\\.5-.*/"
+                },
+                {
+                    "type": "github",
+                    "uri": "rapira-rs/rapira-windows",
+                    "asset-pattern": "/^rapira-v.*-php8\\.5-.*/"
                 }
             ],
             "binary": {
