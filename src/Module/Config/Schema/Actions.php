@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Config\Schema;
 
+use Internal\DLoad\Module\Common\Internal\Attribute\InflectableConfig;
 use Internal\DLoad\Module\Common\Internal\Attribute\XPathEmbedList;
 use Internal\DLoad\Module\Config\Schema\Action\Download;
 use Internal\DLoad\Module\Config\Schema\Action\Velox;
@@ -16,6 +17,7 @@ use Internal\DLoad\Module\Config\Schema\Action\Velox;
  *
  * @internal
  */
+#[InflectableConfig]
 final class Actions
 {
     /** @var list<Download> $downloads Collection of download actions */

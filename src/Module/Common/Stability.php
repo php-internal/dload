@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Common;
 
+use Internal\Container\Factoriable;
 use Internal\DLoad\Module\Common\Input\Build;
-use Internal\DLoad\Service\Factoriable;
 
 /**
  * Software stability level.

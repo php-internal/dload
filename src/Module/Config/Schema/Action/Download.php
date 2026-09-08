@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Config\Schema\Action;
 
+use Internal\DLoad\Module\Common\Internal\Attribute\InflectableConfig;
 use Internal\DLoad\Module\Common\Internal\Attribute\XPath;
 
 /**
@@ -18,6 +19,7 @@ use Internal\DLoad\Module\Common\Internal\Attribute\XPath;
  *
  * @internal
  */
+#[InflectableConfig]
 final class Download
 {
     /** @var non-empty-string $software Software identifier to download */

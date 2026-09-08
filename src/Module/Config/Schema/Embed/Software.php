@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Config\Schema\Embed;
 
+use Internal\DLoad\Module\Common\Internal\Attribute\InflectableConfig;
 use Internal\DLoad\Module\Common\Internal\Attribute\XPath;
 use Internal\DLoad\Module\Common\Internal\Attribute\XPathEmbed;
 use Internal\DLoad\Module\Common\Internal\Attribute\XPathEmbedList;
@@ -38,6 +39,7 @@ use Internal\DLoad\Module\Common\Internal\Attribute\XPathEmbedList;
  *     binary?: BinaryArray,
  * }
  */
+#[InflectableConfig]
 final class Software
 {
     /** @var non-empty-string $name Software package name */

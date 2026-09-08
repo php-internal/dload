@@ -1,5 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <files psalm-version="6.16.1@f1f5de594dc76faf8784e02d3dc4716c91c6f6ac">
+  <file src="src/Bootstrap.php">
+    <InternalClass>
+      <code><![CDATA[new ObjectContainer()]]></code>
+    </InternalClass>
+    <InternalMethod>
+      <code><![CDATA[addInflector]]></code>
+      <code><![CDATA[bind]]></code>
+      <code><![CDATA[bind]]></code>
+      <code><![CDATA[bind]]></code>
+      <code><![CDATA[bind]]></code>
+      <code><![CDATA[bind]]></code>
+      <code><![CDATA[bind]]></code>
+      <code><![CDATA[bind]]></code>
+      <code><![CDATA[bind]]></code>
+      <code><![CDATA[make]]></code>
+      <code><![CDATA[new ObjectContainer()]]></code>
+    </InternalMethod>
+  </file>
   <file src="src/Command/Base.php">
     <LessSpecificReturnStatement>
       <code><![CDATA[$config]]></code>
@@ -121,51 +139,11 @@
       <code><![CDATA[$output[0]]]></code>
     </MixedArgument>
   </file>
-  <file src="src/Module/Common/Internal/Injection/ConfigLoader.php">
+  <file src="src/Module/Common/Internal/Injection/ConfigInflector.php">
     <MixedMethodCall>
       <code><![CDATA[new $attribute->class()]]></code>
       <code><![CDATA[new $attribute->class()]]></code>
     </MixedMethodCall>
-    <RedundantCondition>
-      <code><![CDATA[\assert($xml instanceof \SimpleXMLElement)]]></code>
-      <code><![CDATA[\assert($xml instanceof \SimpleXMLElement)]]></code>
-    </RedundantCondition>
-  </file>
-  <file src="src/Module/Common/Internal/ObjectContainer.php">
-    <ArgumentTypeCoercion>
-      <code><![CDATA[$id]]></code>
-    </ArgumentTypeCoercion>
-    <DocblockTypeContradiction>
-      <code><![CDATA[\is_a($binding, Factoriable::class, true)]]></code>
-    </DocblockTypeContradiction>
-    <ImplementedReturnTypeMismatch>
-      <code><![CDATA[object]]></code>
-    </ImplementedReturnTypeMismatch>
-    <InvalidArgument>
-      <code><![CDATA[[$binding, 'create']]]></code>
-    </InvalidArgument>
-    <InvalidPropertyAssignmentValue>
-      <code><![CDATA[$this->factory]]></code>
-    </InvalidPropertyAssignmentValue>
-    <MixedArgumentTypeCoercion>
-      <code><![CDATA[$arguments]]></code>
-      <code><![CDATA[$service]]></code>
-    </MixedArgumentTypeCoercion>
-    <MixedPropertyTypeCoercion>
-      <code><![CDATA[$this->cache]]></code>
-    </MixedPropertyTypeCoercion>
-    <MixedReturnStatement>
-      <code><![CDATA[$this->injector->invoke([$binding, 'create'])]]></code>
-    </MixedReturnStatement>
-    <MoreSpecificImplementedParamType>
-      <code><![CDATA[$service]]></code>
-    </MoreSpecificImplementedParamType>
-    <PropertyTypeCoercion>
-      <code><![CDATA[$this->cache]]></code>
-    </PropertyTypeCoercion>
-    <UndefinedMethod>
-      <code><![CDATA[$id::create(...)]]></code>
-    </UndefinedMethod>
   </file>
   <file src="src/Module/Downloader/Downloader.php">
     <InternalMethod>
@@ -350,10 +328,5 @@
       <code><![CDATA[return $stability;]]></code>
       <code><![CDATA[return Stability::Dev;]]></code>
     </ReferenceConstraintViolation>
-  </file>
-  <file src="src/Service/Factoriable.php">
-    <InvalidDocblock>
-      <code><![CDATA[Factoriable]]></code>
-    </InvalidDocblock>
   </file>
 </files>

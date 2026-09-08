@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Config\Schema\Embed;
 
+use Internal\DLoad\Module\Common\Internal\Attribute\InflectableConfig;
 use Internal\DLoad\Module\Common\Internal\Attribute\XPath;
 
 /**
@@ -25,6 +26,7 @@ use Internal\DLoad\Module\Common\Internal\Attribute\XPath;
  *     asset-pattern?: non-empty-string
  * }
  */
+#[InflectableConfig]
 final class Repository
 {
     /** @var non-empty-string $type Repository type identifier */

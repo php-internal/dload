@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Common\Input;
 
+use Internal\DLoad\Module\Common\Internal\Attribute\InflectableConfig;
 use Internal\DLoad\Module\Common\Internal\Attribute\InputOption;
 
 /**
@@ -13,6 +14,7 @@ use Internal\DLoad\Module\Common\Internal\Attribute\InputOption;
  *
  * @internal
  */
+#[InflectableConfig]
 final class Destination
 {
     /** @var non-empty-string|null $path Target path for downloaded files */

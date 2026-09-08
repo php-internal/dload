@@ -202,7 +202,7 @@ final class StabilityTest
     #[Test]
     public function enumImplementsFactoriableInterface(): void
     {
-        Assert::contains(\class_implements(Stability::class), 'Internal\DLoad\Service\Factoriable');
+        Assert::contains(\class_implements(Stability::class), 'Internal\Container\Factoriable');
     }
 
     #[Test]

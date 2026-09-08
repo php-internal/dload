@@ -22,6 +22,7 @@
     "require": {
         "php": ">=8.2",
         "composer/semver": "^3.4",
+        "internal/container": "^1.0",
         "internal/destroy": "^1.0",
         "internal/path": "^1.2",
         "internal/toml": "^1.0.3",
@@ -31,8 +32,7 @@
         "react/async": "^3.2 || ^4.3",
         "react/promise": "^2.10 || ^3.2",
         "symfony/console": "^6.4 || ^7 || ^8",
-        "symfony/http-client": "^6.4 || ^7 || ^8",
-        "yiisoft/injector": "^1.2"
+        "symfony/http-client": "^6.4 || ^7 || ^8"
     },
     "require-dev": {
         "buggregator/trap": "^1.15",
@@ -41,8 +41,8 @@
         "roxblnfk/unpoly": "^1.8.1",
         "spiral/code-style": "^2.3.1",
         "testo/bridge-mockery": "^0.1.2",
-        "testo/bridge-rector": "^0.2.2",
-        "testo/testo": "^0.10.40",
+        "testo/bridge-rector": "^0.2.4",
+        "testo/testo": "^0.10.46",
         "vimeo/psalm": "^6.10 || ^7.0"
     },
     "suggest": {

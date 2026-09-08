@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Common\Internal\Injection;
 
+use Internal\Container\Container;
+use Internal\Container\Inflector;
 use Internal\DLoad\Module\Common\Internal\Attribute\ConfigAttribute;
 use Internal\DLoad\Module\Common\Internal\Attribute\Env;
+use Internal\DLoad\Module\Common\Internal\Attribute\InflectableConfig;
 use Internal\DLoad\Module\Common\Internal\Attribute\InputArgument;
 use Internal\DLoad\Module\Common\Internal\Attribute\InputOption;
 use Internal\DLoad\Module\Common\Internal\Attribute\PhpIni;
@@ -15,14 +18,14 @@ use Internal\DLoad\Module\Common\Internal\Attribute\XPathEmbedList;
 use Internal\DLoad\Service\Logger;
 
 /**
- * Configuration loader service.
+ * Configuration loader inflector.
  *
  * Hydrates configuration objects with values from different sources
  * based on their property attributes.
  *
  * @internal
  */
-final class ConfigLoader
+final class ConfigInflector implements Inflector
 {
     private \SimpleXMLElement|null $xml = null;
 
@@ -32,37 +35,39 @@ final class ConfigLoader
      * @psalm-suppress RiskyTruthyFalsyComparison
      */
     public function __construct(
-        private readonly Logger $logger,
         private readonly array $env = [],
         private readonly array $inputArguments = [],
         private readonly array $inputOptions = [],
         ?string $xml = null,
     ) {
-        if (\is_string($xml)) {
-            // Check SimpleXML extension
-            if (!\extension_loaded('simplexml')) {
-                $logger->info('SimpleXML extension is not loaded.');
-            } else {
-                $this->xml = \simplexml_load_string($xml, options: \LIBXML_NOERROR) ?: null;
-            }
+        if (\is_string($xml) && \extension_loaded('simplexml')) {
+            $this->xml = \simplexml_load_string($xml, options: \LIBXML_NOERROR) ?: null;
         }
     }
 
     /**
      * Hydrates a configuration object with values from the configured sources.
      */
-    public function hydrate(object $config): void
+    #[\Override]
+    public function inflect(object $object, Container $container): object
     {
-        // Read class properties
-        $reflection = new \ReflectionObject($config);
+        # Detect inflectable config
+        $reflection = new \ReflectionObject($object);
+        if ($reflection->getAttributes(InflectableConfig::class) === []) {
+            return $object;
+        }
+
+        # Read class properties
         foreach ($reflection->getProperties() as $property) {
             $attributes = $property->getAttributes(ConfigAttribute::class, \ReflectionAttribute::IS_INSTANCEOF);
             if (\count($attributes) === 0) {
                 continue;
             }
 
-            $this->injectValue($config, $property, $attributes);
+            $this->injectValue($container, $object, $property, $attributes);
         }
+
+        return $object;
     }
 
     /**
@@ -70,8 +75,12 @@ final class ConfigLoader
      *
      * @param list<\ReflectionAttribute<ConfigAttribute>> $attributes
      */
-    private function injectValue(object $config, \ReflectionProperty $property, array $attributes): void
-    {
+    private function injectValue(
+        Container $container,
+        object $config,
+        \ReflectionProperty $property,
+        array $attributes,
+    ): void {
         foreach ($attributes as $attribute) {
             try {
                 $attribute = $attribute->newInstance();
@@ -79,8 +88,8 @@ final class ConfigLoader
                 /** @var mixed $value */
                 $value = match (true) {
                     $attribute instanceof XPath => $this->getXPath($attribute),
-                    $attribute instanceof XPathEmbed => $this->getXPathEmbedded($attribute),
-                    $attribute instanceof XPathEmbedList => $this->getXPathEmbeddedList($attribute),
+                    $attribute instanceof XPathEmbed => $this->getXPathEmbedded($container, $attribute),
+                    $attribute instanceof XPathEmbedList => $this->getXPathEmbeddedList($container, $attribute),
                     $attribute instanceof Env => $this->env[$attribute->name] ?? null,
                     $attribute instanceof InputOption => $this->inputOptions[$attribute->name] ?? null,
                     $attribute instanceof InputArgument => $this->inputArguments[$attribute->name] ?? null,
@@ -154,7 +163,14 @@ final class ConfigLoader
                 $property->setValue($config, $result);
                 return;
             } catch (\Throwable $e) {
-                $this->logger->exception($e, important: true);
+                # Config injection failed for this attribute. Resolve the logger lazily from the
+                # container (it is registered after Bootstrap, so it is not available at inflector
+                # construction time) and report the error; ignore failures if it is still too early.
+                try {
+                    $container->get(Logger::class)->exception($e, important: true);
+                } catch (\Throwable) {
+                    # Ignore
+                }
             }
         }
     }
@@ -164,7 +180,7 @@ final class ConfigLoader
      */
     private function getXPath(XPath $attribute): mixed
     {
-        $value = $this->xml?->xpath($attribute->path);
+        $value = $this->xpath($attribute->path);
 
         return \is_array($value) && \array_key_exists($attribute->key, $value)
             ? $value[$attribute->key]
@@ -174,51 +190,73 @@ final class ConfigLoader
     /**
      * Gets a single object from XML using an XPath expression.
      */
-    private function getXPathEmbedded(XPathEmbed $attribute): ?object
+    private function getXPathEmbedded(Container $container, XPathEmbed $attribute): ?object
     {
         if ($this->xml === null) {
             return null;
         }
 
-        $value = $this->xml->xpath($attribute->path);
-        if (!\is_array($value) || empty($value)) {
+        $value = $this->xpath($attribute->path);
+        if (!\is_array($value) || $value === []) {
             return null;
         }
 
         $xml = $value[0];
-        \assert($xml instanceof \SimpleXMLElement);
 
         // Instantiate
         $item = new $attribute->class();
 
-        $this->withXml($xml)->hydrate($item);
+        $this->withXml($xml)->inflect($item, $container);
         return $item;
     }
 
     /**
      * Gets a list of objects from XML using an XPath expression.
+     *
+     * @return list<object>
      */
-    private function getXPathEmbeddedList(XPathEmbedList $attribute): array
+    private function getXPathEmbeddedList(Container $container, XPathEmbedList $attribute): array
     {
         if ($this->xml === null) {
             return [];
         }
 
         $result = [];
-        $value = $this->xml->xpath($attribute->path);
+        $value = $this->xpath($attribute->path);
         \is_array($value) or throw new \Exception(\sprintf('Invalid XPath `%s`', $attribute->path));
 
         foreach ($value as $xml) {
-            \assert($xml instanceof \SimpleXMLElement);
-
             // Instantiate
             $item = new $attribute->class();
 
-            $this->withXml($xml)->hydrate($item);
+            $this->withXml($xml)->inflect($item, $container);
             $result[] = $item;
         }
 
         return $result;
+    }
+
+    /**
+     * Runs an XPath query with libxml's parse diagnostics suppressed: an invalid expression is a
+     * config-author mistake the callers already handle, and the raw PHP warning it would otherwise
+     * raise is noise on the command output.
+     *
+     * @return array<array-key, \SimpleXMLElement>|false|null `null` when no XML is configured, `false`
+     *         on an invalid expression, otherwise the (possibly empty) match list.
+     */
+    private function xpath(string $path): array|false|null
+    {
+        if ($this->xml === null) {
+            return null;
+        }
+
+        $previous = \libxml_use_internal_errors(true);
+        try {
+            return $this->xml->xpath($path);
+        } finally {
+            \libxml_clear_errors();
+            \libxml_use_internal_errors($previous);
+        }
     }
 
     /**
