@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Internal\DLoad\Module\Common\Input;
 
 use Internal\DLoad\Module\Common\Architecture;
+use Internal\DLoad\Module\Common\Internal\Attribute\InflectableConfig;
 use Internal\DLoad\Module\Common\Internal\Attribute\InputOption;
 use Internal\DLoad\Module\Common\OperatingSystem;
 use Internal\DLoad\Module\Common\Stability;
@@ -17,6 +18,7 @@ use Internal\DLoad\Module\Common\Stability;
  *
  * @internal
  */
+#[InflectableConfig]
 final class Build
 {
     /**

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Config\Schema\Embed;
 
+use Internal\DLoad\Module\Common\Internal\Attribute\InflectableConfig;
 use Internal\DLoad\Module\Common\Internal\Attribute\XPath;
 
 /**
@@ -23,6 +24,7 @@ use Internal\DLoad\Module\Common\Internal\Attribute\XPath;
  *     pattern?: non-empty-string
  * }
  */
+#[InflectableConfig]
 final class File
 {
     /**

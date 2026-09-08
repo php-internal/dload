@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Config\Schema\Action\Velox;
 
+use Internal\DLoad\Module\Common\Internal\Attribute\InflectableConfig;
 use Internal\DLoad\Module\Common\Internal\Attribute\XPath;
 
 /**
@@ -17,6 +18,7 @@ use Internal\DLoad\Module\Common\Internal\Attribute\XPath;
  *
  * @internal
  */
+#[InflectableConfig]
 final class Plugin
 {
     /** @var non-empty-string $name Plugin name (required) */

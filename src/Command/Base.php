@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Command;
 
+use Internal\Container\Container;
 use Internal\DLoad\Bootstrap;
-use Internal\DLoad\Service\Container;
 use Internal\DLoad\Service\Logger;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;

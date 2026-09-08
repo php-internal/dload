@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Command;
 
+use Internal\Container\Container;
 use Internal\DLoad\DLoad;
 use Internal\DLoad\Module\Common\Architecture;
 use Internal\DLoad\Module\Common\OperatingSystem;
@@ -11,7 +12,6 @@ use Internal\DLoad\Module\Common\Stability;
 use Internal\DLoad\Module\Config\Schema\Action\Download as DownloadConfig;
 use Internal\DLoad\Module\Config\Schema\Actions;
 use Internal\DLoad\Module\Downloader\Exception\DownloadFailed;
-use Internal\DLoad\Service\Container;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Exception\InvalidArgumentException;

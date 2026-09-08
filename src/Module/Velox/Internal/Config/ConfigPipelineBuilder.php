@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Velox\Internal\Config;
 
+use Internal\Container\Container;
 use Internal\DLoad\Module\Velox\Internal\Config\Pipeline\ConfigPipeline;
 use Internal\DLoad\Module\Velox\Internal\Config\Pipeline\ConfigProcessor;
 use Internal\DLoad\Module\Velox\Internal\Config\Pipeline\Processor\BaseTemplateProcessor;
@@ -11,7 +12,6 @@ use Internal\DLoad\Module\Velox\Internal\Config\Pipeline\Processor\BuildMixinsPr
 use Internal\DLoad\Module\Velox\Internal\Config\Pipeline\Processor\GitHubTokenProcessor;
 use Internal\DLoad\Module\Velox\Internal\Config\Pipeline\Processor\LocalFileProcessor;
 use Internal\DLoad\Module\Velox\Internal\Config\Pipeline\Processor\RemoteApiProcessor;
-use Internal\DLoad\Service\Container;
 
 /**
  * Builder for configuration processing pipeline.

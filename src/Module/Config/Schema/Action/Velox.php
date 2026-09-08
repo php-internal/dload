@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Config\Schema\Action;
 
+use Internal\DLoad\Module\Common\Internal\Attribute\InflectableConfig;
 use Internal\DLoad\Module\Common\Internal\Attribute\XPath;
 use Internal\DLoad\Module\Common\Internal\Attribute\XPathEmbedList;
 use Internal\DLoad\Module\Config\Schema\Action\Velox\Plugin;
@@ -22,6 +23,7 @@ use Internal\DLoad\Module\Config\Schema\Action\Velox\Plugin;
  * @internal
  * @link https://docs.roadrunner.dev/docs/customization/build
  */
+#[InflectableConfig]
 final class Velox
 {
     /** @var non-empty-string|null $veloxVersion Version constraint for velox build tool */

@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Internal\DLoad;
 
+use Internal\Container\Container;
+use Internal\Container\ObjectContainer;
 use Internal\DLoad\Module\Binary\BinaryProvider;
 use Internal\DLoad\Module\Binary\Internal\BinaryProviderImpl;
 use Internal\DLoad\Module\Common\Architecture;
-use Internal\DLoad\Module\Common\Internal\Injection\ConfigLoader;
-use Internal\DLoad\Module\Common\Internal\ObjectContainer;
+use Internal\DLoad\Module\Common\Internal\Injection\ConfigInflector;
 use Internal\DLoad\Module\Common\OperatingSystem;
 use Internal\DLoad\Module\Common\Stability;
 use Internal\DLoad\Module\HttpClient\Factory;
@@ -20,7 +21,6 @@ use Internal\DLoad\Module\Velox\ApiClient;
 use Internal\DLoad\Module\Velox\Builder;
 use Internal\DLoad\Module\Velox\Internal\Client\BuildRoadRunner;
 use Internal\DLoad\Module\Velox\Internal\VeloxBuilder;
-use Internal\DLoad\Service\Container;
 
 /**
  * Bootstraps the application by configuring the dependency container.
@@ -43,16 +43,16 @@ use Internal\DLoad\Service\Container;
 final class Bootstrap
 {
     private function __construct(
-        private Container $container,
+        private ObjectContainer $container,
     ) {}
 
     /**
      * Creates a new bootstrap instance with the specified container.
      *
-     * @param Container $container Dependency injection container (defaults to ObjectContainer)
+     * @param ObjectContainer $container Dependency injection container (defaults to ObjectContainer)
      * @return self Bootstrap instance
      */
-    public static function init(Container $container = new ObjectContainer()): self
+    public static function init(ObjectContainer $container = new ObjectContainer()): self
     {
         return new self($container);
     }
@@ -99,8 +99,11 @@ final class Bootstrap
         // XML config file
         $xml === null or $args['xml'] = $this->readXml($xml);
 
+        // Register config hydration as an inflector: every object produced by the container passes
+        // through it, and it hydrates the ones marked with #[InflectableConfig].
+        $this->container->addInflector($this->container->make(ConfigInflector::class, $args));
+
         // Register bindings
-        $this->container->bind(ConfigLoader::class, $args);
         $this->container->bind(Architecture::class);
         $this->container->bind(OperatingSystem::class);
         $this->container->bind(Stability::class);

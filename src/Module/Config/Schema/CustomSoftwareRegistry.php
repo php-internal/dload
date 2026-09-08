@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Config\Schema;
 
+use Internal\DLoad\Module\Common\Internal\Attribute\InflectableConfig;
 use Internal\DLoad\Module\Common\Internal\Attribute\XPath;
 use Internal\DLoad\Module\Common\Internal\Attribute\XPathEmbedList;
 
@@ -12,6 +13,7 @@ use Internal\DLoad\Module\Common\Internal\Attribute\XPathEmbedList;
  *
  * Holds settings for custom software definitions provided in the configuration.
  */
+#[InflectableConfig]
 final class CustomSoftwareRegistry
 {
     /** @var bool $overwrite Replace the built-in software collection with custom ones */
