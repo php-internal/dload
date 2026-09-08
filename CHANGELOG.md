@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.15.2](https://github.com/php-internal/dload/compare/1.15.1...1.15.2) (2026-09-08)
+
+
+### Code Refactoring
+
+* replace the in-tree DI container with internal/container ([#116](https://github.com/php-internal/dload/issues/116)) ([e0e241d](https://github.com/php-internal/dload/commit/e0e241da1bd9d8d82c4207dc03e15badc49f2d74))
+
 ## [1.15.1](https://github.com/php-internal/dload/compare/1.15.0...1.15.1) (2026-09-05)
 
 
