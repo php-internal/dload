@@ -249,6 +249,16 @@
                     <xs:documentation>Temporary directory for downloads</xs:documentation>
                 </xs:annotation>
             </xs:attribute>
+            <xs:attribute name="cache-dir" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Directory to cache release listings in; caching is disabled when not set</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="cache-ttl" type="xs:nonNegativeInteger" default="600">
+                <xs:annotation>
+                    <xs:documentation>Number of seconds a cached release listing stays usable; 0 disables caching</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
         </xs:complexType>
     </xs:element>
 </xs:schema>

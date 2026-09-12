@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Repository\Internal\GitHub;
 
+use Internal\DLoad\Module\Cache\ResponseCache;
 use Internal\DLoad\Module\Config\Schema\Embed\Repository as RepositoryConfig;
 use Internal\DLoad\Module\Config\Schema\GitHub;
 use Internal\DLoad\Module\HttpClient\Factory as HttpFactory;
@@ -30,6 +31,7 @@ final class Factory implements RepositoryFactory
         private readonly HttpFactory $httpFactory,
         GitHub $gitHubConfig,
         private readonly Logger $logger,
+        private readonly ResponseCache $cache,
     ) {
         $this->gitHubClient = new Client(
             $httpFactory,
@@ -59,6 +61,13 @@ final class Factory implements RepositoryFactory
      */
     private function createRepositoryApi(string $owner, string $repo): RepositoryApi
     {
-        return new RepositoryApi($this->gitHubClient, $this->httpFactory, $owner, $repo, $this->logger);
+        return new RepositoryApi(
+            $this->gitHubClient,
+            $this->httpFactory,
+            $owner,
+            $repo,
+            $this->logger,
+            $this->cache,
+        );
     }
 }

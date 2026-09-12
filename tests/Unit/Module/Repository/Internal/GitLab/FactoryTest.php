@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Unit\Module\Repository\Internal\GitLab;
 
+use Internal\DLoad\Module\Cache\Internal\NullResponseCache;
 use Internal\DLoad\Module\Config\Schema\Embed\Repository as RepositoryConfig;
 use Internal\DLoad\Module\Config\Schema\GitLab as GitLabConfig;
 use Internal\DLoad\Module\Repository\Internal\GitLab\Factory;
@@ -69,6 +70,11 @@ final class FactoryTest
     #[BeforeTest]
     protected function prepare(): void
     {
-        $this->factory = new Factory(new HttpFactoryStub(), new GitLabConfig(), new Logger());
+        $this->factory = new Factory(
+            new HttpFactoryStub(),
+            new GitLabConfig(),
+            new Logger(),
+            new NullResponseCache(),
+        );
     }
 }

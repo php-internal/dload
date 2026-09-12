@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Repository\Internal\GitLab;
 
+use Internal\DLoad\Module\Cache\ResponseCache;
 use Internal\DLoad\Module\Config\Schema\Embed\Repository as RepositoryConfig;
 use Internal\DLoad\Module\Config\Schema\GitLab;
 use Internal\DLoad\Module\HttpClient\Factory as HttpFactory;
@@ -30,6 +31,7 @@ final class Factory implements RepositoryFactory
         private readonly HttpFactory $httpFactory,
         GitLab $gitLabConfig,
         private readonly Logger $logger,
+        private readonly ResponseCache $cache,
     ) {
         $this->gitLabClient = new Client(
             $httpFactory,
@@ -57,6 +59,6 @@ final class Factory implements RepositoryFactory
      */
     private function createRepositoryApi(string $projectPath): RepositoryApi
     {
-        return new RepositoryApi($this->gitLabClient, $this->httpFactory, $projectPath);
+        return new RepositoryApi($this->gitLabClient, $this->httpFactory, $projectPath, $this->cache);
     }
 }

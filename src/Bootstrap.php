@@ -8,10 +8,14 @@ use Internal\Container\Container;
 use Internal\Container\ObjectContainer;
 use Internal\DLoad\Module\Binary\BinaryProvider;
 use Internal\DLoad\Module\Binary\Internal\BinaryProviderImpl;
+use Internal\DLoad\Module\Cache\Internal\FileResponseCache;
+use Internal\DLoad\Module\Cache\Internal\NullResponseCache;
+use Internal\DLoad\Module\Cache\ResponseCache;
 use Internal\DLoad\Module\Common\Architecture;
 use Internal\DLoad\Module\Common\Internal\Injection\ConfigInflector;
 use Internal\DLoad\Module\Common\OperatingSystem;
 use Internal\DLoad\Module\Common\Stability;
+use Internal\DLoad\Module\Config\Schema\Cache as CacheConfig;
 use Internal\DLoad\Module\HttpClient\Factory;
 use Internal\DLoad\Module\HttpClient\Internal\NyholmFactoryImpl;
 use Internal\DLoad\Module\Repository\Internal\GitHub\Factory as GithubRepositoryFactory;
@@ -21,6 +25,7 @@ use Internal\DLoad\Module\Velox\ApiClient;
 use Internal\DLoad\Module\Velox\Builder;
 use Internal\DLoad\Module\Velox\Internal\Client\BuildRoadRunner;
 use Internal\DLoad\Module\Velox\Internal\VeloxBuilder;
+use Internal\DLoad\Service\Logger;
 
 /**
  * Bootstraps the application by configuring the dependency container.
@@ -112,6 +117,16 @@ final class Bootstrap
             static fn(Container $container): RepositoryProvider => (new RepositoryProvider())
                 ->addRepositoryFactory($container->get(GithubRepositoryFactory::class))
                 ->addRepositoryFactory($container->get(GitLabRepositoryFactory::class)),
+        );
+        $this->container->bind(
+            ResponseCache::class,
+            static function (Container $container): ResponseCache {
+                $config = $container->get(CacheConfig::class);
+
+                return $config->dir === null || $config->ttl <= 0
+                    ? new NullResponseCache()
+                    : new FileResponseCache($config->dir, $config->ttl, $container->get(Logger::class));
+            },
         );
         $this->container->bind(BinaryProvider::class, BinaryProviderImpl::class);
         $this->container->bind(Factory::class, NyholmFactoryImpl::class);

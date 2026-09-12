@@ -53,7 +53,8 @@ final class GitHubRepository implements Repository, Destroyable
 
         // Create a generator function for lazy loading release pages
         $pageLoader = function (): \Generator {
-            $page = 0;
+            /** @var \Internal\DLoad\Module\Repository\Internal\Paginator<Api\Response\ReleaseInfo>|null $page */
+            $page = null;
             $anyPageLoaded = false;
 
             do {
@@ -61,11 +62,16 @@ final class GitHubRepository implements Repository, Destroyable
                     // to avoid first eager loading because of generator
                     yield [];
 
-                    $paginator = $this->api->getReleases(++$page);
-                    $releases = $paginator->getPageItems();
+                    # Asking the paginator for the next page IS the request for it: building a new
+                    # paginator per page instead would send every page but the first one twice.
+                    $page = $page === null ? $this->api->getReleases() : $page->getNextPage();
+
+                    if ($page === null) {
+                        return;
+                    }
 
                     $toYield = [];
-                    foreach ($releases as $releaseDTO) {
+                    foreach ($page->getPageItems() as $releaseDTO) {
                         try {
                             $toYield[] = GitHubRelease::fromDTO($this->api, $this, $releaseDTO);
                         } catch (\Throwable $e) {
@@ -76,9 +82,6 @@ final class GitHubRepository implements Repository, Destroyable
                     }
                     yield $toYield;
                     $anyPageLoaded = true;
-
-                    // Check if there are more pages by getting next page
-                    $hasMorePages = $paginator->getNextPage() !== null;
                 } catch (\Throwable $e) {
                     # The first page is mandatory: when it fails, there is nothing to download and the reason
                     # (invalid token, rate limit, missing repository, etc.) must reach the user.
@@ -93,7 +96,7 @@ final class GitHubRepository implements Repository, Destroyable
                     $this->logger->exception($e, important: false);
                     return;
                 }
-            } while ($hasMorePages);
+            } while (true);
         };
 
         // Create paginator

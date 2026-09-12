@@ -49,6 +49,7 @@ With DLoad, you can:
     - [Download Types](#download-types)
     - [Version Constraints](#version-constraints)
     - [Advanced Configuration Options](#advanced-configuration-options)
+    - [Caching Release Lists](#caching-release-lists)
 - [Building Custom RoadRunner](#building-custom-roadrunner)
     - [Build Action Configuration](#build-action-configuration)
     - [Velox Action Attributes](#velox-action-attributes)
@@ -350,6 +351,50 @@ Use Composer-style version constraints:
 </dload>
 ```
 
+### Caching Release Lists
+
+Resolving a version means asking GitHub or GitLab for the repository's release list. DLoad can keep
+those listings in a directory and reuse them, so repeated runs resolve the same versions without
+spending the API rate limit:
+
+```xml
+<dload temp-dir="./runtime" cache-dir="./runtime/dload-cache" cache-ttl="3600">
+    <actions>
+        <download software="rr" />
+    </actions>
+</dload>
+```
+
+| Attribute   | Environment variable | Default | Meaning                                                       |
+|-------------|----------------------|---------|---------------------------------------------------------------|
+| `cache-dir` | `DLOAD_CACHE_DIR`    | not set | Directory to store cached release listings in. Caching is off until it is set. |
+| `cache-ttl` | `DLOAD_CACHE_TTL`    | `600`   | Seconds a cached listing stays usable. `0` disables caching.  |
+
+> [!NOTE]
+> Only successful release listings are cached. Failed requests are never stored, so a rate limit
+> answer is not replayed after the limit is gone, and asset downloads do not go through the cache:
+> the directory holds listings only, never the downloaded binaries.
+
+In GitHub Actions the directory can be carried between jobs, so only the first job of a workflow run
+spends any rate limit on listings:
+
+```yaml
+- name: Cache DLoad release lists
+  uses: actions/cache@v4
+  with:
+    path: ./runtime/dload-cache
+    key: dload-cache-${{ github.run_id }}
+    restore-keys: dload-cache-
+
+- run: ./vendor/bin/dload get
+  env:
+    DLOAD_CACHE_DIR: ./runtime/dload-cache
+```
+
+The `github.run_id` in the key makes every workflow run write a fresh entry, while `restore-keys`
+lets the remaining jobs of that run restore it. A static key would never be written again and the
+cached listings would stay stale forever.
+
 ## Building Custom RoadRunner
 
 DLoad supports building custom RoadRunner binaries using the Velox build tool. This is useful when you need RoadRunner with custom plugin combinations that aren't available in pre-built releases.
@@ -599,6 +644,9 @@ Add to CI/CD environment variables for automated downloads.
 > In GitHub Actions, `secrets.GITHUB_TOKEN` is scoped to the current repository and shares a limit of
 > 1,000 requests per hour across all jobs of the repository. With a large job matrix the limit may run out,
 > and downloads from other repositories may be rejected. Use a personal access token if that happens.
+
+Release listings can also be cached between runs, which removes them from the rate limit budget
+entirely: see [Caching Release Lists](#caching-release-lists).
 
 ## Failure Reporting
 

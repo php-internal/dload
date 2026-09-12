@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Repository\Internal\GitLab\Api;
 
+use Internal\DLoad\Module\Cache\ResponseCache;
 use Internal\DLoad\Module\HttpClient\Factory as HttpFactory;
 use Internal\DLoad\Module\HttpClient\Method;
 use Internal\DLoad\Module\Repository\Exception\ApiException;
@@ -29,6 +30,12 @@ final class RepositoryApi
     private const URL_RELEASE_ASSET = 'https://gitlab.com/api/v4/projects/%s/releases/%s/downloads/%s';
 
     /**
+     * Number of releases to ask for in a single page. GitLab serves 20 by default and allows up to
+     * 100, so the maximum keeps the release list within as few requests as the API permits.
+     */
+    private const RELEASES_PER_PAGE = 100;
+
+    /**
      * @var non-empty-string
      */
     public readonly string $repositoryPath;
@@ -40,6 +47,7 @@ final class RepositoryApi
         private readonly Client $client,
         private readonly HttpFactory $httpFactory,
         string $projectPath,
+        private readonly ResponseCache $cache,
     ) {
         $this->repositoryPath = $projectPath;
     }
@@ -207,13 +215,14 @@ final class RepositoryApi
      */
     private function releasesRequest(int $page): ResponseInterface
     {
-        return $this->request(
-            Method::Get,
-            $this->httpFactory->uri(
-                \sprintf(self::URL_RELEASES, \urlencode($this->repositoryPath)),
-                ['page' => $page],
-            ),
+        $uri = $this->httpFactory->uri(
+            \sprintf(self::URL_RELEASES, \urlencode($this->repositoryPath)),
+            ['page' => $page, 'per_page' => self::RELEASES_PER_PAGE],
         );
+
+        # Only the listing goes through the cache: asset downloads share the same client, and
+        # caching at that level would write every downloaded binary to the cache directory.
+        return $this->cache->remember((string) $uri, fn(): ResponseInterface => $this->request(Method::Get, $uri));
     }
 
     private function hasNextPage(ResponseInterface $response): bool
