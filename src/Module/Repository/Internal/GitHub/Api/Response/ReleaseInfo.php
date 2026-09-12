@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Repository\Internal\GitHub\Api\Response;
 
+use Internal\DLoad\Module\Registry\Record\AssetRecord;
+use Internal\DLoad\Module\Registry\Record\ReleaseRecord;
+
 /**
  * GitHub Release Data Transfer Object.
  *
@@ -55,6 +58,20 @@ final class ReleaseInfo
             assets: $assets,
             prerelease: $data['prerelease'],
             draft: $data['draft'],
+        );
+    }
+
+    /**
+     * Maps the release into the provider-neutral registry record.
+     */
+    public function toRecord(): ReleaseRecord
+    {
+        return new ReleaseRecord(
+            tag: $this->tagName,
+            name: $this->name,
+            publishedAt: $this->publishedAt,
+            prerelease: $this->prerelease,
+            assets: \array_map(static fn(AssetInfo $asset): AssetRecord => $asset->toRecord(), $this->assets),
         );
     }
 }

@@ -64,6 +64,16 @@ final class CachedGenerator implements \IteratorAggregate
     }
 
     /**
+     * Returns the items produced so far without pulling anything more from the generator.
+     *
+     * @return list<T>
+     */
+    public function loaded(): array
+    {
+        return \array_values($this->cache);
+    }
+
+    /**
      * Returns the first item in the cache or from the generator.
      *
      * @return T|null The first item or null if the generator is empty

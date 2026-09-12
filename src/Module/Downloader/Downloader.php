@@ -20,6 +20,8 @@ use Internal\DLoad\Module\Downloader\Internal\Diagnostics\DownloadDiagnostics;
 use Internal\DLoad\Module\Downloader\Internal\DownloadContext;
 use Internal\DLoad\Module\Downloader\Task\DownloadResult;
 use Internal\DLoad\Module\Downloader\Task\DownloadTask;
+use Internal\DLoad\Module\Registry\RepositoryId;
+use Internal\DLoad\Module\Registry\VersionRegistry;
 use Internal\DLoad\Module\Repository\AssetInterface;
 use Internal\DLoad\Module\Repository\Collection\AssetsCollection;
 use Internal\DLoad\Module\Repository\Collection\ReleasesCollection;
@@ -66,6 +68,7 @@ final class Downloader
         private readonly OperatingSystem $operatingSystem,
         private readonly Stability $stability,
         private readonly ArchiveFactory $archiveService,
+        private readonly VersionRegistry $registry,
     ) {}
 
     /**
@@ -110,6 +113,9 @@ final class Downloader
                 );
                 $context->repoConfig = \array_shift($repositories);
                 $repository = $this->repositoryProvider->getByConfig($context->repoConfig);
+
+                // The registry keeps track of which software is served from which repository
+                $this->registry->attach($context->software->getId(), RepositoryId::fromConfig($context->repoConfig));
                 $context->repositoryAttempt = $context->diagnostics->addRepository(
                     type: $context->repoConfig->type,
                     name: $repository->getName(),
