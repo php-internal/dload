@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Unit\Module\Repository\Internal\GitLab\Api;
 
+use Internal\DLoad\Module\Repository\Exception\AssetNotFoundException;
 use Internal\DLoad\Module\Repository\Exception\RateLimitException;
 use Internal\DLoad\Module\Repository\Exception\RepositoryNotFoundException;
 use Internal\DLoad\Module\Repository\Internal\GitLab\Api\ResponseValidator;
@@ -16,6 +17,26 @@ use Testo\Test;
 #[Covers(ResponseValidator::class)]
 final class ResponseValidatorTest
 {
+    #[Test]
+    public function missingAssetIsNotReportedAsMissingProject(): void
+    {
+        $validator = new ResponseValidator(authenticated: false);
+        $request = new Request(
+            'GET',
+            'https://gitlab.com/api/v4/projects/group%2Fproject/releases/v1.0.0/downloads/asset.zip',
+        );
+        $response = new ResponseStub(404, [], \json_encode(['message' => '404 Not Found']));
+
+        try {
+            $validator->validate($request, $response);
+            Assert::fail('AssetNotFoundException is expected.');
+        } catch (AssetNotFoundException $e) {
+            Assert::same($e->repository, 'group/project');
+            Assert::string($e->getMessage())->contains('asset is no longer available');
+            Assert::string($e->getMessage())->notContains('GITLAB_TOKEN');
+        }
+    }
+
     #[Test]
     public function projectPathIsDecodedFromApiUrl(): void
     {

@@ -31,6 +31,12 @@ final class ResponseValidator extends BaseValidator
         return 'project';
     }
 
+    protected function isAssetUri(string $uri): bool
+    {
+        // https://gitlab.com/api/v4/projects/group%2Fproject/releases/v1.0.0/downloads/asset.zip
+        return \preg_match('~/releases/[^/?#]+/downloads/~', $uri) === 1;
+    }
+
     protected function repositoryFromUri(string $uri): ?string
     {
         // https://gitlab.com/api/v4/projects/group%2Fproject/releases

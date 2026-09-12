@@ -231,8 +231,12 @@ final class DLoadTest
      */
     private function buildDLoad(string $xmlConfig): DLoad
     {
+        // The version registry must not leak into the user's cache directory from a test run
+        $environment = \getenv() + ['DLOAD_CACHE_DIR' => (string) $this->testRuntimeDir->join('registry')];
+        $environment['DLOAD_CACHE_DIR'] = (string) $this->testRuntimeDir->join('registry');
+
         $container = Bootstrap::init()
-            ->withConfig($xmlConfig, [], [], \getenv())
+            ->withConfig($xmlConfig, [], [], $environment)
             ->finish();
         $container->set($input = new ArgvInput(), InputInterface::class);
         $container->set($output = new BufferedOutput(), OutputInterface::class);

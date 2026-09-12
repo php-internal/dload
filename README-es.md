@@ -48,6 +48,7 @@ Con DLoad puedes:
     - [Tipos de Descarga](#tipos-de-descarga)
     - [Restricciones de Versión](#restricciones-de-versión)
     - [Opciones de Configuración Avanzadas](#opciones-de-configuración-avanzadas)
+    - [Registro de Versiones](#registro-de-versiones)
 - [Construir RoadRunner Personalizado](#construir-roadrunner-personalizado)
     - [Configuración de Acción de Construcción](#configuración-de-acción-de-construcción)
     - [Atributos de Acción Velox](#atributos-de-acción-velox)
@@ -347,6 +348,72 @@ Usa restricciones de versión estilo Composer:
     </actions>
 </dload>
 ```
+
+### Registro de Versiones
+
+Resolver una versión significa pedir a GitHub o GitLab la lista de releases del repositorio. DLoad
+guarda lo que aprende en un **registro de versiones** local: una pequeña base de datos con los releases
+y assets de cada repositorio conocido, un archivo JSON por repositorio. Las versiones nunca expiran.
+Lo que expira es la *última comprobación* del repositorio: mientras sea más reciente que `cache-ttl`,
+`dload get` se responde desde el registro sin una sola petición a la API. Cuando es más antigua, DLoad
+pide a la API solo los releases publicados desde entonces, normalmente una única petición.
+
+Las páginas de releases se siguen cargando de forma perezosa. La primera ejecución obtiene solo las
+páginas necesarias para encontrar un release que cumpla la versión pedida; los releases más antiguos se
+cargan después, bajo demanda.
+
+El registro está activado por defecto y vive en el directorio de caché del usuario
+(`$XDG_CACHE_HOME/dload`, `%LOCALAPPDATA%\dload\cache` en Windows, `~/.cache/dload` en otros casos):
+
+```xml
+<dload temp-dir="./runtime" cache-dir="./runtime/dload-cache" cache-ttl="3600">
+    <actions>
+        <download software="rr" />
+    </actions>
+</dload>
+```
+
+| Atributo    | Variable de entorno | Por defecto                    | Significado                                                                          |
+|-------------|---------------------|--------------------------------|--------------------------------------------------------------------------------------|
+| `cache-dir` | `DLOAD_CACHE_DIR`   | directorio de caché del usuario | Directorio del registro de versiones.                                                |
+| `cache-ttl` | `DLOAD_CACHE_TTL`   | `600`                          | Segundos que sigue siendo válida la última comprobación. `0` desactiva el registro. |
+
+```bash
+# Comprobar si hay nuevos releases aunque la última comprobación siga vigente
+./vendor/bin/dload get rr --refresh
+
+# Olvidar los repositorios de un software, o todo el registro
+./vendor/bin/dload cache:clear rr
+./vendor/bin/dload cache:clear
+```
+
+> [!NOTE]
+> El registro solo contiene metadatos de releases: tags, nombres y enlaces de descarga. Las descargas
+> no pasan por él y nunca guarda credenciales, así que el directorio puede compartirse o guardarse en
+> la caché de CI sin problemas. Si una comprobación falla por un error de red o un límite de la API, se
+> usan los releases almacenados; un repositorio nunca visto sigue fallando de forma visible. Un
+> release almacenado cuyos assets desaparecieron del origen se elimina del registro en cuanto falla
+> su descarga, y la lista de releases se vuelve a obtener antes de que la ejecución se dé por vencida.
+
+En GitHub Actions el directorio puede conservarse entre ejecuciones del workflow, de modo que cada
+ejecución gasta el límite de la API solo en los releases publicados desde la anterior:
+
+```yaml
+- name: Restore DLoad version registry
+  uses: actions/cache@v4
+  with:
+    path: ./runtime/dload-cache
+    key: dload-registry-${{ github.run_id }}
+    restore-keys: dload-registry-
+
+- run: ./vendor/bin/dload get
+  env:
+    DLOAD_CACHE_DIR: ./runtime/dload-cache
+```
+
+El `github.run_id` en la clave hace que cada ejecución guarde su registro, y `restore-keys` permite
+que la siguiente parta del más reciente. Los jobs paralelos de un mismo workflow no ven la caché de los
+demás, ya que `actions/cache` la guarda al terminar cada job.
 
 ## Construir RoadRunner Personalizado
 

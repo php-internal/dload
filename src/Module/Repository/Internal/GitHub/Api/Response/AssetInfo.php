@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Repository\Internal\GitHub\Api\Response;
 
+use Internal\DLoad\Module\Registry\Record\AssetRecord;
+
 /**
  * GitHub Asset Data Transfer Object.
  *
@@ -40,6 +42,19 @@ final class AssetInfo
             downloadUrl: $data['browser_download_url'],
             size: $data['size'],
             contentType: $data['content_type'],
+        );
+    }
+
+    /**
+     * Maps the asset into the provider-neutral registry record.
+     */
+    public function toRecord(): AssetRecord
+    {
+        return new AssetRecord(
+            name: $this->name,
+            uri: $this->downloadUrl,
+            size: $this->size,
+            contentType: $this->contentType,
         );
     }
 }

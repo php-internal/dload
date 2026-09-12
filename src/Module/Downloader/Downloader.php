@@ -16,13 +16,17 @@ use Internal\DLoad\Module\Config\Schema\Downloader as DownloaderConfig;
 use Internal\DLoad\Module\Config\Schema\Embed\Software;
 use Internal\DLoad\Module\Downloader\Exception\DownloadFailed;
 use Internal\DLoad\Module\Downloader\Exception\NotFound;
+use Internal\DLoad\Module\Downloader\Exception\ReleaseGone;
 use Internal\DLoad\Module\Downloader\Internal\Diagnostics\DownloadDiagnostics;
 use Internal\DLoad\Module\Downloader\Internal\DownloadContext;
 use Internal\DLoad\Module\Downloader\Task\DownloadResult;
 use Internal\DLoad\Module\Downloader\Task\DownloadTask;
+use Internal\DLoad\Module\Registry\RepositoryId;
+use Internal\DLoad\Module\Registry\VersionRegistry;
 use Internal\DLoad\Module\Repository\AssetInterface;
 use Internal\DLoad\Module\Repository\Collection\AssetsCollection;
 use Internal\DLoad\Module\Repository\Collection\ReleasesCollection;
+use Internal\DLoad\Module\Repository\Exception\AssetNotFoundException;
 use Internal\DLoad\Module\Repository\Exception\RateLimitException;
 use Internal\DLoad\Module\Repository\Exception\RepositoryException;
 use Internal\DLoad\Module\Repository\ReleaseInterface;
@@ -66,6 +70,7 @@ final class Downloader
         private readonly OperatingSystem $operatingSystem,
         private readonly Stability $stability,
         private readonly ArchiveFactory $archiveService,
+        private readonly VersionRegistry $registry,
     ) {}
 
     /**
@@ -110,6 +115,9 @@ final class Downloader
                 );
                 $context->repoConfig = \array_shift($repositories);
                 $repository = $this->repositoryProvider->getByConfig($context->repoConfig);
+
+                // The registry keeps track of which software is served from which repository
+                $this->registry->attach($context->software->getId(), RepositoryId::fromConfig($context->repoConfig));
                 $context->repositoryAttempt = $context->diagnostics->addRepository(
                     type: $context->repoConfig->type,
                     name: $repository->getName(),
@@ -161,9 +169,12 @@ final class Downloader
      * @param DownloadContext $context Download context information
      * @return \Closure(): ReleaseInterface Closure that returns the selected release
      */
-    private function processRepository(Repository $repository, DownloadContext $context): \Closure
+    private function processRepository(Repository $repository, DownloadContext $context, bool $mayRetry = true): \Closure
     {
-        return function () use ($repository, $context): ReleaseInterface {
+        return function () use ($repository, $context, $mayRetry): ReleaseInterface {
+            // Set when a release turned out to be deleted: the release list is outdated then
+            $forgotten = false;
+
             $this->logger->info(
                 'Loading releases from `%s` repository %s',
                 $context->repoConfig->type,
@@ -200,7 +211,15 @@ final class Downloader
             }
 
             process_release:
-            $releases === [] and throw new NotFound('No relevant release found.');
+            if ($releases === []) {
+                // The list was outdated: ask the repository again once, with the deleted releases forgotten
+                if ($forgotten && $mayRetry) {
+                    return $this->retryRepository($context);
+                }
+
+                throw new NotFound('No relevant release found.');
+            }
+
             $context->release = \array_shift($releases);
             $context->releaseAttempt = $context->repositoryAttempt->addRelease($context->release->getName());
 
@@ -209,6 +228,17 @@ final class Downloader
             try {
                 await(coroutine($this->processRelease($context)));
                 return $context->release;
+            } catch (ReleaseGone $e) {
+                // The registry must not offer this release again, and the list needs a fresh check
+                $this->registry->forget(
+                    RepositoryId::fromConfig($context->repoConfig),
+                    $context->release->getVersion()->string,
+                );
+                $forgotten = true;
+
+                $context->releaseAttempt->reason ??= $e->getMessage();
+                $this->logger->debug($e->getMessage());
+                goto process_release;
             } catch (NotFound $e) {
                 $context->releaseAttempt->reason ??= $e->getMessage();
                 $this->logger->debug($e->getMessage());
@@ -216,6 +246,23 @@ final class Downloader
                 goto process_release;
             }
         };
+    }
+
+    /**
+     * Fetches the release list anew after deleted releases were forgotten and tries once more.
+     *
+     * @throws NotFound When the fresh list has nothing suitable either.
+     */
+    private function retryRepository(DownloadContext $context): ReleaseInterface
+    {
+        $this->logger->info('Release list of `%s` is outdated, fetching it again.', $context->repoConfig->uri);
+        $repository = $this->repositoryProvider->getByConfig($context->repoConfig);
+
+        try {
+            return await(coroutine($this->processRepository($repository, $context, mayRetry: false)));
+        } finally {
+            $repository instanceof Destroyable and $repository->destroy();
+        }
     }
 
     /**
@@ -391,8 +438,16 @@ final class Downloader
      */
     private function tryProcessAssets(array $assets, DownloadContext $context): AssetInterface
     {
+        // Stays true while every failed asset answered "not found": then the release itself is gone
+        $gone = $assets !== [];
+
         process_asset:
-        $assets === [] and throw new NotFound('none of the matching assets could be downloaded');
+        if ($assets === []) {
+            $gone and throw new ReleaseGone('every matching asset of the release is no longer available');
+
+            throw new NotFound('none of the matching assets could be downloaded');
+        }
+
         $context->asset = \array_shift($assets);
         $this->logger->debug('Trying to load asset `%s`', $context->asset->getName());
         try {
@@ -402,6 +457,7 @@ final class Downloader
             // Retrying other assets makes the situation worse: report the limit immediately
             throw $e;
         } catch (\Throwable $e) {
+            $gone = $gone && $e instanceof AssetNotFoundException;
             $context->releaseAttempt->addFailure($context->asset->getName(), $e);
             $this->logger->exception($e, important: false);
             goto process_asset;

@@ -12,8 +12,15 @@ use Internal\DLoad\Module\Common\Architecture;
 use Internal\DLoad\Module\Common\Internal\Injection\ConfigInflector;
 use Internal\DLoad\Module\Common\OperatingSystem;
 use Internal\DLoad\Module\Common\Stability;
+use Internal\DLoad\Module\Config\Schema\Cache as CacheConfig;
 use Internal\DLoad\Module\HttpClient\Factory;
 use Internal\DLoad\Module\HttpClient\Internal\NyholmFactoryImpl;
+use Internal\DLoad\Module\Registry\Internal\CacheDirectory;
+use Internal\DLoad\Module\Registry\Internal\FileRegistryStorage;
+use Internal\DLoad\Module\Registry\Internal\PassThroughRegistry;
+use Internal\DLoad\Module\Registry\Internal\StoredVersionRegistry;
+use Internal\DLoad\Module\Registry\RegistryStorage;
+use Internal\DLoad\Module\Registry\VersionRegistry;
 use Internal\DLoad\Module\Repository\Internal\GitHub\Factory as GithubRepositoryFactory;
 use Internal\DLoad\Module\Repository\Internal\GitLab\Factory as GitLabRepositoryFactory;
 use Internal\DLoad\Module\Repository\RepositoryProvider;
@@ -21,6 +28,7 @@ use Internal\DLoad\Module\Velox\ApiClient;
 use Internal\DLoad\Module\Velox\Builder;
 use Internal\DLoad\Module\Velox\Internal\Client\BuildRoadRunner;
 use Internal\DLoad\Module\Velox\Internal\VeloxBuilder;
+use Internal\DLoad\Service\Logger;
 
 /**
  * Bootstraps the application by configuring the dependency container.
@@ -112,6 +120,32 @@ final class Bootstrap
             static fn(Container $container): RepositoryProvider => (new RepositoryProvider())
                 ->addRepositoryFactory($container->get(GithubRepositoryFactory::class))
                 ->addRepositoryFactory($container->get(GitLabRepositoryFactory::class)),
+        );
+        $this->container->bind(
+            RegistryStorage::class,
+            static function (Container $container) use ($environment): RegistryStorage {
+                $config = $container->get(CacheConfig::class);
+
+                return new FileRegistryStorage(
+                    $config->dir ?? CacheDirectory::resolve($environment),
+                    $container->get(Logger::class),
+                );
+            },
+        );
+        $this->container->bind(
+            VersionRegistry::class,
+            static function (Container $container): VersionRegistry {
+                $config = $container->get(CacheConfig::class);
+
+                return $config->ttl <= 0
+                    ? new PassThroughRegistry()
+                    : new StoredVersionRegistry(
+                        $container->get(RegistryStorage::class),
+                        $config->ttl,
+                        $container->get(Logger::class),
+                        $config->refresh,
+                    );
+            },
         );
         $this->container->bind(BinaryProvider::class, BinaryProviderImpl::class);
         $this->container->bind(Factory::class, NyholmFactoryImpl::class);

@@ -6,11 +6,11 @@ namespace Internal\DLoad\Module\Repository\Internal\GitLab\Api;
 
 use Internal\DLoad\Module\HttpClient\Factory as HttpFactory;
 use Internal\DLoad\Module\HttpClient\Method;
+use Internal\DLoad\Module\Registry\Record\ReleasePage;
 use Internal\DLoad\Module\Repository\Exception\ApiException;
 use Internal\DLoad\Module\Repository\Exception\RepositoryException;
 use Internal\DLoad\Module\Repository\Internal\GitLab\Api\Response\ReleaseInfo;
 use Internal\DLoad\Module\Repository\Internal\GitLab\Api\Response\RepositoryInfo;
-use Internal\DLoad\Module\Repository\Internal\Paginator;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\UriInterface;
 
@@ -27,6 +27,12 @@ final class RepositoryApi
     private const URL_REPOSITORY = 'https://gitlab.com/api/v4/projects/%s';
     private const URL_RELEASES = 'https://gitlab.com/api/v4/projects/%s/releases';
     private const URL_RELEASE_ASSET = 'https://gitlab.com/api/v4/projects/%s/releases/%s/downloads/%s';
+
+    /**
+     * Number of releases to ask for in a single page. GitLab serves 20 by default and allows up to
+     * 100, so the maximum keeps the release list within as few requests as the API permits.
+     */
+    public const RELEASES_PER_PAGE = 100;
 
     /**
      * @var non-empty-string
@@ -88,76 +94,77 @@ final class RepositoryApi
     }
 
     /**
+     * Lists releases newest first, page by page, starting from the given page.
+     *
+     * A page is requested only when the generator advances to it, so a consumer that stops early
+     * costs no extra request.
+     *
      * @param int<1, max> $page
-     * @return Paginator<ReleaseInfo>
+     * @return \Generator<int, ReleasePage, mixed, void>
      * @throws RepositoryException
      */
-    public function getReleases(int $page = 1): Paginator
+    public function releasePages(int $page = 1): \Generator
     {
-        $pageLoader = function () use ($page): \Generator {
-            $currentPage = $page;
+        $currentPage = $page;
 
-            do {
-                $response = $this->releasesRequest($currentPage);
+        do {
+            $response = $this->releasesRequest($currentPage);
 
-                /** @var list<array{
-                 *     name: non-empty-string|null,
-                 *     tag_name: non-empty-string,
-                 *     description: null|non-empty-string,
-                 *     created_at: non-empty-string,
-                 *     released_at: non-empty-string,
-                 *     assets: array{
-                 *         links: list<array{
-                 *             name: non-empty-string,
-                 *             url: non-empty-string,
-                 *             direct_asset_url?: non-empty-string,
-                 *             link_type: non-empty-string,
-                 *         }>
-                 *     },
-                 *     upcoming_release: bool
-                 * }> $data */
-                $data = $this->decodeReleasesResponse($response);
+            /** @var list<array{
+             *     name: non-empty-string|null,
+             *     tag_name: non-empty-string,
+             *     description: null|non-empty-string,
+             *     created_at: non-empty-string,
+             *     released_at: non-empty-string,
+             *     assets: array{
+             *         links: list<array{
+             *             name: non-empty-string,
+             *             url: non-empty-string,
+             *             direct_asset_url?: non-empty-string,
+             *             link_type: non-empty-string,
+             *         }>
+             *     },
+             *     upcoming_release: bool
+             * }> $data */
+            $data = $this->decodeReleasesResponse($response);
 
-                // If empty response, no more pages
-                if ($data === []) {
-                    return;
+            // If empty response, no more pages
+            if ($data === []) {
+                return;
+            }
+
+            $releases = [];
+            $failure = null;
+            foreach ($data as $releaseData) {
+                try {
+                    $releases[] = ReleaseInfo::fromApiResponse($releaseData)->toRecord();
+                } catch (\Throwable $e) {
+                    $failure ??= $e;
+                    // Skip invalid releases
+                    continue;
                 }
+            }
 
-                $releases = [];
-                $failure = null;
-                foreach ($data as $releaseData) {
-                    try {
-                        $releases[] = ReleaseInfo::fromApiResponse($releaseData);
-                    } catch (\Throwable $e) {
-                        $failure ??= $e;
-                        // Skip invalid releases
-                        continue;
-                    }
-                }
-
-                // The whole page is unreadable: the response structure is not what we expect
-                if ($releases === [] && $failure !== null) {
-                    throw new ApiException(
-                        \sprintf(
-                            'GitLab API returned %d release(s) for project `%s`, but none of them could be read: %s',
-                            \count($data),
-                            $this->repositoryPath,
-                            $failure->getMessage(),
-                        ),
+            // The whole page is unreadable: the response structure is not what we expect
+            if ($releases === [] && $failure !== null) {
+                throw new ApiException(
+                    \sprintf(
+                        'GitLab API returned %d release(s) for project `%s`, but none of them could be read: %s',
+                        \count($data),
                         $this->repositoryPath,
-                        $failure,
-                    );
-                }
+                        $failure->getMessage(),
+                    ),
+                    $this->repositoryPath,
+                    $failure,
+                );
+            }
 
-                yield $releases;
+            $hasMorePages = $this->hasNextPage($response);
 
-                // Check if there are more pages
-                $hasMorePages = $this->hasNextPage($response);
-                $currentPage++;
-            } while ($hasMorePages);
-        };
+            yield new ReleasePage($releases, !$hasMorePages);
 
-        return Paginator::createFromGenerator($pageLoader(), null);
+            $currentPage++;
+        } while ($hasMorePages);
     }
 
     /**
@@ -207,13 +214,12 @@ final class RepositoryApi
      */
     private function releasesRequest(int $page): ResponseInterface
     {
-        return $this->request(
-            Method::Get,
-            $this->httpFactory->uri(
-                \sprintf(self::URL_RELEASES, \urlencode($this->repositoryPath)),
-                ['page' => $page],
-            ),
+        $uri = $this->httpFactory->uri(
+            \sprintf(self::URL_RELEASES, \urlencode($this->repositoryPath)),
+            ['page' => $page, 'per_page' => self::RELEASES_PER_PAGE],
         );
+
+        return $this->request(Method::Get, $uri);
     }
 
     private function hasNextPage(ResponseInterface $response): bool

@@ -43,6 +43,9 @@ use Symfony\Component\Console\Output\OutputInterface;
  *
  * # Force download even if binary exists
  * ./vendor/bin/dload get rr --force
+ *
+ * # Check for new releases even if the version registry is still fresh
+ * ./vendor/bin/dload get rr --refresh
  * ```
  *
  * @internal
@@ -72,6 +75,12 @@ final class Get extends Base
         $this->addOption('os', null, InputOption::VALUE_OPTIONAL, 'Operating system, e.g. "linux", "darwin" etc.');
         $this->addOption('stability', null, InputOption::VALUE_OPTIONAL, 'Minimum stability, e.g. "rc", "beta" etc.');
         $this->addOption('force', 'f', InputOption::VALUE_NONE, 'Force download even if binary exists');
+        $this->addOption(
+            'refresh',
+            null,
+            InputOption::VALUE_NONE,
+            'Check repositories for new releases even if the version registry is still fresh',
+        );
     }
 
     /**

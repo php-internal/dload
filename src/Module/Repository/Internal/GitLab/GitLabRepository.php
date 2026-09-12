@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace Internal\DLoad\Module\Repository\Internal\GitLab;
 
 use Internal\Destroy\Destroyable;
+use Internal\DLoad\Module\Registry\RepositoryId;
+use Internal\DLoad\Module\Registry\VersionRegistry;
 use Internal\DLoad\Module\Repository\Collection\ReleasesCollection;
 use Internal\DLoad\Module\Repository\Exception\RateLimitException;
 use Internal\DLoad\Module\Repository\Internal\GitLab\Api\RepositoryApi;
+use Internal\DLoad\Module\Repository\Internal\Paginator;
 use Internal\DLoad\Module\Repository\Repository;
 use Internal\DLoad\Service\Logger;
 
@@ -19,6 +22,9 @@ use Internal\DLoad\Service\Logger;
  */
 final class GitLabRepository implements Repository, Destroyable
 {
+    /** Repository type identifier in the version registry. */
+    public const TYPE = 'gitlab';
+
     private ?ReleasesCollection $releases = null;
 
     /**
@@ -35,13 +41,17 @@ final class GitLabRepository implements Repository, Destroyable
         private readonly RepositoryApi $api,
         string $projectPath,
         private readonly Logger $logger,
+        private readonly VersionRegistry $registry,
     ) {
         $this->name = $projectPath;
     }
 
     /**
      * Returns a lazily loaded collection of repository releases.
-     * Pages are loaded only when needed during iteration or filtering.
+     *
+     * Releases come from the version registry, which serves stored ones without a request and
+     * asks the API only for what it does not know yet. Pages are loaded only when needed during
+     * iteration or filtering.
      */
     public function getReleases(): ReleasesCollection
     {
@@ -51,38 +61,43 @@ final class GitLabRepository implements Repository, Destroyable
 
         // Create a generator function for lazy loading release pages
         $pageLoader = function (): \Generator {
-            $page = 0;
+            // to avoid first eager loading because of generator
+            yield [];
+
+            $pages = $this->registry->releases(
+                new RepositoryId(self::TYPE, $this->name),
+                new GitLabReleaseSource($this->api),
+            );
             $anyPageLoaded = false;
 
-            do {
+            while (true) {
                 try {
-                    // to avoid first eager loading because of generator
-                    yield [];
+                    // Advancing the generator is what requests the next page
+                    $anyPageLoaded ? $pages->next() : $pages->rewind();
 
-                    $paginator = $this->api->getReleases(++$page);
-                    $releases = $paginator->getPageItems();
+                    if (!$pages->valid()) {
+                        return;
+                    }
 
                     $toYield = [];
-                    foreach ($releases as $releaseDTO) {
+                    foreach ($pages->current() as $record) {
                         try {
-                            $toYield[] = GitLabRelease::fromDTO($this->api, $this, $releaseDTO);
+                            $toYield[] = GitLabRelease::fromRecord($this->api, $this, $record);
                         } catch (\Throwable) {
                             // Skip invalid releases
                             continue;
                         }
                     }
-                    yield $toYield;
-                    $anyPageLoaded = true;
 
-                    // Check if there are more pages by getting next page
-                    $hasMorePages = $paginator->getNextPage() !== null;
+                    $anyPageLoaded = true;
+                    yield $toYield;
                 } catch (\Throwable $e) {
                     # The first page is mandatory: when it fails, there is nothing to download and the reason
                     # (invalid token, rate limit, missing project, etc.) must reach the user.
                     $anyPageLoaded or throw $e;
 
                     # A rate limit leaves the release list incomplete: hiding it would produce a report
-                    # that claims the project has nothing more, so it must reach the user as well.
+                    # that claims the repository has nothing more, so it must reach the user as well.
                     $e instanceof RateLimitException and throw $e;
 
                     # Already loaded releases are enough to continue, so a failure of a subsequent page
@@ -90,11 +105,11 @@ final class GitLabRepository implements Repository, Destroyable
                     $this->logger->exception($e, important: false);
                     return;
                 }
-            } while ($hasMorePages);
+            }
         };
 
         // Create paginator
-        $paginator = \Internal\DLoad\Module\Repository\Internal\Paginator::createFromGenerator($pageLoader(), null);
+        $paginator = Paginator::createFromGenerator($pageLoader(), null);
 
         // Create a collection with the paginator
         $this->releases = ReleasesCollection::create($paginator);
@@ -109,9 +124,10 @@ final class GitLabRepository implements Repository, Destroyable
 
     public function destroy(): void
     {
-        $this->releases === null or $this->releases->map(
-            static fn(object $release) => $release instanceof Destroyable and $release->destroy(),
-        );
+        // Only what was loaded is released: iterating the collection would request the remaining pages
+        foreach ($this->releases?->loaded() ?? [] as $release) {
+            $release instanceof Destroyable and $release->destroy();
+        }
 
         unset($this->releases);
     }

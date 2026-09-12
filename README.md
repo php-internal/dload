@@ -49,6 +49,7 @@ With DLoad, you can:
     - [Download Types](#download-types)
     - [Version Constraints](#version-constraints)
     - [Advanced Configuration Options](#advanced-configuration-options)
+    - [Version Registry](#version-registry)
 - [Building Custom RoadRunner](#building-custom-roadrunner)
     - [Build Action Configuration](#build-action-configuration)
     - [Velox Action Attributes](#velox-action-attributes)
@@ -350,6 +351,72 @@ Use Composer-style version constraints:
 </dload>
 ```
 
+### Version Registry
+
+Resolving a version means asking GitHub or GitLab for the repository's release list. DLoad keeps
+what it learns in a local **version registry**: a small database of the releases and assets every
+known repository offers, one JSON file per repository. Versions never expire from it. What expires
+is the *last check* of a repository: while the check is younger than `cache-ttl`, `dload get` is
+answered from the registry without a single API request. When it is older, DLoad asks the API only
+for the releases published since the last check, which is usually one request.
+
+Release pages are still loaded lazily. The first run fetches only as many pages as it takes to find
+a release that satisfies the requested version, and older releases are fetched later, on demand,
+when a run actually needs one of them.
+
+The registry is on by default and lives in the per-user cache directory (`$XDG_CACHE_HOME/dload`,
+`%LOCALAPPDATA%\dload\cache` on Windows, `~/.cache/dload` otherwise):
+
+```xml
+<dload temp-dir="./runtime" cache-dir="./runtime/dload-cache" cache-ttl="3600">
+    <actions>
+        <download software="rr" />
+    </actions>
+</dload>
+```
+
+| Attribute   | Environment variable | Default              | Meaning                                                                |
+|-------------|----------------------|----------------------|------------------------------------------------------------------------|
+| `cache-dir` | `DLOAD_CACHE_DIR`    | user cache directory | Directory of the version registry.                                     |
+| `cache-ttl` | `DLOAD_CACHE_TTL`    | `600`                | Seconds the last check of a repository stays valid. `0` disables the registry. |
+
+```bash
+# Check the repositories for new releases even if the last check is still fresh
+./vendor/bin/dload get rr --refresh
+
+# Forget the repositories a software package is served from, or the whole registry
+./vendor/bin/dload cache:clear rr
+./vendor/bin/dload cache:clear
+```
+
+> [!NOTE]
+> The registry holds release metadata only: tags, names and asset download links. Downloads never
+> go through it and credentials are never stored in it, so the directory can be shared or committed
+> to a CI cache freely. When a check fails because of a network error or a rate limit, the stored
+> releases are used instead, and a repository that was never seen before still fails loudly.
+> A stored release whose assets have disappeared upstream is dropped from the registry as soon as
+> its download fails, and the release list is fetched again before the run gives up.
+
+In GitHub Actions the directory can be carried between workflow runs, so a run spends the rate limit
+only on releases published since the previous one:
+
+```yaml
+- name: Restore DLoad version registry
+  uses: actions/cache@v4
+  with:
+    path: ./runtime/dload-cache
+    key: dload-registry-${{ github.run_id }}
+    restore-keys: dload-registry-
+
+- run: ./vendor/bin/dload get
+  env:
+    DLOAD_CACHE_DIR: ./runtime/dload-cache
+```
+
+The `github.run_id` in the key makes every workflow run save its registry, while `restore-keys`
+lets the next run start from the most recent one. Jobs that run in parallel within one workflow do not
+see each other's cache, since `actions/cache` saves it when a job ends.
+
 ## Building Custom RoadRunner
 
 DLoad supports building custom RoadRunner binaries using the Velox build tool. This is useful when you need RoadRunner with custom plugin combinations that aren't available in pre-built releases.
@@ -599,6 +666,9 @@ Add to CI/CD environment variables for automated downloads.
 > In GitHub Actions, `secrets.GITHUB_TOKEN` is scoped to the current repository and shares a limit of
 > 1,000 requests per hour across all jobs of the repository. With a large job matrix the limit may run out,
 > and downloads from other repositories may be rejected. Use a personal access token if that happens.
+
+Release lists are also kept in a local version registry, so repeated runs and runs that carry the
+registry between them spend the rate limit only on new releases: see [Version Registry](#version-registry).
 
 ## Failure Reporting
 
