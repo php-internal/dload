@@ -17,6 +17,7 @@ use Testo\Codecov\Covers;
 use Testo\Test;
 
 #[Covers(GitLabRepository::class)]
+#[Covers(RepositoryApi::class)]
 final class GitLabRepositoryTest
 {
     #[Test]

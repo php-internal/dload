@@ -11,6 +11,7 @@ use Nyholm\Psr7\Response;
 use Psr\Http\Message\ResponseInterface;
 use Testo\Assert;
 use Testo\Codecov\Covers;
+use Testo\Core\Exception\SkipTest;
 use Testo\Lifecycle\AfterTest;
 use Testo\Lifecycle\BeforeTest;
 use Testo\Test;
@@ -133,6 +134,63 @@ final class FileResponseCacheTest
         Assert::same((string) $response->getBody(), 'body');
     }
 
+    #[Test]
+    public function unreadableEntryIsFetchedAgain(): void
+    {
+        $cache = $this->cache();
+        $cache->remember('https://api.github.com/x', static fn(): ResponseInterface => new Response(200, [], 'cached'));
+
+        foreach (\glob($this->directory . '/*.json') as $file) {
+            \chmod($file, 0000);
+            \is_readable($file) and throw new SkipTest('The entry stays readable for this user.');
+        }
+
+        $response = $cache->remember('https://api.github.com/x', static fn(): ResponseInterface => new Response(200, [], 'refetched'));
+
+        Assert::same((string) $response->getBody(), 'refetched');
+    }
+
+    #[Test]
+    public function responseIsReturnedWhenTheDirectoryCannotBeCreated(): void
+    {
+        \file_put_contents($this->directory, 'a file where the cache directory should be');
+        $cache = new FileResponseCache($this->directory . '/entries', 600, new Logger());
+
+        $response = $cache->remember('https://api.github.com/x', static fn(): ResponseInterface => new Response(200, [], 'body'));
+
+        Assert::same((string) $response->getBody(), 'body');
+    }
+
+    #[Test]
+    public function responseIsReturnedWhenTheEntryCannotBeWritten(): void
+    {
+        $cache = $this->cache();
+        $file = $this->storeAndForget($cache);
+
+        # The entry is written aside first, so an unwritable temporary path is what makes the store fail.
+        \mkdir($file . '.' . \getmypid() . '.tmp');
+
+        $response = $cache->remember('https://api.github.com/x', static fn(): ResponseInterface => new Response(200, [], 'body'));
+
+        Assert::same((string) $response->getBody(), 'body');
+    }
+
+    #[Test]
+    public function responseIsReturnedWhenTheEntryCannotBeMovedIntoPlace(): void
+    {
+        $cache = $this->cache();
+        $file = $this->storeAndForget($cache);
+
+        # A non-empty directory in place of the entry cannot be replaced by a rename.
+        \mkdir($file);
+        \file_put_contents($file . '/occupied', 'x');
+
+        $response = $cache->remember('https://api.github.com/x', static fn(): ResponseInterface => new Response(200, [], 'body'));
+
+        Assert::same((string) $response->getBody(), 'body');
+        Assert::same(\file_get_contents($file . '/occupied'), 'x');
+    }
+
     #[BeforeTest]
     protected function prepare(): void
     {
@@ -142,15 +200,24 @@ final class FileResponseCacheTest
     #[AfterTest]
     protected function cleanup(): void
     {
-        if (!\is_dir($this->directory)) {
+        self::erase($this->directory);
+    }
+
+    /**
+     * Removes a file or a directory with everything below it.
+     */
+    private static function erase(string $path): void
+    {
+        if (\is_dir($path)) {
+            foreach (\glob($path . '/*') as $child) {
+                self::erase($child);
+            }
+
+            \rmdir($path);
             return;
         }
 
-        foreach (\glob($this->directory . '/*') as $file) {
-            \is_file($file) and \unlink($file);
-        }
-
-        \rmdir($this->directory);
+        \is_file($path) and \unlink($path);
     }
 
     private static function unexpectedFetch(): ResponseInterface
@@ -161,6 +228,24 @@ final class FileResponseCacheTest
     private function cache(int $ttl = 600): FileResponseCache
     {
         return new FileResponseCache($this->directory, $ttl, new Logger());
+    }
+
+    /**
+     * Stores an entry to learn the path the cache picks for the key, then removes it again, so a
+     * test can put an obstacle exactly where the next store writes.
+     *
+     * @return non-empty-string
+     */
+    private function storeAndForget(FileResponseCache $cache): string
+    {
+        $cache->remember('https://api.github.com/x', static fn(): ResponseInterface => new Response(200, [], 'stored'));
+
+        $files = \glob($this->directory . '/*.json');
+        Assert::same(\count($files), 1);
+
+        \unlink($files[0]);
+
+        return $files[0];
     }
 
     /**

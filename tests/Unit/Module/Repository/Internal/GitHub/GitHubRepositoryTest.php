@@ -21,6 +21,7 @@ use Testo\Lifecycle\BeforeTest;
 use Testo\Test;
 
 #[Covers(GitHubRepository::class)]
+#[Covers(RepositoryApi::class)]
 final class GitHubRepositoryTest
 {
     private string $cacheDirectory;
