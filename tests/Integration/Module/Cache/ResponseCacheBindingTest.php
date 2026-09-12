@@ -13,10 +13,6 @@ use Testo\Codecov\Covers;
 use Testo\Filter\Group;
 use Testo\Test;
 
-/**
- * The cache is only useful when the container actually hands out the configured implementation,
- * so the binding is verified through a real bootstrap rather than by constructing it by hand.
- */
 #[Group('integration')]
 #[Covers(Bootstrap::class)]
 final class ResponseCacheBindingTest

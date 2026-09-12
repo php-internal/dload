@@ -28,11 +28,6 @@ final class RepositoryApi
     private const URL_REPOSITORY = 'https://gitlab.com/api/v4/projects/%s';
     private const URL_RELEASES = 'https://gitlab.com/api/v4/projects/%s/releases';
     private const URL_RELEASE_ASSET = 'https://gitlab.com/api/v4/projects/%s/releases/%s/downloads/%s';
-
-    /**
-     * Number of releases to ask for in a single page. GitLab serves 20 by default and allows up to
-     * 100, so the maximum keeps the release list within as few requests as the API permits.
-     */
     private const RELEASES_PER_PAGE = 100;
 
     /**
@@ -220,8 +215,6 @@ final class RepositoryApi
             ['page' => $page, 'per_page' => self::RELEASES_PER_PAGE],
         );
 
-        # Only the listing goes through the cache: asset downloads share the same client, and
-        # caching at that level would write every downloaded binary to the cache directory.
         return $this->cache->remember((string) $uri, fn(): ResponseInterface => $this->request(Method::Get, $uri));
     }
 

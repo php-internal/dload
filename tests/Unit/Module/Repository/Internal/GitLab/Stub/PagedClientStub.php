@@ -9,24 +9,16 @@ use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
-/**
- * HTTP client stub that serves a paginated GitLab releases list.
- *
- * Records every request it receives, so a test can assert not only what the caller got back,
- * but how many requests it took to get there.
- */
 final class PagedClientStub implements ClientInterface
 {
     /**
-     * Query string of every received request, in order.
-     *
      * @var list<string>
      */
     public array $requests = [];
 
     /**
-     * @param int<1, max> $pages Number of pages the list is split into.
-     * @param int<1, max> $releasesPerPage Number of releases on every page.
+     * @param int<1, max> $pages
+     * @param int<1, max> $releasesPerPage
      */
     public function __construct(
         private readonly int $pages = 1,
@@ -52,8 +44,6 @@ final class PagedClientStub implements ClientInterface
     }
 
     /**
-     * Page number of every received request, in order.
-     *
      * @return list<int>
      */
     public function requestedPages(): array

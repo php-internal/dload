@@ -69,8 +69,6 @@ final class GitHubRepositoryTest
         $firstClient = new PagedClientStub(pages: 2, releasesPerPage: 2);
         $firstRun = \iterator_to_array(self::createRepository($firstClient, $this->cache())->getReleases(), false);
 
-        # A second run in a fresh process with the cache directory carried over: every listing is
-        # answered from disk, so the rate limit is left untouched.
         $secondClient = new PagedClientStub(pages: 2, releasesPerPage: 2);
         $secondRun = \iterator_to_array(self::createRepository($secondClient, $this->cache())->getReleases(), false);
 

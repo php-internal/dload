@@ -62,8 +62,6 @@ final class GitHubRepository implements Repository, Destroyable
                     // to avoid first eager loading because of generator
                     yield [];
 
-                    # Asking the paginator for the next page IS the request for it: building a new
-                    # paginator per page instead would send every page but the first one twice.
                     $page = $page === null ? $this->api->getReleases() : $page->getNextPage();
 
                     if ($page === null) {

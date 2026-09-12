@@ -39,8 +39,6 @@ final class FileResponseCacheTest
         Assert::same((string) $second->getBody(), (string) $first->getBody());
         Assert::same($second->getStatusCode(), 200);
 
-        # The `link` header drives pagination: a cached response without it would look like a
-        # single-page listing and the remaining releases would silently disappear.
         Assert::same($second->getHeaderLine('link'), '<https://api.github.com/x?page=2>; rel="next"');
     }
 
@@ -76,8 +74,6 @@ final class FileResponseCacheTest
         $cache = $this->cache(ttl: 600);
         $cache->remember('https://api.github.com/x', static fn(): ResponseInterface => new Response(200, [], 'cached'));
 
-        # Freshness must come from the stored timestamp and not from the file mtime: a CI cache
-        # restores files with a fresh mtime, which would make every entry look brand new.
         $this->ageStoredEntries(60, touchFiles: true);
 
         $response = $cache->remember('https://api.github.com/x', self::unexpectedFetch(...));
@@ -167,7 +163,6 @@ final class FileResponseCacheTest
         $cache = $this->cache();
         $file = $this->storeAndForget($cache);
 
-        # The entry is written aside first, so an unwritable temporary path is what makes the store fail.
         \mkdir($file . '.' . \getmypid() . '.tmp');
 
         $response = $cache->remember('https://api.github.com/x', static fn(): ResponseInterface => new Response(200, [], 'body'));
@@ -181,7 +176,6 @@ final class FileResponseCacheTest
         $cache = $this->cache();
         $file = $this->storeAndForget($cache);
 
-        # A non-empty directory in place of the entry cannot be replaced by a rename.
         \mkdir($file);
         \file_put_contents($file . '/occupied', 'x');
 
@@ -203,9 +197,6 @@ final class FileResponseCacheTest
         self::erase($this->directory);
     }
 
-    /**
-     * Removes a file or a directory with everything below it.
-     */
     private static function erase(string $path): void
     {
         if (\is_dir($path)) {
@@ -231,9 +222,6 @@ final class FileResponseCacheTest
     }
 
     /**
-     * Stores an entry to learn the path the cache picks for the key, then removes it again, so a
-     * test can put an obstacle exactly where the next store writes.
-     *
      * @return non-empty-string
      */
     private function storeAndForget(FileResponseCache $cache): string
@@ -248,9 +236,6 @@ final class FileResponseCacheTest
         return $files[0];
     }
 
-    /**
-     * Moves the stored creation timestamps back in time, so expiry can be tested without sleeping.
-     */
     private function ageStoredEntries(int $seconds, bool $touchFiles = false): void
     {
         foreach (\glob($this->directory . '/*.json') as $file) {
