@@ -44,6 +44,26 @@ final class RepositoryRecordTest
     }
 
     #[Test]
+    public function releaseCanBeDroppedAndTheCheckForgotten(): void
+    {
+        $record = new RepositoryRecord(self::id(), checkedAt: 1_000, releases: [
+            new ReleaseRecord('v2', 'v2'),
+            new ReleaseRecord('v1', 'v1'),
+        ]);
+
+        $dropped = $record->withoutRelease('v2');
+
+        Assert::same(self::tags($dropped), ['v1']);
+        Assert::same($dropped->checkedAt, 1_000);
+        Assert::same($record->withoutRelease('v9'), $record);
+
+        $stale = $dropped->withoutCheck();
+        Assert::null($stale->checkedAt);
+        Assert::same(self::tags($stale), ['v1']);
+        Assert::true($stale->isStale(1_000, 600));
+    }
+
+    #[Test]
     public function stalenessDependsOnTheLastCheck(): void
     {
         $never = RepositoryRecord::empty(self::id());

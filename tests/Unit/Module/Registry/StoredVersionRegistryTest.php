@@ -170,6 +170,41 @@ final class StoredVersionRegistryTest
     }
 
     #[Test]
+    public function forgetDropsTheReleaseAndForcesTheNextCheck(): void
+    {
+        $source = ArrayReleaseSource::ofTags(['v3', 'v2', 'v1']);
+        $registry = $this->registry();
+        self::flatten($registry->releases($this->id, $source));
+        $source->served = [];
+
+        // `v3` was deleted upstream and its download failed
+        $registry->forget($this->id, 'v3');
+
+        $record = $this->storage->load($this->id);
+        Assert::same(self::tagsOf($record->releases()), ['v2', 'v1']);
+        Assert::null($record->checkedAt);
+
+        // The record is fresh by time, yet the next listing asks the source again
+        $again = self::flatten($this->registry()->releases($this->id, $source));
+        Assert::same($source->served, [0]);
+        Assert::same($again, ['v3', 'v2', 'v1']);
+    }
+
+    #[Test]
+    public function forgetOfAnUnknownReleaseChangesNothing(): void
+    {
+        $source = ArrayReleaseSource::ofTags(['v1']);
+        self::flatten($this->registry()->releases($this->id, $source));
+        $saves = $this->storage->saves;
+
+        $this->registry()->forget($this->id, 'v9');
+        $this->registry()->forget(new RepositoryId('github', 'other/repo'), 'v1');
+
+        Assert::same($this->storage->saves, $saves);
+        Assert::same($this->storage->load($this->id)->checkedAt, $this->now);
+    }
+
+    #[Test]
     public function attachRecordsTheSoftwareOnce(): void
     {
         $registry = $this->registry();

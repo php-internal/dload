@@ -391,7 +391,9 @@ El registro está activado por defecto y vive en el directorio de caché del usu
 > El registro solo contiene metadatos de releases: tags, nombres y enlaces de descarga. Las descargas
 > no pasan por él y nunca guarda credenciales, así que el directorio puede compartirse o guardarse en
 > la caché de CI sin problemas. Si una comprobación falla por un error de red o un límite de la API, se
-> usan los releases almacenados; un repositorio nunca visto sigue fallando de forma visible.
+> usan los releases almacenados; un repositorio nunca visto sigue fallando de forma visible. Un
+> release almacenado cuyos assets desaparecieron del origen se elimina del registro en cuanto falla
+> su descarga, y la lista de releases se vuelve a obtener antes de que la ejecución se dé por vencida.
 
 En GitHub Actions el directorio puede conservarse entre ejecuciones del workflow, de modo que cada
 ejecución gasta el límite de la API solo en los releases publicados desde la anterior:

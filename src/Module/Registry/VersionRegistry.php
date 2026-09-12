@@ -41,4 +41,14 @@ interface VersionRegistry
      * @param non-empty-string $software Software identifier.
      */
     public function attach(string $software, RepositoryId $id): void;
+
+    /**
+     * Drops a release that turned out to be gone and marks the repository for a check.
+     *
+     * Called when the assets of a stored release cannot be downloaded any more: the next listing
+     * asks the source again instead of trusting the stored record.
+     *
+     * @param non-empty-string $tag Tag of the release as stored in the registry.
+     */
+    public function forget(RepositoryId $id, string $tag): void;
 }

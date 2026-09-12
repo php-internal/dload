@@ -394,6 +394,8 @@ The registry is on by default and lives in the per-user cache directory (`$XDG_C
 > go through it and credentials are never stored in it, so the directory can be shared or committed
 > to a CI cache freely. When a check fails because of a network error or a rate limit, the stored
 > releases are used instead, and a repository that was never seen before still fails loudly.
+> A stored release whose assets have disappeared upstream is dropped from the registry as soon as
+> its download fails, and the release list is fetched again before the run gives up.
 
 In GitHub Actions the directory can be carried between workflow runs, so a run spends the rate limit
 only on releases published since the previous one:

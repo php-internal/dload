@@ -162,6 +162,37 @@ final class RepositoryRecord
         return $this->with(checkedAt: $checkedAt);
     }
 
+    /**
+     * Forgets the last check, so the record counts as stale until the source is asked again.
+     */
+    public function withoutCheck(): self
+    {
+        return new self(
+            id: $this->id,
+            checkedAt: null,
+            complete: $this->complete,
+            software: $this->software,
+            releases: $this->releases(),
+        );
+    }
+
+    /**
+     * Drops a release; an unknown tag leaves the record as it is.
+     *
+     * @param non-empty-string $tag
+     */
+    public function withoutRelease(string $tag): self
+    {
+        if (!$this->has($tag)) {
+            return $this;
+        }
+
+        return $this->with(releases: \array_values(\array_filter(
+            $this->releases(),
+            static fn(ReleaseRecord $release): bool => $release->tag !== $tag,
+        )));
+    }
+
     public function withComplete(bool $complete): self
     {
         return $this->with(complete: $complete);

@@ -81,6 +81,19 @@ final class StoredVersionRegistry implements VersionRegistry
         $updated === $record or $this->persist($updated);
     }
 
+    public function forget(RepositoryId $id, string $tag): void
+    {
+        $record = $this->storage->load($id);
+        if ($record === null || !$record->has($tag)) {
+            return;
+        }
+
+        $this->logger->debug('Release `%s` of `%s` is gone: dropped from the version registry.', $tag, (string) $id);
+
+        // Without the last check the next listing asks the source again
+        $this->persist($record->withoutRelease($tag)->withoutCheck());
+    }
+
     /**
      * @param list<ReleaseRecord> $page
      */

@@ -29,4 +29,9 @@ final class PassThroughRegistry implements VersionRegistry
     {
         // Nothing to record
     }
+
+    public function forget(RepositoryId $id, string $tag): void
+    {
+        // Nothing is stored
+    }
 }
