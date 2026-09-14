@@ -21,6 +21,8 @@ use Internal\DLoad\Module\Repository\Exception\RepositoryException;
  *     }
  * }
  * ```
+ *
+ * @internal
  */
 interface VersionRegistry
 {
@@ -40,7 +42,7 @@ interface VersionRegistry
      *
      * @param non-empty-string $software Software identifier.
      */
-    public function attach(string $software, RepositoryId $id): void;
+    public function attach(RepositoryId $id, string $software): void;
 
     /**
      * Drops a release that turned out to be gone and marks the repository for a check.

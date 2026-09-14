@@ -12,6 +12,8 @@ use Internal\DLoad\Module\Registry\Record\RepositoryRecord;
  * Implementations must never let a storage failure escape as an exception from `load()`:
  * a broken or unreadable record is reported as missing, because the registry is an optimisation
  * and must not turn a working download into a failed one.
+ *
+ * @internal
  */
 interface RegistryStorage
 {

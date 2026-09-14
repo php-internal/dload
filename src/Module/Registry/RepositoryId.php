@@ -18,6 +18,8 @@ use Internal\DLoad\Module\Config\Schema\Embed\Repository as RepositoryConfig;
  * $id = RepositoryId::fromConfig($repositoryConfig);
  * echo $id; // github:roadrunner-server/roadrunner
  * ```
+ *
+ * @internal
  */
 final class RepositoryId implements \Stringable
 {

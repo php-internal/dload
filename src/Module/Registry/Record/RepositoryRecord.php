@@ -14,45 +14,61 @@ use Internal\DLoad\Module\Registry\RepositoryId;
  * releases found on a check) or at the tail (older releases loaded on demand). `complete` tells
  * whether the tail has reached the end of the listing.
  *
+ * The list is split into segments of at most `SEGMENT_SIZE` releases, so a repository with
+ * thousands of releases costs one small index read plus the segments the run actually iterates.
+ * New releases are packed into the neighbouring segment while it has room and start a new one
+ * when it is full. The tags of every segment live in the index, so counting and membership never
+ * load a segment.
+ *
  * The record is immutable; every change produces a new instance.
  *
- * @psalm-import-type ReleaseArray from ReleaseRecord
  * @psalm-type RepositoryArray = array{
  *     version: int,
  *     repository: array{type: non-empty-string, uri: non-empty-string},
  *     checked_at: int|null,
  *     complete: bool,
  *     software: list<non-empty-string>,
- *     releases: list<ReleaseArray>,
+ *     segments: list<array{key: non-empty-string, tags: list<non-empty-string>}>,
  * }
+ *
+ * @internal
  */
 final class RepositoryRecord
 {
     /** Format version of the stored payload; bump when the structure changes incompatibly. */
-    public const FORMAT_VERSION = 1;
+    public const FORMAT_VERSION = 2;
 
-    /** @var array<non-empty-string, ReleaseRecord> Releases keyed by tag, newest first. */
-    private readonly array $releases;
+    /** Greatest number of releases a segment holds. */
+    public const SEGMENT_SIZE = 100;
+
+    /** @var list<ReleaseSegment> Newest first. */
+    public readonly array $segments;
+
+    /** @var array<non-empty-string, int> Segment position of every stored tag. */
+    private readonly array $index;
 
     /**
      * @param int|null $checkedAt Unix timestamp of the last successful check against the source.
      * @param bool $complete Whether the stored releases reach the end of the source listing.
      * @param list<non-empty-string> $software Identifiers of the software packages served from this repository.
-     * @param list<ReleaseRecord> $releases Releases newest first.
+     * @param list<ReleaseSegment> $segments Newest first.
      */
     public function __construct(
         public readonly RepositoryId $id,
         public readonly ?int $checkedAt = null,
         public readonly bool $complete = false,
         public readonly array $software = [],
-        array $releases = [],
+        array $segments = [],
     ) {
-        $indexed = [];
-        foreach ($releases as $release) {
-            $indexed[$release->tag] ??= $release;
+        $index = [];
+        foreach ($segments as $position => $segment) {
+            foreach ($segment->tags as $tag) {
+                $index[$tag] ??= $position;
+            }
         }
 
-        $this->releases = $indexed;
+        $this->segments = $segments;
+        $this->index = $index;
     }
 
     public static function empty(RepositoryId $id): self
@@ -61,10 +77,13 @@ final class RepositoryRecord
     }
 
     /**
+     * Restores the index of a record; the releases of every segment come through the loader.
+     *
      * @param array<array-key, mixed> $data
+     * @param \Closure(non-empty-string): list<ReleaseRecord> $loader Reads the releases of a segment by its key.
      * @throws \InvalidArgumentException When the array does not describe a repository record.
      */
-    public static function fromArray(array $data): self
+    public static function fromArray(array $data, \Closure $loader): self
     {
         ($data['version'] ?? null) === self::FORMAT_VERSION or throw new \InvalidArgumentException(
             'Unsupported repository record format.',
@@ -80,10 +99,23 @@ final class RepositoryRecord
             'Repository record requires a repository type and URI.',
         );
 
-        $releases = [];
-        /** @var mixed $release */
-        foreach (\is_array($data['releases'] ?? null) ? $data['releases'] : [] as $release) {
-            \is_array($release) and $releases[] = ReleaseRecord::fromArray($release);
+        $segments = [];
+        /** @var mixed $segment */
+        foreach (\is_array($data['segments'] ?? null) ? $data['segments'] : [] as $segment) {
+            \is_array($segment) or throw new \InvalidArgumentException('Repository record segment must be an object.');
+
+            /** @var mixed $key */
+            $key = $segment['key'] ?? null;
+            \is_string($key) && $key !== '' or throw new \InvalidArgumentException('Repository record segment requires a `key`.');
+
+            $tags = [];
+            /** @var mixed $tag */
+            foreach (\is_array($segment['tags'] ?? null) ? $segment['tags'] : [] as $tag) {
+                \is_string($tag) && $tag !== '' or throw new \InvalidArgumentException('Repository record segment tags must be non-empty strings.');
+                $tags[] = $tag;
+            }
+
+            $tags === [] or $segments[] = ReleaseSegment::stored($key, $tags, static fn(): array => $loader($key));
         }
 
         $software = [];
@@ -100,16 +132,37 @@ final class RepositoryRecord
             checkedAt: \is_int($checkedAt) ? $checkedAt : null,
             complete: (bool) ($data['complete'] ?? false),
             software: $software,
-            releases: $releases,
+            segments: $segments,
         );
     }
 
     /**
-     * @return list<ReleaseRecord> Releases newest first.
+     * Releases segment by segment, newest first; a segment is read from storage when reached.
+     *
+     * @return \Generator<int, list<ReleaseRecord>, mixed, void>
+     * @throws \RuntimeException When a segment cannot be read from storage.
+     */
+    public function pages(): \Generator
+    {
+        foreach ($this->segments as $segment) {
+            yield $segment->releases();
+        }
+    }
+
+    /**
+     * Every release, newest first; reads every segment.
+     *
+     * @return list<ReleaseRecord>
+     * @throws \RuntimeException When a segment cannot be read from storage.
      */
     public function releases(): array
     {
-        return \array_values($this->releases);
+        $releases = [];
+        foreach ($this->pages() as $page) {
+            $releases = [...$releases, ...$page];
+        }
+
+        return $releases;
     }
 
     /**
@@ -117,7 +170,7 @@ final class RepositoryRecord
      */
     public function count(): int
     {
-        return \count($this->releases);
+        return \count($this->index);
     }
 
     /**
@@ -125,7 +178,7 @@ final class RepositoryRecord
      */
     public function has(string $tag): bool
     {
-        return isset($this->releases[$tag]);
+        return isset($this->index[$tag]);
     }
 
     /**
@@ -152,50 +205,92 @@ final class RepositoryRecord
      */
     public function withHead(array $fetched): self
     {
+        $fetched = self::unique($fetched);
         $fetchedTags = \array_fill_keys(\array_map(static fn(ReleaseRecord $release): string => $release->tag, $fetched), true);
 
-        $stored = $this->releases();
+        // Flat view of the stored tags with the segment each one belongs to
+        $stored = [];
+        foreach ($this->segments as $position => $segment) {
+            foreach ($segment->tags as $tag) {
+                $stored[] = [$tag, $position];
+            }
+        }
+
         $overlap = null;
-        foreach ($stored as $position => $release) {
-            if (isset($fetchedTags[$release->tag])) {
-                $overlap = $position;
+        foreach ($stored as $offset => [$tag]) {
+            if (isset($fetchedTags[$tag])) {
+                $overlap = $offset;
                 break;
             }
         }
 
         if ($overlap === null) {
-            return $this->with(releases: $fetched);
+            return $this->with(segments: self::pack($fetched, [], $this->nextKey()));
         }
 
         // Listing positions the fetched releases still cover, counting from the overlap
         $spanned = 0;
         foreach ($fetched as $position => $release) {
-            if ($release->tag === $stored[$overlap]->tag) {
+            if ($release->tag === $stored[$overlap][0]) {
                 $spanned = \count($fetched) - $position;
                 break;
             }
         }
 
-        $kept = [];
-        foreach (\array_slice($stored, $overlap) as $release) {
+        $keepFrom = \count($stored);
+        foreach (\array_slice($stored, $overlap, preserve_keys: true) as $offset => [$tag]) {
             if ($spanned <= 0) {
-                $kept[] = $release;
-            } elseif (isset($fetchedTags[$release->tag])) {
-                --$spanned;
+                $keepFrom = $offset;
+                break;
             }
+
+            isset($fetchedTags[$tag]) and --$spanned;
         }
 
-        return $this->with(releases: [...$fetched, ...$kept]);
+        // The segment holding the first kept release is split unless the release opens it;
+        // the segments after it stay as they are
+        $loose = $fetched;
+        $following = [];
+        if ($keepFrom < \count($stored)) {
+            [$tag, $position] = $stored[$keepFrom];
+            $segment = $this->segments[$position];
+            $start = (int) \array_search($tag, $segment->tags, true);
+            $start === 0 or $loose = [...$loose, ...\array_slice($segment->releases(), $start)];
+            $following = \array_slice($this->segments, $start === 0 ? $position : $position + 1);
+        }
+
+        return $this->with(segments: self::pack($loose, $following, $this->nextKey()));
     }
 
     /**
      * Appends older releases loaded on demand; already known tags are ignored.
      *
-     * @param list<ReleaseRecord> $fetched
+     * The last segment is filled up before a new one starts.
+     *
+     * @param list<ReleaseRecord> $fetched Newest first.
      */
     public function withTail(array $fetched): self
     {
-        return $this->with(releases: [...$this->releases(), ...$fetched]);
+        $new = \array_values(\array_filter(
+            self::unique($fetched),
+            fn(ReleaseRecord $release): bool => !$this->has($release->tag),
+        ));
+        if ($new === []) {
+            return $this;
+        }
+
+        $segments = $this->segments;
+        $last = \array_pop($segments);
+        if ($last === null || $last->count() >= self::SEGMENT_SIZE) {
+            $last === null or $segments[] = $last;
+
+            return $this->with(segments: [...$segments, ...self::chunk($new, $this->nextKey())]);
+        }
+
+        return $this->with(segments: [
+            ...$segments,
+            ...self::chunk([...$last->releases(), ...$new], $this->nextKey(), $last->key),
+        ]);
     }
 
     public function withCheckedAt(int $checkedAt): self
@@ -213,7 +308,7 @@ final class RepositoryRecord
             checkedAt: null,
             complete: $this->complete,
             software: $this->software,
-            releases: $this->releases(),
+            segments: $this->segments,
         );
     }
 
@@ -228,10 +323,18 @@ final class RepositoryRecord
             return $this;
         }
 
-        return $this->with(releases: \array_values(\array_filter(
-            $this->releases(),
+        $position = $this->index[$tag];
+        $segments = $this->segments;
+        $remaining = \array_values(\array_filter(
+            $segments[$position]->releases(),
             static fn(ReleaseRecord $release): bool => $release->tag !== $tag,
-        )));
+        ));
+
+        $remaining === []
+            ? \array_splice($segments, $position, 1)
+            : $segments[$position] = ReleaseSegment::fresh($segments[$position]->key, $remaining);
+
+        return $this->with(segments: $segments);
     }
 
     public function withComplete(bool $complete): self
@@ -250,6 +353,16 @@ final class RepositoryRecord
     }
 
     /**
+     * The record as the storage holds it now: no segment is dirty any more.
+     */
+    public function persisted(): self
+    {
+        return $this->with(segments: \array_map(static fn(ReleaseSegment $segment): ReleaseSegment => $segment->persisted(), $this->segments));
+    }
+
+    /**
+     * The index of the record; the releases of the segments are stored separately.
+     *
      * @return RepositoryArray
      */
     public function toArray(): array
@@ -260,26 +373,125 @@ final class RepositoryRecord
             'checked_at' => $this->checkedAt,
             'complete' => $this->complete,
             'software' => $this->software,
-            'releases' => \array_map(static fn(ReleaseRecord $release): array => $release->toArray(), $this->releases()),
+            'segments' => \array_map(
+                static fn(ReleaseSegment $segment): array => ['key' => $segment->key, 'tags' => $segment->tags],
+                $this->segments,
+            ),
         ];
     }
 
     /**
+     * Packs loose releases into segments in front of the given ones.
+     *
+     * The short remainder goes first, where the next check adds its releases, so the head segment
+     * fills up over several checks and the full segments behind it are never rewritten. When the
+     * remainder and the first following segment fit into one, they are joined.
+     *
+     * @param list<ReleaseRecord> $loose Newest first.
+     * @param list<ReleaseSegment> $following Segments that stay as they are.
+     * @param int<1, max> $nextKey
+     * @return list<ReleaseSegment>
+     */
+    private static function pack(array $loose, array $following, int $nextKey): array
+    {
+        if ($loose === []) {
+            return $following;
+        }
+
+        $remainder = \count($loose) % self::SEGMENT_SIZE;
+        $first = $following[0] ?? null;
+        if ($first !== null && $remainder > 0 && $remainder + $first->count() <= self::SEGMENT_SIZE) {
+            $loose = [...$loose, ...$first->releases()];
+            \array_shift($following);
+            $remainder = \count($loose) % self::SEGMENT_SIZE;
+        }
+
+        $head = [];
+        if ($remainder > 0) {
+            /** @var non-empty-list<ReleaseRecord> $partial */
+            $partial = \array_slice($loose, 0, $remainder);
+            $head[] = ReleaseSegment::fresh(self::key($nextKey++), $partial);
+        }
+
+        return [...$head, ...self::chunk(\array_slice($loose, $remainder), $nextKey), ...$following];
+    }
+
+    /**
+     * Splits releases into segments of at most `SEGMENT_SIZE`, keying them from `$nextKey` on.
+     *
+     * @param list<ReleaseRecord> $releases
+     * @param int<1, max> $nextKey
+     * @param non-empty-string|null $reuseKey Key for the first segment, when it replaces an existing one.
+     * @return list<ReleaseSegment>
+     */
+    private static function chunk(array $releases, int $nextKey, ?string $reuseKey = null): array
+    {
+        $segments = [];
+        foreach (\array_chunk($releases, self::SEGMENT_SIZE) as $chunk) {
+            $segments[] = ReleaseSegment::fresh($reuseKey ?? self::key($nextKey++), $chunk);
+            $reuseKey = null;
+        }
+
+        return $segments;
+    }
+
+    /**
+     * @param int<1, max> $number
+     * @return non-empty-string
+     */
+    private static function key(int $number): string
+    {
+        /** @var non-empty-string */
+        return \sprintf('%04d', $number);
+    }
+
+    /**
+     * Drops the releases repeating a tag seen before, so no tag lands in two segments.
+     *
+     * @param list<ReleaseRecord> $releases
+     * @return list<ReleaseRecord>
+     */
+    private static function unique(array $releases): array
+    {
+        $seen = [];
+        $unique = [];
+        foreach ($releases as $release) {
+            isset($seen[$release->tag]) or $unique[] = $release;
+            $seen[$release->tag] = true;
+        }
+
+        return $unique;
+    }
+
+    /**
+     * @return int<1, max>
+     */
+    private function nextKey(): int
+    {
+        $max = 0;
+        foreach ($this->segments as $segment) {
+            $max = \max($max, (int) $segment->key);
+        }
+
+        return $max + 1;
+    }
+
+    /**
      * @param list<non-empty-string>|null $software
-     * @param list<ReleaseRecord>|null $releases
+     * @param list<ReleaseSegment>|null $segments
      */
     private function with(
         ?int $checkedAt = null,
         ?bool $complete = null,
         ?array $software = null,
-        ?array $releases = null,
+        ?array $segments = null,
     ): self {
         return new self(
             id: $this->id,
             checkedAt: $checkedAt ?? $this->checkedAt,
             complete: $complete ?? $this->complete,
             software: $software ?? $this->software,
-            releases: $releases ?? $this->releases(),
+            segments: $segments ?? $this->segments,
         );
     }
 }

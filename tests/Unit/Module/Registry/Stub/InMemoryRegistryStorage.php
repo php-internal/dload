@@ -32,7 +32,7 @@ final class InMemoryRegistryStorage implements RegistryStorage
         $this->failOnSave and throw new \RuntimeException('Storage is read-only.');
 
         ++$this->saves;
-        $this->records[(string) $record->id] = $record;
+        $this->records[(string) $record->id] = $record->persisted();
     }
 
     public function all(): iterable

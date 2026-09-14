@@ -12,6 +12,7 @@ use Internal\DLoad\Module\Repository\Internal\GitHub\Exception\GitHubRateLimitEx
 use Internal\DLoad\Service\Logger;
 use Internal\DLoad\Tests\Unit\Module\Registry\Stub\ArrayReleaseSource;
 use Internal\DLoad\Tests\Unit\Module\Registry\Stub\InMemoryRegistryStorage;
+use Symfony\Component\Console\Output\BufferedOutput;
 use Testo\Assert;
 use Testo\Codecov\Covers;
 use Testo\Lifecycle\BeforeTest;
@@ -143,15 +144,37 @@ final class StoredVersionRegistryTest
     }
 
     #[Test]
-    public function rateLimitOnCheckFallsBackToStoredReleases(): void
+    public function rateLimitOnCheckFallsBackToStoredReleasesAndIsReportedOnce(): void
     {
+        $other = new RepositoryId('github', 'other/repo');
         $source = ArrayReleaseSource::ofTags(['v2', 'v1']);
         self::flatten($this->registry()->releases($this->id, $source));
+        self::flatten($this->registry()->releases($other, $source));
 
         $source->fail(new GitHubRateLimitException('Rate limit exceeded.', 'owner/repo', null));
         $this->now += 601;
+        $output = new BufferedOutput();
+        $registry = $this->registry(logger: new Logger($output));
 
-        Assert::same(self::flatten($this->registry()->releases($this->id, $source)), ['v2', 'v1']);
+        Assert::same(self::flatten($registry->releases($this->id, $source)), ['v2', 'v1']);
+        Assert::same(self::flatten($registry->releases($other, $source)), ['v2', 'v1']);
+
+        // Shown without any verbosity flag, but not for every repository of the run
+        Assert::same(\substr_count($output->fetch(), 'rate limit prevents checking'), 1);
+    }
+
+    #[Test]
+    public function ordinaryCheckFailureStaysOutOfTheDefaultOutput(): void
+    {
+        $source = ArrayReleaseSource::ofTags(['v1']);
+        self::flatten($this->registry()->releases($this->id, $source));
+
+        $source->fail();
+        $this->now += 601;
+        $output = new BufferedOutput();
+        self::flatten($this->registry(logger: new Logger($output))->releases($this->id, $source));
+
+        Assert::same($output->fetch(), '');
     }
 
     #[Test]
@@ -260,9 +283,9 @@ final class StoredVersionRegistryTest
     {
         $registry = $this->registry();
 
-        $registry->attach('rr', $this->id);
-        $registry->attach('rr', $this->id);
-        $registry->attach('roadrunner', $this->id);
+        $registry->attach($this->id, 'rr');
+        $registry->attach($this->id, 'rr');
+        $registry->attach($this->id, 'roadrunner');
 
         Assert::same($this->storage->load($this->id)->software, ['rr', 'roadrunner']);
         Assert::same($this->storage->saves, 2);
@@ -299,8 +322,8 @@ final class StoredVersionRegistryTest
         return \array_map(static fn(ReleaseRecord $release): string => $release->tag, $releases);
     }
 
-    private function registry(bool $refresh = false): StoredVersionRegistry
+    private function registry(bool $refresh = false, ?Logger $logger = null): StoredVersionRegistry
     {
-        return new StoredVersionRegistry($this->storage, 600, new Logger(), $refresh, fn(): int => $this->now);
+        return new StoredVersionRegistry($this->storage, 600, $logger ?? new Logger(), $refresh, fn(): int => $this->now);
     }
 }

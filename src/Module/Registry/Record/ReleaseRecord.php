@@ -18,6 +18,8 @@ namespace Internal\DLoad\Module\Registry\Record;
  *     prerelease?: bool,
  *     assets?: list<AssetArray>,
  * }
+ *
+ * @internal
  */
 final class ReleaseRecord
 {

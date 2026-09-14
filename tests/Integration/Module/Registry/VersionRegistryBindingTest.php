@@ -39,7 +39,7 @@ final class VersionRegistryBindingTest
         Assert::instanceOf($container->get(VersionRegistry::class), StoredVersionRegistry::class);
 
         $container->get(RegistryStorage::class)->save(RepositoryRecord::empty(new RepositoryId('github', 'a/b')));
-        Assert::true(\is_file($this->directory . '/dload/repositories/github/a/b.json'));
+        Assert::true(\is_file($this->directory . '/dload/repositories/github/a/b/index.json'));
     }
 
     #[Test]
@@ -48,7 +48,7 @@ final class VersionRegistryBindingTest
         $container = self::bootstrap(environment: ['DLOAD_CACHE_DIR' => $this->directory]);
 
         $container->get(RegistryStorage::class)->save(RepositoryRecord::empty(new RepositoryId('github', 'a/b')));
-        Assert::true(\is_file($this->directory . '/repositories/github/a/b.json'));
+        Assert::true(\is_file($this->directory . '/repositories/github/a/b/index.json'));
     }
 
     #[Test]
@@ -57,7 +57,7 @@ final class VersionRegistryBindingTest
         $container = self::bootstrap(xml: \sprintf('<?xml version="1.0"?><dload cache-dir="%s"/>', $this->directory));
 
         $container->get(RegistryStorage::class)->save(RepositoryRecord::empty(new RepositoryId('github', 'a/b')));
-        Assert::true(\is_file($this->directory . '/repositories/github/a/b.json'));
+        Assert::true(\is_file($this->directory . '/repositories/github/a/b/index.json'));
     }
 
     #[Test]

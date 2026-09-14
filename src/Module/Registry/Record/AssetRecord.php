@@ -17,6 +17,8 @@ namespace Internal\DLoad\Module\Registry\Record;
  *     content_type?: string|null,
  *     digest?: string|null,
  * }
+ *
+ * @internal
  */
 final class AssetRecord
 {

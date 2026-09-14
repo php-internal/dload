@@ -25,7 +25,7 @@ final class PassThroughRegistry implements VersionRegistry
         }
     }
 
-    public function attach(string $software, RepositoryId $id): void
+    public function attach(RepositoryId $id, string $software): void
     {
         // Nothing to record
     }

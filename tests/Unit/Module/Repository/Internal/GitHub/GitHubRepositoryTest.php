@@ -121,6 +121,18 @@ final class GitHubRepositoryTest
     }
 
     #[Test]
+    public function draftReleasesAreNeitherServedNorStored(): void
+    {
+        $storage = new InMemoryRegistryStorage();
+
+        $names = self::names(self::createRepository(new PagedClientStub(pages: 1, drafts: 2), self::registry($storage)));
+
+        Assert::same(\count($names), 100);
+        Assert::false(\in_array('draft-1', $names, true));
+        Assert::false($storage->load(new RepositoryId(GitHubRepository::TYPE, 'owner/repo'))?->has('draft-1') ?? true);
+    }
+
+    #[Test]
     public function assetDigestReportedByTheApiIsStored(): void
     {
         $storage = new InMemoryRegistryStorage();
@@ -136,14 +148,10 @@ final class GitHubRepositoryTest
     {
         // A fresh record holds the first 50 releases: the tail starts in the middle of API page 1
         $storage = new InMemoryRegistryStorage();
-        $storage->save(new RepositoryRecord(
-            id: new RepositoryId(GitHubRepository::TYPE, 'owner/repo'),
-            checkedAt: \time(),
-            releases: \array_map(
-                static fn(int $i): ReleaseRecord => new ReleaseRecord(\sprintf('v1.0.%d', $i), \sprintf('v1.0.%d', $i)),
-                \range(1, 50),
-            ),
-        ));
+        $storage->save((new RepositoryRecord(new RepositoryId(GitHubRepository::TYPE, 'owner/repo'), checkedAt: \time()))->withHead(\array_map(
+            static fn(int $i): ReleaseRecord => new ReleaseRecord(\sprintf('v1.0.%d', $i), \sprintf('v1.0.%d', $i)),
+            \range(1, 50),
+        )));
 
         $client = new PagedClientStub(pages: 2);
         $all = self::names(self::createRepository($client, self::registry($storage)));

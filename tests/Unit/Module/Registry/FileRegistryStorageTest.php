@@ -23,19 +23,62 @@ final class FileRegistryStorageTest
     private string $directory;
 
     #[Test]
-    public function storesOneReadableFilePerRepository(): void
+    public function storesAnIndexAndOneFilePerSegment(): void
     {
         $storage = $this->storage();
 
-        $storage->save(self::record('github', 'roadrunner-server/roadrunner', ['v1']));
+        $storage->save(self::record('github', 'roadrunner-server/roadrunner', self::range(150, 1)));
         $storage->save(self::record('gitlab', 'group/sub/project', ['v2']));
 
-        Assert::true(\is_file($this->directory . '/repositories/github/roadrunner-server/roadrunner.json'));
-        Assert::true(\is_file($this->directory . '/repositories/gitlab/group/sub/project.json'));
+        $repo = $this->directory . '/repositories/github/roadrunner-server/roadrunner';
+        Assert::true(\is_file($repo . '/index.json'));
+        Assert::true(\is_file($repo . '/releases-0001.json'));
+        Assert::true(\is_file($repo . '/releases-0002.json'));
+        Assert::true(\is_file($this->directory . '/repositories/gitlab/group/sub/project/index.json'));
 
         $loaded = $storage->load(new RepositoryId('github', 'roadrunner-server/roadrunner'));
-        Assert::same($loaded->releases()[0]->tag, 'v1');
+        Assert::same($loaded->count(), 150);
+        Assert::same($loaded->releases()[0]->tag, 'v150');
+        Assert::same($loaded->releases()[149]->tag, 'v1');
         Assert::same($loaded->software, ['rr']);
+    }
+
+    #[Test]
+    public function segmentsAreReadWhenReachedAndOnlyDirtyOnesAreWritten(): void
+    {
+        $storage = $this->storage();
+        $storage->save(self::record('github', 'owner/repo', self::range(150, 1)));
+        $repo = $this->directory . '/repositories/github/owner/repo';
+
+        // A marker in the first segment shows whether the file is rewritten
+        $first = \file_get_contents($repo . '/releases-0001.json');
+        \file_put_contents($repo . '/releases-0001.json', \str_replace('"v150"', '"v150"  ', $first));
+
+        $loaded = $storage->load(new RepositoryId('github', 'owner/repo'));
+        Assert::same($loaded->count(), 150);
+
+        // Appending to the tail opens a new segment after the full one and rewrites nothing else
+        $storage->save($loaded->withTail([new ReleaseRecord('v0', 'v0')]));
+
+        Assert::string(\file_get_contents($repo . '/releases-0001.json'))->contains('"v150"  ');
+        Assert::string(\file_get_contents($repo . '/releases-0003.json'))->contains('"v0"');
+        Assert::same($storage->load(new RepositoryId('github', 'owner/repo'))->count(), 151);
+    }
+
+    #[Test]
+    public function replacedSegmentFilesAreRemoved(): void
+    {
+        $storage = $this->storage();
+        $storage->save(self::record('github', 'owner/repo', self::range(150, 1)));
+        $repo = $this->directory . '/repositories/github/owner/repo';
+
+        // The new release and the head segment of 50 are repacked into one file; the old one is dropped
+        $storage->save($storage->load(new RepositoryId('github', 'owner/repo'))->withHead([new ReleaseRecord('v151', 'v151'), new ReleaseRecord('v150', 'v150')]));
+
+        Assert::false(\is_file($repo . '/releases-0001.json'));
+        Assert::true(\is_file($repo . '/releases-0002.json'));
+        Assert::true(\is_file($repo . '/releases-0003.json'));
+        Assert::same($storage->load(new RepositoryId('github', 'owner/repo'))->count(), 151);
     }
 
     #[Test]
@@ -47,9 +90,74 @@ final class FileRegistryStorageTest
         Assert::null($storage->load($id));
 
         $storage->save(self::record('github', 'owner/repo', ['v1']));
-        \file_put_contents($this->directory . '/repositories/github/owner/repo.json', '{not json');
+        \file_put_contents($this->directory . '/repositories/github/owner/repo/index.json', '{not json');
 
         Assert::null($storage->load($id));
+    }
+
+    #[Test]
+    public function recordWithAMissingSegmentFileReadsAsNull(): void
+    {
+        $storage = $this->storage();
+        $id = new RepositoryId('github', 'owner/repo');
+        $storage->save(self::record('github', 'owner/repo', ['v1']));
+
+        \unlink($this->directory . '/repositories/github/owner/repo/releases-0001.json');
+
+        Assert::null($storage->load($id));
+    }
+
+    #[Test]
+    public function corruptedSegmentDropsTheRecordWhenReached(): void
+    {
+        $storage = $this->storage();
+        $id = new RepositoryId('github', 'owner/repo');
+        $storage->save(self::record('github', 'owner/repo', ['v1']));
+        \file_put_contents($this->directory . '/repositories/github/owner/repo/releases-0001.json', '[{"name": "no tag"}]');
+
+        $loaded = $storage->load($id);
+        Assert::notNull($loaded);
+
+        try {
+            $loaded->releases();
+            Assert::fail('An unreadable segment must be reported.');
+        } catch (\RuntimeException $e) {
+            Assert::string($e->getMessage())->contains('unreadable');
+            Assert::false(\is_dir($this->directory . '/repositories/github/owner/repo'));
+        }
+    }
+
+    #[Test]
+    public function saveReportsAnUnwritableDirectory(): void
+    {
+        $storage = $this->storage();
+        // A file where the repository directory should be
+        \mkdir($this->directory . '/repositories/github', recursive: true);
+        \file_put_contents($this->directory . '/repositories/github/owner', 'not a directory');
+
+        try {
+            $storage->save(self::record('github', 'owner/repo', ['v1']));
+            Assert::fail('A failed write must be reported.');
+        } catch (\RuntimeException $e) {
+            Assert::string($e->getMessage())->contains('registry');
+        }
+    }
+
+    #[Test]
+    public function staleTemporaryFilesAreCleanedUp(): void
+    {
+        $storage = $this->storage();
+        $storage->save(self::record('github', 'owner/repo', ['v1']));
+        $repo = $this->directory . '/repositories/github/owner/repo';
+
+        \file_put_contents($repo . '/index.json.123.tmp', '{}');
+        \touch($repo . '/index.json.123.tmp', \time() - 7200);
+        \file_put_contents($repo . '/index.json.456.tmp', '{}');
+
+        $storage->save($storage->load(new RepositoryId('github', 'owner/repo'))->withSoftware('rr2'));
+
+        Assert::false(\is_file($repo . '/index.json.123.tmp'));
+        Assert::true(\is_file($repo . '/index.json.456.tmp'));
     }
 
     #[Test]
@@ -63,6 +171,8 @@ final class FileRegistryStorageTest
 
         $storage->remove(new RepositoryId('github', 'a/b'));
         Assert::count(\iterator_to_array($storage->all(), false), 1);
+        Assert::false(\is_dir($this->directory . '/repositories/github/a'));
+        Assert::true(\is_dir($this->directory . '/repositories/github/c/d'));
 
         $storage->clear();
         Assert::count(\iterator_to_array($storage->all(), false), 0);
@@ -78,14 +188,14 @@ final class FileRegistryStorageTest
         $storage->save(new RepositoryRecord($id));
 
         Assert::false(\is_dir(\dirname($this->directory) . '/owner'));
-        Assert::true(\is_file($this->directory . '/repositories/github/_/owner/re_po_x.json'));
+        Assert::true(\is_file($this->directory . '/repositories/github/_/owner/re_po_x/index.json'));
         Assert::true($storage->load($id)?->id->equals($id) ?? false);
     }
 
     #[Test]
-    public function recordOfAnotherRepositoryInTheSameFileIsIgnored(): void
+    public function recordOfAnotherRepositoryInTheSameDirectoryIsIgnored(): void
     {
-        // Two identities sanitize to one file name
+        // Two identities sanitize to one directory name
         $storage = $this->storage();
         $storage->save(self::record('github', 'owner/re?po', ['v1']));
 
@@ -101,7 +211,7 @@ final class FileRegistryStorageTest
 
         $storage->save(self::record('github', 'nul/com1', ['v1']));
 
-        Assert::true(\is_file($this->directory . '/repositories/github/_nul/_com1.json'));
+        Assert::true(\is_file($this->directory . '/repositories/github/_nul/_com1/index.json'));
         Assert::same($storage->load($id)?->releases()[0]->tag, 'v1');
     }
 
@@ -120,20 +230,24 @@ final class FileRegistryStorageTest
     /**
      * @param non-empty-string $type
      * @param non-empty-string $uri
-     * @param list<non-empty-string> $tags
+     * @param list<non-empty-string> $tags Newest first.
      */
     private static function record(string $type, string $uri, array $tags): RepositoryRecord
     {
-        return new RepositoryRecord(
-            id: new RepositoryId($type, $uri),
-            checkedAt: 1_000,
-            software: ['rr'],
-            releases: \array_map(static fn(string $tag): ReleaseRecord => new ReleaseRecord($tag, $tag), $tags),
-        );
+        return (new RepositoryRecord(id: new RepositoryId($type, $uri), checkedAt: 1_000, software: ['rr']))
+            ->withHead(\array_map(static fn(string $tag): ReleaseRecord => new ReleaseRecord($tag, $tag), $tags));
+    }
+
+    /**
+     * @return list<non-empty-string> `v<from>` down to `v<to>`.
+     */
+    private static function range(int $from, int $to): array
+    {
+        return \array_map(static fn(int $i): string => 'v' . $i, \range($from, $to));
     }
 
     private function storage(): FileRegistryStorage
     {
-        return new FileRegistryStorage($this->directory, new Logger());
+        return new FileRegistryStorage(Path::create($this->directory), new Logger());
     }
 }

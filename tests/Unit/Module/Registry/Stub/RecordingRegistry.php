@@ -27,7 +27,7 @@ final class RecordingRegistry implements VersionRegistry
         }
     }
 
-    public function attach(string $software, RepositoryId $id): void
+    public function attach(RepositoryId $id, string $software): void
     {
         $this->attached[] = [$software, (string) $id];
     }

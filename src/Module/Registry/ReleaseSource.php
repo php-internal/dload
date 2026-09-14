@@ -12,6 +12,8 @@ use Internal\DLoad\Module\Repository\Exception\RepositoryException;
  *
  * The source lists releases newest first, page by page, and must not perform a request before
  * the corresponding page is actually iterated, so the registry can stop as early as it likes.
+ *
+ * @internal
  */
 interface ReleaseSource
 {

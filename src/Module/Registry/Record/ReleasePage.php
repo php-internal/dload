@@ -9,6 +9,8 @@ namespace Internal\DLoad\Module\Registry\Record;
  *
  * Besides the releases, the page tells whether the listing ends with it: the registry needs to
  * know that at the moment the page arrives, without requesting the next one to find out.
+ *
+ * @internal
  */
 final class ReleasePage
 {

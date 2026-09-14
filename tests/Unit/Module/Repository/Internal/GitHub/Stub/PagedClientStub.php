@@ -28,10 +28,12 @@ final class PagedClientStub implements ClientInterface
     /**
      * @param int<1, max> $pages Number of pages the list is split into when 100 releases are requested per page.
      * @param int<1, max> $releasesPerPage Number of releases on every such page.
+     * @param int<0, max> $drafts Draft releases listed on top, as the API shows them to the token holder.
      */
     public function __construct(
         private readonly int $pages = 1,
         private readonly int $releasesPerPage = 100,
+        private readonly int $drafts = 0,
     ) {}
 
     public function sendRequest(RequestInterface $request): ResponseInterface
@@ -88,8 +90,8 @@ final class PagedClientStub implements ClientInterface
         $releases = [];
         $total = $this->pages * $this->releasesPerPage;
 
-        for ($i = 1; $i <= $total; $i++) {
-            $tag = \sprintf('v1.0.%d', $i);
+        for ($i = 1 - $this->drafts; $i <= $total; $i++) {
+            $tag = $i < 1 ? \sprintf('draft-%d', 1 - $i) : \sprintf('v1.0.%d', $i);
             $releases[] = [
                 'name' => $tag,
                 'tag_name' => $tag,
@@ -102,7 +104,7 @@ final class PagedClientStub implements ClientInterface
                     'digest' => 'sha256:' . \hash('sha256', $tag),
                 ]],
                 'prerelease' => false,
-                'draft' => false,
+                'draft' => $i < 1,
             ];
         }
 

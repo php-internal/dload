@@ -29,6 +29,7 @@ use Internal\DLoad\Module\Velox\Builder;
 use Internal\DLoad\Module\Velox\Internal\Client\BuildRoadRunner;
 use Internal\DLoad\Module\Velox\Internal\VeloxBuilder;
 use Internal\DLoad\Service\Logger;
+use Internal\Path;
 
 /**
  * Bootstraps the application by configuring the dependency container.
@@ -127,7 +128,7 @@ final class Bootstrap
                 $config = $container->get(CacheConfig::class);
 
                 return new FileRegistryStorage(
-                    $config->dir ?? CacheDirectory::resolve($environment),
+                    $config->dir === null ? CacheDirectory::resolve($environment) : Path::create($config->dir),
                     $container->get(Logger::class),
                 );
             },

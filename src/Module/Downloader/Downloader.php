@@ -117,7 +117,7 @@ final class Downloader
                 $repository = $this->repositoryProvider->getByConfig($context->repoConfig);
 
                 // The registry keeps track of which software is served from which repository
-                $this->registry->attach($context->software->getId(), RepositoryId::fromConfig($context->repoConfig));
+                $this->registry->attach(RepositoryId::fromConfig($context->repoConfig), $context->software->getId());
                 $context->repositoryAttempt = $context->diagnostics->addRepository(
                     type: $context->repoConfig->type,
                     name: $repository->getName(),

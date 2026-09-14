@@ -91,7 +91,7 @@ final class CacheClearTest
     protected function prepare(): void
     {
         $this->directory = \sys_get_temp_dir() . '/dload-cache-clear-' . \bin2hex(\random_bytes(6));
-        $this->storage = new FileRegistryStorage($this->directory, new Logger());
+        $this->storage = new FileRegistryStorage(Path::create($this->directory), new Logger());
         \mkdir($this->directory, recursive: true);
         \file_put_contents($this->directory . '/dload.xml', '<?xml version="1.0"?><dload/>');
         \putenv('DLOAD_CACHE_DIR=' . $this->directory);

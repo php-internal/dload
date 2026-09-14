@@ -119,14 +119,10 @@ final class GitLabRepositoryTest
     public function tailIsLoadedFromInsideAPageWhenTheStoredCountIsNotPageAligned(): void
     {
         $storage = new InMemoryRegistryStorage();
-        $storage->save(new RepositoryRecord(
-            id: new RepositoryId(GitLabRepository::TYPE, 'group/project'),
-            checkedAt: \time(),
-            releases: \array_map(
-                static fn(int $i): ReleaseRecord => new ReleaseRecord(\sprintf('v1.0.%d', $i), \sprintf('v1.0.%d', $i)),
-                \range(1, 50),
-            ),
-        ));
+        $storage->save((new RepositoryRecord(new RepositoryId(GitLabRepository::TYPE, 'group/project'), checkedAt: \time()))->withHead(\array_map(
+            static fn(int $i): ReleaseRecord => new ReleaseRecord(\sprintf('v1.0.%d', $i), \sprintf('v1.0.%d', $i)),
+            \range(1, 50),
+        )));
 
         $client = new PagedClientStub(pages: 2);
         $all = self::names(self::createRepository($client, self::registry($storage)));

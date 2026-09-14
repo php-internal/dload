@@ -126,7 +126,9 @@ final class RepositoryApi
             $failure = null;
             foreach ($data as $releaseData) {
                 try {
-                    $releases[] = ReleaseInfo::fromApiResponse($releaseData)->toRecord();
+                    $release = ReleaseInfo::fromApiResponse($releaseData);
+                    // A draft is visible to the token holder only; the registry may be shared
+                    $release->draft or $releases[] = $release->toRecord();
                 } catch (\Throwable $e) {
                     $failure ??= $e;
                     $this->logger->exception($e, important: false);
