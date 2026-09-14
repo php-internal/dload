@@ -232,7 +232,7 @@ final class DLoadTest
     private function buildDLoad(string $xmlConfig): DLoad
     {
         // The version registry must not leak into the user's cache directory from a test run
-        $environment = \getenv() + ['DLOAD_CACHE_DIR' => (string) $this->testRuntimeDir->join('registry')];
+        $environment = \getenv();
         $environment['DLOAD_CACHE_DIR'] = (string) $this->testRuntimeDir->join('registry');
 
         $container = Bootstrap::init()

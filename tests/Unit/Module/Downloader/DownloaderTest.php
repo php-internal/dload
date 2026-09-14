@@ -117,6 +117,29 @@ final class DownloaderTest
         Assert::same($this->registry->forgotten, []);
     }
 
+    #[Test]
+    public function releaseFailingForOtherReasonsIsNotForgotten(): void
+    {
+        $repository = new RepositoryStub('owner/repo');
+        $broken = new ReleaseStub($repository, 'v2.0.0', Version::fromVersionString('v2.0.0'));
+        $broken->setAssets([
+            new GoneAssetStub($broken, 'rr-linux-amd64.tar.gz'),
+            // Every asset fails, but a network error says nothing about the release being gone
+            new GoneAssetStub($broken, 'rr-linux-amd64.zip', new \RuntimeException('Connection reset by peer')),
+        ]);
+        $factory = new SequenceRepositoryFactoryStub([
+            new RepositoryStub('owner/repo', ReleasesCollection::create([$broken])),
+        ]);
+
+        try {
+            $this->download($factory);
+            Assert::fail('DownloadFailed is expected when no asset could be downloaded.');
+        } catch (DownloadFailed) {
+            Assert::same($this->registry->forgotten, []);
+            Assert::same($factory->created, 1);
+        }
+    }
+
     #[BeforeTest]
     protected function prepare(): void
     {

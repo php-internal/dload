@@ -8,6 +8,9 @@ use Internal\DLoad\Module\Config\Schema\GitHub as GitHubConfig;
 use Internal\DLoad\Module\HttpClient\Internal\NyholmFactoryImpl;
 use Internal\DLoad\Module\Registry\Internal\PassThroughRegistry;
 use Internal\DLoad\Module\Registry\Internal\StoredVersionRegistry;
+use Internal\DLoad\Module\Registry\Record\ReleaseRecord;
+use Internal\DLoad\Module\Registry\Record\RepositoryRecord;
+use Internal\DLoad\Module\Registry\RepositoryId;
 use Internal\DLoad\Module\Registry\VersionRegistry;
 use Internal\DLoad\Module\Repository\Internal\GitHub\Api\Client;
 use Internal\DLoad\Module\Repository\Internal\GitHub\Api\RepositoryApi;
@@ -115,6 +118,29 @@ final class GitHubRepositoryTest
         Assert::same($firstClient->requestedPages(), [1]);
         Assert::same($secondClient->requestedPages(), [2, 3]);
         Assert::same(\count($all), 300);
+    }
+
+    #[Test]
+    public function tailIsLoadedFromInsideAPageWhenTheStoredCountIsNotPageAligned(): void
+    {
+        // A fresh record holds the first 50 releases: the tail starts in the middle of API page 1
+        $storage = new InMemoryRegistryStorage();
+        $storage->save(new RepositoryRecord(
+            id: new RepositoryId(GitHubRepository::TYPE, 'owner/repo'),
+            checkedAt: \time(),
+            releases: \array_map(
+                static fn(int $i): ReleaseRecord => new ReleaseRecord(\sprintf('v1.0.%d', $i), \sprintf('v1.0.%d', $i)),
+                \range(1, 50),
+            ),
+        ));
+
+        $client = new PagedClientStub(pages: 2);
+        $all = self::names(self::createRepository($client, self::registry($storage)));
+
+        Assert::same($client->requestedPages(), [1, 2]);
+        Assert::same(\count($all), 200);
+        Assert::same(\count(\array_unique($all)), 200);
+        Assert::same($all[50], 'v1.0.51');
     }
 
     private static function createRepository(

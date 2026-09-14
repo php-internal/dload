@@ -8,11 +8,15 @@ use Internal\DLoad\Module\Config\Schema\GitLab as GitLabConfig;
 use Internal\DLoad\Module\HttpClient\Internal\NyholmFactoryImpl;
 use Internal\DLoad\Module\Registry\Internal\PassThroughRegistry;
 use Internal\DLoad\Module\Registry\Internal\StoredVersionRegistry;
+use Internal\DLoad\Module\Registry\Record\ReleaseRecord;
+use Internal\DLoad\Module\Registry\Record\RepositoryRecord;
+use Internal\DLoad\Module\Registry\RepositoryId;
 use Internal\DLoad\Module\Registry\VersionRegistry;
 use Internal\DLoad\Module\Repository\Internal\GitLab\Api\Client;
 use Internal\DLoad\Module\Repository\Internal\GitLab\Api\RepositoryApi;
 use Internal\DLoad\Module\Repository\Internal\GitLab\GitLabReleaseSource;
 use Internal\DLoad\Module\Repository\Internal\GitLab\GitLabRepository;
+use Internal\DLoad\Module\Repository\ReleaseInterface;
 use Internal\DLoad\Service\Logger;
 use Internal\DLoad\Tests\Unit\Module\Registry\Stub\InMemoryRegistryStorage;
 use Internal\DLoad\Tests\Unit\Module\Repository\Internal\GitLab\Stub\PagedClientStub;
@@ -92,6 +96,47 @@ final class GitLabRepositoryTest
         Assert::same(\count($secondRun), 200);
     }
 
+    #[Test]
+    public function olderReleasesAreLoadedFromTheApiWhenTheRegistryRunsOut(): void
+    {
+        $storage = new InMemoryRegistryStorage();
+
+        $firstClient = new PagedClientStub(pages: 3);
+        foreach (self::createRepository($firstClient, self::registry($storage))->getReleases() as $release) {
+            unset($release);
+            break;
+        }
+
+        $secondClient = new PagedClientStub(pages: 3);
+        $all = self::names(self::createRepository($secondClient, self::registry($storage)));
+
+        Assert::same($firstClient->requestedPages(), [1]);
+        Assert::same($secondClient->requestedPages(), [2, 3]);
+        Assert::same(\count($all), 300);
+    }
+
+    #[Test]
+    public function tailIsLoadedFromInsideAPageWhenTheStoredCountIsNotPageAligned(): void
+    {
+        $storage = new InMemoryRegistryStorage();
+        $storage->save(new RepositoryRecord(
+            id: new RepositoryId(GitLabRepository::TYPE, 'group/project'),
+            checkedAt: \time(),
+            releases: \array_map(
+                static fn(int $i): ReleaseRecord => new ReleaseRecord(\sprintf('v1.0.%d', $i), \sprintf('v1.0.%d', $i)),
+                \range(1, 50),
+            ),
+        ));
+
+        $client = new PagedClientStub(pages: 2);
+        $all = self::names(self::createRepository($client, self::registry($storage)));
+
+        Assert::same($client->requestedPages(), [1, 2]);
+        Assert::same(\count($all), 200);
+        Assert::same(\count(\array_unique($all)), 200);
+        Assert::same($all[50], 'v1.0.51');
+    }
+
     private static function createRepository(
         PagedClientStub $client,
         VersionRegistry $registry = new PassThroughRegistry(),
@@ -110,5 +155,16 @@ final class GitLabRepositoryTest
     private static function registry(InMemoryRegistryStorage $storage): StoredVersionRegistry
     {
         return new StoredVersionRegistry($storage, 600, new Logger());
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function names(GitLabRepository $repository): array
+    {
+        return \array_map(
+            static fn(ReleaseInterface $release): string => $release->getName(),
+            \iterator_to_array($repository->getReleases(), false),
+        );
     }
 }

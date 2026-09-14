@@ -17,10 +17,12 @@ final class GoneAssetStub implements AssetInterface
 {
     /**
      * @param non-empty-string $name
+     * @param \Throwable|null $failure What the download throws; "not found" by default.
      */
     public function __construct(
         private readonly ReleaseInterface $release,
         private readonly string $name,
+        private readonly ?\Throwable $failure = null,
     ) {}
 
     public function getRelease(): ReleaseInterface
@@ -50,7 +52,7 @@ final class GoneAssetStub implements AssetInterface
 
     public function download(): \Traversable
     {
-        throw new AssetNotFoundException('GitHub asset is no longer available: HTTP 404 for ' . $this->getUri(), 'owner/repo');
+        throw $this->failure ?? new AssetNotFoundException('GitHub asset is no longer available: HTTP 404 for ' . $this->getUri(), 'owner/repo');
 
         /** @psalm-suppress UnevaluatedCode */
         yield '';
