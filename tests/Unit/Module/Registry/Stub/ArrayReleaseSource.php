@@ -54,6 +54,19 @@ final class ArrayReleaseSource implements ReleaseSource
         $this->releases = [...\array_map(static fn(string $tag): ReleaseRecord => new ReleaseRecord($tag, $tag), $tags), ...$this->releases];
     }
 
+    /**
+     * Deletes a release from the list, as a repository owner would between two runs.
+     *
+     * @param non-empty-string $tag
+     */
+    public function delete(string $tag): void
+    {
+        $this->releases = \array_values(\array_filter(
+            $this->releases,
+            static fn(ReleaseRecord $release): bool => $release->tag !== $tag,
+        ));
+    }
+
     public function fail(?\Throwable $failure = null): void
     {
         $this->failure = $failure ?? new ApiException('API is unavailable.', 'stub/stub');

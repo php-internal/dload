@@ -11,6 +11,8 @@ use Internal\DLoad\Module\Config\Schema\Embed\Repository as RepositoryConfig;
  *
  * The same repository may be referenced by several software packages and by several configs,
  * so the registry keys its records by the repository type and URI rather than by software name.
+ * GitHub and GitLab resolve paths case-insensitively, so the identity is normalized: lower case,
+ * no surrounding slashes.
  *
  * ```php
  * $id = RepositoryId::fromConfig($repositoryConfig);
@@ -19,14 +21,25 @@ use Internal\DLoad\Module\Config\Schema\Embed\Repository as RepositoryConfig;
  */
 final class RepositoryId implements \Stringable
 {
+    /** @var non-empty-string Repository type, e.g. `github` or `gitlab`. */
+    public readonly string $type;
+
+    /** @var non-empty-string Repository path within the type, e.g. `owner/repo`. */
+    public readonly string $uri;
+
     /**
-     * @param non-empty-string $type Repository type, e.g. `github` or `gitlab`.
-     * @param non-empty-string $uri Repository URI within the type, e.g. `owner/repo`.
+     * @param non-empty-string $type
+     * @param non-empty-string $uri
+     * @throws \InvalidArgumentException When the URI has nothing but slashes and spaces.
      */
-    public function __construct(
-        public readonly string $type,
-        public readonly string $uri,
-    ) {}
+    public function __construct(string $type, string $uri)
+    {
+        $normalized = \strtolower(\trim($uri, " \t\n\r/"));
+        $normalized === '' and throw new \InvalidArgumentException(\sprintf('Repository URI `%s` is empty.', $uri));
+
+        $this->type = \strtolower($type);
+        $this->uri = $normalized;
+    }
 
     public static function fromConfig(RepositoryConfig $config): self
     {

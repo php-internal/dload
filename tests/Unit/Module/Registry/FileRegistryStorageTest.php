@@ -82,6 +82,29 @@ final class FileRegistryStorageTest
         Assert::true($storage->load($id)?->id->equals($id) ?? false);
     }
 
+    #[Test]
+    public function recordOfAnotherRepositoryInTheSameFileIsIgnored(): void
+    {
+        // Two identities sanitize to one file name
+        $storage = $this->storage();
+        $storage->save(self::record('github', 'owner/re?po', ['v1']));
+
+        Assert::null($storage->load(new RepositoryId('github', 'owner/re*po')));
+        Assert::notNull($storage->load(new RepositoryId('github', 'owner/re?po')));
+    }
+
+    #[Test]
+    public function windowsDeviceNamesAreEscaped(): void
+    {
+        $storage = $this->storage();
+        $id = new RepositoryId('github', 'nul/com1');
+
+        $storage->save(self::record('github', 'nul/com1', ['v1']));
+
+        Assert::true(\is_file($this->directory . '/repositories/github/_nul/_com1.json'));
+        Assert::same($storage->load($id)?->releases()[0]->tag, 'v1');
+    }
+
     #[BeforeTest]
     protected function prepare(): void
     {

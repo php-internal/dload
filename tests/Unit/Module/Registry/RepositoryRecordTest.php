@@ -33,6 +33,59 @@ final class RepositoryRecordTest
     }
 
     #[Test]
+    public function headDropsStoredReleasesMissingFromTheFetchedSpan(): void
+    {
+        // `v3` was deleted upstream: the fresh head reaches `v2`, and `v3` is not in it
+        $record = new RepositoryRecord(self::id(), releases: [
+            new ReleaseRecord('v4', 'v4'),
+            new ReleaseRecord('v3', 'v3'),
+            new ReleaseRecord('v2', 'v2'),
+            new ReleaseRecord('v1', 'v1'),
+        ]);
+
+        $updated = $record->withHead([new ReleaseRecord('v5', 'v5'), new ReleaseRecord('v4', 'v4'), new ReleaseRecord('v2', 'v2')]);
+
+        Assert::same(self::tags($updated), ['v5', 'v4', 'v2', 'v1']);
+        Assert::same($updated->count(), 4);
+    }
+
+    #[Test]
+    public function headDropsTheStoredReleaseRightAfterTheOnlyOneItReaches(): void
+    {
+        // `v5` was deleted: the fresh page reads `v6, v4`, so `v5` no longer follows `v6`
+        $record = new RepositoryRecord(self::id(), releases: [new ReleaseRecord('v6', 'v6'), new ReleaseRecord('v5', 'v5')]);
+
+        $updated = $record->withHead([new ReleaseRecord('v6', 'v6'), new ReleaseRecord('v4', 'v4')]);
+
+        Assert::same(self::tags($updated), ['v6', 'v4']);
+    }
+
+    #[Test]
+    public function headReachingNoStoredReleaseIsTheWholeListing(): void
+    {
+        $record = new RepositoryRecord(self::id(), releases: [new ReleaseRecord('v1', 'v1')]);
+
+        $updated = $record->withHead([new ReleaseRecord('v2', 'v2')]);
+
+        Assert::same(self::tags($updated), ['v2']);
+    }
+
+    #[Test]
+    public function repositoryIdIsNormalized(): void
+    {
+        $id = new RepositoryId('GitHub', '/Owner/Repo/');
+
+        Assert::same((string) $id, 'github:owner/repo');
+        Assert::true($id->equals(new RepositoryId('github', 'owner/repo')));
+
+        try {
+            new RepositoryId('github', '/');
+            Assert::fail('A URI without a path must be rejected.');
+        } catch (\InvalidArgumentException) {
+        }
+    }
+
+    #[Test]
     public function tailIgnoresKnownReleases(): void
     {
         $record = new RepositoryRecord(self::id(), releases: [new ReleaseRecord('v2', 'v2')]);

@@ -70,24 +70,29 @@ final class RepositoryRecord
             'Unsupported repository record format.',
         );
 
+        /** @var mixed $repository */
         $repository = $data['repository'] ?? null;
+        /** @var mixed $type */
         $type = \is_array($repository) ? ($repository['type'] ?? null) : null;
+        /** @var mixed $uri */
         $uri = \is_array($repository) ? ($repository['uri'] ?? null) : null;
         \is_string($type) && $type !== '' && \is_string($uri) && $uri !== '' or throw new \InvalidArgumentException(
             'Repository record requires a repository type and URI.',
         );
 
         $releases = [];
+        /** @var mixed $release */
         foreach (\is_array($data['releases'] ?? null) ? $data['releases'] : [] as $release) {
             \is_array($release) and $releases[] = ReleaseRecord::fromArray($release);
         }
 
-        /** @var list<non-empty-string> $software */
-        $software = \array_values(\array_filter(
-            \is_array($data['software'] ?? null) ? $data['software'] : [],
-            static fn(mixed $name): bool => \is_string($name) && $name !== '',
-        ));
+        $software = [];
+        /** @var mixed $name */
+        foreach (\is_array($data['software'] ?? null) ? $data['software'] : [] as $name) {
+            \is_string($name) && $name !== '' and $software[] = $name;
+        }
 
+        /** @var mixed $checkedAt */
         $checkedAt = $data['checked_at'] ?? null;
 
         return new self(
@@ -136,15 +141,51 @@ final class RepositoryRecord
     /**
      * Replaces the head of the list with freshly fetched releases.
      *
-     * The fetched releases are the newest ones; they overwrite the stored entries with the same
-     * tags (assets may have been attached after the release was created) and the remaining stored
-     * releases follow them, so the list stays newest first.
+     * The fetched releases are the newest ones, and sources only ever add releases at the top,
+     * so from the first stored release they contain onwards both lists walk the same listing
+     * positions. A stored release missing from the fetched span at its position was deleted
+     * upstream and is dropped: keeping it would inflate `count()`, which the registry uses as
+     * the offset for loading the tail. Stored releases beyond the span are kept, and when the
+     * fetched releases contain no stored one they are the whole listing.
      *
      * @param list<ReleaseRecord> $fetched Newest first.
      */
     public function withHead(array $fetched): self
     {
-        return $this->with(releases: [...$fetched, ...$this->releases()]);
+        $fetchedTags = \array_fill_keys(\array_map(static fn(ReleaseRecord $release): string => $release->tag, $fetched), true);
+
+        $stored = $this->releases();
+        $overlap = null;
+        foreach ($stored as $position => $release) {
+            if (isset($fetchedTags[$release->tag])) {
+                $overlap = $position;
+                break;
+            }
+        }
+
+        if ($overlap === null) {
+            return $this->with(releases: $fetched);
+        }
+
+        // Listing positions the fetched releases still cover, counting from the overlap
+        $spanned = 0;
+        foreach ($fetched as $position => $release) {
+            if ($release->tag === $stored[$overlap]->tag) {
+                $spanned = \count($fetched) - $position;
+                break;
+            }
+        }
+
+        $kept = [];
+        foreach (\array_slice($stored, $overlap) as $release) {
+            if ($spanned <= 0) {
+                $kept[] = $release;
+            } elseif (isset($fetchedTags[$release->tag])) {
+                --$spanned;
+            }
+        }
+
+        return $this->with(releases: [...$fetched, ...$kept]);
     }
 
     /**

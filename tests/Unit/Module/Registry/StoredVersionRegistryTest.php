@@ -8,6 +8,7 @@ use Internal\DLoad\Module\Registry\Internal\StoredVersionRegistry;
 use Internal\DLoad\Module\Registry\Record\ReleaseRecord;
 use Internal\DLoad\Module\Registry\RepositoryId;
 use Internal\DLoad\Module\Repository\Exception\ApiException;
+use Internal\DLoad\Module\Repository\Internal\GitHub\Exception\GitHubRateLimitException;
 use Internal\DLoad\Service\Logger;
 use Internal\DLoad\Tests\Unit\Module\Registry\Stub\ArrayReleaseSource;
 use Internal\DLoad\Tests\Unit\Module\Registry\Stub\InMemoryRegistryStorage;
@@ -101,6 +102,56 @@ final class StoredVersionRegistryTest
 
         Assert::same($again, ['v6', 'v5', 'v4', 'v3', 'v2', 'v1']);
         Assert::same($source->served, [0, 2]);
+    }
+
+    #[Test]
+    public function releaseDeletedUpstreamDoesNotShiftTheTail(): void
+    {
+        $source = ArrayReleaseSource::ofTags(['v6', 'v5', 'v4', 'v3', 'v2', 'v1']);
+
+        // The first run stores the first page only
+        $this->registry()->releases($this->id, $source)->current();
+        $source->served = [];
+
+        // `v5` is deleted upstream, so every older release moves up one position
+        $source->delete('v5');
+        $this->now += 601;
+        $again = self::flatten($this->registry()->releases($this->id, $source));
+
+        // The check drops `v5`; the tail continues from the true offset and `v3` is not skipped
+        Assert::same($again, ['v6', 'v4', 'v3', 'v2', 'v1']);
+        Assert::same($source->served, [0, 2, 4]);
+    }
+
+    #[Test]
+    public function failedTailLoadingStillServesTheStoredReleases(): void
+    {
+        $source = ArrayReleaseSource::ofTags(['v4', 'v3', 'v2', 'v1']);
+        $this->registry()->releases($this->id, $source)->current();
+
+        $source->fail();
+        $pages = $this->registry()->releases($this->id, $source);
+
+        // The stored page comes first; only the request for the tail fails
+        Assert::same(self::tagsOf($pages->current()), ['v4', 'v3']);
+        try {
+            $pages->next();
+            Assert::fail('The failure of the tail request must reach the caller.');
+        } catch (ApiException) {
+            Assert::false($this->storage->load($this->id)->complete);
+        }
+    }
+
+    #[Test]
+    public function rateLimitOnCheckFallsBackToStoredReleases(): void
+    {
+        $source = ArrayReleaseSource::ofTags(['v2', 'v1']);
+        self::flatten($this->registry()->releases($this->id, $source));
+
+        $source->fail(new GitHubRateLimitException('Rate limit exceeded.', 'owner/repo', null));
+        $this->now += 601;
+
+        Assert::same(self::flatten($this->registry()->releases($this->id, $source)), ['v2', 'v1']);
     }
 
     #[Test]

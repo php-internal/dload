@@ -43,7 +43,10 @@ final class FileRegistryStorage implements RegistryStorage
 
     public function load(RepositoryId $id): ?RepositoryRecord
     {
-        return $this->read($this->fileOf($id));
+        $record = $this->read($this->fileOf($id));
+
+        // Sanitizing and case-insensitive file systems may map two identities onto one file
+        return $record?->id->equals($id) === true ? $record : null;
     }
 
     public function save(RepositoryRecord $record): void
@@ -55,7 +58,7 @@ final class FileRegistryStorage implements RegistryStorage
 
         $payload = \json_encode($record->toArray(), \JSON_THROW_ON_ERROR | \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES);
 
-        $temp = Path::create((string) $file . '.' . \getmypid() . '.tmp');
+        $temp = Path::create((string) $file . '.' . (int) \getmypid() . '.tmp');
         @\file_put_contents((string) $temp, $payload) === false and throw new \RuntimeException(
             \sprintf('Failed to write registry record `%s`.', $temp),
         );
@@ -100,7 +103,9 @@ final class FileRegistryStorage implements RegistryStorage
 
     /**
      * Keeps a path segment safe for every file system: anything but plain ASCII is replaced,
-     * and a segment that would otherwise be empty or a directory reference gets a placeholder.
+     * a segment that would otherwise be empty or a directory reference gets a placeholder, and
+     * a Windows device name (`nul`, `con`, `com1`...) gets a prefix, as Windows opens the device
+     * whatever the extension.
      *
      * @return non-empty-string
      */
@@ -108,7 +113,11 @@ final class FileRegistryStorage implements RegistryStorage
     {
         $safe = (string) \preg_replace('/[^A-Za-z0-9._-]+/', '_', $segment);
 
-        return $safe === '' || \trim($safe, '.') === '' ? '_' : $safe;
+        if ($safe === '' || \trim($safe, '.') === '') {
+            return '_';
+        }
+
+        return \preg_match('/^(?:con|prn|aux|nul|com[0-9]|lpt[0-9])(?:\.|$)/i', $safe) === 1 ? '_' . $safe : $safe;
     }
 
     /**
