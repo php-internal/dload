@@ -121,6 +121,17 @@ final class GitHubRepositoryTest
     }
 
     #[Test]
+    public function assetDigestReportedByTheApiIsStored(): void
+    {
+        $storage = new InMemoryRegistryStorage();
+
+        self::createRepository(new PagedClientStub(pages: 1), self::registry($storage))->getReleases()->first();
+
+        $asset = $storage->load(new RepositoryId(GitHubRepository::TYPE, 'owner/repo'))?->releases()[0]->assets[0];
+        Assert::same($asset?->digest, 'sha256:' . \hash('sha256', 'v1.0.1'));
+    }
+
+    #[Test]
     public function tailIsLoadedFromInsideAPageWhenTheStoredCountIsNotPageAligned(): void
     {
         // A fresh record holds the first 50 releases: the tail starts in the middle of API page 1

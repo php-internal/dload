@@ -150,7 +150,7 @@ final class RepositoryRecordTest
                     name: 'Release 2',
                     publishedAt: new \DateTimeImmutable('2024-01-02T03:04:05+00:00'),
                     prerelease: true,
-                    assets: [new AssetRecord('rr-linux-amd64.tar.gz', 'https://x/rr.tar.gz', 42, 'application/gzip')],
+                    assets: [new AssetRecord('rr-linux-amd64.tar.gz', 'https://x/rr.tar.gz', 42, 'application/gzip', 'sha256:9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08')],
                 ),
                 new ReleaseRecord('v1.0.0', 'v1.0.0'),
             ],
@@ -161,6 +161,8 @@ final class RepositoryRecordTest
         Assert::same($restored->toArray(), $record->toArray());
         Assert::true($restored->id->equals(self::id()));
         Assert::same($restored->releases()[0]->assets[0]->size, 42);
+        Assert::same($restored->releases()[0]->assets[0]->digest, 'sha256:9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08');
+        Assert::null(AssetRecord::fromArray(['name' => 'x', 'uri' => 'https://x', 'digest' => ''])->digest);
         Assert::same($restored->releases()[0]->publishedAt?->format(\DATE_ATOM), '2024-01-02T03:04:05+00:00');
         Assert::null($restored->releases()[1]->publishedAt);
     }

@@ -19,12 +19,14 @@ final class AssetInfo
      * @param non-empty-string $downloadUrl
      * @param int<0, max> $size
      * @param non-empty-string $contentType
+     * @param non-empty-string|null $digest Checksum as `sha256:<hex>`; GitHub reports it for assets uploaded since 2025.
      */
     public function __construct(
         public readonly string $name,
         public readonly string $downloadUrl,
         public readonly int $size,
         public readonly string $contentType,
+        public readonly ?string $digest = null,
     ) {}
 
     /**
@@ -32,16 +34,20 @@ final class AssetInfo
      *     name: string,
      *     browser_download_url: string,
      *     size: int,
-     *     content_type: string
+     *     content_type: string,
+     *     digest?: string|null
      * } $data
      */
     public static function fromApiResponse(array $data): self
     {
+        $digest = $data['digest'] ?? null;
+
         return new self(
             name: $data['name'],
             downloadUrl: $data['browser_download_url'],
             size: $data['size'],
             contentType: $data['content_type'],
+            digest: $digest === '' ? null : $digest,
         );
     }
 
@@ -55,6 +61,7 @@ final class AssetInfo
             uri: $this->downloadUrl,
             size: $this->size,
             contentType: $this->contentType,
+            digest: $this->digest,
         );
     }
 }

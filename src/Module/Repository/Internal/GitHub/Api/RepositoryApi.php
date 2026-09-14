@@ -109,7 +109,8 @@ final class RepositoryApi
              *         name: string,
              *         browser_download_url: string,
              *         size: int,
-             *         content_type: string
+             *         content_type: string,
+             *         digest?: string|null
              *     }>,
              *     prerelease: bool,
              *     draft: bool

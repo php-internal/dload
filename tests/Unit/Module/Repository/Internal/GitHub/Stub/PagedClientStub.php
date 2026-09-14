@@ -94,7 +94,13 @@ final class PagedClientStub implements ClientInterface
                 'name' => $tag,
                 'tag_name' => $tag,
                 'published_at' => '2024-01-01T00:00:00Z',
-                'assets' => [],
+                'assets' => [[
+                    'name' => 'rr-linux-amd64.tar.gz',
+                    'browser_download_url' => 'https://github.com/owner/repo/releases/download/' . $tag . '/rr-linux-amd64.tar.gz',
+                    'size' => 1024,
+                    'content_type' => 'application/gzip',
+                    'digest' => 'sha256:' . \hash('sha256', $tag),
+                ]],
                 'prerelease' => false,
                 'draft' => false,
             ];
