@@ -43,11 +43,15 @@ final class ReleaseRecord
         $tag = $data['tag'] ?? null;
         \is_string($tag) && $tag !== '' or throw new \InvalidArgumentException('Release record requires a non-empty `tag`.');
 
+        /** @var mixed $name */
         $name = $data['name'] ?? null;
         \is_string($name) && $name !== '' or $name = $tag;
 
+        /** @var mixed $publishedAt */
         $publishedAt = $data['published_at'] ?? null;
+
         $assets = [];
+        /** @var mixed $asset */
         foreach (\is_array($data['assets'] ?? null) ? $data['assets'] : [] as $asset) {
             \is_array($asset) and $assets[] = AssetRecord::fromArray($asset);
         }

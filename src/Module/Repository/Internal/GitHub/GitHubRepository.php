@@ -82,7 +82,7 @@ final class GitHubRepository implements Repository, Destroyable
                     }
 
                     $toYield = [];
-                    foreach ($pages->current() as $record) {
+                    foreach ($pages->current() ?? [] as $record) {
                         try {
                             $toYield[] = GitHubRelease::fromRecord($this->api, $this, $record);
                         } catch (\Throwable $e) {

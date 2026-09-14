@@ -80,7 +80,7 @@ final class GitLabRepository implements Repository, Destroyable
                     }
 
                     $toYield = [];
-                    foreach ($pages->current() as $record) {
+                    foreach ($pages->current() ?? [] as $record) {
                         try {
                             $toYield[] = GitLabRelease::fromRecord($this->api, $this, $record);
                         } catch (\Throwable) {

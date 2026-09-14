@@ -44,7 +44,9 @@ final class AssetRecord
             'Asset record requires non-empty `name` and `uri`.',
         );
 
+        /** @var mixed $size */
         $size = $data['size'] ?? null;
+        /** @var mixed $contentType */
         $contentType = $data['content_type'] ?? null;
 
         return new self(

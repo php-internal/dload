@@ -213,6 +213,7 @@ final class Downloader
             process_release:
             if ($releases === []) {
                 // The list was outdated: ask the repository again once, with the deleted releases forgotten
+                /** @var bool $forgotten */
                 if ($forgotten && $mayRetry) {
                     return $this->retryRepository($context);
                 }
@@ -230,10 +231,8 @@ final class Downloader
                 return $context->release;
             } catch (ReleaseGone $e) {
                 // The registry must not offer this release again, and the list needs a fresh check
-                $this->registry->forget(
-                    RepositoryId::fromConfig($context->repoConfig),
-                    $context->release->getVersion()->string,
-                );
+                $tag = $context->release->getVersion()->string;
+                $tag === '' or $this->registry->forget(RepositoryId::fromConfig($context->repoConfig), $tag);
                 $forgotten = true;
 
                 $context->releaseAttempt->reason ??= $e->getMessage();
@@ -443,6 +442,7 @@ final class Downloader
 
         process_asset:
         if ($assets === []) {
+            /** @var bool $gone */
             $gone and throw new ReleaseGone('every matching asset of the release is no longer available');
 
             throw new NotFound('none of the matching assets could be downloaded');

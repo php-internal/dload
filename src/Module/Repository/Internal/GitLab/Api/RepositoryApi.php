@@ -100,7 +100,7 @@ final class RepositoryApi
      * costs no extra request.
      *
      * @param int<1, max> $page
-     * @return \Generator<int, ReleasePage, mixed, void>
+     * @return \Generator<int, ReleasePage, mixed, null>
      * @throws RepositoryException
      */
     public function releasePages(int $page = 1): \Generator

@@ -50,8 +50,10 @@ final class CacheDirectory
      */
     private static function variable(array $env, string $name): ?string
     {
+        /** @var mixed $value */
         $value = $env[$name] ?? null;
+        $path = \is_string($value) ? \rtrim(\trim($value), '/\\') : '';
 
-        return \is_string($value) && \trim($value) !== '' ? \rtrim($value, '/\\') : null;
+        return $path === '' ? null : $path;
     }
 }

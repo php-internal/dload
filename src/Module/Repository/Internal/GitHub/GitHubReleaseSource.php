@@ -25,8 +25,10 @@ final class GitHubReleaseSource implements ReleaseSource
     public function pages(int $offset = 0): \Generator
     {
         $skip = $offset % RepositoryApi::RELEASES_PER_PAGE;
+        /** @var int<1, max> $first */
+        $first = \intdiv($offset, RepositoryApi::RELEASES_PER_PAGE) + 1;
 
-        foreach ($this->api->releasePages(\intdiv($offset, RepositoryApi::RELEASES_PER_PAGE) + 1) as $page) {
+        foreach ($this->api->releasePages($first) as $page) {
             yield $skip === 0 ? $page : new ReleasePage(\array_slice($page->releases, $skip), $page->last);
             $skip = 0;
         }
