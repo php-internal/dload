@@ -375,13 +375,15 @@ DLoad 支持三种下载类型，它们决定了资源的处理方式：
 | `cache-dir` | `DLOAD_CACHE_DIR`  | 用户缓存目录 | 版本注册表所在目录。                         |
 | `cache-ttl` | `DLOAD_CACHE_TTL`  | `600`        | 最近一次检查保持有效的秒数。`0` 表示禁用注册表。 |
 
+`dload.xml` 中的属性优先于环境变量。
+
 ```bash
 # 即使最近一次检查仍然有效，也强制检查仓库是否有新发布
 ./vendor/bin/dload get rr --refresh
 
 # 忘记某个软件所使用的仓库，或清空整个注册表
 ./vendor/bin/dload cache:clear rr
-./vendor/bin/dload cache:clear
+./vendor/bin/dload cache:clear --force
 ```
 
 > [!NOTE]

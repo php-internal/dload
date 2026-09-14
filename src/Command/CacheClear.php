@@ -9,9 +9,12 @@ use Internal\DLoad\Module\Registry\RegistryStorage;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Formatter\OutputFormatter;
+use Symfony\Component\Console\Helper\QuestionHelper;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Question\ConfirmationQuestion;
 
 /**
  * Removes stored release listings from the version registry.
@@ -37,6 +40,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 final class CacheClear extends Base
 {
     private const ARG_SOFTWARE = 'software';
+    private const OPTION_FORCE = 'force';
 
     public function configure(): void
     {
@@ -45,6 +49,12 @@ final class CacheClear extends Base
             self::ARG_SOFTWARE,
             InputArgument::OPTIONAL | InputArgument::IS_ARRAY,
             'Software whose repositories must be forgotten, e.g. "rr", "dolt". Everything when omitted.',
+        );
+        $this->addOption(
+            self::OPTION_FORCE,
+            'f',
+            InputOption::VALUE_NONE,
+            'Clear the whole registry without asking for confirmation',
         );
     }
 
@@ -61,6 +71,12 @@ final class CacheClear extends Base
         ));
 
         if ($software === []) {
+            if (!$this->confirmed($input, $output)) {
+                $output->writeln('<comment>The version registry is left as it is.</comment>');
+
+                return Command::SUCCESS;
+            }
+
             $storage->clear();
             $output->writeln('<info>The version registry has been cleared.</info>');
 
@@ -77,6 +93,25 @@ final class CacheClear extends Base
         $output->writeln(\sprintf('<info>%d repository listing(s) removed.</info>', $removed));
 
         return Command::SUCCESS;
+    }
+
+    /**
+     * Whether the whole registry may be dropped: a non-interactive run goes ahead, a person is asked.
+     */
+    private function confirmed(InputInterface $input, OutputInterface $output): bool
+    {
+        if ((bool) $input->getOption(self::OPTION_FORCE) || !$input->isInteractive()) {
+            return true;
+        }
+
+        /** @var QuestionHelper $helper */
+        $helper = $this->getHelper('question');
+
+        return (bool) $helper->ask(
+            $input,
+            $output,
+            new ConfirmationQuestion('Forget every stored release listing? [y/N] ', false),
+        );
     }
 
     /**
