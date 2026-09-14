@@ -380,7 +380,7 @@ The registry is on by default and lives in the per-user cache directory (`$XDG_C
 | `cache-dir` | `DLOAD_CACHE_DIR`    | user cache directory | Directory of the version registry.                                     |
 | `cache-ttl` | `DLOAD_CACHE_TTL`    | `600`                | Seconds the last check of a repository stays valid. `0` disables the registry. |
 
-An attribute set in `dload.xml` takes precedence over the environment variable.
+The environment variable takes precedence over the attribute in `dload.xml`, and the command line option over both.
 
 ```bash
 # Check the repositories for new releases even if the last check is still fresh

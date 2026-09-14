@@ -378,7 +378,7 @@ El registro está activado por defecto y vive en el directorio de caché del usu
 | `cache-dir` | `DLOAD_CACHE_DIR`   | directorio de caché del usuario | Directorio del registro de versiones.                                                |
 | `cache-ttl` | `DLOAD_CACHE_TTL`   | `600`                          | Segundos que sigue siendo válida la última comprobación. `0` desactiva el registro. |
 
-Un atributo definido en `dload.xml` tiene prioridad sobre la variable de entorno.
+La variable de entorno tiene prioridad sobre el atributo de `dload.xml`, y la opción de línea de comandos sobre ambos.
 
 ```bash
 # Comprobar si hay nuevos releases aunque la última comprobación siga vigente

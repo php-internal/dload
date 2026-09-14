@@ -61,6 +61,20 @@ final class VersionRegistryBindingTest
     }
 
     #[Test]
+    public function environmentOverridesTheXmlAttribute(): void
+    {
+        $container = self::bootstrap(
+            xml: '<?xml version="1.0"?><dload cache-dir="/nowhere" cache-ttl="900"/>',
+            environment: ['DLOAD_CACHE_DIR' => $this->directory, 'DLOAD_CACHE_TTL' => '0'],
+        );
+
+        Assert::instanceOf($container->get(VersionRegistry::class), PassThroughRegistry::class);
+
+        $container->get(RegistryStorage::class)->save(RepositoryRecord::empty(new RepositoryId('github', 'a/b')));
+        Assert::true(\is_file($this->directory . '/repositories/github/a/b/index.json'));
+    }
+
+    #[Test]
     public function zeroTtlDisablesTheRegistry(): void
     {
         $container = self::bootstrap(environment: ['DLOAD_CACHE_DIR' => $this->directory, 'DLOAD_CACHE_TTL' => '0']);

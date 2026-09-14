@@ -71,7 +71,25 @@ final class ConfigInflector implements Inflector
     }
 
     /**
+     * Rank of a configuration source; a lower value is consulted first.
+     */
+    private static function priority(ConfigAttribute $attribute): int
+    {
+        return match (true) {
+            $attribute instanceof InputArgument, $attribute instanceof InputOption => 0,
+            $attribute instanceof Env => 1,
+            $attribute instanceof PhpIni => 2,
+            default => 3,
+        };
+    }
+
+    /**
      * Injects values into a property based on its configuration attributes.
+     *
+     * The first source that has a value wins. Sources are consulted in a fixed order, whatever
+     * the order of the attributes on the property: what was typed on the command line beats the
+     * environment, and the environment beats the configuration file, so a CI job can override a
+     * committed `dload.xml` without editing it.
      *
      * @param list<\ReflectionAttribute<ConfigAttribute>> $attributes
      */
@@ -81,10 +99,14 @@ final class ConfigInflector implements Inflector
         \ReflectionProperty $property,
         array $attributes,
     ): void {
-        foreach ($attributes as $attribute) {
-            try {
-                $attribute = $attribute->newInstance();
+        $instances = \array_map(
+            static fn(\ReflectionAttribute $attribute): ConfigAttribute => $attribute->newInstance(),
+            $attributes,
+        );
+        \usort($instances, static fn(ConfigAttribute $a, ConfigAttribute $b): int => self::priority($a) <=> self::priority($b));
 
+        foreach ($instances as $attribute) {
+            try {
                 /** @var mixed $value */
                 $value = match (true) {
                     $attribute instanceof XPath => $this->getXPath($attribute),
