@@ -13,6 +13,7 @@ use Internal\DLoad\Service\Logger;
 use Internal\Path;
 use Testo\Assert;
 use Testo\Codecov\Covers;
+use Testo\Core\Exception\SkipTest;
 use Testo\Lifecycle\AfterTest;
 use Testo\Lifecycle\BeforeTest;
 use Testo\Test;
@@ -297,9 +298,14 @@ final class FileRegistryStorageTest
         $repo = $this->directory . '/repositories/github/owner/repo';
         \mkdir($repo, recursive: true);
 
-        // A non-removable directory where the index file belongs makes the rename into place fail
-        \mkdir($repo . '/index.json');
-        $pin = \fopen($repo . '/index.json/pin', 'w');
+        // A directory where the index file belongs makes the rename into place fail once it cannot be
+        // emptied: Windows refuses to delete an open file, POSIX a file in a directory without write
+        // permission (root ignores permissions, so the test cannot be run as root)
+        \DIRECTORY_SEPARATOR === '\\' || !\function_exists('posix_geteuid') || \posix_geteuid() !== 0
+            or throw new SkipTest('Root can remove any directory.');
+        \mkdir($repo . '/index.json/locked', recursive: true);
+        $pin = \fopen($repo . '/index.json/locked/pin', 'w');
+        \chmod($repo . '/index.json/locked', 0555);
 
         try {
             $storage->save(new RepositoryRecord(new RepositoryId('github', 'owner/repo')));
@@ -308,6 +314,7 @@ final class FileRegistryStorageTest
             Assert::string($e->getMessage())->contains('Failed to store registry file');
         } finally {
             \fclose($pin);
+            \chmod($repo . '/index.json/locked', 0755);
         }
     }
 
