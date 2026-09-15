@@ -116,8 +116,11 @@ final class Downloader
                 $context->repoConfig = \array_shift($repositories);
                 $repository = $this->repositoryProvider->getByConfig($context->repoConfig);
 
-                // The registry keeps track of which software is served from which repository
-                $this->registry->attach(RepositoryId::fromConfig($context->repoConfig), $context->software->getId());
+                // The registry keeps track of which software is served from which repository. The
+                // identity comes from the repository, not the config: the factory may have reduced
+                // a full URL to the path the repository stores its releases under.
+                $context->repositoryId = new RepositoryId($context->repoConfig->type, $repository->getName());
+                $this->registry->attach($context->repositoryId, $context->software->getId());
                 $context->repositoryAttempt = $context->diagnostics->addRepository(
                     type: $context->repoConfig->type,
                     name: $repository->getName(),
@@ -232,7 +235,7 @@ final class Downloader
             } catch (ReleaseGone $e) {
                 // The registry must not offer this release again, and the list needs a fresh check
                 $tag = $context->release->getVersion()->string;
-                $tag === '' or $this->registry->forget(RepositoryId::fromConfig($context->repoConfig), $tag);
+                $tag === '' or $this->registry->forget($context->repositoryId, $tag);
                 $forgotten = true;
 
                 $context->releaseAttempt->reason ??= $e->getMessage();

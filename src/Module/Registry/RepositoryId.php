@@ -4,18 +4,17 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Registry;
 
-use Internal\DLoad\Module\Config\Schema\Embed\Repository as RepositoryConfig;
-
 /**
  * Identity of a software repository in the version registry.
  *
  * The same repository may be referenced by several software packages and by several configs,
- * so the registry keys its records by the repository type and URI rather than by software name.
- * GitHub and GitLab resolve paths case-insensitively, so the identity is normalized: lower case,
- * no surrounding slashes.
+ * so the registry keys its records by the repository type and path rather than by software name.
+ * The path is the one the repository reports, not the configured URI: a factory may accept a full
+ * URL and reduce it. GitHub and GitLab resolve paths case-insensitively, so the identity is
+ * normalized: lower case, no surrounding slashes.
  *
  * ```php
- * $id = RepositoryId::fromConfig($repositoryConfig);
+ * $id = new RepositoryId('github', $repository->getName());
  * echo $id; // github:roadrunner-server/roadrunner
  * ```
  *
@@ -41,11 +40,6 @@ final class RepositoryId implements \Stringable
 
         $this->type = \strtolower($type);
         $this->uri = $normalized;
-    }
-
-    public static function fromConfig(RepositoryConfig $config): self
-    {
-        return new self($config->type, $config->uri);
     }
 
     public function equals(self $other): bool

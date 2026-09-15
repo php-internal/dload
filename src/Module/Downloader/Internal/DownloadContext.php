@@ -10,6 +10,7 @@ use Internal\DLoad\Module\Config\Schema\Embed\Software;
 use Internal\DLoad\Module\Downloader\Internal\Diagnostics\DownloadDiagnostics;
 use Internal\DLoad\Module\Downloader\Internal\Diagnostics\ReleaseAttempt;
 use Internal\DLoad\Module\Downloader\Internal\Diagnostics\RepositoryAttempt;
+use Internal\DLoad\Module\Registry\RepositoryId;
 use Internal\DLoad\Module\Repository\AssetInterface;
 use Internal\DLoad\Module\Repository\ReleaseInterface;
 use Internal\DLoad\Module\Task\Progress;
@@ -36,6 +37,9 @@ final class DownloadContext
 
     /** @var ReleaseInterface Current release being processed */
     public ReleaseInterface $release;
+
+    /** @var RepositoryId Identity of the current repository in the version registry */
+    public RepositoryId $repositoryId;
 
     /** @var RepositoryAttempt Diagnostics of the repository being processed */
     public RepositoryAttempt $repositoryAttempt;

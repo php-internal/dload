@@ -61,6 +61,21 @@ final class DownloaderTest
     }
 
     #[Test]
+    public function registryIdComesFromTheRepositoryNotTheConfiguredUri(): void
+    {
+        // The factory reduces a full URL to the path; the registry must key the record the same way
+        $repository = new RepositoryStub('owner/repo');
+        $gone = self::release($repository, 'v2.0.0', assets: false);
+        $alive = self::release($repository, 'v1.9.0', assets: true);
+        $repository = new RepositoryStub('owner/repo', ReleasesCollection::create([$gone, $alive]));
+
+        $this->download([$repository], uri: 'https://github.com/Owner/Repo');
+
+        Assert::same($this->registry->attached, [['rr', 'github:owner/repo']]);
+        Assert::same($this->registry->forgotten, [['github:owner/repo', 'v2.0.0']]);
+    }
+
+    #[Test]
     public function outdatedListIsFetchedAgainWhenNothingIsLeft(): void
     {
         // The stored list knows only the deleted release; a fresh list has its replacement
@@ -171,8 +186,9 @@ final class DownloaderTest
 
     /**
      * @param list<Repository>|SequenceRepositoryFactoryStub $repositories
+     * @param non-empty-string $uri Repository URI as written in the config.
      */
-    private function download(array|SequenceRepositoryFactoryStub $repositories): DownloadResult
+    private function download(array|SequenceRepositoryFactoryStub $repositories, string $uri = 'owner/repo'): DownloadResult
     {
         $factory = $repositories instanceof SequenceRepositoryFactoryStub
             ? $repositories
@@ -194,7 +210,7 @@ final class DownloaderTest
 
         $software = Software::fromArray([
             'name' => 'rr',
-            'repositories' => [['type' => 'github', 'uri' => 'owner/repo']],
+            'repositories' => [['type' => 'github', 'uri' => $uri]],
         ]);
         $task = $downloader->download($software, DownloadConfig::fromSoftwareId('rr'), static fn(): null => null);
 
