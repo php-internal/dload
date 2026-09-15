@@ -272,6 +272,10 @@ jobs:
       - name: 📥 Download all build artifacts
         uses: actions/download-artifact@v4
         with:
+          # Only the binary archives. docker/build-push-action also uploads
+          # `*.dockerbuild` provenance artifacts that we neither want on the
+          # release nor can rely on downloading cleanly.
+          pattern: dload-*
           path: dist
           merge-multiple: true
 
