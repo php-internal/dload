@@ -177,6 +177,33 @@ final class FileRegistryStorageTest
     }
 
     #[Test]
+    public function saveWaitsForTheLockOfAnotherRunAndGivesUp(): void
+    {
+        $storage = $this->storage(lockTimeout: 0.2);
+        $storage->save(self::record('github', 'owner/repo', ['v1']));
+
+        // Another run holds the repository
+        $lock = \fopen($this->directory . '/locks/github_owner_repo.lock', 'c');
+        \flock($lock, \LOCK_EX);
+
+        $started = \microtime(true);
+        try {
+            $storage->save(self::record('github', 'owner/repo', ['v2', 'v1']));
+            Assert::fail('A lock held by another run must be reported.');
+        } catch (\RuntimeException $e) {
+            Assert::string($e->getMessage())->contains('Another run holds');
+            Assert::true(\microtime(true) - $started >= 0.2);
+        }
+
+        // The record was left untouched, and the lock is taken as soon as it is released
+        Assert::same($storage->load(new RepositoryId('github', 'owner/repo'))?->count(), 1);
+        \flock($lock, \LOCK_UN);
+        \fclose($lock);
+        $storage->save(self::record('github', 'owner/repo', ['v2', 'v1']));
+        Assert::same($storage->load(new RepositoryId('github', 'owner/repo'))?->count(), 2);
+    }
+
+    #[Test]
     public function listsRemovesAndClears(): void
     {
         $storage = $this->storage();
@@ -193,6 +220,7 @@ final class FileRegistryStorageTest
         $storage->clear();
         Assert::count(\iterator_to_array($storage->all(), false), 0);
         Assert::null($storage->load(new RepositoryId('github', 'c/d')));
+        Assert::false(\is_dir($this->directory . '/locks'));
     }
 
     #[Test]
@@ -262,8 +290,8 @@ final class FileRegistryStorageTest
         return \array_map(static fn(int $i): string => 'v' . $i, \range($from, $to));
     }
 
-    private function storage(): FileRegistryStorage
+    private function storage(float $lockTimeout = 10.0): FileRegistryStorage
     {
-        return new FileRegistryStorage(Path::create($this->directory), new Logger());
+        return new FileRegistryStorage(Path::create($this->directory), new Logger(), $lockTimeout);
     }
 }

@@ -27,7 +27,16 @@ use Internal\Path;
  *
  * Files are written aside and renamed into place, so an interrupted or parallel run cannot
  * leave a half-written file for anyone to read. Segments are written before the index, so the
- * index never points at a file that is not there yet.
+ * index never points at a file that is not there yet. A save or removal holds a lock on the
+ * repository, so two runs cannot interleave their files: without it one could drop the segments
+ * the other has just written as orphans, or publish an index over the other's segment content.
+ *
+ * ```
+ * <dir>/locks/github_roadrunner-server_roadrunner.lock
+ * ```
+ *
+ * The lock files live beside the repositories, not inside them, because Windows refuses to
+ * remove a directory holding an open file.
  *
  * @internal
  * @psalm-internal Internal\DLoad
@@ -35,21 +44,32 @@ use Internal\Path;
 final class FileRegistryStorage implements RegistryStorage
 {
     private const REPOSITORIES_DIR = 'repositories';
+    private const LOCKS_DIR = 'locks';
     private const INDEX_FILE = 'index.json';
     private const SEGMENT_PREFIX = 'releases-';
     private const EXTENSION = '.json';
     private const TEMP_EXTENSION = '.tmp';
+    private const LOCK_EXTENSION = '.lock';
 
     /** Age after which a leftover temporary file of a crashed run is removed, in seconds. */
     private const STALE_TEMP_AGE = 3600;
 
-    private readonly Path $root;
+    /** Pause between two attempts to take a lock held by another run, in microseconds. */
+    private const LOCK_RETRY_DELAY = 50_000;
 
+    private readonly Path $root;
+    private readonly Path $locks;
+
+    /**
+     * @param float $lockTimeout Seconds to wait for a lock held by another run before giving up.
+     */
     public function __construct(
         Path $directory,
         private readonly Logger $logger,
+        private readonly float $lockTimeout = 10.0,
     ) {
         $this->root = $directory->join(self::REPOSITORIES_DIR);
+        $this->locks = $directory->join(self::LOCKS_DIR);
     }
 
     public function load(RepositoryId $id): ?RepositoryRecord
@@ -62,20 +82,22 @@ final class FileRegistryStorage implements RegistryStorage
 
     public function save(RepositoryRecord $record): void
     {
-        $directory = $this->directoryOf($record->id);
-        $directory->isDir() or FS::mkdir($directory);
-        $directory->isDir() or throw new \RuntimeException(\sprintf('Failed to create registry directory `%s`.', $directory));
+        $this->locked($record->id, function () use ($record): void {
+            $directory = $this->directoryOf($record->id);
+            $directory->isDir() or FS::mkdir($directory);
+            $directory->isDir() or throw new \RuntimeException(\sprintf('Failed to create registry directory `%s`.', $directory));
 
-        foreach ($record->segments as $segment) {
-            $segment->dirty and $this->write(
-                $this->segmentFile($directory, $segment->key),
-                \array_map(static fn(ReleaseRecord $release): array => $release->toArray(), $segment->releases()),
-            );
-        }
+            foreach ($record->segments as $segment) {
+                $segment->dirty and $this->write(
+                    $this->segmentFile($directory, $segment->key),
+                    \array_map(static fn(ReleaseRecord $release): array => $release->toArray(), $segment->releases()),
+                );
+            }
 
-        $this->write($directory->join(self::INDEX_FILE), $record->toArray());
+            $this->write($directory->join(self::INDEX_FILE), $record->toArray());
 
-        $this->removeOrphans($directory, $record);
+            $this->removeOrphans($directory, $record);
+        });
     }
 
     public function all(): iterable
@@ -101,22 +123,25 @@ final class FileRegistryStorage implements RegistryStorage
 
     public function remove(RepositoryId $id): void
     {
-        $directory = $this->directoryOf($id);
-        if (!$directory->isDir()) {
-            return;
-        }
+        $this->locked($id, function () use ($id): void {
+            $directory = $this->directoryOf($id);
+            if (!$directory->isDir()) {
+                return;
+            }
 
-        FS::removeDir($directory);
+            FS::removeDir($directory);
 
-        // Owner and type directories are worth nothing once empty
-        for ($parent = $directory->parent(); (string) $parent !== (string) $this->root && $this->isEmptyDir($parent); $parent = $parent->parent()) {
-            FS::removeDir($parent);
-        }
+            // Owner and type directories are worth nothing once empty
+            for ($parent = $directory->parent(); (string) $parent !== (string) $this->root && $this->isEmptyDir($parent); $parent = $parent->parent()) {
+                FS::removeDir($parent);
+            }
+        });
     }
 
     public function clear(): void
     {
         $this->root->isDir() and FS::removeDir($this->root);
+        $this->locks->isDir() and FS::removeDir($this->locks);
     }
 
     /**
@@ -136,6 +161,39 @@ final class FileRegistryStorage implements RegistryStorage
         }
 
         return \preg_match('/^(?:con|prn|aux|nul|com[0-9]|lpt[0-9])(?:\.|$)/i', $safe) === 1 ? '_' . $safe : $safe;
+    }
+
+    /**
+     * Runs the action while holding the exclusive lock of the repository.
+     *
+     * @throws \RuntimeException When the lock cannot be taken within the timeout.
+     */
+    private function locked(RepositoryId $id, \Closure $action): void
+    {
+        $this->locks->isDir() or FS::mkdir($this->locks);
+        $file = $this->locks->join(\implode('_', \array_map(self::sanitize(...), [$id->type, ...\explode('/', $id->uri)])) . self::LOCK_EXTENSION);
+
+        $handle = @\fopen((string) $file, 'c');
+        $handle === false and throw new \RuntimeException(\sprintf('Failed to open registry lock `%s`.', $file));
+
+        try {
+            // Blocking `flock()` cannot give up; polling puts a bound on a lock a stuck run holds
+            $deadline = \microtime(true) + $this->lockTimeout;
+            while (!\flock($handle, \LOCK_EX | \LOCK_NB)) {
+                \microtime(true) < $deadline or throw new \RuntimeException(
+                    \sprintf('Another run holds the registry record of `%s` for longer than %.0f second(s).', $id, $this->lockTimeout),
+                );
+                \usleep(self::LOCK_RETRY_DELAY);
+            }
+
+            try {
+                $action();
+            } finally {
+                \flock($handle, \LOCK_UN);
+            }
+        } finally {
+            \fclose($handle);
+        }
     }
 
     /**
