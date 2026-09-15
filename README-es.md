@@ -396,7 +396,7 @@ La variable de entorno tiene prioridad sobre el atributo de `dload.xml`, y la op
 > usan los releases almacenados; un repositorio nunca visto sigue fallando de forma visible. Un
 > release almacenado cuyos assets desaparecieron del origen se elimina del registro en cuanto falla
 > su descarga, y la lista de releases se vuelve a obtener antes de que la ejecución se dé por vencida.
-> Los borradores de releases de GitHub nunca se almacenan. Un release que el proveedor inserta por debajo del inicio de su lista, como un release de GitLab con un `released_at` retroactivo, no lo detecta la comprobación; ejecute `cache:clear` para ese software para incorporarlo.
+> Los borradores de releases de GitHub nunca se entregan; el registro guarda solo sus etiquetas como marcadores ocultos que conservan la posición en la lista. Un release que el proveedor inserta por debajo del inicio de su lista, como un release de GitLab con un `released_at` retroactivo, no lo detecta la comprobación; ejecute `cache:clear` para ese software para incorporarlo.
 
 En GitHub Actions el directorio puede conservarse entre ejecuciones del workflow, de modo que cada
 ejecución gasta el límite de la API solo en los releases publicados desde la anterior:

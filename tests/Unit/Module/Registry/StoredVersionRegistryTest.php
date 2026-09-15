@@ -26,6 +26,23 @@ final class StoredVersionRegistryTest
     private int $now = 1_000_000;
 
     #[Test]
+    public function hiddenReleasesAreStoredButNeverServed(): void
+    {
+        $source = new ArrayReleaseSource([
+            new ReleaseRecord('draft', 'draft', hidden: true),
+            new ReleaseRecord('v2', 'v2'),
+            new ReleaseRecord('v1', 'v1'),
+        ]);
+
+        Assert::same(self::flatten($this->registry()->releases($this->id, $source)), ['v2', 'v1']);
+        Assert::same($this->storage->load($this->id)?->count(), 3);
+
+        // The stored list is served without a request and still leaves the hidden one out
+        Assert::same(self::flatten($this->registry()->releases($this->id, $source)), ['v2', 'v1']);
+        Assert::same($source->served, [0, 2]);
+    }
+
+    #[Test]
     public function firstRunLoadsOnlyThePagesTheConsumerNeeds(): void
     {
         $source = ArrayReleaseSource::ofTags(['v6', 'v5', 'v4', 'v3', 'v2', 'v1']);

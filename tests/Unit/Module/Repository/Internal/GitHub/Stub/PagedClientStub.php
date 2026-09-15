@@ -98,7 +98,7 @@ final class PagedClientStub implements ClientInterface
                 'name' => $tag,
                 // A number where a string belongs fails the strict constructor of the response object
                 'tag_name' => $i >= 1 && $i <= $this->broken ? $i : $tag,
-                'published_at' => '2024-01-01T00:00:00Z',
+                'published_at' => $i < 1 ? null : '2024-01-01T00:00:00Z',
                 'assets' => [[
                     'name' => 'rr-linux-amd64.tar.gz',
                     'browser_download_url' => 'https://github.com/owner/repo/releases/download/' . $tag . '/rr-linux-amd64.tar.gz',

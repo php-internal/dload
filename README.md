@@ -398,7 +398,7 @@ The environment variable takes precedence over the attribute in `dload.xml`, and
 > releases are used instead, and a repository that was never seen before still fails loudly.
 > A stored release whose assets have disappeared upstream is dropped from the registry as soon as
 > its download fails, and the release list is fetched again before the run gives up.
-> GitHub draft releases are never stored. A release that a provider inserts below the top of its listing, such as a GitLab release with a backdated `released_at`, is not noticed by a check; run `cache:clear` for that software to pick it up.
+> GitHub draft releases are never served; the registry keeps only their tags, as hidden placeholders that hold the position in the listing. A release that a provider inserts below the top of its listing, such as a GitLab release with a backdated `released_at`, is not noticed by a check; run `cache:clear` for that software to pick it up.
 
 In GitHub Actions the directory can be carried between workflow runs, so a run spends the rate limit
 only on releases published since the previous one:

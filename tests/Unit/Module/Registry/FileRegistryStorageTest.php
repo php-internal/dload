@@ -44,6 +44,22 @@ final class FileRegistryStorageTest
     }
 
     #[Test]
+    public function hiddenFlagSurvivesTheRoundTrip(): void
+    {
+        $storage = $this->storage();
+        $id = new RepositoryId('github', 'owner/repo');
+
+        $storage->save((new RepositoryRecord($id, checkedAt: 1_000))->withHead([
+            new ReleaseRecord('draft', 'draft', hidden: true),
+            new ReleaseRecord('v1', 'v1'),
+        ]));
+
+        $releases = $storage->load($id)?->releases() ?? [];
+        Assert::true($releases[0]->hidden);
+        Assert::false($releases[1]->hidden);
+    }
+
+    #[Test]
     public function segmentsAreReadWhenReachedAndOnlyDirtyOnesAreWritten(): void
     {
         $storage = $this->storage();

@@ -66,7 +66,9 @@ final class StoredVersionRegistry implements VersionRegistry
             $this->logger->debug('Releases of `%s` are served from the version registry.', (string) $id);
         }
 
-        yield from $record->pages();
+        foreach ($record->pages() as $page) {
+            yield ReleaseRecord::visible($page);
+        }
 
         if ($record->complete) {
             return;
@@ -180,7 +182,8 @@ final class StoredVersionRegistry implements VersionRegistry
 
             $record = $this->persist($record->withTail($new)->withComplete($page->last));
 
-            $new === [] or yield $new;
+            $visible = ReleaseRecord::visible($new);
+            $visible === [] or yield $visible;
         }
 
         $record->complete or $this->persist($record->withComplete(true));

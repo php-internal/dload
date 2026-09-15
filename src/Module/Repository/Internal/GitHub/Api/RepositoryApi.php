@@ -127,9 +127,7 @@ final class RepositoryApi
             $skipped = 0;
             foreach ($data as $releaseData) {
                 try {
-                    $release = ReleaseInfo::fromApiResponse($releaseData);
-                    // A draft is visible to the token holder only; the registry may be shared
-                    $release->draft or $releases[] = $release->toRecord();
+                    $releases[] = ReleaseInfo::fromApiResponse($releaseData)->toRecord();
                 } catch (\Throwable $e) {
                     $failure ??= $e;
                     ++$skipped;

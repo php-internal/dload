@@ -17,6 +17,7 @@ namespace Internal\DLoad\Module\Registry\Record;
  *     published_at?: string|null,
  *     prerelease?: bool,
  *     assets?: list<AssetArray>,
+ *     hidden?: bool,
  * }
  *
  * @internal
@@ -27,6 +28,9 @@ final class ReleaseRecord
      * @param non-empty-string $tag Tag the release was made from; identifies the release within a repository.
      * @param non-empty-string $name Human-readable release name.
      * @param list<AssetRecord> $assets
+     * @param bool $hidden Whether the release is listed by the source but must not be served, as a
+     *        GitHub draft is. It keeps its position, so the stored count still maps onto the paging
+     *        of the source.
      */
     public function __construct(
         public readonly string $tag,
@@ -34,7 +38,19 @@ final class ReleaseRecord
         public readonly ?\DateTimeImmutable $publishedAt = null,
         public readonly bool $prerelease = false,
         public readonly array $assets = [],
+        public readonly bool $hidden = false,
     ) {}
+
+    /**
+     * Leaves out the releases that must not be served.
+     *
+     * @param list<ReleaseRecord> $releases
+     * @return list<ReleaseRecord>
+     */
+    public static function visible(array $releases): array
+    {
+        return \array_values(\array_filter($releases, static fn(ReleaseRecord $release): bool => !$release->hidden));
+    }
 
     /**
      * @param array<array-key, mixed> $data
@@ -64,6 +80,7 @@ final class ReleaseRecord
             publishedAt: \is_string($publishedAt) && $publishedAt !== '' ? new \DateTimeImmutable($publishedAt) : null,
             prerelease: (bool) ($data['prerelease'] ?? false),
             assets: $assets,
+            hidden: (bool) ($data['hidden'] ?? false),
         );
     }
 
@@ -72,12 +89,15 @@ final class ReleaseRecord
      */
     public function toArray(): array
     {
-        return [
+        $data = [
             'tag' => $this->tag,
             'name' => $this->name,
             'published_at' => $this->publishedAt?->format(\DateTimeInterface::ATOM),
             'prerelease' => $this->prerelease,
             'assets' => \array_map(static fn(AssetRecord $asset): array => $asset->toArray(), $this->assets),
         ];
+        $this->hidden and $data['hidden'] = true;
+
+        return $data;
     }
 }

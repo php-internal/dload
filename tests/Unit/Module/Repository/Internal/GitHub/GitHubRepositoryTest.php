@@ -125,11 +125,19 @@ final class GitHubRepositoryTest
     {
         $storage = new InMemoryRegistryStorage();
 
-        $names = self::names(self::createRepository(new PagedClientStub(pages: 1, drafts: 2), self::registry($storage)));
+        $client = new PagedClientStub(pages: 1, drafts: 2);
+        $names = self::names(self::createRepository($client, self::registry($storage)));
 
         Assert::same(\count($names), 100);
         Assert::false(\in_array('draft-1', $names, true));
-        Assert::false($storage->load(new RepositoryId(GitHubRepository::TYPE, 'owner/repo'))?->has('draft-1') ?? true);
+
+        // The draft keeps its listing position as a hidden placeholder, so the stored count still
+        // maps onto the API paging and the second page is the next request, not the first one again
+        Assert::same($client->requestedPages(), [1, 2]);
+        $stored = $storage->load(new RepositoryId(GitHubRepository::TYPE, 'owner/repo'));
+        Assert::same($stored?->count(), 102);
+        Assert::true($stored?->releases()[0]->hidden);
+        Assert::same($stored?->releases()[0]->assets, []);
     }
 
     #[Test]

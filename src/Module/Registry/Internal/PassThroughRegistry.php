@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Registry\Internal;
 
+use Internal\DLoad\Module\Registry\Record\ReleaseRecord;
 use Internal\DLoad\Module\Registry\ReleaseSource;
 use Internal\DLoad\Module\Registry\RepositoryId;
 use Internal\DLoad\Module\Registry\VersionRegistry;
@@ -21,7 +22,7 @@ final class PassThroughRegistry implements VersionRegistry
     public function releases(RepositoryId $id, ReleaseSource $source): \Generator
     {
         foreach ($source->pages() as $page) {
-            yield $page->releases;
+            yield ReleaseRecord::visible($page->releases);
         }
     }
 
