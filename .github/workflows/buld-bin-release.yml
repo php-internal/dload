@@ -280,8 +280,10 @@ jobs:
           path: dist
           merge-multiple: true
 
+      # Upload with the gh CLI rather than action-gh-release: the action PATCHes
+      # the release before uploading and that update 403s here, while a plain
+      # asset upload does not.
       - name: 📤 Upload release assets
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ env.RELEASE_TAG }}
-          files: dist/*.tar.gz
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "$RELEASE_TAG" dist/*.tar.gz --clobber --repo "$GITHUB_REPOSITORY"
