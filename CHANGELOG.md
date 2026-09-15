@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.16.4](https://github.com/php-internal/dload/compare/1.16.3...1.16.4) (2026-09-15)
+
+
+### Bug Fixes
+
+* **ci:** download only the binary artifacts when publishing a release ([90bfd17](https://github.com/php-internal/dload/commit/90bfd17c6683dbea833a24c645017f5d17923caa))
+
 ## [1.16.3](https://github.com/php-internal/dload/compare/1.16.2...1.16.3) (2026-09-15)
 
 
