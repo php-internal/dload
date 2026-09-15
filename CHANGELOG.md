@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.16.5](https://github.com/php-internal/dload/compare/1.16.4...1.16.5) (2026-09-15)
+
+
+### Bug Fixes
+
+* **ci:** authenticate spc on the Windows build ([a30284c](https://github.com/php-internal/dload/commit/a30284c75528e9b47b3189c21d01fa45a295f714))
+* **ci:** upload release binaries with the gh CLI ([fe60082](https://github.com/php-internal/dload/commit/fe6008221e541832a4a13a5ccc5cd59ba50e8dd6))
+
 ## [1.16.4](https://github.com/php-internal/dload/compare/1.16.3...1.16.4) (2026-09-15)
 
 
