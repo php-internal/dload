@@ -55,6 +55,24 @@ final class ResponseValidatorTest
     }
 
     #[Test]
+    public function unrecognizedUriLeavesProjectUnknown(): void
+    {
+        $validator = new ResponseValidator(authenticated: false);
+        // A URI without a `/projects/{id}` segment exposes no project identifier
+        $request = new Request('GET', 'https://gitlab.com/api/v4/version');
+        $response = new ResponseStub(404, [], \json_encode(['message' => '404 Not Found']));
+
+        try {
+            $validator->validate($request, $response);
+            Assert::fail('RepositoryNotFoundException is expected.');
+        } catch (RepositoryNotFoundException $e) {
+            Assert::null($e->repository);
+            // With no project, the message falls back to the raw endpoint
+            Assert::string($e->getMessage())->contains('GET https://gitlab.com/api/v4/version');
+        }
+    }
+
+    #[Test]
     public function tooManyRequestsIsReportedAsRateLimit(): void
     {
         $validator = new ResponseValidator(authenticated: false);

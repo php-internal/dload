@@ -107,6 +107,33 @@ final class RepositoryRecordTest
     }
 
     #[Test]
+    public function headAbsorbsAShortFollowingSegmentThatFits(): void
+    {
+        // A full head segment and a short tail of 10 kept in its own segment
+        $record = self::record(self::range(100, 1))->withTail(self::releases(self::range(-1, -10)));
+        Assert::same(self::sizes($record), [100, 10]);
+
+        // `v100` is reached, so the head segment is repacked; its 1-release remainder plus the
+        // 10-release tail segment fit into one, so the tail is pulled in instead of left behind
+        $updated = $record->withHead(self::releases(['v101', 'v100']));
+
+        Assert::same($updated->count(), 111);
+        Assert::same(self::sizes($updated), [11, 100]);
+        Assert::true($updated->has('v-10'));
+        Assert::same(self::tags($updated)[0], 'v101');
+    }
+
+    #[Test]
+    public function emptyHeadClearsTheListing(): void
+    {
+        // No fetched releases means the source lists none, so the whole stored listing is dropped
+        $updated = self::record(['v2', 'v1'])->withHead([]);
+
+        Assert::same($updated->count(), 0);
+        Assert::same($updated->releases(), []);
+    }
+
+    #[Test]
     public function tailFillsTheLastSegmentBeforeStartingANewOne(): void
     {
         $record = self::record(self::range(150, 1));
@@ -194,6 +221,16 @@ final class RepositoryRecordTest
         Assert::true($never->isStale(1_000, 600));
         Assert::false($checked->isStale(1_600, 600));
         Assert::true($checked->isStale(1_601, 600));
+    }
+
+    #[Test]
+    public function completenessFlagIsToggled(): void
+    {
+        $record = RepositoryRecord::empty(self::id());
+        Assert::false($record->complete);
+
+        Assert::true($record->withComplete(true)->complete);
+        Assert::false($record->withComplete(true)->withComplete(false)->complete);
     }
 
     #[Test]
@@ -297,6 +334,20 @@ final class RepositoryRecordTest
             Assert::fail('An unknown format version must be rejected.');
         } catch (\InvalidArgumentException $e) {
             Assert::same($e->getMessage(), 'Unsupported repository record format.');
+        }
+    }
+
+    #[Test]
+    public function fromArrayRejectsMissingRepositoryIdentity(): void
+    {
+        try {
+            RepositoryRecord::fromArray(
+                ['version' => RepositoryRecord::FORMAT_VERSION, 'repository' => ['type' => 'github']],
+                static fn(): array => [],
+            );
+            Assert::fail('A record without a repository URI must be rejected.');
+        } catch (\InvalidArgumentException $e) {
+            Assert::same($e->getMessage(), 'Repository record requires a repository type and URI.');
         }
     }
 

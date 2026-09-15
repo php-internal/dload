@@ -188,6 +188,24 @@ final class ResponseValidatorTest
         }
     }
 
+    #[Test]
+    public function unrecognizedUriLeavesRepositoryUnknown(): void
+    {
+        $validator = new ResponseValidator(authenticated: false);
+        // A URI that is neither an API call nor a github.com link exposes no owner/repo pair
+        $request = new Request('GET', 'https://example.com/health');
+        $response = new ResponseStub(404, [], \json_encode(['message' => 'Not Found']));
+
+        try {
+            $validator->validate($request, $response);
+            Assert::fail('RepositoryNotFoundException is expected.');
+        } catch (RepositoryNotFoundException $e) {
+            Assert::null($e->repository);
+            // With no repository, the message falls back to the raw endpoint
+            Assert::string($e->getMessage())->contains('GET https://example.com/health');
+        }
+    }
+
     private static function releasesRequest(): RequestInterface
     {
         return new Request('GET', 'https://api.github.com/repos/owner/repo/releases?page=1');

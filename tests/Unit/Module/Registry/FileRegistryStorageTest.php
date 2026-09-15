@@ -259,6 +259,58 @@ final class FileRegistryStorageTest
         Assert::same($storage->load($id)?->releases()[0]->tag, 'v1');
     }
 
+    #[Test]
+    public function removingAnUnknownRepositoryIsANoOp(): void
+    {
+        $storage = $this->storage();
+        $storage->save(self::record('github', 'owner/repo', ['v1']));
+
+        $storage->remove(new RepositoryId('github', 'ghost/repo'));
+
+        Assert::notNull($storage->load(new RepositoryId('github', 'owner/repo')));
+        Assert::null($storage->load(new RepositoryId('github', 'ghost/repo')));
+        Assert::false(\is_dir($this->directory . '/repositories/github/ghost'));
+    }
+
+    #[Test]
+    public function saveReportsAFailedTemporaryWrite(): void
+    {
+        $storage = $this->storage();
+        $repo = $this->directory . '/repositories/github/owner/repo';
+        \mkdir($repo, recursive: true);
+
+        // A directory sitting at the exact temporary path a write uses makes file_put_contents fail
+        \mkdir($repo . '/releases-0001.json.' . \getmypid() . '.tmp');
+
+        try {
+            $storage->save(self::record('github', 'owner/repo', ['v1']));
+            Assert::fail('A failed temporary write must be reported.');
+        } catch (\RuntimeException $e) {
+            Assert::string($e->getMessage())->contains('Failed to write registry file');
+        }
+    }
+
+    #[Test]
+    public function saveReportsAFailedRenameIntoPlace(): void
+    {
+        $storage = $this->storage();
+        $repo = $this->directory . '/repositories/github/owner/repo';
+        \mkdir($repo, recursive: true);
+
+        // A non-removable directory where the index file belongs makes the rename into place fail
+        \mkdir($repo . '/index.json');
+        $pin = \fopen($repo . '/index.json/pin', 'w');
+
+        try {
+            $storage->save(new RepositoryRecord(new RepositoryId('github', 'owner/repo')));
+            Assert::fail('A failed rename into place must be reported.');
+        } catch (\RuntimeException $e) {
+            Assert::string($e->getMessage())->contains('Failed to store registry file');
+        } finally {
+            \fclose($pin);
+        }
+    }
+
     #[BeforeTest]
     protected function prepare(): void
     {

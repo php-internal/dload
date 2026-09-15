@@ -12,6 +12,7 @@ use Internal\DLoad\Module\Registry\Record\ReleaseRecord;
 use Internal\DLoad\Module\Registry\Record\RepositoryRecord;
 use Internal\DLoad\Module\Registry\RepositoryId;
 use Internal\DLoad\Module\Registry\VersionRegistry;
+use Internal\DLoad\Module\Repository\Exception\RateLimitException;
 use Internal\DLoad\Module\Repository\Internal\GitLab\Api\Client;
 use Internal\DLoad\Module\Repository\Internal\GitLab\Api\RepositoryApi;
 use Internal\DLoad\Module\Repository\Internal\GitLab\GitLabReleaseSource;
@@ -20,8 +21,10 @@ use Internal\DLoad\Module\Repository\ReleaseInterface;
 use Internal\DLoad\Service\Logger;
 use Internal\DLoad\Tests\Unit\Module\Registry\Stub\InMemoryRegistryStorage;
 use Internal\DLoad\Tests\Unit\Module\Repository\Internal\GitLab\Stub\PagedClientStub;
+use Internal\DLoad\Tests\Unit\Module\Repository\Internal\GitLab\Stub\ScriptedRegistryStub;
 use Testo\Assert;
 use Testo\Codecov\Covers;
+use Testo\Expect;
 use Testo\Test;
 
 #[Covers(GitLabRepository::class)]
@@ -131,6 +134,77 @@ final class GitLabRepositoryTest
         Assert::same(\count($all), 200);
         Assert::same(\count(\array_unique($all)), 200);
         Assert::same($all[50], 'v1.0.51');
+    }
+
+    #[Test]
+    public function theSameCollectionIsReturnedOnEveryCall(): void
+    {
+        $repository = self::createRepository(new PagedClientStub(pages: 1));
+
+        Assert::same($repository->getReleases(), $repository->getReleases());
+    }
+
+    #[Test]
+    public function nameIsTheGroupAndProject(): void
+    {
+        Assert::same(self::createRepository(new PagedClientStub(pages: 1))->getName(), 'group/project');
+    }
+
+    #[Test]
+    public function aReleaseWithAnUnparsableTagIsSkipped(): void
+    {
+        $registry = new ScriptedRegistryStub([[self::record('not-a-version'), self::record('v1.0.1')]]);
+        $repository = self::createRepository(new PagedClientStub(pages: 1), $registry);
+
+        $names = self::names($repository);
+
+        Assert::same($names, ['v1.0.1']);
+    }
+
+    #[Test]
+    public function aFailureOfTheFirstPageReachesTheCaller(): void
+    {
+        $registry = new ScriptedRegistryStub([new \RuntimeException('missing project')]);
+        $repository = self::createRepository(new PagedClientStub(pages: 1), $registry);
+
+        Expect::exception(\RuntimeException::class)->withMessage('missing project');
+
+        self::names($repository);
+    }
+
+    #[Test]
+    public function aRateLimitOnALaterPageReachesTheCaller(): void
+    {
+        $registry = new ScriptedRegistryStub([
+            [self::record('v1.0.2')],
+            new RateLimitException('API rate limit exceeded'),
+        ]);
+        $repository = self::createRepository(new PagedClientStub(pages: 1), $registry);
+
+        Expect::exception(RateLimitException::class)->withMessage('API rate limit exceeded');
+
+        self::names($repository);
+    }
+
+    #[Test]
+    public function anOrdinaryFailureOfALaterPageStopsPaginationAndKeepsWhatLoaded(): void
+    {
+        $registry = new ScriptedRegistryStub([
+            [self::record('v1.0.2')],
+            new \RuntimeException('transient network error'),
+        ]);
+        $repository = self::createRepository(new PagedClientStub(pages: 1), $registry);
+
+        // The first page is enough to keep going, so the later failure only ends the listing
+        Assert::same(self::names($repository), ['v1.0.2']);
+    }
+
+    /**
+     * @param non-empty-string $tag
+     */
+    private static function record(string $tag): ReleaseRecord
+    {
+        return new ReleaseRecord($tag, $tag);
     }
 
     private static function createRepository(
