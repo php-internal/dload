@@ -17,6 +17,9 @@ use Psr\Http\Message\ResponseInterface;
  */
 final class ClientStub implements ClientInterface
 {
+    /** @var list<RequestInterface> Requests in the order they were sent. */
+    public array $sent = [];
+
     /**
      * @var array<string, ResponseInterface>
      */
@@ -43,6 +46,7 @@ final class ClientStub implements ClientInterface
 
     public function sendRequest(RequestInterface $request): ResponseInterface
     {
+        $this->sent[] = $request;
         $requestKey = $this->createRequestKey($request);
 
         if (isset($this->exceptions[$requestKey])) {

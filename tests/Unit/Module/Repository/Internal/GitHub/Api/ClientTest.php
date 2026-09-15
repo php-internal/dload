@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Internal\DLoad\Tests\Unit\Module\Repository\Internal\GitHub\Api;
 
 use Internal\DLoad\Module\Config\Schema\GitHub;
+use Internal\DLoad\Module\HttpClient\Internal\NyholmFactoryImpl;
 use Internal\DLoad\Module\Repository\Exception\AccessDeniedException;
 use Internal\DLoad\Module\Repository\Exception\ApiException;
 use Internal\DLoad\Module\Repository\Exception\AuthenticationException;
 use Internal\DLoad\Module\Repository\Exception\RateLimitException;
 use Internal\DLoad\Module\Repository\Exception\RepositoryNotFoundException;
 use Internal\DLoad\Module\Repository\Internal\GitHub\Api\Client;
+use Internal\DLoad\Service\Logger;
 use Internal\DLoad\Tests\Unit\Module\Repository\Internal\GitHub\Stub\ClientExceptionStub;
 use Internal\DLoad\Tests\Unit\Module\Repository\Internal\GitHub\Stub\ClientStub;
 use Internal\DLoad\Tests\Unit\Module\Repository\Internal\GitHub\Stub\GitHubConfigStub;
@@ -168,6 +170,27 @@ final class ClientTest
         $result = $clientWithToken->request($method, $uri);
 
         Assert::equals($result, $response);
+    }
+
+    #[Test]
+    public function tokenIsSentToGitHubHostsOnly(): void
+    {
+        // Asset URLs may come from a registry file on disk, so the token must not follow them anywhere
+        $http = new ClientStub();
+        $client = new Client(new NyholmFactoryImpl(new Logger()), $http, GitHubConfigStub::withToken('secret'));
+
+        $client->request('GET', 'https://api.github.com/repos/owner/repo/releases');
+        $client->request('GET', 'https://objects.githubusercontent.com/asset');
+        $client->request('GET', 'https://GitHub.com/owner/repo/releases/download/v1/rr.tar.gz');
+        $client->request('GET', 'https://evil.example/github.com/asset');
+        $client->request('GET', 'https://notgithub.com/asset');
+
+        Assert::same($http->sent[0]->getHeaderLine('authorization'), 'Bearer secret');
+        Assert::same($http->sent[1]->getHeaderLine('authorization'), 'Bearer secret');
+        Assert::same($http->sent[2]->getHeaderLine('authorization'), 'Bearer secret');
+        Assert::same($http->sent[3]->getHeaderLine('authorization'), '');
+        Assert::same($http->sent[4]->getHeaderLine('authorization'), '');
+        Assert::same($http->sent[3]->getHeaderLine('accept'), 'application/vnd.github.v3+json');
     }
 
     #[Test]
