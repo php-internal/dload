@@ -173,6 +173,7 @@ También puedes descargar la versión más reciente desde [GitHub releases](http
 | `--stability` | Estabilidad del release (stable, beta) | stable |
 | `--config` | Ruta al archivo de configuración | ./dload.xml |
 | `--force`, `-f` | Forzar descarga aunque el binario ya exista | false |
+| `--refresh`, `-r` | Comprobar si hay nuevos releases aunque el registro de versiones siga vigente | false |
 
 ### Ver Software
 

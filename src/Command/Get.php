@@ -77,7 +77,7 @@ final class Get extends Base
         $this->addOption('force', 'f', InputOption::VALUE_NONE, 'Force download even if binary exists');
         $this->addOption(
             'refresh',
-            null,
+            'r',
             InputOption::VALUE_NONE,
             'Check repositories for new releases even if the version registry is still fresh',
         );

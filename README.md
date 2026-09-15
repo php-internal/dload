@@ -175,6 +175,7 @@ Alternatively, you can download the latest release from [GitHub releases](https:
 | `--stability` | Release stability (stable, beta) | stable |
 | `--config` | Path to configuration file | ./dload.xml |
 | `--force`, `-f` | Force download even if binary exists | false |
+| `--refresh`, `-r` | Check repositories for new releases even if the version registry is still fresh | false |
 
 ### View Software
 

@@ -173,6 +173,7 @@ composer require internal/dload -W
 | `--stability` | 发布稳定性 (stable, beta) | stable |
 | `--config` | 配置文件路径 | ./dload.xml |
 | `--force`, `-f` | 即使二进制文件已存在也强制下载 | false |
+| `--refresh`, `-r` | 即使版本注册表仍然有效，也检查仓库是否有新发布 | false |
 
 ### 查看软件
 
