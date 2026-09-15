@@ -266,7 +266,7 @@ jobs:
             ./dload-${{ env.VERSION }}-darwin-amd64.tar.gz
 
   build-windows:
-    runs-on: windows-latest
+    runs-on: windows-2022
     name: 📦 Build Windows (x64)
     steps:
       - name: Checkout code
