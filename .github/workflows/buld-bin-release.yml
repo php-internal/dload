@@ -179,6 +179,10 @@ jobs:
     runs-on: windows-2022
     timeout-minutes: 30
     name: 📦 Build Windows (x64)
+    # spc fetches pre-built PHP from the GitHub API; without a token it hits the
+    # anonymous rate limit and fails with 403.
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -251,18 +255,16 @@ jobs:
           retention-days: 1
           if-no-files-found: error
 
-  # A single job publishes every binary to the release. The build jobs run in
-  # parallel and used to upload straight to the release, where concurrent
-  # action-gh-release calls raced and dropped a random subset of assets each
-  # release. Collecting the artifacts and attaching them once removes the race.
+  # One job attaches every binary: parallel jobs each calling action-gh-release
+  # race on the same release and drop a random subset of the assets.
   publish:
     name: 📤 Publish binaries to the release
     needs:
       - build-unix
       - build-macos-arm64
       - build-windows
-    # Run even when a build fails so the platforms that did build still ship;
-    # the failed build stays red as the honest signal that one is missing.
+    # Ship the platforms that built even if another failed; the failed build
+    # stays red as the signal one is missing.
     if: ${{ always() }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -272,9 +274,8 @@ jobs:
       - name: 📥 Download all build artifacts
         uses: actions/download-artifact@v4
         with:
-          # Only the binary archives. docker/build-push-action also uploads
-          # `*.dockerbuild` provenance artifacts that we neither want on the
-          # release nor can rely on downloading cleanly.
+          # Binary archives only: docker/build-push-action also uploads
+          # `*.dockerbuild` provenance artifacts that flake on download.
           pattern: dload-*
           path: dist
           merge-multiple: true
