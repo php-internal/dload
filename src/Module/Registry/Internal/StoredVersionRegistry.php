@@ -123,6 +123,20 @@ final class StoredVersionRegistry implements VersionRegistry
             $complete = $record->complete;
 
             foreach ($source->pages() as $page) {
+                // A release the source could not read is missing from the page exactly like a
+                // deleted one, and `withHead()` would drop it; the stored list stays untouched
+                // and the next run checks again
+                if ($page->skipped > 0 && $record->count() > 0) {
+                    $this->logger->debug(
+                        'The listing of `%s` has %d unreadable release(s); the stored %d are kept as they are.',
+                        (string) $record->id,
+                        $page->skipped,
+                        $record->count(),
+                    );
+
+                    return $record;
+                }
+
                 $fetched = [...$fetched, ...$page->releases];
 
                 // The listing ended during the check: everything is known now

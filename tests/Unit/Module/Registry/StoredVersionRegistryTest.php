@@ -125,6 +125,38 @@ final class StoredVersionRegistryTest
     }
 
     #[Test]
+    public function unreadableReleaseIsNotTakenForADeletedOne(): void
+    {
+        $source = ArrayReleaseSource::ofTags(['v3', 'v2', 'v1'], perPage: 3);
+        self::flatten($this->registry()->releases($this->id, $source));
+
+        // The source fails to read `v2` this time; the stored list must keep it
+        $source->unreadable = ['v2'];
+        $source->publish('v4');
+        $this->now += 601;
+        $again = self::flatten($this->registry()->releases($this->id, $source));
+
+        Assert::same($again, ['v3', 'v2', 'v1']);
+
+        // Nothing was stored, so the next run checks again instead of waiting for the TTL
+        $source->unreadable = [];
+        $source->served = [];
+        $fixed = self::flatten($this->registry()->releases($this->id, $source));
+
+        Assert::same($fixed, ['v4', 'v3', 'v2', 'v1']);
+        Assert::same($source->served, [0]);
+    }
+
+    #[Test]
+    public function unreadableReleaseIsSkippedWhenNothingIsStored(): void
+    {
+        $source = ArrayReleaseSource::ofTags(['v3', 'v2', 'v1'], perPage: 3);
+        $source->unreadable = ['v2'];
+
+        Assert::same(self::flatten($this->registry()->releases($this->id, $source)), ['v3', 'v1']);
+    }
+
+    #[Test]
     public function failedTailLoadingStillServesTheStoredReleases(): void
     {
         $source = ArrayReleaseSource::ofTags(['v4', 'v3', 'v2', 'v1']);

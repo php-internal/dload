@@ -17,9 +17,12 @@ final class ReleasePage
     /**
      * @param list<ReleaseRecord> $releases Releases of the page, newest first.
      * @param bool $last Whether the listing has no page after this one.
+     * @param int<0, max> $skipped Number of releases of the page the source could not read. They
+     *        are absent from `$releases` although they exist upstream.
      */
     public function __construct(
         public readonly array $releases,
         public readonly bool $last,
+        public readonly int $skipped = 0,
     ) {}
 }

@@ -133,6 +133,15 @@ final class GitHubRepositoryTest
     }
 
     #[Test]
+    public function unreadableReleasesAreCountedOnThePage(): void
+    {
+        $page = (new GitHubReleaseSource(self::api(new PagedClientStub(pages: 1, broken: 2))))->pages()->current();
+
+        Assert::same(\count($page->releases), 98);
+        Assert::same($page->skipped, 2);
+    }
+
+    #[Test]
     public function assetDigestReportedByTheApiIsStored(): void
     {
         $storage = new InMemoryRegistryStorage();
@@ -166,17 +175,21 @@ final class GitHubRepositoryTest
         PagedClientStub $client,
         VersionRegistry $registry = new PassThroughRegistry(),
     ): GitHubRepository {
+        return new GitHubRepository(self::api($client), 'owner', 'repo', new Logger(), $registry);
+    }
+
+    private static function api(PagedClientStub $client): RepositoryApi
+    {
         $logger = new Logger();
         $httpFactory = new NyholmFactoryImpl($logger);
-        $api = new RepositoryApi(
+
+        return new RepositoryApi(
             new Client($httpFactory, $client, new GitHubConfig()),
             $httpFactory,
             'owner',
             'repo',
             $logger,
         );
-
-        return new GitHubRepository($api, 'owner', 'repo', $logger, $registry);
     }
 
     private static function registry(InMemoryRegistryStorage $storage): StoredVersionRegistry

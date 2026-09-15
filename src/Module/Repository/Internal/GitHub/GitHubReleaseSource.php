@@ -29,7 +29,7 @@ final class GitHubReleaseSource implements ReleaseSource
         $first = \intdiv($offset, RepositoryApi::RELEASES_PER_PAGE) + 1;
 
         foreach ($this->api->releasePages($first) as $page) {
-            yield $skip === 0 ? $page : new ReleasePage(\array_slice($page->releases, $skip), $page->last);
+            yield $skip === 0 ? $page : new ReleasePage(\array_slice($page->releases, $skip), $page->last, $page->skipped);
             $skip = 0;
         }
     }

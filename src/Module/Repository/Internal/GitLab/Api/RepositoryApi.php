@@ -135,11 +135,13 @@ final class RepositoryApi
 
             $releases = [];
             $failure = null;
+            $skipped = 0;
             foreach ($data as $releaseData) {
                 try {
                     $releases[] = ReleaseInfo::fromApiResponse($releaseData)->toRecord();
                 } catch (\Throwable $e) {
                     $failure ??= $e;
+                    ++$skipped;
                     // Skip invalid releases
                     continue;
                 }
@@ -161,7 +163,7 @@ final class RepositoryApi
 
             $hasMorePages = $this->hasNextPage($response);
 
-            yield new ReleasePage($releases, !$hasMorePages);
+            yield new ReleasePage($releases, !$hasMorePages, $skipped);
 
             $currentPage++;
         } while ($hasMorePages);

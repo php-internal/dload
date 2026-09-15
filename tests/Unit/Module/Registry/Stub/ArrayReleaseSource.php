@@ -28,6 +28,13 @@ final class ArrayReleaseSource implements ReleaseSource
     public ?\Throwable $failure = null;
 
     /**
+     * Tags of releases the source cannot read: they are left out of the pages and counted as skipped.
+     *
+     * @var list<non-empty-string>
+     */
+    public array $unreadable = [];
+
+    /**
      * @param list<ReleaseRecord> $releases Newest first.
      * @param int<1, max> $perPage
      */
@@ -84,8 +91,12 @@ final class ArrayReleaseSource implements ReleaseSource
             $this->served[] = $page * $this->perPage;
             $items = \array_slice($this->releases, $page * $this->perPage, $this->perPage);
             $last = ($page + 1) * $this->perPage >= \count($this->releases);
+            $readable = \array_values(\array_filter(
+                $items,
+                fn(ReleaseRecord $release): bool => !\in_array($release->tag, $this->unreadable, true),
+            ));
 
-            yield new ReleasePage(\array_slice($items, $skip), $last);
+            yield new ReleasePage(\array_slice($readable, $skip), $last, \count($items) - \count($readable));
 
             $skip = 0;
             ++$page;

@@ -29,11 +29,13 @@ final class PagedClientStub implements ClientInterface
      * @param int<1, max> $pages Number of pages the list is split into when 100 releases are requested per page.
      * @param int<1, max> $releasesPerPage Number of releases on every such page.
      * @param int<0, max> $drafts Draft releases listed on top, as the API shows them to the token holder.
+     * @param int<0, max> $broken Number of the newest published releases that cannot be decoded.
      */
     public function __construct(
         private readonly int $pages = 1,
         private readonly int $releasesPerPage = 100,
         private readonly int $drafts = 0,
+        private readonly int $broken = 0,
     ) {}
 
     public function sendRequest(RequestInterface $request): ResponseInterface
@@ -94,7 +96,8 @@ final class PagedClientStub implements ClientInterface
             $tag = $i < 1 ? \sprintf('draft-%d', 1 - $i) : \sprintf('v1.0.%d', $i);
             $releases[] = [
                 'name' => $tag,
-                'tag_name' => $tag,
+                // A number where a string belongs fails the strict constructor of the response object
+                'tag_name' => $i >= 1 && $i <= $this->broken ? $i : $tag,
                 'published_at' => '2024-01-01T00:00:00Z',
                 'assets' => [[
                     'name' => 'rr-linux-amd64.tar.gz',
