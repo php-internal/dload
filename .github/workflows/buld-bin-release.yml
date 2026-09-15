@@ -172,7 +172,7 @@ jobs:
             ./dload-${{ env.VERSION }}-darwin-arm64.tar.gz
 
   build-macos-amd64:
-    runs-on: macos-latest
+    runs-on: macos-15-intel
     name: 📦 Build macOS (x64)
     steps:
       - name: Checkout code
