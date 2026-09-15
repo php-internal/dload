@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.16.1](https://github.com/php-internal/dload/compare/1.16.0...1.16.1) (2026-09-15)
+
+
+### Bug Fixes
+
+* **ci:** pass GITHUB_TOKEN to acceptance tests so they stop hitting the rate limit ([71c6ae1](https://github.com/php-internal/dload/commit/71c6ae14014e6c0b8c1d294f5d47fecd781dc76c))
+
 ## [1.16.0](https://github.com/php-internal/dload/compare/1.15.2...1.16.0) (2026-09-15)
 
 
