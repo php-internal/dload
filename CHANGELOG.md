@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.16.2](https://github.com/php-internal/dload/compare/1.16.1...1.16.2) (2026-09-15)
+
+
+### Bug Fixes
+
+* **ci:** pin the Windows binary build to windows-2022 ([50d3f09](https://github.com/php-internal/dload/commit/50d3f09b82d31bacf846d99b5ef4b14b4acdb938))
+* **ci:** run the macOS x64 binary build on a real Intel runner ([1db2385](https://github.com/php-internal/dload/commit/1db238578cb11e9d646f260dd8dda43af317e112))
+
 ## [1.16.1](https://github.com/php-internal/dload/compare/1.16.0...1.16.1) (2026-09-15)
 
 
