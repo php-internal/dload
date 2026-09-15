@@ -79,12 +79,13 @@ jobs:
           format: "tar.gz"
           name: dload-${{ env.VERSION }}-${{ matrix.platform.os }}-${{ matrix.platform.arch }}
 
-      - name: 📤 Upload release assets
-        uses: softprops/action-gh-release@v2
+      - name: 📤 Upload build artifact
+        uses: actions/upload-artifact@v4
         with:
-          tag_name: ${{ env.RELEASE_TAG }}
-          files: |
-            ./dload-${{ env.VERSION }}-${{ matrix.platform.os }}-${{ matrix.platform.arch }}.tar.gz
+          name: dload-${{ env.VERSION }}-${{ matrix.platform.os }}-${{ matrix.platform.arch }}
+          path: ./dload-${{ env.VERSION }}-${{ matrix.platform.os }}-${{ matrix.platform.arch }}.tar.gz
+          retention-days: 1
+          if-no-files-found: error
 
   build-macos-arm64:
     runs-on: macos-14
@@ -164,12 +165,13 @@ jobs:
           format: "tar.gz"
           name: dload-${{ env.VERSION }}-darwin-arm64
 
-      - name: 📤 Upload release assets
-        uses: softprops/action-gh-release@v2
+      - name: 📤 Upload build artifact
+        uses: actions/upload-artifact@v4
         with:
-          tag_name: ${{ env.RELEASE_TAG }}
-          files: |
-            ./dload-${{ env.VERSION }}-darwin-arm64.tar.gz
+          name: dload-${{ env.VERSION }}-darwin-arm64
+          path: ./dload-${{ env.VERSION }}-darwin-arm64.tar.gz
+          retention-days: 1
+          if-no-files-found: error
 
   build-macos-amd64:
     runs-on: macos-15-intel
@@ -258,12 +260,13 @@ jobs:
           format: "tar.gz"
           name: dload-${{ env.VERSION }}-darwin-amd64
 
-      - name: 📤 Upload release assets
-        uses: softprops/action-gh-release@v2
+      - name: 📤 Upload build artifact
+        uses: actions/upload-artifact@v4
         with:
-          tag_name: ${{ env.RELEASE_TAG }}
-          files: |
-            ./dload-${{ env.VERSION }}-darwin-amd64.tar.gz
+          name: dload-${{ env.VERSION }}-darwin-amd64
+          path: ./dload-${{ env.VERSION }}-darwin-amd64.tar.gz
+          retention-days: 1
+          if-no-files-found: error
 
   build-windows:
     runs-on: windows-2022
@@ -332,9 +335,37 @@ jobs:
           format: "tar.gz"
           name: dload-${{ env.VERSION }}-windows-amd64
 
+      - name: 📤 Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dload-${{ env.VERSION }}-windows-amd64
+          path: ./dload-${{ env.VERSION }}-windows-amd64.tar.gz
+          retention-days: 1
+          if-no-files-found: error
+
+  # A single job publishes every binary to the release. The build jobs run in
+  # parallel and used to upload straight to the release, where concurrent
+  # action-gh-release calls raced and dropped a random subset of assets each
+  # release. Collecting the artifacts and attaching them once removes the race.
+  publish:
+    name: 📤 Publish binaries to the release
+    needs:
+      - build-unix
+      - build-macos-arm64
+      - build-macos-amd64
+      - build-windows
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: 📥 Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
       - name: 📤 Upload release assets
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.RELEASE_TAG }}
-          files: |
-            ./dload-${{ env.VERSION }}-windows-amd64.tar.gz
+          files: dist/*.tar.gz
