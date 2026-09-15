@@ -7,7 +7,6 @@
     "check-requirements": false,
     "dump-autoload": false,
     "compression": "GZ",
-    "git": "git",
     "directories": [
         "src",
         "vendor"

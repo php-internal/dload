@@ -51,6 +51,8 @@ jobs:
 
       - name: 🧪 Collect code coverage with Xdebug and Testo
         run: composer test:cc
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 📤 Upload code coverage report to Codecov
         uses: codecov/codecov-action@v4
@@ -103,6 +105,8 @@ jobs:
 
       - name: 🧪 Run tests
         run: composer test
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   compile-phar:
     timeout-minutes: 4
