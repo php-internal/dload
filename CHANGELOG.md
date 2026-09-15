@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.16.3](https://github.com/php-internal/dload/compare/1.16.2...1.16.3) (2026-09-15)
+
+
+### Bug Fixes
+
+* **ci:** add build timeouts and make the release publish best-effort ([955cd24](https://github.com/php-internal/dload/commit/955cd24422f111b72b5c4ccac5adccc01e4d3ef2))
+* **ci:** drop the macOS x64 binary build ([02d4f9b](https://github.com/php-internal/dload/commit/02d4f9be29146b4a4c52352ba94797a56a1a343d))
+* **ci:** publish release binaries from one job to stop the upload race ([56685ae](https://github.com/php-internal/dload/commit/56685ae6e6fc4b804360d5e280113cf26b0de2e6))
+
 ## [1.16.2](https://github.com/php-internal/dload/compare/1.16.1...1.16.2) (2026-09-15)
 
 
