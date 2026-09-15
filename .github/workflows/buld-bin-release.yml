@@ -21,6 +21,7 @@ env:
 jobs:
   build-unix:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     name: 📦 Build Unix Executables
     strategy:
       fail-fast: false
@@ -89,6 +90,7 @@ jobs:
 
   build-macos-arm64:
     runs-on: macos-14
+    timeout-minutes: 30
     name: 📦 Build macOS ARM64
     steps:
       - name: Checkout code
@@ -175,6 +177,7 @@ jobs:
 
   build-macos-amd64:
     runs-on: macos-15-intel
+    timeout-minutes: 30
     name: 📦 Build macOS (x64)
     steps:
       - name: Checkout code
@@ -270,6 +273,7 @@ jobs:
 
   build-windows:
     runs-on: windows-2022
+    timeout-minutes: 30
     name: 📦 Build Windows (x64)
     steps:
       - name: Checkout code
@@ -354,7 +358,11 @@ jobs:
       - build-macos-arm64
       - build-macos-amd64
       - build-windows
+    # Run even when a build fails so the platforms that did build still ship;
+    # the failed build stays red as the honest signal that one is missing.
+    if: ${{ always() }}
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: write
     steps:
