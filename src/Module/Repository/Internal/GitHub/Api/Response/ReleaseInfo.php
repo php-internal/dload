@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Repository\Internal\GitHub\Api\Response;
 
+use Internal\DLoad\Module\Registry\Record\AssetRecord;
+use Internal\DLoad\Module\Registry\Record\ReleaseRecord;
+
 /**
  * GitHub Release Data Transfer Object.
  *
@@ -20,7 +23,7 @@ final class ReleaseInfo
     public function __construct(
         public readonly string $name,
         public readonly string $tagName,
-        public readonly \DateTimeImmutable $publishedAt,
+        public readonly ?\DateTimeImmutable $publishedAt,
         public readonly array $assets,
         public readonly bool $prerelease,
         public readonly bool $draft,
@@ -30,12 +33,13 @@ final class ReleaseInfo
      * @param array{
      *     name: string|null,
      *     tag_name: string,
-     *     published_at: string,
+     *     published_at: string|null,
      *     assets: array<array-key, array{
      *         name: string,
      *         browser_download_url: string,
      *         size: int,
-     *         content_type: string
+     *         content_type: string,
+     *         digest?: string|null
      *     }>,
      *     prerelease: bool,
      *     draft: bool
@@ -51,10 +55,32 @@ final class ReleaseInfo
         return new self(
             name: $data['name'] ?? $data['tag_name'],
             tagName: $data['tag_name'],
-            publishedAt: new \DateTimeImmutable($data['published_at']),
+            // A draft has not been published yet
+            publishedAt: $data['published_at'] === null ? null : new \DateTimeImmutable($data['published_at']),
             assets: $assets,
             prerelease: $data['prerelease'],
             draft: $data['draft'],
+        );
+    }
+
+    /**
+     * Maps the release into the provider-neutral registry record.
+     *
+     * A draft is visible to the token holder only, and the registry may be shared, so it becomes a
+     * hidden placeholder that carries nothing but the tag.
+     */
+    public function toRecord(): ReleaseRecord
+    {
+        if ($this->draft) {
+            return new ReleaseRecord(tag: $this->tagName, name: $this->tagName, hidden: true);
+        }
+
+        return new ReleaseRecord(
+            tag: $this->tagName,
+            name: $this->name,
+            publishedAt: $this->publishedAt,
+            prerelease: $this->prerelease,
+            assets: \array_map(static fn(AssetInfo $asset): AssetRecord => $asset->toRecord(), $this->assets),
         );
     }
 }

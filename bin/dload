@@ -51,6 +51,7 @@ use Symfony\Component\Console\CommandLoader\FactoryCommandLoader;
             Command\Show::getCommandName() => static fn() => new Command\Show(),
             Command\Init::getCommandName() => static fn() => new Command\Init(),
             Command\Build::getCommandName() => static fn() => new Command\Build(),
+            Command\CacheClear::getCommandName() => static fn() => new Command\CacheClear(),
         ]),
     );
     $application->setDefaultCommand(Command\Get::getCommandName(), false);

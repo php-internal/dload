@@ -9,6 +9,7 @@ use Internal\DLoad\Module\Repository\Internal\CachedGenerator;
 use Testo\Assert;
 use Testo\Codecov\Covers;
 use Testo\Data\DataProvider;
+use Testo\Expect;
 use Testo\Test;
 
 #[Covers(CachedGenerator::class)]
@@ -268,6 +269,59 @@ final class CachedGeneratorTest
         Assert::same($firstAccess, 0);
         Assert::count($partialIteration, 10);
         Assert::same($totalCount, 1000);
+    }
+
+    /**
+     * Tests that loaded() returns only the items already produced, without pulling more from the generator.
+     */
+    #[Test]
+    public function loadedReturnsOnlyItemsProducedSoFar(): void
+    {
+        $generator = $this->createGenerator(5);
+        $cachedGenerator = new CachedGenerator($generator);
+
+        $i = 0;
+        foreach ($cachedGenerator as $item) {
+            if (++$i >= 2) {
+                break;
+            }
+        }
+
+        $loaded = $cachedGenerator->loaded();
+
+        Assert::same($loaded, [0, 1]);
+    }
+
+    /**
+     * Tests that isEmpty() returns false once the cache holds items, without touching the generator again.
+     */
+    #[Test]
+    public function isEmptyReturnsFalseWhenCacheAlreadyPopulated(): void
+    {
+        $generator = $this->createGenerator(3);
+        $cachedGenerator = new CachedGenerator($generator);
+
+        $cachedGenerator->first();
+        $isEmpty = $cachedGenerator->isEmpty();
+
+        Assert::false($isEmpty);
+    }
+
+    /**
+     * Tests that an exception raised while advancing the generator is re-thrown to the caller.
+     */
+    #[Test]
+    public function throwingGeneratorRethrowsException(): void
+    {
+        $generator = (static function () {
+            yield 'a';
+            throw new \RuntimeException('boom');
+        })();
+        $cachedGenerator = new CachedGenerator($generator);
+
+        Expect::exception(\RuntimeException::class)->withMessage('boom');
+
+        \iterator_to_array($cachedGenerator);
     }
 
     /**

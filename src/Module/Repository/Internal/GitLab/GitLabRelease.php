@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Internal\DLoad\Module\Repository\Internal\GitLab;
 
 use Internal\Destroy\Destroyable;
+use Internal\DLoad\Module\Registry\Record\ReleaseRecord;
 use Internal\DLoad\Module\Repository\Collection\AssetsCollection;
-use Internal\DLoad\Module\Repository\Internal\GitLab\Api\Response\ReleaseInfo;
 use Internal\DLoad\Module\Repository\Internal\GitLab\Api\RepositoryApi;
 use Internal\DLoad\Module\Repository\Internal\Release;
 use Internal\DLoad\Module\Version\Version;
@@ -30,17 +30,20 @@ final class GitLabRelease extends Release implements Destroyable
         parent::__construct($repository, $name, $version);
     }
 
-    public static function fromDTO(
+    /**
+     * @throws \InvalidArgumentException When the release tag is not a version.
+     */
+    public static function fromRecord(
         RepositoryApi $api,
         GitLabRepository $repository,
-        ReleaseInfo $dto,
+        ReleaseRecord $record,
     ): self {
-        $version = Version::fromVersionString($dto->tagName);
-        $result = new self($repository, $dto->name, $version);
+        $version = Version::fromVersionString($record->tag);
+        $result = new self($repository, $record->name, $version);
 
-        $result->assets = AssetsCollection::create(static function () use ($api, $result, $dto): \Generator {
-            foreach ($dto->assets as $assetDTO) {
-                yield GitLabAsset::fromDTO($api, $result, $assetDTO);
+        $result->assets = AssetsCollection::create(static function () use ($api, $result, $record): \Generator {
+            foreach ($record->assets as $asset) {
+                yield GitLabAsset::fromRecord($api, $result, $asset);
             }
         });
 

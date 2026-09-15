@@ -6,6 +6,7 @@ namespace Internal\DLoad\Tests\Unit\Module\Repository\Internal\GitHub\Api;
 
 use Internal\DLoad\Module\Repository\Exception\AccessDeniedException;
 use Internal\DLoad\Module\Repository\Exception\ApiException;
+use Internal\DLoad\Module\Repository\Exception\AssetNotFoundException;
 use Internal\DLoad\Module\Repository\Exception\RateLimitException;
 use Internal\DLoad\Module\Repository\Exception\RepositoryNotFoundException;
 use Internal\DLoad\Module\Repository\Internal\GitHub\Api\ResponseValidator;
@@ -126,18 +127,33 @@ final class ResponseValidatorTest
     }
 
     #[Test]
-    public function repositoryIsResolvedFromAssetDownloadUrl(): void
+    public function missingAssetIsNotReportedAsMissingRepository(): void
     {
         $validator = new ResponseValidator(authenticated: false);
         $request = new Request('GET', 'https://github.com/owner/repo/releases/download/v1.0.0/asset.zip');
-        $response = new ResponseStub(404, [], \json_encode(['message' => 'Not Found']));
+        $response = new ResponseStub(404, [], 'Not Found');
 
         try {
             $validator->validate($request, $response);
-            Assert::fail('RepositoryNotFoundException is expected.');
-        } catch (RepositoryNotFoundException $e) {
+            Assert::fail('AssetNotFoundException is expected.');
+        } catch (AssetNotFoundException $e) {
+            // The repository is still known, but the advice about tokens and addresses would mislead
             Assert::same($e->repository, 'owner/repo');
+            Assert::string($e->getMessage())->contains('asset is no longer available');
+            Assert::string($e->getMessage())->contains('release may have been deleted');
+            Assert::string($e->getMessage())->notContains('GITHUB_TOKEN');
         }
+    }
+
+    #[Test]
+    public function forbiddenAssetIsStillAnAccessProblem(): void
+    {
+        $validator = new ResponseValidator(authenticated: false);
+        $request = new Request('GET', 'https://github.com/owner/repo/releases/download/v1.0.0/asset.zip');
+
+        Expect::exception(AccessDeniedException::class);
+
+        $validator->validate($request, new ResponseStub(403, [], 'Forbidden'));
     }
 
     #[Test]
@@ -169,6 +185,24 @@ final class ResponseValidatorTest
             $message = $e->getMessage();
             Assert::same(\preg_match('//u', $message), 1, 'The message must stay valid UTF-8.');
             Assert::string($message)->contains('…');
+        }
+    }
+
+    #[Test]
+    public function unrecognizedUriLeavesRepositoryUnknown(): void
+    {
+        $validator = new ResponseValidator(authenticated: false);
+        // A URI that is neither an API call nor a github.com link exposes no owner/repo pair
+        $request = new Request('GET', 'https://example.com/health');
+        $response = new ResponseStub(404, [], \json_encode(['message' => 'Not Found']));
+
+        try {
+            $validator->validate($request, $response);
+            Assert::fail('RepositoryNotFoundException is expected.');
+        } catch (RepositoryNotFoundException $e) {
+            Assert::null($e->repository);
+            // With no repository, the message falls back to the raw endpoint
+            Assert::string($e->getMessage())->contains('GET https://example.com/health');
         }
     }
 

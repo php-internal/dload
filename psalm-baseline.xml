@@ -174,6 +174,7 @@
       <code><![CDATA[$releaseAttempt]]></code>
       <code><![CDATA[$repoConfig]]></code>
       <code><![CDATA[$repositoryAttempt]]></code>
+      <code><![CDATA[$repositoryId]]></code>
     </PropertyNotSetInConstructor>
   </file>
   <file src="src/Module/Downloader/SoftwareCollection.php">

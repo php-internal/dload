@@ -283,4 +283,122 @@ final class CollectionTest
         $emptyCollection = $testCollection::create([]);
         Assert::true($emptyCollection->limit(5)->empty());
     }
+
+    #[Test]
+    public function createFromClosure(): void
+    {
+        $testCollection = new class([]) extends Collection {};
+
+        // A closure is invoked once and its result converted to a collection
+        $collection = $testCollection::create(static fn(): array => ['a', 'b', 'c']);
+
+        Assert::equals($collection->toArray(), ['a', 'b', 'c']);
+    }
+
+    #[Test]
+    public function createFromUnsupportedTypeThrows(): void
+    {
+        $testCollection = new class([]) extends Collection {};
+
+        try {
+            $testCollection::create(42);
+            Assert::fail('Expected InvalidArgumentException for an unsupported input type');
+        } catch (\InvalidArgumentException $e) {
+            Assert::contains(\explode(' ', $e->getMessage()), 'int.');
+        }
+    }
+
+    #[Test]
+    public function firstWithoutFilterOnArray(): void
+    {
+        $testCollection = new class([]) extends Collection {};
+        $items = [(object) ['n' => 10], (object) ['n' => 20], (object) ['n' => 30]];
+        $collection = $testCollection::create($items);
+
+        // No collection filters and no argument: returns the first stored item
+        Assert::same($collection->first(), $items[0]);
+    }
+
+    #[Test]
+    public function firstWithoutFilterOnEmptyArrayReturnsNull(): void
+    {
+        $testCollection = new class([]) extends Collection {};
+        $collection = $testCollection::create([]);
+
+        Assert::null($collection->first());
+    }
+
+    #[Test]
+    public function firstWithoutFilterOnPaginator(): void
+    {
+        $testCollection = new class([]) extends Collection {};
+
+        $first = (object) ['label' => 'first'];
+        $pageLoader = static function () use ($first): \Generator {
+            yield [$first, (object) ['label' => 'second']];
+            yield [(object) ['label' => 'third']];
+        };
+        $collection = $testCollection::create(Paginator::createFromGenerator($pageLoader(), null));
+
+        // No filters: served straight from the cached generator's first()
+        Assert::same($collection->first(), $first);
+    }
+
+    #[Test]
+    public function firstReturnsNullWhenNothingMatches(): void
+    {
+        $testCollection = new class([]) extends Collection {};
+        $collection = $testCollection::create([1, 2, 3]);
+
+        // A filter that excludes everything exhausts the iterator and yields null
+        $first = $collection
+            ->filter(static fn($item) => $item > 100)
+            ->first();
+
+        Assert::null($first);
+    }
+
+    #[Test]
+    public function countWithoutFiltersOnPaginator(): void
+    {
+        $testCollection = new class([]) extends Collection {};
+
+        $pageLoader = static function (): \Generator {
+            yield [1, 2, 3];
+            yield [4, 5];
+        };
+        $collection = $testCollection::create(Paginator::createFromGenerator($pageLoader(), null));
+
+        // No filters and no limit: counted by the cached generator across all pages
+        Assert::count($collection, 5);
+    }
+
+    #[Test]
+    public function emptyWithoutFiltersOnPaginator(): void
+    {
+        $testCollection = new class([]) extends Collection {};
+
+        $nonEmptyLoader = static function (): \Generator {
+            yield ['only'];
+        };
+        $nonEmpty = $testCollection::create(Paginator::createFromGenerator($nonEmptyLoader(), null));
+        Assert::false($nonEmpty->empty());
+
+        $emptyLoader = static function (): \Generator {
+            yield [];
+        };
+        $empty = $testCollection::create(Paginator::createFromGenerator($emptyLoader(), null));
+        Assert::true($empty->empty());
+    }
+
+    #[Test]
+    public function emptyWithFilter(): void
+    {
+        $testCollection = new class([]) extends Collection {};
+        $collection = $testCollection::create([(object) ['n' => 1], (object) ['n' => 2], (object) ['n' => 3]]);
+
+        // With filters, emptiness is decided by first(): all excluded -> empty
+        Assert::true($collection->filter(static fn($item) => $item->n > 100)->empty());
+        Assert::false($collection->filter(static fn($item) => $item->n > 1)->empty());
+    }
 }

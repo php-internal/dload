@@ -7,6 +7,7 @@ namespace Internal\DLoad\Module\Repository\Internal\GitHub;
 use Internal\DLoad\Module\Config\Schema\Embed\Repository as RepositoryConfig;
 use Internal\DLoad\Module\Config\Schema\GitHub;
 use Internal\DLoad\Module\HttpClient\Factory as HttpFactory;
+use Internal\DLoad\Module\Registry\VersionRegistry;
 use Internal\DLoad\Module\Repository\Internal\GitHub\Api\Client;
 use Internal\DLoad\Module\Repository\Internal\GitHub\Api\RepositoryApi;
 use Internal\DLoad\Module\Repository\RepositoryFactory;
@@ -30,6 +31,7 @@ final class Factory implements RepositoryFactory
         private readonly HttpFactory $httpFactory,
         GitHub $gitHubConfig,
         private readonly Logger $logger,
+        private readonly VersionRegistry $registry,
     ) {
         $this->gitHubClient = new Client(
             $httpFactory,
@@ -50,7 +52,7 @@ final class Factory implements RepositoryFactory
 
         $api = $this->createRepositoryApi($org, $repo);
 
-        return new GitHubRepository($api, $org, $repo, $this->logger);
+        return new GitHubRepository($api, $org, $repo, $this->logger, $this->registry);
     }
 
     /**

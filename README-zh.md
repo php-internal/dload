@@ -48,6 +48,7 @@ DLoad 解决了 PHP 项目中的一个实际问题：如何在分发 PHP 代码�
     - [下载类型](#下载类型)
     - [版本约束](#版本约束)
     - [高级配置选项](#高级配置选项)
+    - [版本注册表](#版本注册表)
 - [构建自定义 RoadRunner](#构建自定义-roadrunner)
     - [构建动作配置](#构建动作配置)
     - [Velox 动作属性](#velox-动作属性)
@@ -172,6 +173,7 @@ composer require internal/dload -W
 | `--stability` | 发布稳定性 (stable, beta) | stable |
 | `--config` | 配置文件路径 | ./dload.xml |
 | `--force`, `-f` | 即使二进制文件已存在也强制下载 | false |
+| `--refresh`, `-r` | 即使版本注册表仍然有效，也检查仓库是否有新发布 | false |
 
 ### 查看软件
 
@@ -347,6 +349,68 @@ DLoad 支持三种下载类型，它们决定了资源的处理方式：
     </actions>
 </dload>
 ```
+
+### 版本注册表
+
+解析版本意味着向 GitHub 或 GitLab 请求仓库的发布列表。DLoad 会把获取到的信息保存在本地的
+**版本注册表**中：这是一个小型数据库，记录每个已知仓库的发布版本和资产，每个仓库一个 JSON 文件。
+其中的版本永不过期，过期的只是仓库的*最近一次检查*：只要检查时间比 `cache-ttl` 更新，`dload get`
+就直接从注册表返回结果，不会发出任何 API 请求。检查过期后，DLoad 只向 API 请求此后发布的版本，
+通常只需一次请求。
+
+发布页面仍然按需加载。首次运行只获取找到满足所需版本的发布所需的页面，更早的发布会在之后真正需要时再加载。
+
+注册表默认启用，位于用户缓存目录（`$XDG_CACHE_HOME/dload`，Windows 下为 `%LOCALAPPDATA%\dload\cache`，
+其他情况为 `~/.cache/dload`）：
+
+```xml
+<dload temp-dir="./runtime" cache-dir="./runtime/dload-cache" cache-ttl="3600">
+    <actions>
+        <download software="rr" />
+    </actions>
+</dload>
+```
+
+| 属性        | 环境变量           | 默认值       | 含义                                         |
+|-------------|--------------------|--------------|----------------------------------------------|
+| `cache-dir` | `DLOAD_CACHE_DIR`  | 用户缓存目录 | 版本注册表所在目录。                         |
+| `cache-ttl` | `DLOAD_CACHE_TTL`  | `600`        | 最近一次检查保持有效的秒数。`0` 表示禁用注册表。 |
+
+环境变量优先于 `dload.xml` 中的属性，命令行选项优先于两者。
+
+```bash
+# 即使最近一次检查仍然有效，也强制检查仓库是否有新发布
+./vendor/bin/dload get rr --refresh
+
+# 忘记某个软件所使用的仓库，或清空整个注册表
+./vendor/bin/dload cache:clear rr
+./vendor/bin/dload cache:clear --force
+```
+
+> [!NOTE]
+> 注册表只保存发布的元数据：标签、名称和资产下载链接。下载不会经过注册表，也不会保存任何凭据，
+> 因此该目录可以自由共享或放入 CI 缓存。若因网络错误或 API 速率限制导致检查失败，会使用已保存的发布；
+> 从未见过的仓库仍会明确报错。若某个已保存发布的资产在上游已被删除，下载失败后它会立即从注册表中移除，
+> 并在本次运行放弃之前重新获取发布列表。
+> GitHub 的草稿发布永远不会被提供；注册表只以隐藏占位符的形式保存其标签，用于占据列表中的位置。若提供方将某个发布插入到列表开头以下的位置，例如 GitLab 中 `released_at` 被回填的发布，检查不会发现它；请对该软件运行 `cache:clear` 以获取它。
+
+在 GitHub Actions 中可以在多次工作流运行之间保留该目录，这样每次运行只为上次运行之后发布的版本消耗速率限制：
+
+```yaml
+- name: Restore DLoad version registry
+  uses: actions/cache@v4
+  with:
+    path: ./runtime/dload-cache
+    key: dload-registry-${{ github.run_id }}
+    restore-keys: dload-registry-
+
+- run: ./vendor/bin/dload get
+  env:
+    DLOAD_CACHE_DIR: ./runtime/dload-cache
+```
+
+键中的 `github.run_id` 使每次运行都保存自己的注册表，而 `restore-keys` 让下一次运行从最新的注册表开始。
+同一工作流中并行运行的作业彼此看不到缓存，因为 `actions/cache` 在作业结束时才保存缓存。
 
 ## 构建自定义 RoadRunner
 

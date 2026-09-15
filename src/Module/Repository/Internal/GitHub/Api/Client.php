@@ -18,13 +18,20 @@ use Psr\Http\Message\UriInterface;
  * HTTP client wrapper with GitHub-specific error handling and authentication.
  *
  * Converts unsuccessful responses (rate limits, invalid token, missing repository, etc.)
- * into exceptions with actionable messages. Adds GitHub API token authentication when available.
+ * into exceptions with actionable messages. Adds the GitHub API token to requests bound for GitHub hosts.
  *
  * @internal
  * @psalm-internal Internal\DLoad\Module\Repository\Internal\GitHub
  */
 final class Client
 {
+    /**
+     * Hosts the token may be sent to. Asset URLs come from the API response and from the version
+     * registry on disk, so a tampered file must not be able to point a request with the token at
+     * a host of its choosing.
+     */
+    private const TRUSTED_HOSTS = ['github.com', 'githubusercontent.com'];
+
     /**
      * @var array<non-empty-string, non-empty-string>
      */
@@ -39,9 +46,6 @@ final class Client
         private readonly ClientInterface $client,
         private readonly GitHub $gitHubConfig,
     ) {
-        // Add authorization header if token is available
-        $this->gitHubConfig->token !== null and $this->defaultHeaders['authorization'] = 'Bearer ' . $this->gitHubConfig->token;
-
         $this->validator = new ResponseValidator(authenticated: $this->gitHubConfig->token !== null);
     }
 
@@ -52,9 +56,11 @@ final class Client
      */
     public function request(Method|string $method, string|UriInterface $uri, array $headers = []): ResponseInterface
     {
-        $request = $this->httpFactory->request($method, $uri, $headers + $this->defaultHeaders);
+        $headers += $this->defaultHeaders;
+        $this->gitHubConfig->token !== null && self::isTrusted($uri)
+            and $headers += ['authorization' => 'Bearer ' . $this->gitHubConfig->token];
 
-        return $this->sendRequest($request);
+        return $this->sendRequest($this->httpFactory->request($method, $uri, $headers));
     }
 
     /**
@@ -71,5 +77,22 @@ final class Client
         $this->validator->validate($request, $response);
 
         return $response;
+    }
+
+    private static function isTrusted(string|UriInterface $uri): bool
+    {
+        $host = $uri instanceof UriInterface ? $uri->getHost() : \parse_url($uri, \PHP_URL_HOST);
+        if (!\is_string($host) || $host === '') {
+            return false;
+        }
+
+        $host = \strtolower($host);
+        foreach (self::TRUSTED_HOSTS as $trusted) {
+            if ($host === $trusted || \str_ends_with($host, '.' . $trusted)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

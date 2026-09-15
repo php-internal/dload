@@ -6,6 +6,7 @@ namespace Internal\DLoad\Module\Repository\Internal;
 
 use Internal\DLoad\Module\Repository\Exception\AccessDeniedException;
 use Internal\DLoad\Module\Repository\Exception\ApiException;
+use Internal\DLoad\Module\Repository\Exception\AssetNotFoundException;
 use Internal\DLoad\Module\Repository\Exception\AuthenticationException;
 use Internal\DLoad\Module\Repository\Exception\RateLimitException;
 use Internal\DLoad\Module\Repository\Exception\RepositoryException;
@@ -61,6 +62,16 @@ abstract class ResponseValidator
             ),
             $status === 403 => new AccessDeniedException(
                 $this->accessDeniedMessage($apiMessage, $repository),
+                $repository,
+            ),
+            // A missing asset is not a missing repository: the listing was fine, the file is gone
+            $status === 404 && $this->isAssetUri((string) $request->getUri()) => new AssetNotFoundException(
+                \sprintf(
+                    '%s asset is no longer available: HTTP 404 for %s. '
+                    . 'The release may have been deleted or its assets replaced since the release list was fetched.',
+                    $this->providerName(),
+                    (string) $request->getUri(),
+                ),
                 $repository,
             ),
             $status === 404 => new RepositoryNotFoundException(
@@ -134,6 +145,13 @@ abstract class ResponseValidator
      * @return non-empty-string|null
      */
     abstract protected function repositoryFromUri(string $uri): ?string;
+
+    /**
+     * Whether the URI points to a release asset rather than to the API.
+     *
+     * A 404 for an asset means the release is gone, not that the repository does not exist.
+     */
+    abstract protected function isAssetUri(string $uri): bool;
 
     /**
      * @return positive-int|null Requests per hour allowed without a token.

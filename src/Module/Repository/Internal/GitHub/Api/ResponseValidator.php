@@ -26,6 +26,12 @@ final class ResponseValidator extends BaseValidator
         return 'GITHUB_TOKEN';
     }
 
+    protected function isAssetUri(string $uri): bool
+    {
+        // Assets are served from github.com (and its CDN), the API lives on api.github.com
+        return \str_contains($uri, '/releases/download/');
+    }
+
     protected function repositoryFromUri(string $uri): ?string
     {
         // API calls: https://api.github.com/repos/owner/repo/releases

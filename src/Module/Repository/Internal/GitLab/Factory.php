@@ -7,6 +7,7 @@ namespace Internal\DLoad\Module\Repository\Internal\GitLab;
 use Internal\DLoad\Module\Config\Schema\Embed\Repository as RepositoryConfig;
 use Internal\DLoad\Module\Config\Schema\GitLab;
 use Internal\DLoad\Module\HttpClient\Factory as HttpFactory;
+use Internal\DLoad\Module\Registry\VersionRegistry;
 use Internal\DLoad\Module\Repository\Internal\GitLab\Api\Client;
 use Internal\DLoad\Module\Repository\Internal\GitLab\Api\RepositoryApi;
 use Internal\DLoad\Module\Repository\RepositoryFactory;
@@ -30,6 +31,7 @@ final class Factory implements RepositoryFactory
         private readonly HttpFactory $httpFactory,
         GitLab $gitLabConfig,
         private readonly Logger $logger,
+        private readonly VersionRegistry $registry,
     ) {
         $this->gitLabClient = new Client(
             $httpFactory,
@@ -49,7 +51,7 @@ final class Factory implements RepositoryFactory
         $uri = \is_string($path) && $path !== '' ? $path : $config->uri;
         $api = $this->createRepositoryApi($uri);
 
-        return new GitLabRepository($api, $uri, $this->logger);
+        return new GitLabRepository($api, $uri, $this->logger, $this->registry);
     }
 
     /**

@@ -9,8 +9,8 @@ use Internal\DLoad\Module\Common\Architecture;
 use Internal\DLoad\Module\Common\OperatingSystem;
 use Internal\DLoad\Module\HttpClient\Method;
 use Internal\DLoad\Module\HttpClient\StreamReader;
+use Internal\DLoad\Module\Registry\Record\AssetRecord;
 use Internal\DLoad\Module\Repository\Internal\Asset;
-use Internal\DLoad\Module\Repository\Internal\GitHub\Api\Response\AssetInfo;
 use Internal\DLoad\Module\Repository\Internal\GitHub\Api\RepositoryApi;
 use Internal\DLoad\Module\Repository\Exception\RepositoryException;
 
@@ -41,12 +41,12 @@ final class GitHubAsset extends Asset implements Destroyable
         );
     }
 
-    public static function fromDTO(
+    public static function fromRecord(
         RepositoryApi $api,
         GitHubRelease $release,
-        AssetInfo $dto,
+        AssetRecord $record,
     ): self {
-        return new self($api, $release, $dto->name, $dto->downloadUrl);
+        return new self($api, $release, $record->name, $record->uri);
     }
 
     /**

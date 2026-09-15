@@ -95,6 +95,18 @@ abstract class Collection implements \IteratorAggregate, \Countable
     }
 
     /**
+     * Returns the items loaded so far, ignoring filters and without loading anything more.
+     *
+     * Iterating a lazy collection may cost requests; releasing what has been loaded must not.
+     *
+     * @return list<T>
+     */
+    public function loaded(): array
+    {
+        return \is_array($this->items) ? \array_values($this->items) : $this->items->loaded();
+    }
+
+    /**
      * Maps each item in the collection using the provided callback.
      *
      * @param callable(T): mixed $map Function that transforms each item
