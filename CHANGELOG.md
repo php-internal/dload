@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.16.0](https://github.com/php-internal/dload/compare/1.15.2...1.16.0) (2026-09-15)
+
+
+### Features
+
+* add version registry that keeps release lists between runs ([#119](https://github.com/php-internal/dload/issues/119)) ([c1d5df9](https://github.com/php-internal/dload/commit/c1d5df90be2ce0a37d346bffc3be2a631952e89a))
+* **get:** add `--refresh|-r` to ignore the registry TTL once ([c1d5df9](https://github.com/php-internal/dload/commit/c1d5df90be2ce0a37d346bffc3be2a631952e89a))
+
 ## [1.15.2](https://github.com/php-internal/dload/compare/1.15.1...1.15.2) (2026-09-08)
 
 
