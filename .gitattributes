@@ -1,21 +1,39 @@
+# Line-ending normalization for text files.
 * text=auto
 
-.github                export-ignore
-.phive                 export-ignore
-.*                     export-ignore
-*.dist                 export-ignore
-*.yaml                 export-ignore
-*.xml                  export-ignore
-composer.lock          export-ignore
-composer-require-*     export-ignore
-Makefile               export-ignore
-Dockerfile             export-ignore
-infection.*            export-ignore
-testo.php              export-ignore
-tests                  export-ignore
-docs                   export-ignore
-resources/mock         export-ignore
-CLAUDE.*               export-ignore
+# PHP-aware hunk headers in `git diff`.
+*.php diff=php
 
+# Binary files keep their bytes.
 *.http binary
 *.gpg binary
+
+# Default: nothing is included in the `composer archive` of internal/dload.
+# Re-include only the files the installed package needs below.
+* export-ignore
+
+# Top-level documentation, the manifest and the config schema that `dload.xml` points at.
+/composer.json   -export-ignore
+/LICENSE.md      -export-ignore
+/README*.md      -export-ignore
+/CHANGELOG.md    -export-ignore
+/dload.xsd       -export-ignore
+
+# CLI entry points.
+/bin             -export-ignore
+/bin/dload       -export-ignore
+/bin/dload.bat   -export-ignore
+
+# Source code and the runtime resources it reads: the built-in software registry
+# with its schema, the version file and the logo the README shows.
+/src                            -export-ignore
+/src/**                         -export-ignore
+/resources                      -export-ignore
+/resources/software.json        -export-ignore
+/resources/software.schema.json -export-ignore
+/resources/version.json         -export-ignore
+/resources/logo.svg             -export-ignore
+
+# Agent skills shipped to consumers through `extra.skills` in composer.json.
+/skills          -export-ignore
+/skills/**       -export-ignore
