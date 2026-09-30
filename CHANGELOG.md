@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.16.6](https://github.com/php-internal/dload/compare/1.16.5...1.16.6) (2026-09-30)
+
+
+### Documentation
+
+* **skills:** split dload-fetch-tool into references and cover the version registry ([a408e53](https://github.com/php-internal/dload/commit/a408e539a3cfe8c30b56abddd5aed5c2a4e20d90))
+
 ## [1.16.5](https://github.com/php-internal/dload/compare/1.16.4...1.16.5) (2026-09-15)
 
 
