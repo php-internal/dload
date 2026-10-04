@@ -259,6 +259,24 @@
                 "name": "rapira",
                 "version-command": "--version"
             }
+        },
+        {
+            "name": "Bun",
+            "alias": "bun",
+            "description": "Incredibly fast JavaScript runtime, bundler, test runner, and package manager - all in one.",
+            "homepage": "https://bun.com",
+            "repositories": [
+                {
+                    "type": "github",
+                    "uri": "oven-sh/bun",
+                    "asset-pattern": "/^bun-(?!.*-profile\\.zip$).*/"
+                }
+            ],
+            "binary": {
+                "name": "bun",
+                "pattern": "/^bun(?:x)?(?:\\.exe)?$/",
+                "version-command": "--version"
+            }
         }
     ]
 }

@@ -49,6 +49,12 @@ final class VersionTest
         // Case insensitive stability
         yield 'version with uppercase stability' => ['1.2.3-BETA', '1.2.3-BETA', '1.2.3', null, Stability::Beta];
         yield 'version with mixed case stability' => ['1.2.3-Alpha', '1.2.3-Alpha', '1.2.3', null, Stability::Alpha];
+
+        // Versions with a lowercase word prefix, as used in release tags like `bun-v1.4.2`
+        yield 'prefixed tag with v' => ['bun-v1.4.2', 'bun-v1.4.2', '1.4.2', null, Stability::Stable];
+        yield 'prefixed tag without v' => ['bun-1.4.2', 'bun-1.4.2', '1.4.2', null, Stability::Stable];
+        yield 'prefixed tag with underscore separator' => ['tool_1.4.2', 'tool_1.4.2', '1.4.2', null, Stability::Stable];
+        yield 'prefixed tag with stability suffix' => ['bun-v1.4.2-canary.1', 'bun-v1.4.2-canary.1', '1.4.2', 'canary.1', Stability::Preview];
     }
 
     /**
@@ -65,6 +71,9 @@ final class VersionTest
         yield 'dev-feature+issue-1' => ['dev-feature+issue-1'];
         yield '1.0.0-alpha11+cs-1.1.0' => ['1.0.0-alpha11+cs-1.1.0'];
         yield '1.0.0-beta#comment-part' => ['1.0.0-beta#comment-part'];
+
+        // Prefixes that must still be rejected: text stuck to the digits without a separator
+        yield 'text directly before digits' => ['version1.2.3'];
     }
 
     /**
@@ -127,6 +136,8 @@ final class VersionTest
         // Real cases
         yield 'real case 2' => ['v1.3.1-nexus-cancellation.0', Stability::Preview, 'Temporal cancellation version'];
         yield 'real case 3' => ['v1.3.0', Stability::Stable, 'Stable version'];
+        yield 'prefixed tag' => ['bun-v1.4.2', Stability::Stable, 'Bun release tag'];
+        yield 'prefixed tag with canary suffix' => ['bun-v1.4.2-canary.1', Stability::Preview, 'Bun canary tag'];
     }
 
     /**

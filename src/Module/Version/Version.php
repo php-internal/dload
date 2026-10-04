@@ -13,8 +13,8 @@ use Internal\DLoad\Module\Common\Stability;
  */
 class Version implements \Stringable
 {
-    protected const VERSION_SEMVER_PATTERN = 'v?(\d+\.\d+\.\d+(?:\+\d+)?)([-+][\w.-]+)?';
-    protected const VERSION_FALLBACK_PATTERN = 'v?(\d+(?:\.\d+(?:\.\d+(?:\+\d+)?)?)?)([-+.][\w.-]+)?';
+    protected const VERSION_SEMVER_PATTERN = '(?:[a-z]+[-_])?v?(\d+\.\d+\.\d+(?:\+\d+)?)([-+][\w.-]+)?';
+    protected const VERSION_FALLBACK_PATTERN = '(?:[a-z]+[-_])?v?(\d+(?:\.\d+(?:\.\d+(?:\+\d+)?)?)?)([-+.][\w.-]+)?';
     protected const VERSION_HASH_SUFFIX_PATTERN = '(?:#([a-f0-9]{6,40}))?';
 
     /**
