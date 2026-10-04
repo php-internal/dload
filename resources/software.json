@@ -259,6 +259,23 @@
                 "name": "rapira",
                 "version-command": "--version"
             }
+        },
+        {
+            "name": "Deno",
+            "alias": "deno",
+            "description": "A modern runtime for JavaScript and TypeScript.",
+            "homepage": "https://deno.com",
+            "repositories": [
+                {
+                    "type": "github",
+                    "uri": "denoland/deno",
+                    "asset-pattern": "/^deno-.*/"
+                }
+            ],
+            "binary": {
+                "name": "deno",
+                "version-command": "--version"
+            }
         }
     ]
 }
