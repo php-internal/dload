@@ -46,6 +46,9 @@ use Symfony\Component\Console\Output\OutputInterface;
  *
  * # Check for new releases even if the version registry is still fresh
  * ./vendor/bin/dload get rr --refresh
+ *
+ * # Exit quietly with status 0 when there is nothing to download
+ * ./vendor/bin/dload get --quiet
  * ```
  *
  * @internal
@@ -81,6 +84,12 @@ final class Get extends Base
             InputOption::VALUE_NONE,
             'Check repositories for new releases even if the version registry is still fresh',
         );
+        $this->addOption(
+            'quiet',
+            'q',
+            InputOption::VALUE_NONE,
+            'Exit with status 0 when there is no software to download',
+        );
     }
 
     /**
@@ -95,7 +104,7 @@ final class Get extends Base
      * @return int `Command::SUCCESS` when every requested package is in place,
      *         `Command::FAILURE` when at least one download failed
      *
-     * @throws \RuntimeException When no software is specified to download
+     * @throws \RuntimeException When no software is specified to download, unless `--quiet` is set
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
@@ -107,6 +116,11 @@ final class Get extends Base
         /** @var Actions $actionsConfig */
         $actionsConfig = $container->get(Actions::class);
         $actions = self::getDownloadActions($input, $actionsConfig);
+
+        // With --quiet, "nothing to do" is a success, not an error
+        if ($actions === [] && $input->getOption('quiet')) {
+            return Command::SUCCESS;
+        }
 
         $output->writeln('Architecture: ' . $container->get(Architecture::class)->name);
         $output->writeln('  Op. system: ' . $container->get(OperatingSystem::class)->name);
