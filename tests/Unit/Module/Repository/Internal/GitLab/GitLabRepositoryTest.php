@@ -8,6 +8,7 @@ use Internal\DLoad\Module\Config\Schema\GitLab as GitLabConfig;
 use Internal\DLoad\Module\HttpClient\Internal\NyholmFactoryImpl;
 use Internal\DLoad\Module\Registry\Internal\PassThroughRegistry;
 use Internal\DLoad\Module\Registry\Internal\StoredVersionRegistry;
+use Internal\DLoad\Module\Registry\Record\AssetRecord;
 use Internal\DLoad\Module\Registry\Record\ReleaseRecord;
 use Internal\DLoad\Module\Registry\Record\RepositoryRecord;
 use Internal\DLoad\Module\Registry\RepositoryId;
@@ -15,6 +16,7 @@ use Internal\DLoad\Module\Registry\VersionRegistry;
 use Internal\DLoad\Module\Repository\Exception\RateLimitException;
 use Internal\DLoad\Module\Repository\Internal\GitLab\Api\Client;
 use Internal\DLoad\Module\Repository\Internal\GitLab\Api\RepositoryApi;
+use Internal\DLoad\Module\Repository\Internal\GitLab\GitLabAsset;
 use Internal\DLoad\Module\Repository\Internal\GitLab\GitLabReleaseSource;
 use Internal\DLoad\Module\Repository\Internal\GitLab\GitLabRepository;
 use Internal\DLoad\Module\Repository\ReleaseInterface;
@@ -29,6 +31,7 @@ use Testo\Test;
 
 #[Covers(GitLabRepository::class)]
 #[Covers(GitLabReleaseSource::class)]
+#[Covers(GitLabAsset::class)]
 final class GitLabRepositoryTest
 {
     #[Test]
@@ -181,6 +184,27 @@ final class GitLabRepositoryTest
         Assert::same(
             \array_map(static fn(ReleaseInterface $release): string => $release->getVersion()->string, $releases),
             ['v1.4.2', 'v1.4.1-canary.1'],
+        );
+    }
+
+    #[Test]
+    public function assetsAreDownloadedByTheTagNotTheReleaseName(): void
+    {
+        $client = new PagedClientStub(pages: 1);
+        $registry = new ScriptedRegistryStub([[new ReleaseRecord(
+            'cli/v1.2.3',
+            'CLI 1.2.3',
+            assets: [new AssetRecord('cli-linux-amd64.tar.gz', 'https://gitlab.com/group/project/-/releases/cli%2Fv1.2.3/downloads/cli-linux-amd64.tar.gz')],
+        )]]);
+        $repository = self::createRepository($client, $registry, tagPrefix: 'cli/');
+        $asset = $repository->getReleases()->first()?->getAssets()->first();
+        Assert::notNull($asset);
+
+        \iterator_to_array($asset->download(), false);
+
+        Assert::same(
+            \end($client->uris),
+            'https://gitlab.com/api/v4/projects/group%2Fproject/releases/cli%2Fv1.2.3/downloads/cli-linux-amd64.tar.gz',
         );
     }
 

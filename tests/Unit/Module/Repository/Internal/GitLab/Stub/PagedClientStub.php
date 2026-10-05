@@ -26,6 +26,13 @@ final class PagedClientStub implements ClientInterface
     public array $requests = [];
 
     /**
+     * Full URI of every received request, in order.
+     *
+     * @var list<string>
+     */
+    public array $uris = [];
+
+    /**
      * @param int<1, max> $pages Number of pages the list is split into when 100 releases are requested per page.
      * @param int<1, max> $releasesPerPage Number of releases on every such page.
      */
@@ -38,6 +45,7 @@ final class PagedClientStub implements ClientInterface
     {
         $query = $request->getUri()->getQuery();
         $this->requests[] = $query;
+        $this->uris[] = (string) $request->getUri();
 
         $page = self::pageOf($query);
         $perPage = self::perPageOf($query);
