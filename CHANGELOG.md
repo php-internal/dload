@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.17.0](https://github.com/php-internal/dload/compare/1.16.6...1.17.0) (2026-10-05)
+
+
+### Features
+
+* Add Deno to default registry ([#129](https://github.com/php-internal/dload/issues/129)) ([bdb1a1a](https://github.com/php-internal/dload/commit/bdb1a1a47b5b887283f9b0969d87641edae7b645))
+* **get:** exit with status 0 under --quiet when there is nothing to download ([#132](https://github.com/php-internal/dload/issues/132)) ([c9217e3](https://github.com/php-internal/dload/commit/c9217e3e80f1a3cd62cf721633a9398237cea157))
+* **registry:** add Bun to the default software registry ([7352181](https://github.com/php-internal/dload/commit/7352181202549d6675a59285005e21993df1a6e6)), closes [#130](https://github.com/php-internal/dload/issues/130)
+* **registry:** select releases by a tag prefix ([298a29c](https://github.com/php-internal/dload/commit/298a29cb10dab3f8975eb9cd0104844a07c9427b))
+
+
+### Bug Fixes
+
+* **gitlab:** download release assets by the tag, not the release name ([35ee4ba](https://github.com/php-internal/dload/commit/35ee4bae2d5d6121705997bec4d0ecd6f80f649f))
+
 ## [1.16.6](https://github.com/php-internal/dload/compare/1.16.5...1.16.6) (2026-09-30)
 
 
