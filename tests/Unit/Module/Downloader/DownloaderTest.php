@@ -14,6 +14,7 @@ use Internal\DLoad\Module\Config\Schema\Action\Type;
 use Internal\DLoad\Module\Config\Schema\Downloader as DownloaderConfig;
 use Internal\DLoad\Module\Config\Schema\Embed\Software;
 use Internal\DLoad\Module\Downloader\Downloader;
+use Internal\DLoad\Module\Downloader\Internal\AssetSelection\AssetSelector;
 use Internal\DLoad\Module\Downloader\Exception\DownloadFailed;
 use Internal\DLoad\Module\Downloader\Task\DownloadResult;
 use Internal\DLoad\Module\Repository\Collection\ReleasesCollection;
@@ -426,6 +427,7 @@ final class DownloaderTest
             stability: Stability::Stable,
             archiveService: new ArchiveFactory(),
             registry: $this->registry,
+            assetSelector: new AssetSelector(OperatingSystem::tryFromString('linux') ?? throw new \LogicException(), Architecture::tryFromString('amd64') ?? throw new \LogicException(), new ArchiveFactory()),
         );
 
         $software = Software::fromArray([
@@ -474,6 +476,7 @@ final class DownloaderTest
             stability: Stability::Stable,
             archiveService: new ArchiveFactory(),
             registry: $this->registry,
+            assetSelector: new AssetSelector(OperatingSystem::tryFromString('linux') ?? throw new \LogicException(), Architecture::tryFromString('amd64') ?? throw new \LogicException(), new ArchiveFactory()),
         );
     }
 

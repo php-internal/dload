@@ -18,13 +18,13 @@ use Internal\DLoad\Module\Downloader\Exception\DownloadFailed;
 use Internal\DLoad\Module\Downloader\Exception\NotFound;
 use Internal\DLoad\Module\Downloader\Exception\ReleaseGone;
 use Internal\DLoad\Module\Downloader\Internal\Diagnostics\DownloadDiagnostics;
+use Internal\DLoad\Module\Downloader\Internal\AssetSelection\AssetSelector;
 use Internal\DLoad\Module\Downloader\Internal\DownloadContext;
 use Internal\DLoad\Module\Downloader\Task\DownloadResult;
 use Internal\DLoad\Module\Downloader\Task\DownloadTask;
 use Internal\DLoad\Module\Registry\RepositoryId;
 use Internal\DLoad\Module\Registry\VersionRegistry;
 use Internal\DLoad\Module\Repository\AssetInterface;
-use Internal\DLoad\Module\Repository\Collection\AssetsCollection;
 use Internal\DLoad\Module\Repository\Collection\ReleasesCollection;
 use Internal\DLoad\Module\Repository\Exception\AssetNotFoundException;
 use Internal\DLoad\Module\Repository\Exception\RateLimitException;
@@ -71,6 +71,7 @@ final class Downloader
         private readonly Stability $stability,
         private readonly ArchiveFactory $archiveService,
         private readonly VersionRegistry $registry,
+        private readonly AssetSelector $assetSelector,
     ) {}
 
     /**
@@ -269,8 +270,8 @@ final class Downloader
     /**
      * Processes a release to find suitable assets.
      *
-     * If software has binary configuration, filters assets using all criteria at once.
-     * If no binary configuration exists, applies filters gradually to find the best matching asset.
+     * If software has binary configuration, only assets for the host OS and architecture are tried.
+     * Otherwise assets for another platform are tried after them.
      *
      * @param DownloadContext $context Download context information
      * @return \Closure(): AssetInterface Closure that returns the selected asset
@@ -286,147 +287,43 @@ final class Downloader
 
             $context->releaseAttempt->registerAssets($names);
 
-            return match (true) {
-                // Phar assets usually don't depend on OS or architecture, so we can use gradual filtering
-                $context->actionConfig->type === Type::Phar => $this->findAssetWithGradualFiltering($context),
-                // Use strict filtering when binary configuration exists
-                $context->software->binary !== null => $this->findAssetWithStrictFiltering($context),
-                // Use gradual filtering when no binary configuration exists
-                default => $this->findAssetWithGradualFiltering($context),
-            };
+            // Phar assets usually don't depend on OS or architecture; without a binary configuration
+            // there is nothing to verify the choice, so assets for another platform stay as a fallback.
+            $strict = $context->actionConfig->type !== Type::Phar && $context->software->binary !== null;
+            $selection = $this->assetSelector->select(
+                $context->release->getAssets(),
+                $context->repoConfig->assetPattern,
+                $context->actionConfig->type,
+                $strict,
+            );
+            $this->logger->debug('%d matching assets found.', \count($selection->candidates));
+
+            $selection->isEmpty() and throw new NotFound(
+                $strict
+                    ? \sprintf(
+                        'no asset matches OS `%s`, architecture `%s`, name pattern `%s`%s',
+                        $this->operatingSystem->value,
+                        $this->architecture->value,
+                        $context->repoConfig->assetPattern,
+                        $this->describeFormatFilter($context->actionConfig),
+                    )
+                    : \sprintf(
+                        'no asset matches name pattern `%s`%s',
+                        $context->repoConfig->assetPattern,
+                        $this->describeFormatFilter($context->actionConfig),
+                    ),
+            );
+
+            foreach ($selection->sorted() as $candidate) {
+                $this->logger->debug(
+                    'Asset `%s` ranked [%s].',
+                    $candidate->asset->getName(),
+                    \implode(', ', $candidate->ranks),
+                );
+            }
+
+            return $this->tryProcessAssets($selection->assets(), $context);
         };
-    }
-
-    /**
-     * Finds an asset using strict filtering with all criteria applied at once.
-     *
-     * @param DownloadContext $context Download context information
-     * @return AssetInterface Selected asset
-     * @throws NotFound If no suitable asset is found
-     */
-    private function findAssetWithStrictFiltering(DownloadContext $context): AssetInterface
-    {
-        // Apply all filters at once: OS, architecture, and name pattern
-        $assetsCollection = $context->release->getAssets()
-            ->whereOperatingSystem($this->operatingSystem)
-            ->whereArchitecture($this->architecture)
-            ->whereNameMatches($context->repoConfig->assetPattern);
-
-        /** @var AssetInterface[] $allAssets */
-        $allAssets = $this->addFormatFilter($assetsCollection, $context->actionConfig)->toArray();
-        $this->logger->debug('%d matching assets found.', \count($allAssets));
-
-        $allAssets === [] and throw new NotFound(
-            \sprintf(
-                'no asset matches OS `%s`, architecture `%s`, name pattern `%s`%s',
-                $this->operatingSystem->value,
-                $this->architecture->value,
-                $context->repoConfig->assetPattern,
-                $this->describeFormatFilter($context->actionConfig),
-            ),
-        );
-
-        // Sort assets by priority and try to process them
-        $sortedAssets = $this->sortAssetsByPriority($allAssets, $this->archiveService->getSupportedExtensions());
-
-        return $this->tryProcessAssets($sortedAssets, $context);
-    }
-
-    /**
-     * Finds an asset using gradual filtering, trying different combinations of criteria.
-     *
-     * @param DownloadContext $context Download context information
-     * @return AssetInterface Selected asset
-     * @throws NotFound If no suitable asset is found
-     */
-    private function findAssetWithGradualFiltering(DownloadContext $context): AssetInterface
-    {
-        $assetsCollection = $context->release->getAssets()
-            ->whereNameMatches($context->repoConfig->assetPattern);
-
-        $assetsCollection = $this->addFormatFilter($assetsCollection, $context->actionConfig);
-        $supportedExtensions = $this->archiveService->getSupportedExtensions();
-
-        // If we got here, no assets were found with any filter combination
-        \count($assetsCollection) === 0 and throw new NotFound(
-            \sprintf(
-                'no asset matches name pattern `%s`%s',
-                $context->repoConfig->assetPattern,
-                $this->describeFormatFilter($context->actionConfig),
-            ),
-        );
-
-        // Try #1: Filter by both OS and architecture (most specific)
-        $filteredAssets = $assetsCollection
-            ->whereOperatingSystem($this->operatingSystem)
-            ->whereArchitecture($this->architecture)
-            ->toArray();
-
-        if ($filteredAssets !== []) {
-            $this->logger->debug(
-                'Found %d assets matching OS %s and architecture %s.',
-                \count($filteredAssets),
-                $this->operatingSystem->value,
-                $this->architecture->value,
-            );
-            $sortedAssets = $this->sortAssetsByPriority($filteredAssets, $supportedExtensions);
-            try {
-                return $this->tryProcessAssets($sortedAssets, $context);
-            } catch (NotFound $e) {
-                $this->logger->debug('Failed to process assets with OS and architecture filtering: %s', $e->getMessage());
-                // Continue to next filter strategy
-            }
-        }
-
-        // Try #2: Filter by OS only
-        $filteredAssets = $assetsCollection
-            ->whereOperatingSystem($this->operatingSystem)
-            ->toArray();
-
-        if ($filteredAssets !== []) {
-            $this->logger->debug(
-                'Found %d assets matching OS %s (any architecture).',
-                \count($filteredAssets),
-                $this->operatingSystem->value,
-            );
-            $sortedAssets = $this->sortAssetsByPriority($filteredAssets, $supportedExtensions);
-            try {
-                return $this->tryProcessAssets($sortedAssets, $context);
-            } catch (NotFound $e) {
-                $this->logger->debug('Failed to process assets with OS-only filtering: %s', $e->getMessage());
-                // Continue to next filter strategy
-            }
-        }
-
-        // Try #3: Filter by architecture only
-        $filteredAssets = $assetsCollection
-            ->whereArchitecture($this->architecture)
-            ->toArray();
-
-        if ($filteredAssets !== []) {
-            $this->logger->debug(
-                'Found %d assets matching architecture %s (any OS).',
-                \count($filteredAssets),
-                $this->architecture->value,
-            );
-            $sortedAssets = $this->sortAssetsByPriority($filteredAssets, $supportedExtensions);
-            try {
-                return $this->tryProcessAssets($sortedAssets, $context);
-            } catch (NotFound $e) {
-                $this->logger->debug('Failed to process assets with architecture-only filtering: %s', $e->getMessage());
-                // Continue to next filter strategy
-            }
-        }
-
-        // Try #4: Use name pattern only (least specific)
-        $filteredAssets = $assetsCollection->toArray();
-
-        $this->logger->debug(
-            'Found %d assets matching name pattern (any OS, any architecture).',
-            \count($filteredAssets),
-        );
-        $sortedAssets = $this->sortAssetsByPriority($filteredAssets, $supportedExtensions);
-        return $this->tryProcessAssets($sortedAssets, $context);
     }
 
     /**
@@ -501,36 +398,6 @@ final class Downloader
     }
 
     /**
-     * Sorts assets by priority with supported archives first, then other files.
-     *
-     * @param AssetInterface[] $assets List of assets to sort
-     * @param list<non-empty-string> $supportedExtensions List of supported archive extensions
-     * @return AssetInterface[] Sorted list of assets
-     */
-    private function sortAssetsByPriority(array $assets, array $supportedExtensions): array
-    {
-        $archiveAssets = [];
-        $otherAssets = [];
-
-        foreach ($assets as $asset) {
-            $assetName = \strtolower($asset->getName());
-            $isArchive = false;
-
-            foreach ($supportedExtensions as $extension) {
-                if (\str_ends_with($assetName, '.' . $extension)) {
-                    $archiveAssets[] = $asset;
-                    $isArchive = true;
-                    break;
-                }
-            }
-
-            $isArchive or $otherAssets[] = $asset;
-        }
-
-        return [...$archiveAssets, ...$otherAssets];
-    }
-
-    /**
      * Downloads the selected asset to a temporary file.
      *
      * Creates a temporary file and downloads the asset content, reporting progress via callback.
@@ -589,21 +456,5 @@ final class Downloader
         );
 
         return $temp;
-    }
-
-    /**
-     * Adds format filter to the assets collection if specified in action options.
-     *
-     * @param AssetsCollection $collection Collection of assets to filter
-     * @param DownloadConfig $actionOptions Download action options
-     * @return AssetsCollection Filtered collection
-     */
-    private function addFormatFilter(AssetsCollection $collection, DownloadConfig $actionOptions): AssetsCollection
-    {
-        return match ($actionOptions->type) {
-            Type::Phar => $collection->whereFileExtensions(['phar']),
-            Type::Archive => $collection->whereFileExtensions($this->archiveService->getSupportedExtensions()),
-            default => $collection,
-        };
     }
 }
