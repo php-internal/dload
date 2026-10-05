@@ -7,6 +7,7 @@ namespace Internal\DLoad\Tests\Unit\Module\Downloader;
 use Internal\DLoad\Module\Archive\ArchiveFactory;
 use Internal\DLoad\Module\Common\Architecture;
 use Internal\DLoad\Module\Common\FileSystem\FS;
+use Internal\DLoad\Module\Common\Libc;
 use Internal\DLoad\Module\Common\OperatingSystem;
 use Internal\DLoad\Module\Common\Stability;
 use Internal\DLoad\Module\Config\Schema\Action\Download as DownloadConfig;
@@ -85,6 +86,30 @@ final class AssetSelectionTest
         'SHASUMS256.txt.asc',
     ];
 
+    /**
+     * Assets of the Mago 1.51.2 release: Rust target triples with glibc and musl builds.
+     */
+    private const MAGO_ASSETS = [
+        'mago-1.51.2-aarch64-apple-darwin.tar.gz',
+        'mago-1.51.2-aarch64-unknown-linux-gnu.tar.gz',
+        'mago-1.51.2-aarch64-unknown-linux-musl.tar.gz',
+        'mago-1.51.2-arm-unknown-linux-gnueabi.tar.gz',
+        'mago-1.51.2-arm-unknown-linux-gnueabihf.tar.gz',
+        'mago-1.51.2-arm-unknown-linux-musleabi.tar.gz',
+        'mago-1.51.2-arm-unknown-linux-musleabihf.tar.gz',
+        'mago-1.51.2-armv7-unknown-linux-gnueabihf.tar.gz',
+        'mago-1.51.2-armv7-unknown-linux-musleabihf.tar.gz',
+        'mago-1.51.2-wasm.tar.gz',
+        'mago-1.51.2-x86_64-apple-darwin.tar.gz',
+        'mago-1.51.2-x86_64-pc-windows-gnu.tar.gz',
+        'mago-1.51.2-x86_64-pc-windows-msvc.zip',
+        'mago-1.51.2-x86_64-unknown-freebsd.tar.gz',
+        'mago-1.51.2-x86_64-unknown-linux-gnu.tar.gz',
+        'mago-1.51.2-x86_64-unknown-linux-musl.tar.gz',
+        'source-code.tar.gz',
+        'source-code.zip',
+    ];
+
     private string $tempDir;
 
     public static function provideBunHosts(): \Generator
@@ -138,6 +163,31 @@ final class AssetSelectionTest
         Assert::same($result->file->getFilename(), $expected);
     }
 
+    public static function provideMagoHosts(): \Generator
+    {
+        yield 'Linux x64 glibc' => [Architecture::X86_64, Libc::Gnu, 'mago-1.51.2-x86_64-unknown-linux-gnu.tar.gz'];
+        yield 'Linux x64 musl' => [Architecture::X86_64, Libc::Musl, 'mago-1.51.2-x86_64-unknown-linux-musl.tar.gz'];
+        yield 'Linux arm64 glibc' => [Architecture::ARM_64, Libc::Gnu, 'mago-1.51.2-aarch64-unknown-linux-gnu.tar.gz'];
+        yield 'Linux arm64 musl' => [Architecture::ARM_64, Libc::Musl, 'mago-1.51.2-aarch64-unknown-linux-musl.tar.gz'];
+    }
+
+    #[DataProvider('provideMagoHosts')]
+    #[Test]
+    public function magoBuildForTheHostLibcIsSelected(Architecture $arch, Libc $libc, string $expected): void
+    {
+        $result = $this->download(
+            self::registryEntry('mago'),
+            'carthage-software/mago',
+            '1.51.2',
+            self::MAGO_ASSETS,
+            OperatingSystem::Linux,
+            $arch,
+            $libc,
+        );
+
+        Assert::same($result->file->getFilename(), $expected);
+    }
+
     #[BeforeTest]
     protected function setUp(): void
     {
@@ -174,19 +224,38 @@ final class AssetSelectionTest
 
     private function downloadBun(Software $software, OperatingSystem $os, Architecture $arch): DownloadResult
     {
-        $repository = new RepositoryStub('oven-sh/bun');
-        $release = new ReleaseStub($repository, 'Bun v1.4.2', Version::fromVersionString('v1.4.2'), tag: 'bun-v1.4.2');
+        return $this->download($software, 'oven-sh/bun', 'bun-v1.4.2', self::BUN_ASSETS, $os, $arch, Libc::Gnu);
+    }
+
+    /**
+     * Runs the downloader against one release with the given assets.
+     *
+     * @param non-empty-string $repositoryName
+     * @param non-empty-string $tag
+     * @param list<non-empty-string> $assets Asset names in the order the API lists them.
+     */
+    private function download(
+        Software $software,
+        string $repositoryName,
+        string $tag,
+        array $assets,
+        OperatingSystem $os,
+        Architecture $arch,
+        Libc $libc,
+    ): DownloadResult {
+        $repository = new RepositoryStub($repositoryName);
+        $release = new ReleaseStub($repository, $tag, Version::fromVersionString(\preg_replace('/^[a-z]+-/', '', $tag)), tag: $tag);
         $release->setAssets(\array_map(
             static fn(string $name): AssetStub => new AssetStub(
                 $release,
                 $name,
-                'https://github.com/oven-sh/bun/releases/download/bun-v1.4.2/' . $name,
+                "https://github.com/{$repositoryName}/releases/download/{$tag}/{$name}",
                 OperatingSystem::tryFromBuildName($name),
                 Architecture::tryFromBuildName($name),
             ),
-            self::BUN_ASSETS,
+            $assets,
         ));
-        $repository = new RepositoryStub('oven-sh/bun', ReleasesCollection::create([$release]));
+        $repository = new RepositoryStub($repositoryName, ReleasesCollection::create([$release]));
 
         $config = new DownloaderConfig();
         $config->tmpDir = $this->tempDir;
@@ -202,9 +271,9 @@ final class AssetSelectionTest
             stability: Stability::Stable,
             archiveService: new ArchiveFactory(),
             registry: new RecordingRegistry(),
-            assetSelector: new AssetSelector($os, $arch, new ArchiveFactory()),
+            assetSelector: new AssetSelector($os, $arch, $libc, new ArchiveFactory()),
         );
-        $task = $downloader->download($software, DownloadConfig::fromSoftwareId('bun'), static fn(): null => null);
+        $task = $downloader->download($software, DownloadConfig::fromSoftwareId($software->getId()), static fn(): null => null);
 
         /** @var DownloadResult */
         return await(($task->handler)());

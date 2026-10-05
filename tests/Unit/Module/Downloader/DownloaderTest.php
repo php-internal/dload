@@ -7,6 +7,7 @@ namespace Internal\DLoad\Tests\Unit\Module\Downloader;
 use Internal\DLoad\Module\Archive\ArchiveFactory;
 use Internal\DLoad\Module\Common\Architecture;
 use Internal\DLoad\Module\Common\FileSystem\FS;
+use Internal\DLoad\Module\Common\Libc;
 use Internal\DLoad\Module\Common\OperatingSystem;
 use Internal\DLoad\Module\Common\Stability;
 use Internal\DLoad\Module\Config\Schema\Action\Download as DownloadConfig;
@@ -427,7 +428,7 @@ final class DownloaderTest
             stability: Stability::Stable,
             archiveService: new ArchiveFactory(),
             registry: $this->registry,
-            assetSelector: new AssetSelector(OperatingSystem::tryFromString('linux') ?? throw new \LogicException(), Architecture::tryFromString('amd64') ?? throw new \LogicException(), new ArchiveFactory()),
+            assetSelector: new AssetSelector(OperatingSystem::Linux, Architecture::X86_64, Libc::Gnu, new ArchiveFactory()),
         );
 
         $software = Software::fromArray([
@@ -476,7 +477,7 @@ final class DownloaderTest
             stability: Stability::Stable,
             archiveService: new ArchiveFactory(),
             registry: $this->registry,
-            assetSelector: new AssetSelector(OperatingSystem::tryFromString('linux') ?? throw new \LogicException(), Architecture::tryFromString('amd64') ?? throw new \LogicException(), new ArchiveFactory()),
+            assetSelector: new AssetSelector(OperatingSystem::Linux, Architecture::X86_64, Libc::Gnu, new ArchiveFactory()),
         );
     }
 

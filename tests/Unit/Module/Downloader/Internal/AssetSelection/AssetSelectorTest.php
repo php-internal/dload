@@ -6,6 +6,7 @@ namespace Internal\DLoad\Tests\Unit\Module\Downloader\Internal\AssetSelection;
 
 use Internal\DLoad\Module\Archive\ArchiveFactory;
 use Internal\DLoad\Module\Common\Architecture;
+use Internal\DLoad\Module\Common\Libc;
 use Internal\DLoad\Module\Common\OperatingSystem;
 use Internal\DLoad\Module\Config\Schema\Action\Type;
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\AssetSelector;
@@ -25,6 +26,7 @@ use Testo\Test;
 #[Covers(FormatRule::class)]
 #[Covers(OperatingSystemRule::class)]
 #[Covers(ArchitectureRule::class)]
+#[Covers(LibcRule::class)]
 #[Covers(ArchiveRule::class)]
 final class AssetSelectorTest
 {
@@ -104,6 +106,38 @@ final class AssetSelectorTest
     }
 
     #[Test]
+    public function aGlibcHostPrefersGlibcBuildsAndKeepsMuslOnesAsAFallback(): void
+    {
+        $names = self::select(['tool-x86_64-unknown-linux-musl.tar.gz', 'tool-x86_64-unknown-linux-gnu.tar.gz']);
+
+        Assert::same($names, ['tool-x86_64-unknown-linux-gnu.tar.gz', 'tool-x86_64-unknown-linux-musl.tar.gz']);
+    }
+
+    #[Test]
+    public function aMuslHostPrefersMuslBuilds(): void
+    {
+        $names = self::select(['tool-linux-amd64.tar.gz', 'tool-linux-amd64-musl.tar.gz'], libc: Libc::Musl);
+
+        Assert::same($names, ['tool-linux-amd64-musl.tar.gz', 'tool-linux-amd64.tar.gz']);
+    }
+
+    #[Test]
+    public function aMuslOnlyReleaseIsSelectedOnAGlibcHost(): void
+    {
+        $names = self::select(['tool-x86_64-unknown-linux-musl.tar.gz', 'tool-aarch64-unknown-linux-musl.tar.gz']);
+
+        Assert::same($names, ['tool-x86_64-unknown-linux-musl.tar.gz']);
+    }
+
+    #[Test]
+    public function theLibcIsWeighedAfterThePlatform(): void
+    {
+        $names = self::select(['tool-linux-arm64.tar.gz', 'tool-linux-amd64-musl.tar.gz'], strict: false);
+
+        Assert::same($names, ['tool-linux-amd64-musl.tar.gz', 'tool-linux-arm64.tar.gz']);
+    }
+
+    #[Test]
     public function archivesComeBeforeOtherFiles(): void
     {
         $names = self::select(['tool-linux-amd64', 'tool-linux-amd64.deb', 'tool-linux-amd64.tar.gz']);
@@ -123,8 +157,9 @@ final class AssetSelectorTest
         bool $strict = true,
         OperatingSystem $os = OperatingSystem::Linux,
         Architecture $arch = Architecture::X86_64,
+        Libc $libc = Libc::Gnu,
     ): array {
-        $selection = (new AssetSelector($os, $arch, new ArchiveFactory()))
+        $selection = (new AssetSelector($os, $arch, $libc, new ArchiveFactory()))
             ->select(NamedAssets::create(...$assets), $pattern, $type, $strict);
 
         return \array_map(static fn(AssetInterface $asset): string => $asset->getName(), $selection->assets());

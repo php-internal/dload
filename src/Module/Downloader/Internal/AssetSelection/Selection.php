@@ -40,7 +40,7 @@ final class Selection
     {
         $candidates = [];
         foreach ($assets as $asset) {
-            $candidates[] = new Candidate($asset, \count($candidates));
+            $candidates[] = new Candidate($asset, AssetName::fromString($asset->getName()), \count($candidates));
         }
 
         return new self($candidates, $assetPattern, $type, $strict);

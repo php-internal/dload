@@ -20,6 +20,7 @@ final class Candidate
      */
     public function __construct(
         public readonly AssetInterface $asset,
+        public readonly AssetName $name,
         public readonly int $position,
         public readonly array $ranks = [],
     ) {}
@@ -41,6 +42,6 @@ final class Candidate
 
     public function withRank(int $rank): self
     {
-        return new self($this->asset, $this->position, [...$this->ranks, $rank]);
+        return new self($this->asset, $this->name, $this->position, [...$this->ranks, $rank]);
     }
 }

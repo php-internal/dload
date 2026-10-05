@@ -170,7 +170,7 @@ composer require internal/dload -W
 |-------|----------|--------------|
 | `--path` | Папка для хранения бинарников | Текущая папка |
 | `--arch` | Целевая архитектура (amd64, arm64) | Архитектура системы |
-| `--os` | Целевая ОС (linux, darwin, windows) | Текущая ОС |
+| `--os` | Целевая ОС (linux, alpine, darwin, windows, android) | Текущая ОС |
 | `--stability` | Стабильность релиза (stable, beta) | stable |
 | `--config` | Путь к конфигурационному файлу | ./dload.xml |
 | `--force`, `-f` | Принудительная загрузка даже если бинарник уже есть | false |

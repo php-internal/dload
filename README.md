@@ -171,7 +171,7 @@ Alternatively, you can download the latest release from [GitHub releases](https:
 |--------|-------------|---------|
 | `--path` | Directory to store binaries | Current directory |
 | `--arch` | Target architecture (amd64, arm64) | System architecture |
-| `--os` | Target OS (linux, darwin, windows) | Current OS |
+| `--os` | Target OS (linux, alpine, darwin, windows, android) | Current OS |
 | `--stability` | Release stability (stable, beta) | stable |
 | `--config` | Path to configuration file | ./dload.xml |
 | `--force`, `-f` | Force download even if binary exists | false |
