@@ -28,6 +28,7 @@ enum OperatingSystem: string implements Factoriable
     case BSD = 'freebsd';
     case Linux = 'linux';
     case Windows = 'windows';
+    case Android = 'android';
     case Alpine = 'unknown-musl';
 
     private const ERROR_UNKNOWN_OS = 'Current OS `%s` may not be supported';
@@ -39,9 +40,12 @@ enum OperatingSystem: string implements Factoriable
 
     public static function fromGlobals(): self
     {
-        return self::tryFromString(\PHP_OS_FAMILY) ?? throw new \OutOfRangeException(
+        $os = self::tryFromString(\PHP_OS_FAMILY) ?? throw new \OutOfRangeException(
             \sprintf(self::ERROR_UNKNOWN_OS, \PHP_OS_FAMILY),
         );
+
+        // PHP reports Android as Linux; the variable is set by the Android runtime and Termux
+        return $os === self::Linux && \getenv('ANDROID_ROOT') !== false ? self::Android : $os;
     }
 
     public static function tryFromString(string $name): ?self
@@ -50,6 +54,7 @@ enum OperatingSystem: string implements Factoriable
             'windows', 'win32', 'win64' => self::Windows,
             'bsd', 'freebsd' => self::BSD,
             'darwin', 'macos' => self::Darwin,
+            'android' => self::Android,
             'linux' => \str_contains(\PHP_OS, 'alpine')
                 ? self::Alpine
                 : self::Linux,
@@ -59,6 +64,11 @@ enum OperatingSystem: string implements Factoriable
 
     public static function tryFromBuildName(string $name): ?self
     {
+        // Android builds are also named after Linux, like `aarch64-linux-android`
+        if (\preg_match('/(?:\b|_)android(?:\b|_)/i', $name) === 1) {
+            return self::Android;
+        }
+
         return \preg_match(
             '/(?:\b|_)(windows|linux|darwin|macos|alpine|bsd|freebsd|win32|win64)(?:\b|_)/i',
             $name,

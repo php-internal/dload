@@ -66,6 +66,25 @@ final class AssetSelectorTest
     }
 
     #[Test]
+    public function androidBuildsAreNotSelectedOnLinux(): void
+    {
+        $names = self::select(['tool-linux-amd64-android.zip', 'tool-linux-amd64.zip']);
+
+        Assert::same($names, ['tool-linux-amd64.zip']);
+    }
+
+    #[Test]
+    public function androidPrefersAndroidBuildsAndFallsBackToLinuxOnes(): void
+    {
+        $names = self::select(
+            ['tool-darwin-amd64.zip', 'tool-linux-amd64.zip', 'tool-linux-amd64-android.zip'],
+            os: OperatingSystem::Android,
+        );
+
+        Assert::same($names, ['tool-linux-amd64-android.zip', 'tool-linux-amd64.zip']);
+    }
+
+    #[Test]
     public function aGradualSelectionPutsOtherPlatformsAfterTheHostOne(): void
     {
         $names = self::select([

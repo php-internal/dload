@@ -21,6 +21,8 @@ class OperatingSystemTest
         yield ['protoc-27.3-win64.zip', OperatingSystem::Windows];
         yield ['protoc-27.3-win32.zip', OperatingSystem::Windows];
         yield ['temporal-test-server_1.33.0_macOS_arm64.tar.gz', OperatingSystem::Darwin];
+        yield ['bun-linux-x64-android-baseline.zip', OperatingSystem::Android];
+        yield ['tool-aarch64-linux-android.tar.gz', OperatingSystem::Android];
     }
 
     #[DataProvider('provideBuildNames')]
