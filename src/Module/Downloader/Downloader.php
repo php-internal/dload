@@ -316,9 +316,13 @@ final class Downloader
 
             foreach ($selection->sorted() as $candidate) {
                 $this->logger->debug(
-                    'Asset `%s` ranked [%s].',
+                    'Asset `%s` ranked: %s.',
                     $candidate->asset->getName(),
-                    \implode(', ', $candidate->ranks),
+                    \implode(' ', \array_map(
+                        static fn(string $key, int $rank): string => "{$key}={$rank}",
+                        \array_keys($candidate->ranks),
+                        $candidate->ranks,
+                    )),
                 );
             }
 

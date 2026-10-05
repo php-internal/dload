@@ -22,12 +22,15 @@ Filters the release's asset list. dload then runs OS/arch detection on every mat
 - match all OS/arch variants of the tool;
 - leave out sibling tools, checksums, signatures, source archives.
 
+Build variants stay in the pattern too. Among the assets for the host, dload prefers the host libc (`musl` builds on Alpine, the others elsewhere), then the name with the fewest extra tokens — so `bun-linux-x64.zip` wins over `-baseline`, `-profile` and `-debug` twins — then archives. Android builds are never picked on Linux.
+
 Tokens the OS/arch matchers recognise (case-insensitive, bounded by `_` or a word boundary):
 
 | Kind | Tokens |
 |---|---|
-| OS   | `windows`, `linux`, `darwin`, `macos`, `alpine`, `bsd`, `freebsd`, `win32`, `win64` |
+| OS   | `windows`, `linux`, `darwin`, `macos`, `alpine`, `bsd`, `freebsd`, `win32`, `win64`, `android` (wins over `linux`) |
 | Arch | `amd64`, `arm64`, `aarch64`, `x86_64`, `x64`, `win64` |
+| Libc | `musl`, `musleabi*`, `alpine`; `gnu`, `gnueabi*`, `glibc`; none means glibc |
 
 | Situation | Pattern |
 |---|---|

@@ -30,6 +30,7 @@ final class OperatingSystemRule implements AssetRule
         );
 
         return $next($selection->rank(
+            'os',
             fn(Candidate $candidate): int => $this->rank($candidate->asset->getOperatingSystem()) ?? 2,
         ));
     }

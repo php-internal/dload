@@ -27,6 +27,7 @@ final class LibcRule implements AssetRule
     public function select(Selection $selection, callable $next): Selection
     {
         return $next($selection->prefer(
+            'libc',
             fn(Candidate $candidate): bool => ($candidate->name->libc ?? Libc::Gnu) === $this->libc,
         ));
     }

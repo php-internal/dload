@@ -10,8 +10,9 @@ use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Candidate;
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Selection;
 
 /**
- * Keeps assets built for the host architecture: removes the others in a strict selection,
- * ranks them lower otherwise.
+ * Prefers assets built for the host architecture.
+ *
+ * A strict selection removes the others; otherwise they are ranked last.
  *
  * @internal
  * @psalm-internal Internal\DLoad\Module\Downloader
@@ -25,11 +26,8 @@ final class ArchitectureRule implements AssetRule
     public function select(Selection $selection, callable $next): Selection
     {
         $fits = fn(Candidate $candidate): bool => $candidate->asset->getArchitecture() === $this->architecture;
+        $selection->strict and $selection = $selection->remove(static fn(Candidate $candidate): bool => !$fits($candidate));
 
-        return $next(
-            $selection->strict
-                ? $selection->remove(static fn(Candidate $candidate): bool => !$fits($candidate))
-                : $selection->prefer($fits),
-        );
+        return $next($selection->prefer('arch', $fits));
     }
 }
