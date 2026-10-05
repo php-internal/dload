@@ -9,7 +9,7 @@ use Internal\DLoad\Module\Common\FileSystem\FS;
 use Internal\Path;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Tester\CommandTester;
+use Symfony\Component\Console\Tester\ApplicationTester;
 use Testo\Assert;
 use Testo\Codecov\Covers;
 use Testo\Expect;
@@ -74,17 +74,20 @@ final class GetTest
     /**
      * @param array<string, mixed> $input
      */
-    private function run(array $input): CommandTester
+    private function run(array $input): ApplicationTester
     {
         $application = new Application();
+        $application->setAutoExit(false);
+        $application->setCatchExceptions(false);
         // Symfony Console 8 renamed `add()` to `addCommand()`
         \method_exists($application, 'addCommand')
             ? $application->addCommand(new Get())
             : $application->add(new Get());
 
-        $tester = new CommandTester($application->find('get'));
-        $tester->execute(
-            $input + ['--config' => $this->directory . '/dload.xml'],
+        // ApplicationTester goes through Application::run(), which maps the global --quiet to the output verbosity
+        $tester = new ApplicationTester($application);
+        $tester->run(
+            ['command' => 'get'] + $input + ['--config' => $this->directory . '/dload.xml'],
             ['interactive' => false],
         );
 

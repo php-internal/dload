@@ -47,7 +47,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  * # Check for new releases even if the version registry is still fresh
  * ./vendor/bin/dload get rr --refresh
  *
- * # Exit quietly with status 0 when there is nothing to download
+ * # The global --quiet also turns "nothing to download" into a silent exit with status 0
  * ./vendor/bin/dload get --quiet
  * ```
  *
@@ -84,12 +84,6 @@ final class Get extends Base
             InputOption::VALUE_NONE,
             'Check repositories for new releases even if the version registry is still fresh',
         );
-        $this->addOption(
-            'quiet',
-            'q',
-            InputOption::VALUE_NONE,
-            'Exit with status 0 when there is no software to download',
-        );
     }
 
     /**
@@ -118,7 +112,7 @@ final class Get extends Base
         $actions = self::getDownloadActions($input, $actionsConfig);
 
         // With --quiet, "nothing to do" is a success, not an error
-        if ($actions === [] && $input->getOption('quiet')) {
+        if ($actions === [] && $output->isQuiet()) {
             return Command::SUCCESS;
         }
 
