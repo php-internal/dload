@@ -17,7 +17,8 @@ class OperatingSystemTest
         yield ['temporal_cli_0.13.2_windows_amd64.tar.gz', OperatingSystem::Windows];
         yield ['roadrunner-2024.1.5-linux-amd64.deb', OperatingSystem::Linux];
         yield ['roadrunner-2024.1.5-linux-amd64.tar.gz', OperatingSystem::Linux];
-        yield ['roadrunner-2024.1.5-unknown-musl-amd64.tar.gz', null];
+        yield ['roadrunner-2024.1.5-unknown-musl-amd64.tar.gz', OperatingSystem::Linux];
+        yield ['tool-alpine-amd64.tar.gz', OperatingSystem::Linux];
         yield ['protoc-27.3-win64.zip', OperatingSystem::Windows];
         yield ['protoc-27.3-win32.zip', OperatingSystem::Windows];
         yield ['temporal-test-server_1.33.0_macOS_arm64.tar.gz', OperatingSystem::Darwin];

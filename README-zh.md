@@ -169,7 +169,7 @@ composer require internal/dload -W
 |--------|-------------|---------|
 | `--path` | 二进制文件存储目录 | 当前目录 |
 | `--arch` | 目标架构 (amd64, arm64) | 系统架构 |
-| `--os` | 目标操作系统 (linux, darwin, windows) | 当前操作系统 |
+| `--os` | 目标操作系统 (linux, alpine, darwin, windows, android) | 当前操作系统 |
 | `--stability` | 发布稳定性 (stable, beta) | stable |
 | `--config` | 配置文件路径 | ./dload.xml |
 | `--force`, `-f` | 即使二进制文件已存在也强制下载 | false |

@@ -7,6 +7,7 @@ namespace Internal\DLoad\Command;
 use Internal\Container\Container;
 use Internal\DLoad\DLoad;
 use Internal\DLoad\Module\Common\Architecture;
+use Internal\DLoad\Module\Common\Libc;
 use Internal\DLoad\Module\Common\OperatingSystem;
 use Internal\DLoad\Module\Common\Stability;
 use Internal\DLoad\Module\Config\Schema\Action\Download as DownloadConfig;
@@ -117,7 +118,10 @@ final class Get extends Base
         }
 
         $output->writeln('Architecture: ' . $container->get(Architecture::class)->name);
-        $output->writeln('  Op. system: ' . $container->get(OperatingSystem::class)->name);
+        $output->writeln(
+            '  Op. system: ' . $container->get(OperatingSystem::class)->name
+            . ($container->get(Libc::class) === Libc::Musl ? ' (musl)' : ''),
+        );
         $output->writeln('   Stability: ' . $container->get(Stability::class)->name);
 
         $actions === [] and throw new \RuntimeException('No software to download.');

@@ -169,7 +169,7 @@ También puedes descargar la versión más reciente desde [GitHub releases](http
 |--------|-------------|-------------------|
 | `--path` | Directorio donde guardar los binarios | Directorio actual |
 | `--arch` | Arquitectura de destino (amd64, arm64) | Arquitectura del sistema |
-| `--os` | Sistema operativo de destino (linux, darwin, windows) | SO actual |
+| `--os` | Sistema operativo de destino (linux, alpine, darwin, windows, android) | SO actual |
 | `--stability` | Estabilidad del release (stable, beta) | stable |
 | `--config` | Ruta al archivo de configuración | ./dload.xml |
 | `--force`, `-f` | Forzar descarga aunque el binario ya exista | false |

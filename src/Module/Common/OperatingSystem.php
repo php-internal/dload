@@ -29,13 +29,14 @@ enum OperatingSystem: string implements Factoriable
     case Linux = 'linux';
     case Windows = 'windows';
     case Android = 'android';
-    case Alpine = 'unknown-musl';
 
     private const ERROR_UNKNOWN_OS = 'Current OS `%s` may not be supported';
 
     public static function create(Build $config): static
     {
-        return self::tryFrom((string) $config->os) ?? self::fromGlobals();
+        return self::tryFrom((string) $config->os)
+            ?? self::tryFromString((string) $config->os)
+            ?? self::fromGlobals();
     }
 
     public static function fromGlobals(): self
@@ -55,9 +56,8 @@ enum OperatingSystem: string implements Factoriable
             'bsd', 'freebsd' => self::BSD,
             'darwin', 'macos' => self::Darwin,
             'android' => self::Android,
-            'linux' => \str_contains(\PHP_OS, 'alpine')
-                ? self::Alpine
-                : self::Linux,
+            // The libc is a separate trait, see {@see Libc}
+            'linux', 'alpine', 'unknown-musl' => self::Linux,
             default => null,
         };
     }
@@ -69,13 +69,16 @@ enum OperatingSystem: string implements Factoriable
             return self::Android;
         }
 
-        return \preg_match(
+        if (\preg_match(
             '/(?:\b|_)(windows|linux|darwin|macos|alpine|bsd|freebsd|win32|win64)(?:\b|_)/i',
             $name,
             $matches,
-        ) === 1
-            ? self::tryFromString(\strtolower($matches[1]))
-            : null;
+        ) === 1) {
+            return self::tryFromString(\strtolower($matches[1]));
+        }
+
+        // Only Linux builds name the libc alone, like `unknown-musl`
+        return Libc::tryFromBuildName($name) === Libc::Musl ? self::Linux : null;
     }
 
     public function getBinaryExtension(): string

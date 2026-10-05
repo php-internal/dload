@@ -10,6 +10,7 @@ use Internal\DLoad\Module\Binary\BinaryProvider;
 use Internal\DLoad\Module\Binary\Internal\BinaryProviderImpl;
 use Internal\DLoad\Module\Common\Architecture;
 use Internal\DLoad\Module\Common\Internal\Injection\ConfigInflector;
+use Internal\DLoad\Module\Common\Libc;
 use Internal\DLoad\Module\Common\OperatingSystem;
 use Internal\DLoad\Module\Common\Stability;
 use Internal\DLoad\Module\Config\Schema\Cache as CacheConfig;
@@ -115,6 +116,7 @@ final class Bootstrap
         // Register bindings
         $this->container->bind(Architecture::class);
         $this->container->bind(OperatingSystem::class);
+        $this->container->bind(Libc::class);
         $this->container->bind(Stability::class);
         $this->container->bind(
             RepositoryProvider::class,
