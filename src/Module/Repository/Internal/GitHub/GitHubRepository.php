@@ -44,6 +44,7 @@ final class GitHubRepository implements Repository, Destroyable
         string $repo,
         private readonly Logger $logger,
         private readonly VersionRegistry $registry,
+        private readonly string $tagPrefix = '',
     ) {
         $this->name = $org . '/' . $repo;
     }
@@ -83,8 +84,13 @@ final class GitHubRepository implements Repository, Destroyable
 
                     $toYield = [];
                     foreach ($pages->current() ?? [] as $record) {
+                        // Releases of other components sharing the repository
+                        if (!\str_starts_with($record->tag, $this->tagPrefix)) {
+                            continue;
+                        }
+
                         try {
-                            $toYield[] = GitHubRelease::fromRecord($this->api, $this, $record);
+                            $toYield[] = GitHubRelease::fromRecord($this->api, $this, $record, $this->tagPrefix);
                         } catch (\Throwable $e) {
                             $this->logger->exception($e, important: false);
                             // Skip invalid releases

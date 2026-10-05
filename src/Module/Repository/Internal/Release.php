@@ -20,10 +20,12 @@ abstract class Release implements ReleaseInterface
 
     /**
      * @param non-empty-string $name Release name.
+     * @param non-empty-string $tag Tag the release was made from.
      */
     public function __construct(
         protected Repository $repository,
         protected string $name,
+        protected string $tag,
         protected Version $version,
         iterable $assets = [],
     ) {
@@ -38,6 +40,11 @@ abstract class Release implements ReleaseInterface
     public function getName(): string
     {
         return $this->name;
+    }
+
+    public function getTag(): string
+    {
+        return $this->tag;
     }
 
     public function getVersion(): Version

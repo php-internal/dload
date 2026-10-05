@@ -208,6 +208,38 @@ final class GitHubRepositoryTest
     }
 
     #[Test]
+    public function tagPrefixSelectsReleasesAndIsNotPartOfTheVersion(): void
+    {
+        $registry = new ScriptedRegistryStub([[
+            self::record('cli-v2.0.0'),
+            self::record('bun-v1.4.2'),
+            self::record('v1.0.0'),
+            self::record('bun-v1.4.1-canary.1'),
+        ]]);
+        $repository = self::createRepository(new PagedClientStub(pages: 1), $registry, tagPrefix: 'bun-');
+
+        $releases = \iterator_to_array($repository->getReleases(), false);
+
+        Assert::same(
+            \array_map(static fn(ReleaseInterface $release): string => $release->getTag(), $releases),
+            ['bun-v1.4.2', 'bun-v1.4.1-canary.1'],
+        );
+        Assert::same(
+            \array_map(static fn(ReleaseInterface $release): string => $release->getVersion()->string, $releases),
+            ['v1.4.2', 'v1.4.1-canary.1'],
+        );
+    }
+
+    #[Test]
+    public function aTagConsistingOfThePrefixOnlyIsSkipped(): void
+    {
+        $registry = new ScriptedRegistryStub([[self::record('bun-'), self::record('bun-v1.0.1')]]);
+        $repository = self::createRepository(new PagedClientStub(pages: 1), $registry, tagPrefix: 'bun-');
+
+        Assert::same(self::names($repository), ['bun-v1.0.1']);
+    }
+
+    #[Test]
     public function aFailureOfTheFirstPageReachesTheCaller(): void
     {
         $registry = new ScriptedRegistryStub([new \RuntimeException('missing repository')]);
@@ -256,8 +288,9 @@ final class GitHubRepositoryTest
     private static function createRepository(
         PagedClientStub $client,
         VersionRegistry $registry = new PassThroughRegistry(),
+        string $tagPrefix = '',
     ): GitHubRepository {
-        return new GitHubRepository(self::api($client), 'owner', 'repo', new Logger(), $registry);
+        return new GitHubRepository(self::api($client), 'owner', 'repo', new Logger(), $registry, $tagPrefix);
     }
 
     private static function api(PagedClientStub $client): RepositoryApi

@@ -51,7 +51,7 @@ final class Factory implements RepositoryFactory
         $uri = \is_string($path) && $path !== '' ? $path : $config->uri;
         $api = $this->createRepositoryApi($uri);
 
-        return new GitLabRepository($api, $uri, $this->logger, $this->registry);
+        return new GitLabRepository($api, $uri, $this->logger, $this->registry, $config->tagPrefix);
     }
 
     /**

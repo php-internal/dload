@@ -52,7 +52,7 @@ final class Factory implements RepositoryFactory
 
         $api = $this->createRepositoryApi($org, $repo);
 
-        return new GitHubRepository($api, $org, $repo, $this->logger, $this->registry);
+        return new GitHubRepository($api, $org, $repo, $this->logger, $this->registry, $config->tagPrefix);
     }
 
     /**

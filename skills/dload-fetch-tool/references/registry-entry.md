@@ -5,7 +5,7 @@ How to describe a tool dload does not ship, as a `<software>` block inside `<reg
 ## Facts to collect
 
 1. **GitHub repo** as `owner/repo`.
-2. **A real release tag** to inspect — any recent one.
+2. **A real release tag** to inspect — any recent one. Note any text before the version (`bun-v1.4.2`, `cli-v2.0.0`): it needs a [`tag-prefix`](#tag-prefix).
 3. **The asset filename matrix**:
    ```bash
    curl -s https://api.github.com/repos/<owner>/<repo>/releases/tags/<tag> \
@@ -37,6 +37,12 @@ Tokens the OS/arch matchers recognise (case-insensitive, bounded by `_` or a wor
 | PHAR | `/^<name>\.phar$/` or `/^.*\.phar$/` |
 
 Patterns are slash-delimited, and in XML attributes backslashes are literal — write `\.exe`.
+
+## `tag-prefix`
+
+A literal string the release tags start with, cut off before the version is parsed. dload reads the version from the tag, so a tag like `bun-v1.4.2` is skipped as unparsable until `tag-prefix="bun-"` is set.
+
+It also selects one component of a monorepo with per-component tags (release-please: `cli-v2.0.0`, `sdk-v1.4.0`): releases whose tag does not start with the prefix are ignored. Include the separator in the prefix (`cli-`, `cli/`), leave the `v` out — it is part of the version.
 
 ## `binary.pattern`
 

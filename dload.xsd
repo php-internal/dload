@@ -166,6 +166,11 @@
                                                         <xs:documentation>Regular expression pattern to match assets</xs:documentation>
                                                     </xs:annotation>
                                                 </xs:attribute>
+                                                <xs:attribute name="tag-prefix" type="xs:string">
+                                                    <xs:annotation>
+                                                        <xs:documentation>Text before the version in release tags, like "bun-" in "bun-v1.4.2". Releases whose tag does not start with it are ignored, which selects one component of a monorepo (release-please style tags).</xs:documentation>
+                                                    </xs:annotation>
+                                                </xs:attribute>
                                             </xs:complexType>
                                         </xs:element>
                                         <xs:element name="binary" minOccurs="0" maxOccurs="unbounded">

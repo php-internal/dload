@@ -19,12 +19,14 @@ final class ReleaseStub implements ReleaseInterface
     /**
      * @param non-empty-string $name Formatted version (e.g. "1.2.3")
      * @param array<AssetInterface> $assets
+     * @param non-empty-string|null $tag Defaults to the name
      */
     public function __construct(
         private readonly RepositoryStub $repository,
         private readonly string $name,
         private readonly Version $version,
         private array $assets = [],
+        private readonly ?string $tag = null,
     ) {}
 
     public function getRepository(): Repository
@@ -35,6 +37,11 @@ final class ReleaseStub implements ReleaseInterface
     public function getName(): string
     {
         return $this->name;
+    }
+
+    public function getTag(): string
+    {
+        return $this->tag ?? $this->name;
     }
 
     public function getVersion(): Version

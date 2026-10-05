@@ -566,6 +566,12 @@ This ensures consistent Velox versions across different environments and team me
             <repository type="gitlab" uri="path/to/my/repository" asset-pattern="/^cool-.*/" />
             <binary name="cool" pattern="/^cool-.*/" />
         </software>
+
+        <!-- Monorepo with release-please tags like `cli-v1.2.0` -->
+        <software name="my-cli" description="CLI component of a monorepo">
+            <repository type="github" uri="my-org/monorepo" tag-prefix="cli-" asset-pattern="/^cli-.*/" />
+            <binary name="cli" pattern="/^cli-.*/" />
+        </software>
     </registry>
 </dload>
 ```
@@ -577,6 +583,7 @@ This ensures consistent Velox versions across different environments and team me
 - **type**: Currently supports "github"
 - **uri**: Repository path (e.g., "username/repo")
 - **asset-pattern**: Regex pattern to match release assets
+- **tag-prefix**: Text before the version in release tags, e.g. `bun-` for `bun-v1.4.2`. Releases with other tags are ignored, so only the selected component of a monorepo with per-component tags (release-please) is used
 
 #### Binary Elements
 

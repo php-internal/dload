@@ -36,16 +36,24 @@ interface ReleaseInterface
     public function getRepository(): Repository;
 
     /**
-     * Returns Composer's compatible "pretty" release version.
+     * Returns the human-readable release name.
      *
-     * This version is formatted for semantic versioning compatibility.
-     *
-     * @return non-empty-string Formatted version string (e.g. "1.2.3")
+     * @return non-empty-string
      */
     public function getName(): string;
 
     /**
-     * Returns the version of this release.
+     * Returns the tag the release was made from, exactly as the repository reports it.
+     *
+     * Unlike the version, it keeps the configured tag prefix: it identifies the release
+     * within the repository and in the version registry.
+     *
+     * @return non-empty-string
+     */
+    public function getTag(): string;
+
+    /**
+     * Returns the version of this release, parsed from the tag without the tag prefix.
      */
     public function getVersion(): Version;
 

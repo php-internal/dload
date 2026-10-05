@@ -553,6 +553,12 @@ DLoad 会自动处理构建过程：
             <repository type="gitlab" uri="path/to/my/repository" asset-pattern="/^cool-.*/" />
             <binary name="cool" pattern="/^cool-.*/" />
         </software>
+
+        <!-- 使用 release-please 标签（如 `cli-v1.2.0`）的 monorepo -->
+        <software name="my-cli" description="monorepo 中的 CLI 组件">
+            <repository type="github" uri="my-org/monorepo" tag-prefix="cli-" asset-pattern="/^cli-.*/" />
+            <binary name="cli" pattern="/^cli-.*/" />
+        </software>
     </registry>
 </dload>
 ```
@@ -564,6 +570,7 @@ DLoad 会自动处理构建过程：
 - **type**：目前支持 "github"
 - **uri**：仓库路径（例如 "username/repo"）
 - **asset-pattern**：匹配发布资源的正则表达式模式
+- **tag-prefix**：发布标签中版本号之前的文本，例如 `bun-v1.4.2` 中的 `bun-`。标签不以它开头的发布会被忽略，因此对于按组件打标签的 monorepo（release-please），只会使用选定的组件
 
 #### 二进制要素
 

@@ -562,6 +562,12 @@ DLoad автоматически управляет процессом сбор�
             <repository type="gitlab" uri="path/to/my/repository" asset-pattern="/^cool-.*/" />
             <binary name="cool" pattern="/^cool-.*/" />
         </software>
+
+        <!-- Монорепозиторий с тегами release-please вида `cli-v1.2.0` -->
+        <software name="my-cli" description="CLI-компонент монорепозитория">
+            <repository type="github" uri="my-org/monorepo" tag-prefix="cli-" asset-pattern="/^cli-.*/" />
+            <binary name="cli" pattern="/^cli-.*/" />
+        </software>
     </registry>
 </dload>
 ```
@@ -573,6 +579,7 @@ DLoad автоматически управляет процессом сбор�
 - **type**: В настоящее время поддерживает "github"
 - **uri**: Путь репозитория (например, "username/repo")
 - **asset-pattern**: Regex-паттерн для соответствия ресурсам релиза
+- **tag-prefix**: Текст перед версией в тегах релизов, например `bun-` для `bun-v1.4.2`. Релизы с другими тегами игнорируются, поэтому из монорепозитория с тегами по компонентам (release-please) берётся только нужный компонент
 
 #### Элементы Binary
 
