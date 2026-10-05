@@ -52,13 +52,13 @@ final class RepositoryApi
 
     /**
      * @param non-empty-string $repositoryPath
-     * @param non-empty-string $releaseName
+     * @param non-empty-string $tag Tag of the release; GitLab addresses release downloads by it, not by the release name.
      * @param non-empty-string $fileName
      * @throws RepositoryException
      */
-    public function downloadArtifact(string $repositoryPath, string $releaseName, string $fileName): ResponseInterface
+    public function downloadArtifact(string $repositoryPath, string $tag, string $fileName): ResponseInterface
     {
-        $url = \sprintf(self::URL_RELEASE_ASSET, \urlencode($repositoryPath), $releaseName, $fileName);
+        $url = \sprintf(self::URL_RELEASE_ASSET, \urlencode($repositoryPath), \rawurlencode($tag), $fileName);
         return $this->client->downloadArtifact($url);
     }
 

@@ -59,7 +59,7 @@ final class GitLabAsset extends Asset implements Destroyable
      */
     public function download(?\Closure $progress = null): \Generator
     {
-        $response = $this->api->downloadArtifact($this->release->getRepository()->getName(), $this->release->getName(), $this->getName());
+        $response = $this->api->downloadArtifact($this->release->getRepository()->getName(), $this->release->getTag(), $this->getName());
 
         yield from StreamReader::chunks($response->getBody(), $progress);
     }
