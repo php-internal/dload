@@ -28,7 +28,6 @@ use Internal\DLoad\Tests\Unit\Module\Repository\Stub\RepositoryStub;
 use Internal\Path;
 use Testo\Assert;
 use Testo\Codecov\Covers;
-use Testo\Core\Exception\SkipTest;
 use Testo\Data\DataProvider;
 use Testo\Lifecycle\AfterTest;
 use Testo\Lifecycle\BeforeTest;
@@ -110,6 +109,22 @@ final class AssetSelectionTest
         'source-code.zip',
     ];
 
+    /**
+     * Assets of the TigerBeetle 0.17.9 release: every build has a `-debug` twin listed first.
+     */
+    private const TIGERBEETLE_ASSETS = [
+        'tigerbeetle-aarch64-linux-debug.zip',
+        'tigerbeetle-aarch64-linux.zip',
+        'tigerbeetle-universal-macos-debug.zip',
+        'tigerbeetle-universal-macos.zip',
+        'tigerbeetle-x86_64-linux-debug.zip',
+        'tigerbeetle-x86_64-linux.zip',
+        'tigerbeetle-x86_64-windows-debug.zip',
+        'tigerbeetle-x86_64-windows.zip',
+        'vortex-driver-zig-aarch64-linux.zip',
+        'vortex-driver-zig-x86_64-linux.zip',
+    ];
+
     private string $tempDir;
 
     public static function provideBunHosts(): \Generator
@@ -124,6 +139,27 @@ final class AssetSelectionTest
         yield 'FreeBSD arm64' => [OperatingSystem::BSD, Architecture::ARM_64, 'bun-freebsd-aarch64.zip'];
     }
 
+    public static function provideBunMuslHosts(): \Generator
+    {
+        yield 'Linux x64' => [Architecture::X86_64, 'bun-linux-x64-musl.zip'];
+        yield 'Linux arm64' => [Architecture::ARM_64, 'bun-linux-aarch64-musl.zip'];
+    }
+
+    public static function provideTigerBeetleHosts(): \Generator
+    {
+        yield 'Linux x64' => [OperatingSystem::Linux, Architecture::X86_64, 'tigerbeetle-x86_64-linux.zip'];
+        yield 'Linux arm64' => [OperatingSystem::Linux, Architecture::ARM_64, 'tigerbeetle-aarch64-linux.zip'];
+        yield 'Windows x64' => [OperatingSystem::Windows, Architecture::X86_64, 'tigerbeetle-x86_64-windows.zip'];
+    }
+
+    public static function provideMagoHosts(): \Generator
+    {
+        yield 'Linux x64 glibc' => [Architecture::X86_64, Libc::Gnu, 'mago-1.51.2-x86_64-unknown-linux-gnu.tar.gz'];
+        yield 'Linux x64 musl' => [Architecture::X86_64, Libc::Musl, 'mago-1.51.2-x86_64-unknown-linux-musl.tar.gz'];
+        yield 'Linux arm64 glibc' => [Architecture::ARM_64, Libc::Gnu, 'mago-1.51.2-aarch64-unknown-linux-gnu.tar.gz'];
+        yield 'Linux arm64 musl' => [Architecture::ARM_64, Libc::Musl, 'mago-1.51.2-aarch64-unknown-linux-musl.tar.gz'];
+    }
+
     #[DataProvider('provideBunHosts')]
     #[Test]
     public function bunRegistryEntrySelectsThePlainBuild(
@@ -136,39 +172,41 @@ final class AssetSelectionTest
         Assert::same($result->file->getFilename(), $expected);
     }
 
-    /**
-     * The target of variant ranking: the plain build wins without a pattern that spells out
-     * the asset shape of one tool.
-     */
-    #[DataProvider('provideBunHosts')]
+    #[DataProvider('provideBunMuslHosts')]
     #[Test]
-    public function bunPlainBuildIsSelectedWithABroadAssetPattern(
+    public function bunMuslBuildIsSelectedOnAMuslHost(Architecture $arch, string $expected): void
+    {
+        $result = $this->download(
+            self::registryEntry('bun'),
+            'oven-sh/bun',
+            'bun-v1.4.2',
+            self::BUN_ASSETS,
+            OperatingSystem::Linux,
+            $arch,
+            Libc::Musl,
+        );
+
+        Assert::same($result->file->getFilename(), $expected);
+    }
+
+    #[DataProvider('provideTigerBeetleHosts')]
+    #[Test]
+    public function tigerBeetleReleaseBuildIsSelectedOverTheDebugOne(
         OperatingSystem $os,
         Architecture $arch,
         string $expected,
     ): void {
-        $software = Software::fromArray([
-            'name' => 'Bun',
-            'alias' => 'bun',
-            'repositories' => [['type' => 'github', 'uri' => 'oven-sh/bun', 'asset-pattern' => '/^bun-.*/']],
-            'binary' => ['name' => 'bun'],
-        ]);
+        $result = $this->download(
+            self::registryEntry('tigerbeetle'),
+            'tigerbeetle/tigerbeetle',
+            '0.17.9',
+            self::TIGERBEETLE_ASSETS,
+            $os,
+            $arch,
+            Libc::Gnu,
+        );
 
-        $result = $this->downloadBun($software, $os, $arch);
-
-        $result->file->getFilename() === $expected or throw new SkipTest(\sprintf(
-            'Picks `%s`: asset variants are not ranked yet, see https://github.com/php-internal/dload/issues/134',
-            $result->file->getFilename(),
-        ));
         Assert::same($result->file->getFilename(), $expected);
-    }
-
-    public static function provideMagoHosts(): \Generator
-    {
-        yield 'Linux x64 glibc' => [Architecture::X86_64, Libc::Gnu, 'mago-1.51.2-x86_64-unknown-linux-gnu.tar.gz'];
-        yield 'Linux x64 musl' => [Architecture::X86_64, Libc::Musl, 'mago-1.51.2-x86_64-unknown-linux-musl.tar.gz'];
-        yield 'Linux arm64 glibc' => [Architecture::ARM_64, Libc::Gnu, 'mago-1.51.2-aarch64-unknown-linux-gnu.tar.gz'];
-        yield 'Linux arm64 musl' => [Architecture::ARM_64, Libc::Musl, 'mago-1.51.2-aarch64-unknown-linux-musl.tar.gz'];
     }
 
     #[DataProvider('provideMagoHosts')]

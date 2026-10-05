@@ -27,6 +27,7 @@ use Testo\Test;
 #[Covers(OperatingSystemRule::class)]
 #[Covers(ArchitectureRule::class)]
 #[Covers(LibcRule::class)]
+#[Covers(ExtrasRule::class)]
 #[Covers(ArchiveRule::class)]
 final class AssetSelectorTest
 {
@@ -135,6 +136,30 @@ final class AssetSelectorTest
         $names = self::select(['tool-linux-arm64.tar.gz', 'tool-linux-amd64-musl.tar.gz'], strict: false);
 
         Assert::same($names, ['tool-linux-amd64-musl.tar.gz', 'tool-linux-arm64.tar.gz']);
+    }
+
+    #[Test]
+    public function thePlainBuildComesBeforeItsVariants(): void
+    {
+        $names = self::select([
+            'tool-linux-amd64-baseline-profile.zip',
+            'tool-linux-amd64-baseline.zip',
+            'tool-linux-amd64.zip',
+        ]);
+
+        Assert::same($names, [
+            'tool-linux-amd64.zip',
+            'tool-linux-amd64-baseline.zip',
+            'tool-linux-amd64-baseline-profile.zip',
+        ]);
+    }
+
+    #[Test]
+    public function aPlainBinaryComesBeforeAnArchivedVariant(): void
+    {
+        $names = self::select(['tool-linux-amd64-debug.tar.gz', 'tool-linux-amd64']);
+
+        Assert::same($names, ['tool-linux-amd64', 'tool-linux-amd64-debug.tar.gz']);
     }
 
     #[Test]

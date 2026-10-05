@@ -34,7 +34,7 @@ curl -s "https://api.github.com/repos/<owner>/<repo>/releases/tags/<tag>" \
 
 After filtering, dload picks the host's variant with:
 
-- OS: `/(?:\b|_)(windows|linux|darwin|macos|alpine|bsd|freebsd|win32|win64)(?:\b|_)/i`
+- OS: `/(?:\b|_)(windows|linux|darwin|macos|alpine|bsd|freebsd|win32|win64)(?:\b|_)/i`; an `android` token makes it Android, a bare `musl` makes it Linux
 - Arch: `/(?:\b|_)(amd64|arm64|aarch64|x86_64|x64|win64)(?:\b|_)/i`
 
 A candidate that matches neither is discarded. Common offenders:
@@ -43,6 +43,8 @@ A candidate that matches neither is discarded. Common offenders:
 - No arch separator: `tool-linux64.tar.gz` — the OS matches, no arch token is extractable.
 
 Compare with the host: `php -r "echo PHP_OS_FAMILY, ' / ', php_uname('m'), PHP_EOL;"`.
+
+Several candidates left: dload tries them best first — host libc, then the fewest extra name tokens, then archives, then the release order. Run with `-vvv` to see the rank of every asset (`Asset ... ranked: os=0 arch=0 libc=0 extras=1 archive=0`); a wrong pick usually means the wanted build carries an extra token the others lack.
 
 ## Stage 4 — binary extraction
 

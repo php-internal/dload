@@ -16,7 +16,7 @@ final class Candidate
 {
     /**
      * @param int<0, max> $position Position of the asset in the release, the last tie-breaker.
-     * @param list<int> $ranks One key per ranking rule in the pipeline order; lower is better.
+     * @param array<non-empty-string, int> $ranks One key per ranking rule in the pipeline order; lower is better.
      */
     public function __construct(
         public readonly AssetInterface $asset,
@@ -40,8 +40,11 @@ final class Candidate
         return false;
     }
 
-    public function withRank(int $rank): self
+    /**
+     * @param non-empty-string $key Name of the rank, unique within the selection.
+     */
+    public function withRank(string $key, int $rank): self
     {
-        return new self($this->asset, $this->name, $this->position, [...$this->ranks, $rank]);
+        return new self($this->asset, $this->name, $this->position, [...$this->ranks, $key => $rank]);
     }
 }

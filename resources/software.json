@@ -287,7 +287,7 @@
                     "type": "github",
                     "uri": "oven-sh/bun",
                     "tag-prefix": "bun-",
-                    "asset-pattern": "/^bun-[a-z]+-(?:x64|aarch64)\\.zip$/"
+                    "asset-pattern": "/^bun-.*/"
                 }
             ],
             "binary": {

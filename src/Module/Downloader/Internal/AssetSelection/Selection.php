@@ -65,12 +65,13 @@ final class Selection
     /**
      * Gives every candidate a rank; lower is better.
      *
+     * @param non-empty-string $key Name of the rank, unique within the selection.
      * @param \Closure(Candidate): int $rank
      */
-    public function rank(\Closure $rank): self
+    public function rank(string $key, \Closure $rank): self
     {
         return $this->withCandidates(\array_map(
-            static fn(Candidate $candidate): Candidate => $candidate->withRank($rank($candidate)),
+            static fn(Candidate $candidate): Candidate => $candidate->withRank($key, $rank($candidate)),
             $this->candidates,
         ));
     }
@@ -78,11 +79,12 @@ final class Selection
     /**
      * Moves the candidates matching the predicate ahead of the others.
      *
+     * @param non-empty-string $key Name of the rank, unique within the selection.
      * @param \Closure(Candidate): bool $predicate
      */
-    public function prefer(\Closure $predicate): self
+    public function prefer(string $key, \Closure $predicate): self
     {
-        return $this->rank(static fn(Candidate $candidate): int => $predicate($candidate) ? 0 : 1);
+        return $this->rank($key, static fn(Candidate $candidate): int => $predicate($candidate) ? 0 : 1);
     }
 
     public function isEmpty(): bool
@@ -100,7 +102,8 @@ final class Selection
         $candidates = $this->candidates;
         \usort(
             $candidates,
-            static fn(Candidate $a, Candidate $b): int => [...$a->ranks, $a->position] <=> [...$b->ranks, $b->position],
+            static fn(Candidate $a, Candidate $b): int => [...\array_values($a->ranks), $a->position]
+                <=> [...\array_values($b->ranks), $b->position],
         );
 
         return $candidates;

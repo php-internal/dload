@@ -4,27 +4,24 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule;
 
-use Internal\DLoad\Module\Archive\ArchiveFactory;
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\AssetRule;
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Candidate;
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Selection;
 
 /**
- * Prefers archives dload can extract over other files.
+ * Prefers the plain build: the fewer extra tokens in the name, the better.
+ *
+ * Variants like `-baseline`, `-profile` or `-debug` add a token to the name of the plain build,
+ * so no list of variant names is needed. Tokens shared by all the assets, like the tool name,
+ * do not change the order.
  *
  * @internal
  * @psalm-internal Internal\DLoad\Module\Downloader
  */
-final class ArchiveRule implements AssetRule
+final class ExtrasRule implements AssetRule
 {
-    public function __construct(
-        private readonly ArchiveFactory $archiveFactory,
-    ) {}
-
     public function select(Selection $selection, callable $next): Selection
     {
-        $extensions = $this->archiveFactory->getSupportedExtensions();
-
-        return $next($selection->prefer('archive', static fn(Candidate $candidate): bool => $candidate->hasExtension($extensions)));
+        return $next($selection->rank('extras', static fn(Candidate $candidate): int => \count($candidate->name->extras)));
     }
 }

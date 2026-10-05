@@ -35,8 +35,8 @@ final class SelectionTest
     public function anEarlierRankOutweighsALaterOne(): void
     {
         $selection = self::selection('a-slow', 'b-fast', 'c-fast')
-            ->prefer(static fn(Candidate $candidate): bool => $candidate->asset->getName() !== 'b-fast')
-            ->prefer(static fn(Candidate $candidate): bool => \str_ends_with($candidate->asset->getName(), 'fast'));
+            ->prefer('first', static fn(Candidate $candidate): bool => $candidate->asset->getName() !== 'b-fast')
+            ->prefer('second', static fn(Candidate $candidate): bool => \str_ends_with($candidate->asset->getName(), 'fast'));
 
         Assert::same(self::names($selection), ['c-fast', 'a-slow', 'b-fast']);
     }
@@ -45,7 +45,7 @@ final class SelectionTest
     public function aLaterRankOnlyOrdersCandidatesEqualByTheEarlierOnes(): void
     {
         $selection = self::selection('aaa', 'b', 'cc')
-            ->rank(static fn(Candidate $candidate): int => \strlen($candidate->asset->getName()));
+            ->rank('length', static fn(Candidate $candidate): int => \strlen($candidate->asset->getName()));
 
         Assert::same(self::names($selection), ['b', 'cc', 'aaa']);
     }
@@ -53,9 +53,19 @@ final class SelectionTest
     #[Test]
     public function equallyRankedCandidatesKeepTheReleaseOrder(): void
     {
-        $selection = self::selection('b', 'a', 'c')->rank(static fn(): int => 1);
+        $selection = self::selection('b', 'a', 'c')->rank('same', static fn(): int => 1);
 
         Assert::same(self::names($selection), ['b', 'a', 'c']);
+    }
+
+    #[Test]
+    public function ranksAreKeptUnderTheirNames(): void
+    {
+        $selection = self::selection('a')
+            ->rank('os', static fn(): int => 2)
+            ->prefer('libc', static fn(): bool => true);
+
+        Assert::same($selection->sorted()[0]->ranks, ['os' => 2, 'libc' => 0]);
     }
 
     #[Test]
