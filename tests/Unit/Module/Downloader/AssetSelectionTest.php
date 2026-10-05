@@ -13,6 +13,7 @@ use Internal\DLoad\Module\Config\Schema\Action\Download as DownloadConfig;
 use Internal\DLoad\Module\Config\Schema\Downloader as DownloaderConfig;
 use Internal\DLoad\Module\Config\Schema\Embed\Software;
 use Internal\DLoad\Module\Downloader\Downloader;
+use Internal\DLoad\Module\Downloader\Internal\AssetSelection\AssetSelector;
 use Internal\DLoad\Module\Downloader\Task\DownloadResult;
 use Internal\DLoad\Module\Repository\Collection\ReleasesCollection;
 use Internal\DLoad\Module\Repository\RepositoryProvider;
@@ -201,6 +202,7 @@ final class AssetSelectionTest
             stability: Stability::Stable,
             archiveService: new ArchiveFactory(),
             registry: new RecordingRegistry(),
+            assetSelector: new AssetSelector($os, $arch, new ArchiveFactory()),
         );
         $task = $downloader->download($software, DownloadConfig::fromSoftwareId('bun'), static fn(): null => null);
 
