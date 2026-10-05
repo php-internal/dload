@@ -261,6 +261,23 @@
             }
         },
         {
+            "name": "Deno",
+            "alias": "deno",
+            "description": "A modern runtime for JavaScript and TypeScript.",
+            "homepage": "https://deno.com",
+            "repositories": [
+                {
+                    "type": "github",
+                    "uri": "denoland/deno",
+                    "asset-pattern": "/^deno-.*/"
+                }
+            ],
+            "binary": {
+                "name": "deno",
+                "version-command": "--version"
+            }
+        },
+        {
             "name": "Bun",
             "alias": "bun",
             "description": "Incredibly fast JavaScript runtime, bundler, test runner, and package manager - all in one.",
@@ -275,8 +292,8 @@
             "binary": {
                 "name": "bun",
                 "pattern": "/^bun(?:x)?(?:\\.exe)?$/",
-                "version-command": "--version"
             }
         }
+          
     ]
 }
