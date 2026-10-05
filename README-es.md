@@ -560,6 +560,12 @@ El binario de RoadRunner construido incluirá solo los plugins especificados en 
             <repository type="gitlab" uri="path/to/my/repository" asset-pattern="/^cool-.*/" />
             <binary name="cool" pattern="/^cool-.*/" />
         </software>
+
+        <!-- Monorepo con tags de release-please como `cli-v1.2.0` -->
+        <software name="my-cli" description="Componente CLI de un monorepo">
+            <repository type="github" uri="my-org/monorepo" tag-prefix="cli-" asset-pattern="/^cli-.*/" />
+            <binary name="cli" pattern="/^cli-.*/" />
+        </software>
     </registry>
 </dload>
 ```
@@ -571,6 +577,7 @@ El binario de RoadRunner construido incluirá solo los plugins especificados en 
 - **type**: Actualmente soporta "github"
 - **uri**: Ruta del repositorio (ej., "username/repo")
 - **asset-pattern**: Patrón regex para hacer match con assets de release
+- **tag-prefix**: Texto antes de la versión en los tags de release, p. ej. `bun-` para `bun-v1.4.2`. Los releases con otros tags se ignoran, así que de un monorepo con tags por componente (release-please) solo se usa el componente seleccionado
 
 #### Elementos Binary
 

@@ -23,7 +23,8 @@ use Internal\DLoad\Module\Common\Internal\Attribute\XPath;
  * @psalm-type RepositoryArray = array{
  *     type: non-empty-string,
  *     uri: non-empty-string,
- *     asset-pattern?: non-empty-string
+ *     asset-pattern?: non-empty-string,
+ *     tag-prefix?: string
  * }
  */
 #[InflectableConfig]
@@ -42,6 +43,14 @@ final class Repository
     public string $assetPattern = '/^.*$/';
 
     /**
+     * @var string $tagPrefix Text before the version in release tags, like `bun-` in `bun-v1.4.2`.
+     *      Releases whose tag does not start with it are ignored, which selects one component
+     *      in a monorepo with per-component tags (release-please style).
+     */
+    #[XPath('@tag-prefix')]
+    public string $tagPrefix = '';
+
+    /**
      * Creates a Repository configuration from an array.
      *
      * @param RepositoryArray $repositoryArray Configuration array
@@ -52,6 +61,7 @@ final class Repository
         $self->type = $repositoryArray['type'] ?? 'github';
         $self->uri = $repositoryArray['uri'];
         $self->assetPattern = $repositoryArray['asset-pattern'] ?? '/^.*$/';
+        $self->tagPrefix = $repositoryArray['tag-prefix'] ?? '';
 
         return $self;
     }

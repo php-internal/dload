@@ -74,6 +74,20 @@ final class DownloaderTest
     }
 
     #[Test]
+    public function deletedReleaseIsForgottenByItsTagWithThePrefix(): void
+    {
+        $repository = new RepositoryStub('owner/repo');
+        $gone = new ReleaseStub($repository, 'Bun v2.0.0', Version::fromVersionString('v2.0.0'), tag: 'bun-v2.0.0');
+        $gone->setAssets([new GoneAssetStub($gone, 'rr-linux-amd64.tar.gz')]);
+        $alive = self::release($repository, 'v1.9.0', assets: true);
+        $repository = new RepositoryStub('owner/repo', ReleasesCollection::create([$gone, $alive]));
+
+        $this->download([$repository]);
+
+        Assert::same($this->registry->forgotten, [['github:owner/repo', 'bun-v2.0.0']]);
+    }
+
+    #[Test]
     public function registryIdComesFromTheRepositoryNotTheConfiguredUri(): void
     {
         // The factory reduces a full URL to the path; the registry must key the record the same way

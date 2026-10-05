@@ -79,6 +79,10 @@
                 "asset-pattern": {
                   "type": "string",
                   "description": "Regular expression pattern to match assets"
+                },
+                "tag-prefix": {
+                  "type": "string",
+                  "description": "Text before the version in release tags, like `bun-` in `bun-v1.4.2`. Releases whose tag does not start with it are ignored, which selects one component of a monorepo (release-please style tags)."
                 }
               }
             }

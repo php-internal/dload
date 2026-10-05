@@ -42,6 +42,7 @@ final class GitLabRepository implements Repository, Destroyable
         string $projectPath,
         private readonly Logger $logger,
         private readonly VersionRegistry $registry,
+        private readonly string $tagPrefix = '',
     ) {
         $this->name = $projectPath;
     }
@@ -81,8 +82,13 @@ final class GitLabRepository implements Repository, Destroyable
 
                     $toYield = [];
                     foreach ($pages->current() ?? [] as $record) {
+                        // Releases of other components sharing the repository
+                        if (!\str_starts_with($record->tag, $this->tagPrefix)) {
+                            continue;
+                        }
+
                         try {
-                            $toYield[] = GitLabRelease::fromRecord($this->api, $this, $record);
+                            $toYield[] = GitLabRelease::fromRecord($this->api, $this, $record, $this->tagPrefix);
                         } catch (\Throwable) {
                             // Skip invalid releases
                             continue;

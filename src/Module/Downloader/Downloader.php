@@ -234,8 +234,7 @@ final class Downloader
                 return $context->release;
             } catch (ReleaseGone $e) {
                 // The registry must not offer this release again, and the list needs a fresh check
-                $tag = $context->release->getVersion()->string;
-                $tag === '' or $this->registry->forget($context->repositoryId, $tag);
+                $this->registry->forget($context->repositoryId, $context->release->getTag());
                 $forgotten = true;
 
                 $context->releaseAttempt->reason ??= $e->getMessage();

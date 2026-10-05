@@ -21,25 +21,31 @@ final class GitHubRelease extends Release implements Destroyable
 {
     /**
      * @param non-empty-string $name
+     * @param non-empty-string $tag
      */
     private function __construct(
         GitHubRepository $repository,
         string $name,
+        string $tag,
         Version $version,
     ) {
-        parent::__construct($repository, $name, $version);
+        parent::__construct($repository, $name, $tag, $version);
     }
 
     /**
+     * @param string $tagPrefix Prefix the tag starts with; it is not part of the version.
      * @throws \InvalidArgumentException When the release tag is not a version.
      */
     public static function fromRecord(
         RepositoryApi $api,
         GitHubRepository $repository,
         ReleaseRecord $record,
+        string $tagPrefix = '',
     ): self {
-        $version = Version::fromVersionString($record->tag);
-        $result = new self($repository, $record->name, $version);
+        $version = \substr($record->tag, \strlen($tagPrefix));
+        $version === '' and throw new \InvalidArgumentException("Release tag `{$record->tag}` has no version.");
+        $version = Version::fromVersionString($version);
+        $result = new self($repository, $record->name, $record->tag, $version);
 
         $result->assets = AssetsCollection::create(static function () use ($api, $result, $record): \Generator {
             foreach ($record->assets as $asset) {
