@@ -82,6 +82,17 @@ final class Logger
     }
 
     /**
+     * Outputs a warning message in yellow.
+     *
+     * @param string $message Message format string
+     * @param string|int|float|bool ...$values Format values
+     */
+    public function warning(string $message, string|int|float|bool ...$values): void
+    {
+        $this->echo("\033[33m" . \sprintf($message, ...self::values($values)) . "\033[0m\n", false);
+    }
+
+    /**
      * Outputs an error message in red.
      *
      * @param string $message Message format string

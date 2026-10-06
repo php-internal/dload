@@ -27,6 +27,7 @@ use Internal\DLoad\Tests\Unit\Module\Repository\Stub\ReleaseStub;
 use Internal\DLoad\Tests\Unit\Module\Repository\Stub\RepositoryStub;
 use Internal\Path;
 use Internal\DLoad\Tests\Unit\Module\Downloader\Internal\AssetSelection\Stub\LibcContainer;
+use Symfony\Component\Console\Output\BufferedOutput;
 use Testo\Assert;
 use Testo\Codecov\Covers;
 use Testo\Data\DataProvider;
@@ -210,6 +211,26 @@ final class AssetSelectionTest
         Assert::same($result->file->getFilename(), $expected);
     }
 
+    #[Test]
+    public function anEmulatedBuildIsInstalledWithAWarning(): void
+    {
+        $output = new BufferedOutput();
+
+        $result = $this->download(
+            self::registryEntry('tigerbeetle'),
+            'tigerbeetle/tigerbeetle',
+            '0.17.9',
+            ['tigerbeetle-x86_64-windows.zip', 'tigerbeetle-aarch64-linux.zip'],
+            OperatingSystem::Windows,
+            Architecture::ARM_64,
+            Libc::Gnu,
+            new Logger($output),
+        );
+
+        Assert::same($result->file->getFilename(), 'tigerbeetle-x86_64-windows.zip');
+        Assert::string($output->fetch())->contains('needs an x86-64 emulator');
+    }
+
     #[DataProvider('provideMagoHosts')]
     #[Test]
     public function magoBuildForTheHostLibcIsSelected(Architecture $arch, Libc $libc, string $expected): void
@@ -281,6 +302,7 @@ final class AssetSelectionTest
         OperatingSystem $os,
         Architecture $arch,
         Libc $libc,
+        Logger $logger = new Logger(),
     ): DownloadResult {
         $repository = new RepositoryStub($repositoryName);
         $release = new ReleaseStub($repository, $tag, Version::fromVersionString(\preg_replace('/^[a-z]+-/', '', $tag)), tag: $tag);
@@ -301,7 +323,7 @@ final class AssetSelectionTest
 
         $downloader = new Downloader(
             config: $config,
-            logger: new Logger(),
+            logger: $logger,
             repositoryProvider: (new RepositoryProvider())->addRepositoryFactory(
                 new SequenceRepositoryFactoryStub([$repository]),
             ),
