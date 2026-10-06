@@ -12,6 +12,7 @@ use Internal\DLoad\Module\Config\Schema\Action\Type;
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\AssetSelector;
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\ArchitectureRule;
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\ArchiveRule;
+use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\CompanionRule;
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\ExtrasRule;
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\FormatRule;
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\LibcRule;
@@ -27,6 +28,7 @@ use Testo\Test;
 #[Covers(AssetSelector::class)]
 #[Covers(NamePatternRule::class)]
 #[Covers(FormatRule::class)]
+#[Covers(CompanionRule::class)]
 #[Covers(OperatingSystemRule::class)]
 #[Covers(ArchitectureRule::class)]
 #[Covers(LibcRule::class)]
@@ -175,6 +177,14 @@ final class AssetSelectorTest
         $names = self::select(['tool-linux-amd64-debug.tar.gz', 'tool-linux-amd64']);
 
         Assert::same($names, ['tool-linux-amd64', 'tool-linux-amd64-debug.tar.gz']);
+    }
+
+    #[Test]
+    public function aChecksumNeverOutranksABuild(): void
+    {
+        $names = self::select(['tool-linux-amd64.tar.gz.sha256', 'tool-linux-amd64-musl.tar.gz']);
+
+        Assert::same($names, ['tool-linux-amd64-musl.tar.gz']);
     }
 
     #[Test]
