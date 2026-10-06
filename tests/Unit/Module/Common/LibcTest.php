@@ -6,6 +6,7 @@ namespace Internal\DLoad\Tests\Unit\Module\Common;
 
 use Internal\DLoad\Module\Common\Input\Build;
 use Internal\DLoad\Module\Common\Libc;
+use Internal\DLoad\Module\Common\OperatingSystem;
 use Testo\Assert;
 use Testo\Codecov\Covers;
 use Testo\Data\DataProvider;
@@ -48,7 +49,19 @@ final class LibcTest
         $build = new Build();
         $build->os = 'alpine';
 
-        Assert::same(Libc::create($build), Libc::Musl);
+        Assert::same(Libc::create($build, OperatingSystem::Linux), Libc::Musl);
+    }
+
+    #[Test]
+    public function androidPrefersMuslBuilds(): void
+    {
+        Assert::same(Libc::create(new Build(), OperatingSystem::Android), Libc::Musl);
+    }
+
+    #[Test]
+    public function aHostOtherThanLinuxIsNotProbed(): void
+    {
+        Assert::same(Libc::create(new Build(), OperatingSystem::Darwin), Libc::Gnu);
     }
 
     #[DataProvider('provideHosts')]

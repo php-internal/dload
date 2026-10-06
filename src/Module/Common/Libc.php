@@ -10,8 +10,9 @@ use Internal\DLoad\Module\Common\Input\Build;
 /**
  * C standard library a binary is linked against.
  *
- * Only Linux distributions differ here: Alpine and a few others use musl. Every other host is
- * treated as {@see self::Gnu}, which keeps musl builds a fallback there.
+ * Only Linux distributions differ here: Alpine and a few others use musl. Android counts as
+ * {@see self::Musl}: its own libc runs no glibc build, while musl builds are usually static.
+ * Every other host is treated as {@see self::Gnu}, which keeps musl builds a fallback there.
  *
  * ```php
  * // Recommended: Get from container (autowired with build config); detection runs once
@@ -28,10 +29,12 @@ enum Libc: string implements Factoriable
     case Gnu = 'gnu';
     case Musl = 'musl';
 
-    public static function create(Build $config): self
+    public static function create(Build $config, OperatingSystem $os): self
     {
-        return match (\strtolower((string) $config->os)) {
-            'alpine', 'unknown-musl' => self::Musl,
+        return match (true) {
+            \in_array(\strtolower((string) $config->os), ['alpine', 'unknown-musl'], true) => self::Musl,
+            $os === OperatingSystem::Android => self::Musl,
+            $os !== OperatingSystem::Linux => self::Gnu,
             default => self::fromGlobals(),
         };
     }
