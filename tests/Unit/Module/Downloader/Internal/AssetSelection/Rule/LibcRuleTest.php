@@ -7,6 +7,7 @@ namespace Internal\DLoad\Tests\Unit\Module\Downloader\Internal\AssetSelection\Ru
 use Internal\DLoad\Module\Common\Libc;
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\LibcRule;
 use Internal\DLoad\Tests\Unit\Module\Downloader\Internal\AssetSelection\Stub\RuleRunner;
+use Internal\DLoad\Tests\Unit\Module\Downloader\Internal\AssetSelection\Stub\LibcContainer;
 use Testo\Assert;
 use Testo\Codecov\Covers;
 use Testo\Test;
@@ -23,7 +24,7 @@ final class LibcRuleTest
     #[Test]
     public function aGlibcHostRanksMuslBuildsLast(): void
     {
-        $selection = RuleRunner::run(new LibcRule(Libc::Gnu), self::ASSETS);
+        $selection = RuleRunner::run(new LibcRule(new LibcContainer(Libc::Gnu)), self::ASSETS);
 
         Assert::same(RuleRunner::ranks($selection, 'libc'), [
             'tool-x86_64-unknown-linux-gnu.tar.gz' => 0,
@@ -35,7 +36,7 @@ final class LibcRuleTest
     #[Test]
     public function aMuslHostRanksMuslBuildsFirst(): void
     {
-        $selection = RuleRunner::run(new LibcRule(Libc::Musl), self::ASSETS);
+        $selection = RuleRunner::run(new LibcRule(new LibcContainer(Libc::Musl)), self::ASSETS);
 
         Assert::same(RuleRunner::ranks($selection, 'libc'), [
             'tool-x86_64-unknown-linux-gnu.tar.gz' => 1,
@@ -47,8 +48,33 @@ final class LibcRuleTest
     #[Test]
     public function nothingIsRemoved(): void
     {
-        $selection = RuleRunner::run(new LibcRule(Libc::Gnu), self::ASSETS);
+        $selection = RuleRunner::run(new LibcRule(new LibcContainer(Libc::Gnu)), self::ASSETS);
 
         Assert::same(RuleRunner::names($selection), self::ASSETS);
+    }
+
+    #[Test]
+    public function theHostIsNotProbedWithoutAChoiceOfLibc(): void
+    {
+        $container = new LibcContainer(Libc::Gnu);
+
+        $selection = RuleRunner::run(new LibcRule($container), ['tool-linux-amd64.tar.gz', 'tool-x86_64-unknown-linux-gnu.tar.gz']);
+
+        Assert::same($container->requests, 0);
+        Assert::same(RuleRunner::ranks($selection, 'libc'), [
+            'tool-linux-amd64.tar.gz' => 0,
+            'tool-x86_64-unknown-linux-gnu.tar.gz' => 0,
+        ]);
+    }
+
+    #[Test]
+    public function theHostIsProbedWhenTheLibcDecides(): void
+    {
+        $container = new LibcContainer(Libc::Musl);
+
+        $selection = RuleRunner::run(new LibcRule($container), self::ASSETS);
+
+        Assert::same($container->requests, 1);
+        Assert::same(RuleRunner::ranks($selection, 'libc')['tool-x86_64-unknown-linux-musl.tar.gz'], 0);
     }
 }

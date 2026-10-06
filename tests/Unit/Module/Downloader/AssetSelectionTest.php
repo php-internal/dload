@@ -26,6 +26,7 @@ use Internal\DLoad\Tests\Unit\Module\Repository\Stub\AssetStub;
 use Internal\DLoad\Tests\Unit\Module\Repository\Stub\ReleaseStub;
 use Internal\DLoad\Tests\Unit\Module\Repository\Stub\RepositoryStub;
 use Internal\Path;
+use Internal\DLoad\Tests\Unit\Module\Downloader\Internal\AssetSelection\Stub\LibcContainer;
 use Testo\Assert;
 use Testo\Codecov\Covers;
 use Testo\Data\DataProvider;
@@ -309,7 +310,7 @@ final class AssetSelectionTest
             stability: Stability::Stable,
             archiveService: new ArchiveFactory(),
             registry: new RecordingRegistry(),
-            assetSelector: new AssetSelector($os, $arch, $libc, new ArchiveFactory()),
+            assetSelector: new AssetSelector($os, $arch, new LibcContainer($libc), new ArchiveFactory()),
         );
         $task = $downloader->download($software, DownloadConfig::fromSoftwareId($software->getId()), static fn(): null => null);
 

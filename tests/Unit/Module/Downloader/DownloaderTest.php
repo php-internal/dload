@@ -33,6 +33,7 @@ use Internal\DLoad\Tests\Unit\Module\Repository\Stub\AssetStub;
 use Internal\DLoad\Tests\Unit\Module\Repository\Stub\ReleaseStub;
 use Internal\DLoad\Tests\Unit\Module\Repository\Stub\RepositoryStub;
 use Internal\Path;
+use Internal\DLoad\Tests\Unit\Module\Downloader\Internal\AssetSelection\Stub\LibcContainer;
 use Testo\Assert;
 use Testo\Codecov\Covers;
 use Testo\Data\DataProvider;
@@ -428,7 +429,7 @@ final class DownloaderTest
             stability: Stability::Stable,
             archiveService: new ArchiveFactory(),
             registry: $this->registry,
-            assetSelector: new AssetSelector(OperatingSystem::Linux, Architecture::X86_64, Libc::Gnu, new ArchiveFactory()),
+            assetSelector: new AssetSelector(OperatingSystem::Linux, Architecture::X86_64, new LibcContainer(Libc::Gnu), new ArchiveFactory()),
         );
 
         $software = Software::fromArray([
@@ -477,7 +478,7 @@ final class DownloaderTest
             stability: Stability::Stable,
             archiveService: new ArchiveFactory(),
             registry: $this->registry,
-            assetSelector: new AssetSelector(OperatingSystem::Linux, Architecture::X86_64, Libc::Gnu, new ArchiveFactory()),
+            assetSelector: new AssetSelector(OperatingSystem::Linux, Architecture::X86_64, new LibcContainer(Libc::Gnu), new ArchiveFactory()),
         );
     }
 

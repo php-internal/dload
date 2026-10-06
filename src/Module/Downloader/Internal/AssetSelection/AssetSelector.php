@@ -6,7 +6,6 @@ namespace Internal\DLoad\Module\Downloader\Internal\AssetSelection;
 
 use Internal\DLoad\Module\Archive\ArchiveFactory;
 use Internal\DLoad\Module\Common\Architecture;
-use Internal\DLoad\Module\Common\Libc;
 use Internal\DLoad\Module\Common\OperatingSystem;
 use Internal\DLoad\Module\Common\Pipeline\Pipeline;
 use Internal\DLoad\Module\Config\Schema\Action\Type;
@@ -18,6 +17,7 @@ use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\LibcRule;
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\NamePatternRule;
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\OperatingSystemRule;
 use Internal\DLoad\Module\Repository\AssetInterface;
+use Psr\Container\ContainerInterface;
 
 /**
  * Orders the assets of a release from the best fit for the host to the worst.
@@ -38,7 +38,7 @@ final class AssetSelector
     public function __construct(
         OperatingSystem $operatingSystem,
         Architecture $architecture,
-        Libc $libc,
+        ContainerInterface $container,
         ArchiveFactory $archiveFactory,
     ) {
         /**
@@ -52,7 +52,7 @@ final class AssetSelector
             new FormatRule($archiveFactory),
             new OperatingSystemRule($operatingSystem),
             new ArchitectureRule($architecture),
-            new LibcRule($libc),
+            new LibcRule($container),
             new ExtrasRule(),
             new ArchiveRule($archiveFactory),
         )->with(static fn(Selection $selection): Selection => $selection, 'select');
