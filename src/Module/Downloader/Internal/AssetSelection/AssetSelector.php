@@ -51,7 +51,7 @@ final class AssetSelector
             new NamePatternRule(),
             new FormatRule($archiveFactory),
             new OperatingSystemRule($operatingSystem),
-            new ArchitectureRule($architecture),
+            new ArchitectureRule($architecture, $operatingSystem),
             new LibcRule($container),
             new ExtrasRule(),
             new ArchiveRule($archiveFactory),
