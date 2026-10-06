@@ -120,7 +120,7 @@ final class Get extends Base
         $output->writeln('Architecture: ' . $container->get(Architecture::class)->name);
         $output->writeln(
             '  Op. system: ' . $container->get(OperatingSystem::class)->name
-            . ($container->get(Libc::class) === Libc::Musl ? ' (musl)' : ''),
+            . self::describeLibc($container->get(Libc::class)),
         );
         $output->writeln('   Stability: ' . $container->get(Stability::class)->name);
 
@@ -261,6 +261,14 @@ final class Get extends Base
         $arch === '' or $container->set(Architecture::tryFromString($arch) ?? throw new InvalidArgumentException(
             "Unknown architecture: {$arch}.",
         ));
+    }
+
+    /**
+     * Names the libc next to the OS where builds differ by it.
+     */
+    private static function describeLibc(Libc $libc): string
+    {
+        return $libc === Libc::System ? '' : " ({$libc->value})";
     }
 
     /**

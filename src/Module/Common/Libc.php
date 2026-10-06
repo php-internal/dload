@@ -8,11 +8,9 @@ use Internal\Container\Factoriable;
 use Internal\DLoad\Module\Common\Input\Build;
 
 /**
- * C standard library a binary is linked against.
+ * C standard library of a host or a build.
  *
- * Only Linux distributions differ here: Alpine and a few others use musl. Android counts as
- * {@see self::Musl}: its own libc runs no glibc build, while musl builds are usually static.
- * Every other host is treated as {@see self::Gnu}, which keeps musl builds a fallback there.
+ * Builds name only {@see self::Gnu} or {@see self::Musl}; the other cases describe hosts.
  *
  * ```php
  * // Recommended: Get from container (autowired with build config); detection runs once
@@ -26,15 +24,32 @@ use Internal\DLoad\Module\Common\Input\Build;
  */
 enum Libc: string implements Factoriable
 {
+    /**
+     * glibc: most Linux distributions.
+     */
     case Gnu = 'gnu';
+
+    /**
+     * musl: Alpine and a few other Linux distributions.
+     */
     case Musl = 'musl';
+
+    /**
+     * Android's own libc: it runs no glibc build, while musl builds are usually static.
+     */
+    case Bionic = 'bionic';
+
+    /**
+     * The one libc the OS ships, like on Windows, macOS and BSD: builds do not differ by it.
+     */
+    case System = 'system';
 
     public static function create(Build $config, OperatingSystem $os): self
     {
         return match (true) {
             \in_array(\strtolower((string) $config->os), ['alpine', 'unknown-musl'], true) => self::Musl,
-            $os === OperatingSystem::Android => self::Musl,
-            $os !== OperatingSystem::Linux => self::Gnu,
+            $os === OperatingSystem::Android => self::Bionic,
+            $os !== OperatingSystem::Linux => self::System,
             default => self::fromGlobals(),
         };
     }
@@ -51,7 +66,7 @@ enum Libc: string implements Factoriable
     public static function detect(string $osFamily, string $root): self
     {
         if ($osFamily !== 'Linux') {
-            return self::Gnu;
+            return self::System;
         }
 
         // The musl dynamic loader exists on musl systems only, and checking it runs nothing
@@ -61,6 +76,11 @@ enum Libc: string implements Factoriable
         return \is_array($loaders) && $loaders !== [] ? self::Musl : self::Gnu;
     }
 
+    /**
+     * Reads the libc a build is linked against from its name.
+     *
+     * @return self::Gnu|self::Musl|null Null when the name tells nothing.
+     */
     public static function tryFromBuildName(string $name): ?self
     {
         if (\preg_match('/(?:\b|_)(musl(?:eabi(?:hf)?)?|alpine|gnu(?:eabi(?:hf)?)?|glibc)(?:\b|_)/i', $name, $matches) !== 1) {
@@ -69,5 +89,21 @@ enum Libc: string implements Factoriable
 
         $token = \strtolower($matches[1]);
         return \str_starts_with($token, 'musl') || $token === 'alpine' ? self::Musl : self::Gnu;
+    }
+
+    /**
+     * Whether a host with this libc prefers the build.
+     *
+     * A build that names no libc counts as a glibc one.
+     *
+     * @param self|null $build Libc the build names.
+     */
+    public function prefers(?self $build): bool
+    {
+        return match ($this) {
+            self::Gnu => $build !== self::Musl,
+            self::Musl, self::Bionic => $build === self::Musl,
+            self::System => true,
+        };
     }
 }
