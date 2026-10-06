@@ -38,10 +38,20 @@ enum Libc: string implements Factoriable
 
     public static function fromGlobals(): self
     {
+        return self::detect(\PHP_OS_FAMILY, '/');
+    }
+
+    /**
+     * @param string $osFamily OS family in terms of {@see PHP_OS_FAMILY}.
+     * @param non-empty-string $root Root of the file system to look for the musl loader in.
+     */
+    public static function detect(string $osFamily, string $root): self
+    {
         // The musl dynamic loader exists on musl systems only, and checking it runs nothing
-        return \PHP_OS_FAMILY === 'Linux' && \glob('/lib/ld-musl-*.so.1') !== []
-            ? self::Musl
-            : self::Gnu;
+        $loaders = \glob(\rtrim($root, '/') . '/lib/ld-musl-*.so.1');
+
+        // `glob()` reports an error as `false`, which must not count as a found loader
+        return $osFamily === 'Linux' && \is_array($loaders) && $loaders !== [] ? self::Musl : self::Gnu;
     }
 
     public static function tryFromBuildName(string $name): ?self
