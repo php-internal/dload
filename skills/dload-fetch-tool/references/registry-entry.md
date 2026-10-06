@@ -22,7 +22,7 @@ Filters the release's asset list. dload then runs OS/arch detection on every mat
 - match all OS/arch variants of the tool;
 - leave out sibling tools, checksums, signatures, source archives.
 
-Build variants stay in the pattern too. Among the assets for the host, dload prefers the host libc (`musl` builds on Alpine, the others elsewhere), then the name with the fewest extra tokens — so `bun-linux-x64.zip` wins over `-baseline`, `-profile` and `-debug` twins — then archives. Android builds are never picked on Linux. On ARM macOS and Windows, x86-64 builds are a fallback: Rosetta 2 and the Windows emulation run them.
+Build variants stay in the pattern too. Among the assets for the host, dload prefers the host libc (`musl` builds on Alpine and Android, the others elsewhere), then the name with the fewest extra tokens — so `bun-linux-x64.zip` wins over `-baseline`, `-profile` and `-debug` twins — then archives. Android builds are dropped on Linux whenever the entry has a `binary` (without one, every other platform is only ranked lower). On ARM macOS and Windows, x86-64 builds are a fallback: Rosetta 2 and the Windows emulation run them.
 
 Tokens the OS/arch matchers recognise (case-insensitive, bounded by `_` or a word boundary):
 
