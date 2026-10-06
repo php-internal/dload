@@ -91,6 +91,18 @@ final class AssetSelectorTest
     }
 
     #[Test]
+    public function appleSiliconFallsBackToAnX86Build(): void
+    {
+        $names = self::select(
+            ['tool-linux-arm64.zip', 'tool-darwin-amd64.zip'],
+            os: OperatingSystem::Darwin,
+            arch: Architecture::ARM_64,
+        );
+
+        Assert::same($names, ['tool-darwin-amd64.zip']);
+    }
+
+    #[Test]
     public function aGradualSelectionPutsOtherPlatformsAfterTheHostOne(): void
     {
         $names = self::select([
