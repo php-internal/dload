@@ -14,7 +14,7 @@ use Internal\DLoad\Module\Common\Input\Build;
  * treated as {@see self::Gnu}, which keeps musl builds a fallback there.
  *
  * ```php
- * // Recommended: Get from container (autowired with build config)
+ * // Recommended: Get from container (autowired with build config); detection runs once
  * $libc = $container->get(Libc::class);
  *
  * // Or read it from a build name
@@ -47,11 +47,15 @@ enum Libc: string implements Factoriable
      */
     public static function detect(string $osFamily, string $root): self
     {
+        if ($osFamily !== 'Linux') {
+            return self::Gnu;
+        }
+
         // The musl dynamic loader exists on musl systems only, and checking it runs nothing
         $loaders = \glob(\rtrim($root, '/') . '/lib/ld-musl-*.so.1');
 
         // `glob()` reports an error as `false`, which must not count as a found loader
-        return $osFamily === 'Linux' && \is_array($loaders) && $loaders !== [] ? self::Musl : self::Gnu;
+        return \is_array($loaders) && $loaders !== [] ? self::Musl : self::Gnu;
     }
 
     public static function tryFromBuildName(string $name): ?self

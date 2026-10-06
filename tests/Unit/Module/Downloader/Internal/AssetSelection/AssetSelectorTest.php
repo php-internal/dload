@@ -19,6 +19,7 @@ use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\NamePatternRul
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\OperatingSystemRule;
 use Internal\DLoad\Module\Repository\AssetInterface;
 use Internal\DLoad\Tests\Unit\Module\Downloader\Internal\AssetSelection\Stub\NamedAssets;
+use Internal\DLoad\Tests\Unit\Module\Downloader\Internal\AssetSelection\Stub\LibcContainer;
 use Testo\Assert;
 use Testo\Codecov\Covers;
 use Testo\Test;
@@ -186,7 +187,7 @@ final class AssetSelectorTest
         Architecture $arch = Architecture::X86_64,
         Libc $libc = Libc::Gnu,
     ): array {
-        $selection = (new AssetSelector($os, $arch, $libc, new ArchiveFactory()))
+        $selection = (new AssetSelector($os, $arch, new LibcContainer($libc), new ArchiveFactory()))
             ->select(NamedAssets::create(...$assets), $pattern, $type, $strict);
 
         return \array_map(static fn(AssetInterface $asset): string => $asset->getName(), $selection->assets());
