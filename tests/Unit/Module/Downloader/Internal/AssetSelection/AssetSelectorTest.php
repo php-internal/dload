@@ -6,6 +6,7 @@ namespace Internal\DLoad\Tests\Unit\Module\Downloader\Internal\AssetSelection;
 
 use Internal\DLoad\Module\Archive\ArchiveFactory;
 use Internal\DLoad\Module\Common\Architecture;
+use Internal\DLoad\Module\Common\Input\Build;
 use Internal\DLoad\Module\Common\Libc;
 use Internal\DLoad\Module\Common\OperatingSystem;
 use Internal\DLoad\Module\Config\Schema\Action\Type;
@@ -177,6 +178,21 @@ final class AssetSelectorTest
         $names = self::select(['tool-linux-amd64-debug.tar.gz', 'tool-linux-amd64']);
 
         Assert::same($names, ['tool-linux-amd64', 'tool-linux-amd64-debug.tar.gz']);
+    }
+
+    #[Test]
+    public function androidPrefersAStaticMuslLinuxBuild(): void
+    {
+        $libc = Libc::create(new Build(), OperatingSystem::Android);
+
+        $names = self::select(
+            ['tool-aarch64-unknown-linux-gnu.tar.gz', 'tool-aarch64-unknown-linux-musl.tar.gz'],
+            os: OperatingSystem::Android,
+            arch: Architecture::ARM_64,
+            libc: $libc,
+        );
+
+        Assert::same($names, ['tool-aarch64-unknown-linux-musl.tar.gz', 'tool-aarch64-unknown-linux-gnu.tar.gz']);
     }
 
     #[Test]
