@@ -11,11 +11,11 @@ use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Selection;
 use Psr\Container\ContainerInterface;
 
 /**
- * Prefers assets linked against the host libc.
+ * Prefers the builds the host libc prefers, see {@see Libc::prefers()}.
  *
  * Ranks rather than removes: a static build runs whatever the libc, and some tools publish
- * only a musl build for Linux. An asset that names no libc counts as a glibc one. The host libc
- * comes from the container only when the assets differ in libc: resolving it probes the file system.
+ * only a musl build for Linux. The host libc comes from the container only when the assets
+ * differ in libc: resolving it probes the file system.
  *
  * @internal
  * @psalm-internal Internal\DLoad\Module\Downloader
@@ -30,7 +30,7 @@ final class LibcRule implements AssetRule
     {
         $libcs = [];
         foreach ($selection->candidates as $candidate) {
-            $libcs[self::libc($candidate)->value] = true;
+            $libcs[($candidate->name->libc ?? Libc::Gnu)->value] = true;
         }
 
         // The host is probed only when there is a choice between libcs
@@ -40,11 +40,6 @@ final class LibcRule implements AssetRule
 
         /** @var Libc $host */
         $host = $this->container->get(Libc::class);
-        return $next($selection->prefer('libc', static fn(Candidate $candidate): bool => self::libc($candidate) === $host));
-    }
-
-    private static function libc(Candidate $candidate): Libc
-    {
-        return $candidate->name->libc ?? Libc::Gnu;
+        return $next($selection->prefer('libc', static fn(Candidate $candidate): bool => $host->prefers($candidate->name->libc)));
     }
 }

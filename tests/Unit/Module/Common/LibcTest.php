@@ -33,7 +33,20 @@ final class LibcTest
     {
         yield 'Linux with the musl loader' => ['Linux', true, Libc::Musl];
         yield 'Linux without it' => ['Linux', false, Libc::Gnu];
-        yield 'not Linux' => ['Darwin', true, Libc::Gnu];
+        yield 'not Linux' => ['Darwin', true, Libc::System];
+    }
+
+    public static function providePreferences(): iterable
+    {
+        yield 'glibc host, glibc build' => [Libc::Gnu, Libc::Gnu, true];
+        yield 'glibc host, plain build' => [Libc::Gnu, null, true];
+        yield 'glibc host, musl build' => [Libc::Gnu, Libc::Musl, false];
+        yield 'musl host, musl build' => [Libc::Musl, Libc::Musl, true];
+        yield 'musl host, plain build' => [Libc::Musl, null, false];
+        yield 'Android, musl build' => [Libc::Bionic, Libc::Musl, true];
+        yield 'Android, glibc build' => [Libc::Bionic, Libc::Gnu, false];
+        yield 'system libc, musl build' => [Libc::System, Libc::Musl, true];
+        yield 'system libc, glibc build' => [Libc::System, Libc::Gnu, true];
     }
 
     #[DataProvider('provideBuildNames')]
@@ -41,6 +54,13 @@ final class LibcTest
     public function tryFromBuildName(string $name, ?Libc $expected): void
     {
         Assert::same(Libc::tryFromBuildName($name), $expected);
+    }
+
+    #[DataProvider('providePreferences')]
+    #[Test]
+    public function prefers(Libc $host, ?Libc $build, bool $expected): void
+    {
+        Assert::same($host->prefers($build), $expected);
     }
 
     #[Test]
@@ -53,15 +73,15 @@ final class LibcTest
     }
 
     #[Test]
-    public function androidPrefersMuslBuilds(): void
+    public function androidHasItsOwnLibc(): void
     {
-        Assert::same(Libc::create(new Build(), OperatingSystem::Android), Libc::Musl);
+        Assert::same(Libc::create(new Build(), OperatingSystem::Android), Libc::Bionic);
     }
 
     #[Test]
     public function aHostOtherThanLinuxIsNotProbed(): void
     {
-        Assert::same(Libc::create(new Build(), OperatingSystem::Darwin), Libc::Gnu);
+        Assert::same(Libc::create(new Build(), OperatingSystem::Darwin), Libc::System);
     }
 
     #[DataProvider('provideHosts')]

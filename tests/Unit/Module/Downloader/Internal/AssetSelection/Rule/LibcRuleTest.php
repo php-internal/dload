@@ -46,6 +46,32 @@ final class LibcRuleTest
     }
 
     #[Test]
+    public function androidRanksMuslBuildsFirst(): void
+    {
+        $selection = RuleRunner::run(new LibcRule(new LibcContainer(Libc::Bionic)), self::ASSETS);
+
+        Assert::same(RuleRunner::ranks($selection, 'libc'), [
+            'tool-x86_64-unknown-linux-gnu.tar.gz' => 1,
+            'tool-x86_64-unknown-linux-musl.tar.gz' => 0,
+            'tool-linux-amd64.tar.gz' => 1,
+        ]);
+    }
+
+    #[Test]
+    public function aSystemLibcRanksNothing(): void
+    {
+        $selection = RuleRunner::run(new LibcRule(new LibcContainer(Libc::System)), [
+            'tool-x86_64-pc-windows-gnu.tar.gz',
+            'tool-x86_64-pc-windows-msvc.zip',
+        ]);
+
+        Assert::same(RuleRunner::ranks($selection, 'libc'), [
+            'tool-x86_64-pc-windows-gnu.tar.gz' => 0,
+            'tool-x86_64-pc-windows-msvc.zip' => 0,
+        ]);
+    }
+
+    #[Test]
     public function nothingIsRemoved(): void
     {
         $selection = RuleRunner::run(new LibcRule(new LibcContainer(Libc::Gnu)), self::ASSETS);
