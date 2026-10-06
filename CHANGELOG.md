@@ -1,5 +1,38 @@
 # Changelog
 
+## [1.18.0](https://github.com/php-internal/dload/compare/1.17.0...1.18.0) (2026-10-06)
+
+
+### Features
+
+* **downloader:** fall back to x86-64 builds on ARM macOS and Windows ([b045f25](https://github.com/php-internal/dload/commit/b045f250df57d0e923834d073cbb4406c6f8ec5c))
+* **downloader:** prefer the build for the host libc ([a5ea3e0](https://github.com/php-internal/dload/commit/a5ea3e00dd377aafc7f041300053d7ce78d80c1f))
+* **downloader:** prefer the plain build over its variants ([0d5092a](https://github.com/php-internal/dload/commit/0d5092a99500e99d5b4482e582ed75d4fd1206b2))
+* **downloader:** recognize Android builds ([9ae238f](https://github.com/php-internal/dload/commit/9ae238f8f7fd0d28e8a121355556142e83a44683))
+* **downloader:** warn when an installed build needs x86-64 emulation ([e4e9459](https://github.com/php-internal/dload/commit/e4e94597316d10d5098532d3ad92070db2c439d1))
+* **get:** show the libc of Linux and Android hosts ([410e738](https://github.com/php-internal/dload/commit/410e7387a3da701abaf754fef281b8ed227e5526))
+* **registry:** select Bun assets with a broad pattern ([0d5092a](https://github.com/php-internal/dload/commit/0d5092a99500e99d5b4482e582ed75d4fd1206b2)), closes [#134](https://github.com/php-internal/dload/issues/134)
+
+
+### Bug Fixes
+
+* **downloader:** do not detect musl when the loader lookup fails ([92db68e](https://github.com/php-internal/dload/commit/92db68e4499d7ec8907cbd52a2604005af07fed4))
+* **downloader:** never select checksums and signatures ([535540d](https://github.com/php-internal/dload/commit/535540df1c181942d2d8dd16a6f5a4b3d14f39d3))
+* **downloader:** prefer musl builds on Android ([7345551](https://github.com/php-internal/dload/commit/7345551ebd2b6ad7d9c60ce9599d9431a6c88140))
+
+
+### Documentation
+
+* **skill:** describe when Android builds are dropped ([c155632](https://github.com/php-internal/dload/commit/c155632edbdf541808bf292b74b6793cdea60631))
+
+
+### Code Refactoring
+
+* **downloader:** drop a bogus preg_match flag ([c155632](https://github.com/php-internal/dload/commit/c155632edbdf541808bf292b74b6793cdea60631))
+* **downloader:** name the libc of every host ([410e738](https://github.com/php-internal/dload/commit/410e7387a3da701abaf754fef281b8ed227e5526))
+* **downloader:** read the host libc lazily in asset selection ([666e6cd](https://github.com/php-internal/dload/commit/666e6cdfb040a131cab135dd2a8eebc22c1e4678))
+* **downloader:** select assets through a ranking pipeline ([144de75](https://github.com/php-internal/dload/commit/144de751d97c53c054b25eef2817576e3f2d366c))
+
 ## [1.17.0](https://github.com/php-internal/dload/compare/1.16.6...1.17.0) (2026-10-05)
 
 
