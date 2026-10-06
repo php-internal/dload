@@ -7,6 +7,7 @@ namespace Internal\DLoad\Tests\Unit\Module\Common;
 use Internal\DLoad\Module\Common\OperatingSystem;
 use Testo\Assert;
 use Testo\Data\DataProvider;
+use Testo\Expect;
 use Testo\Test;
 
 class OperatingSystemTest
@@ -45,5 +46,19 @@ class OperatingSystemTest
     public function androidIsDetectedByItsRuntimeOnLinux(string $osFamily, bool $androidRuntime, OperatingSystem $expected): void
     {
         Assert::same(OperatingSystem::fromHost($osFamily, $androidRuntime), $expected);
+    }
+
+    #[Test]
+    public function androidCanBeRequestedByName(): void
+    {
+        Assert::same(OperatingSystem::tryFromString('android'), OperatingSystem::Android);
+    }
+
+    #[Test]
+    public function anUnknownHostFamilyIsRejected(): void
+    {
+        Expect::exception(\OutOfRangeException::class);
+
+        OperatingSystem::fromHost('Solaris', false);
     }
 }

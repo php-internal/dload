@@ -100,4 +100,10 @@ final class LibcTest
             \rmdir($root);
         }
     }
+
+    #[Test]
+    public function theCurrentHostIsProbedAtTheFileSystemRoot(): void
+    {
+        Assert::same(Libc::fromGlobals(), Libc::detect(\PHP_OS_FAMILY, '/'));
+    }
 }
