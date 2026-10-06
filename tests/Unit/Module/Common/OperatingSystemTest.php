@@ -26,10 +26,24 @@ class OperatingSystemTest
         yield ['tool-aarch64-linux-android.tar.gz', OperatingSystem::Android];
     }
 
+    public static function provideHosts(): iterable
+    {
+        yield 'Linux with the Android runtime' => ['Linux', true, OperatingSystem::Android];
+        yield 'Linux without it' => ['Linux', false, OperatingSystem::Linux];
+        yield 'not Linux' => ['Darwin', true, OperatingSystem::Darwin];
+    }
+
     #[DataProvider('provideBuildNames')]
     #[Test]
     public function tryFromBuildName(string $name, ?OperatingSystem $expected): void
     {
         Assert::same(OperatingSystem::tryFromBuildName($name), $expected);
+    }
+
+    #[DataProvider('provideHosts')]
+    #[Test]
+    public function androidIsDetectedByItsRuntimeOnLinux(string $osFamily, bool $androidRuntime, OperatingSystem $expected): void
+    {
+        Assert::same(OperatingSystem::fromHost($osFamily, $androidRuntime), $expected);
     }
 }

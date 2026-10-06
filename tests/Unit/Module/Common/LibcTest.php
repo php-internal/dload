@@ -28,6 +28,13 @@ final class LibcTest
         yield ['muslim-prayer-times-linux-amd64.zip', null];
     }
 
+    public static function provideHosts(): iterable
+    {
+        yield 'Linux with the musl loader' => ['Linux', true, Libc::Musl];
+        yield 'Linux without it' => ['Linux', false, Libc::Gnu];
+        yield 'not Linux' => ['Darwin', true, Libc::Gnu];
+    }
+
     #[DataProvider('provideBuildNames')]
     #[Test]
     public function tryFromBuildName(string $name, ?Libc $expected): void
@@ -42,5 +49,22 @@ final class LibcTest
         $build->os = 'alpine';
 
         Assert::same(Libc::create($build), Libc::Musl);
+    }
+
+    #[DataProvider('provideHosts')]
+    #[Test]
+    public function muslIsDetectedByItsLoaderOnLinux(string $osFamily, bool $loader, Libc $expected): void
+    {
+        $root = \sys_get_temp_dir() . '/dload-libc-' . \bin2hex(\random_bytes(6));
+        \mkdir($root . '/lib', recursive: true);
+        $loader and \touch($root . '/lib/ld-musl-x86_64.so.1');
+
+        try {
+            Assert::same(Libc::detect($osFamily, $root), $expected);
+        } finally {
+            $loader and \unlink($root . '/lib/ld-musl-x86_64.so.1');
+            \rmdir($root . '/lib');
+            \rmdir($root);
+        }
     }
 }

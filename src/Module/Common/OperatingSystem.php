@@ -41,12 +41,22 @@ enum OperatingSystem: string implements Factoriable
 
     public static function fromGlobals(): self
     {
-        $os = self::tryFromString(\PHP_OS_FAMILY) ?? throw new \OutOfRangeException(
-            \sprintf(self::ERROR_UNKNOWN_OS, \PHP_OS_FAMILY),
+        // The variable is set by the Android runtime and Termux
+        return self::fromHost(\PHP_OS_FAMILY, \getenv('ANDROID_ROOT') !== false);
+    }
+
+    /**
+     * @param string $osFamily OS family in terms of {@see PHP_OS_FAMILY}.
+     * @param bool $androidRuntime Whether the Android runtime is present.
+     */
+    public static function fromHost(string $osFamily, bool $androidRuntime): self
+    {
+        $os = self::tryFromString($osFamily) ?? throw new \OutOfRangeException(
+            \sprintf(self::ERROR_UNKNOWN_OS, $osFamily),
         );
 
-        // PHP reports Android as Linux; the variable is set by the Android runtime and Termux
-        return $os === self::Linux && \getenv('ANDROID_ROOT') !== false ? self::Android : $os;
+        // PHP reports Android as Linux
+        return $os === self::Linux && $androidRuntime ? self::Android : $os;
     }
 
     public static function tryFromString(string $name): ?self
