@@ -20,6 +20,12 @@ use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Selection;
  */
 final class ArchitectureRule implements AssetRule
 {
+    /** Name of the rank this rule gives. */
+    public const KEY = 'arch';
+
+    /** Rank of an asset the host runs only through emulation. */
+    public const EMULATED = 1;
+
     public function __construct(
         private readonly Architecture $architecture,
         private readonly OperatingSystem $operatingSystem,
@@ -32,7 +38,7 @@ final class ArchitectureRule implements AssetRule
         );
 
         return $next($selection->rank(
-            'arch',
+            self::KEY,
             fn(Candidate $candidate): int => $this->rank($candidate->asset->getArchitecture()) ?? 2,
         ));
     }
@@ -47,7 +53,7 @@ final class ArchitectureRule implements AssetRule
             // Rosetta 2 on macOS and the built-in emulation of Windows run x86-64 builds on ARM
             $arch === Architecture::X86_64
                 && $this->architecture === Architecture::ARM_64
-                && \in_array($this->operatingSystem, [OperatingSystem::Darwin, OperatingSystem::Windows], true) => 1,
+                && \in_array($this->operatingSystem, [OperatingSystem::Darwin, OperatingSystem::Windows], true) => self::EMULATED,
             default => null,
         };
     }

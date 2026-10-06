@@ -19,6 +19,7 @@ use Internal\DLoad\Module\Downloader\Exception\NotFound;
 use Internal\DLoad\Module\Downloader\Exception\ReleaseGone;
 use Internal\DLoad\Module\Downloader\Internal\Diagnostics\DownloadDiagnostics;
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\AssetSelector;
+use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\ArchitectureRule;
 use Internal\DLoad\Module\Downloader\Internal\DownloadContext;
 use Internal\DLoad\Module\Downloader\Task\DownloadResult;
 use Internal\DLoad\Module\Downloader\Task\DownloadTask;
@@ -326,7 +327,18 @@ final class Downloader
                 );
             }
 
-            return $this->tryProcessAssets($selection->assets(), $context);
+            $asset = $this->tryProcessAssets($selection->assets(), $context);
+            foreach ($selection->candidates as $candidate) {
+                // The host runs this build only through emulation, which may be missing (Rosetta 2 is optional)
+                $candidate->asset === $asset && ($candidate->ranks[ArchitectureRule::KEY] ?? null) === ArchitectureRule::EMULATED and $this->logger->warning(
+                    'No `%s` build of `%s` found, `%s` needs an x86-64 emulator to run.',
+                    $this->architecture->value,
+                    $context->software->getId(),
+                    $asset->getName(),
+                );
+            }
+
+            return $asset;
         };
     }
 
