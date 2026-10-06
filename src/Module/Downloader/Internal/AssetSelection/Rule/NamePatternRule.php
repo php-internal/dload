@@ -24,7 +24,6 @@ final class NamePatternRule implements AssetRule
             static fn(Candidate $candidate): bool => @\preg_match(
                 $pattern,
                 $candidate->asset->getName(),
-                flags: \PREG_NO_ERROR,
             ) !== 1,
         ));
     }
