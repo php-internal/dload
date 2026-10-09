@@ -14,7 +14,7 @@ use Internal\DLoad\Module\Config\Schema\Action\Velox as VeloxConfig;
 use Internal\DLoad\Module\Config\Schema\Actions;
 use Internal\DLoad\Module\Config\Schema\Embed\Binary as BinaryConfig;
 use Internal\DLoad\Module\Config\Schema\Embed\Software;
-use Internal\DLoad\Module\Downloader\SoftwareCollection;
+use Internal\DLoad\Module\Software\SoftwareCollection;
 use Internal\DLoad\Module\Velox\Exception\Dependency as DependencyException;
 use Internal\DLoad\Module\Version\Constraint;
 use Internal\DLoad\Service\Logger;

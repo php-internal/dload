@@ -25,6 +25,8 @@ use Internal\DLoad\Module\Registry\VersionRegistry;
 use Internal\DLoad\Module\Repository\Internal\GitHub\Factory as GithubRepositoryFactory;
 use Internal\DLoad\Module\Repository\Internal\GitLab\Factory as GitLabRepositoryFactory;
 use Internal\DLoad\Module\Repository\RepositoryProvider;
+use Internal\DLoad\Module\Software\SoftwareCollection;
+use Internal\DLoad\Module\Software\SoftwareCollector;
 use Internal\DLoad\Module\Velox\ApiClient;
 use Internal\DLoad\Module\Velox\Builder;
 use Internal\DLoad\Module\Velox\Internal\Client\BuildRoadRunner;
@@ -149,6 +151,10 @@ final class Bootstrap
                         $config->refresh,
                     );
             },
+        );
+        $this->container->bind(
+            SoftwareCollection::class,
+            static fn(Container $container): SoftwareCollection => $container->get(SoftwareCollector::class)->collect(),
         );
         $this->container->bind(BinaryProvider::class, BinaryProviderImpl::class);
         $this->container->bind(Factory::class, NyholmFactoryImpl::class);
