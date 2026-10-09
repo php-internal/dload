@@ -21,6 +21,7 @@ use Testo\Assert;
 use Testo\Codecov\Covers;
 use Testo\Lifecycle\AfterTest;
 use Testo\Lifecycle\BeforeTest;
+use Testo\Retry;
 use Testo\Test;
 
 /**
@@ -30,6 +31,7 @@ use Testo\Test;
  * Requires internet connectivity to download actual software packages.
  */
 #[Covers(DLoad::class)]
+#[Retry(maxAttempts: 3)]
 final class DLoadTest
 {
     private Path $testRuntimeDir;
