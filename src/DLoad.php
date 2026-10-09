@@ -18,7 +18,7 @@ use Internal\DLoad\Module\Config\Schema\Embed\File;
 use Internal\DLoad\Module\Config\Schema\Embed\Software;
 use Internal\DLoad\Module\Downloader\Downloader;
 use Internal\DLoad\Module\Downloader\Exception\NothingExtracted;
-use Internal\DLoad\Module\Downloader\SoftwareCollection;
+use Internal\DLoad\Module\Software\SoftwareCollection;
 use Internal\DLoad\Module\Downloader\Task\DownloadResult;
 use Internal\DLoad\Module\Downloader\Task\DownloadTask;
 use Internal\DLoad\Module\Task\Manager;

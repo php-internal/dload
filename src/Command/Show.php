@@ -9,7 +9,7 @@ use Internal\DLoad\Module\Binary\BinaryProvider;
 use Internal\DLoad\Module\Common\Input\Destination;
 use Internal\DLoad\Module\Config\Schema\Action\Download;
 use Internal\DLoad\Module\Config\Schema\Actions;
-use Internal\DLoad\Module\Downloader\SoftwareCollection;
+use Internal\DLoad\Module\Software\SoftwareCollection;
 use Internal\Path;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;

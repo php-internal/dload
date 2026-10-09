@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Internal\DLoad\Command;
 
 use Internal\DLoad\Module\Config\Schema\Embed\Software;
-use Internal\DLoad\Module\Downloader\SoftwareCollection;
+use Internal\DLoad\Module\Software\SoftwareCollection;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
