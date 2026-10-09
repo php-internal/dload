@@ -41,13 +41,6 @@ final class LocalFileProcessor implements ConfigProcessor
             "Failed to read local config file: {$configPath}.",
         );
 
-        $localData = TomlData::fromString($localToml);
-        $mergedData = $context->tomlData->merge($localData);
-
-        return $next(
-            $context->withTomlData($mergedData)
-                ->addMetadata('local_file_applied', true)
-                ->addMetadata('local_file_path', $configPath->__toString()),
-        );
+        return $next($context->withTomlData($context->tomlData->merge(TomlData::fromString($localToml))));
     }
 }

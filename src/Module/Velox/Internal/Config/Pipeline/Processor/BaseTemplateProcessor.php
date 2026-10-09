@@ -11,8 +11,7 @@ use Internal\DLoad\Module\Velox\Internal\Config\Pipeline\TomlData;
 /**
  * Base template processor (step 0).
  *
- * Initializes configuration with base template containing
- * essential settings like log configuration and default RoadRunner version.
+ * Replaces the configuration with the base template: log settings and the debug flag.
  * Always runs as the first step in the pipeline.
  *
  * @internal
@@ -32,9 +31,6 @@ final class BaseTemplateProcessor implements ConfigProcessor
             ],
         ]);
 
-        return $next(
-            $context->withTomlData($baseTemplate)
-                ->addMetadata('base_template_applied', true),
-        );
+        return $next($context->withTomlData($baseTemplate));
     }
 }

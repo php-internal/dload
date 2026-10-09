@@ -9,9 +9,9 @@ use Internal\DLoad\Module\Velox\Internal\Config\Pipeline\ConfigProcessor;
 use Internal\Path;
 
 /**
- * Build mixins processor
+ * Build mixins processor (step 3).
  *
- * Applies build action settings such as RoadRunner version and debug flags.
+ * Applies build action settings: RoadRunner version, plugin replacements and the debug flag.
  *
  * @internal
  * @psalm-internal Internal\DLoad\Module\Velox
@@ -21,19 +21,15 @@ final class BuildMixinsProcessor implements ConfigProcessor
     public function process(ConfigContext $context, callable $next): ConfigContext
     {
         $tomlData = $context->tomlData;
-        $appliedMixins = [];
 
         if ($context->action->roadrunnerVersion !== null) {
             $tomlData = $tomlData->set('roadrunner.ref', $context->action->roadrunnerVersion);
-            $appliedMixins[] = 'roadrunner_ref';
         }
 
-        // Merge replacements
         foreach ($context->action->plugins as $plugin) {
             if ($plugin->replace === null) {
                 continue;
             }
-
 
             $tomlData = $tomlData->set(
                 'github.plugins.' . $plugin->name . '.replace',
@@ -43,16 +39,8 @@ final class BuildMixinsProcessor implements ConfigProcessor
             );
         }
 
-
         $tomlData = $tomlData->set('debug.enabled', $context->action->debug);
-        $appliedMixins[] = 'debug_enabled';
-        $tomlData->toToml();
 
-        return $next(
-            $context
-                ->withTomlData($tomlData)
-                ->addMetadata('build_mixins_applied', true)
-                ->addMetadata('applied_mixins', $appliedMixins),
-        );
+        return $next($context->withTomlData($tomlData));
     }
 }
