@@ -140,7 +140,7 @@ final class DLoad
                     $software,
                     $action->type,
                     $this->getDestinationPath($action),
-                    temporary: !$this->useMock,
+                    removeDownload: !$this->useMock,
                 ),
             );
 

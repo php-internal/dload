@@ -22,7 +22,6 @@ final class Installation
     /**
      * @param Type|null $type Download action type; null when the action does not restrict it.
      * @param File|null $binaryRule Extraction rule of the software binary, null when it has none.
-     * @param bool $temporary Whether the downloaded file is removed once installed.
      */
     public function __construct(
         public readonly DownloadResult $download,
@@ -30,7 +29,6 @@ final class Installation
         public readonly ?Type $type,
         public readonly Path $destination,
         public readonly ?File $binaryRule,
-        public readonly bool $temporary,
     ) {}
 
     /**
