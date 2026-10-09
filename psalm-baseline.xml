@@ -77,11 +77,6 @@
       <code><![CDATA[$units[$i]]]></code>
     </MixedArgument>
   </file>
-  <file src="src/DLoad.php">
-    <PossiblyNullArgument>
-      <code><![CDATA[$software->binary]]></code>
-    </PossiblyNullArgument>
-  </file>
   <file src="src/Module/Archive/ArchiveFactory.php">
     <MixedPropertyTypeCoercion>
       <code><![CDATA[$this->matchers]]></code>
