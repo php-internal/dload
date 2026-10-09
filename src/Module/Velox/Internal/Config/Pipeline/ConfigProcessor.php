@@ -4,23 +4,24 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Velox\Internal\Config\Pipeline;
 
+use Internal\DLoad\Module\Common\Pipeline\Interceptor;
+
 /**
- * Interface for configuration processors in the pipeline.
+ * Step of the Velox configuration pipeline: applies one configuration source.
  *
- * Each processor is invokable and handles a specific configuration source.
- * Processors should check internally if processing is needed and return
- * the context unchanged if not applicable.
+ * Steps run in the order set by {@see \Internal\DLoad\Module\Velox\Internal\Config\ConfigPipelineBuilder},
+ * and each one overrides the values of the steps before it. A step that has nothing to apply passes
+ * the context to `$next` unchanged; a step that does not call `$next` drops all the steps after it.
+ *
+ * @extends Interceptor<ConfigContext, ConfigContext>
  *
  * @internal
  * @psalm-internal Internal\DLoad\Module\Velox
  */
-interface ConfigProcessor
+interface ConfigProcessor extends Interceptor
 {
     /**
-     * Processes the configuration context.
-     *
-     * Should check internally if processing is needed and return
-     * the context unchanged if not applicable.
+     * @param callable(ConfigContext): ConfigContext $next
      */
-    public function __invoke(ConfigContext $context): ConfigContext;
+    public function process(ConfigContext $context, callable $next): ConfigContext;
 }

@@ -23,17 +23,18 @@ final class GitHubTokenProcessor implements ConfigProcessor
         private readonly GitHub $gitHub,
     ) {}
 
-    public function __invoke(ConfigContext $context): ConfigContext
+    public function process(ConfigContext $context, callable $next): ConfigContext
     {
-        // Early return if no token
         if ($this->gitHub->token === null) {
-            return $context;
+            return $next($context);
         }
 
         $tomlData = $context->tomlData->set('github.token.token', $this->gitHub->token);
 
-        return $context
-            ->withTomlData($tomlData)
-            ->addMetadata('github_token_applied', true);
+        return $next(
+            $context
+                ->withTomlData($tomlData)
+                ->addMetadata('github_token_applied', true),
+        );
     }
 }

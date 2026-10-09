@@ -20,7 +20,7 @@ use Internal\DLoad\Module\Velox\Internal\Config\Pipeline\TomlData;
  */
 final class BaseTemplateProcessor implements ConfigProcessor
 {
-    public function __invoke(ConfigContext $context): ConfigContext
+    public function process(ConfigContext $context, callable $next): ConfigContext
     {
         $baseTemplate = new TomlData([
             'log' => [
@@ -32,7 +32,9 @@ final class BaseTemplateProcessor implements ConfigProcessor
             ],
         ]);
 
-        return $context->withTomlData($baseTemplate)
-            ->addMetadata('base_template_applied', true);
+        return $next(
+            $context->withTomlData($baseTemplate)
+                ->addMetadata('base_template_applied', true),
+        );
     }
 }

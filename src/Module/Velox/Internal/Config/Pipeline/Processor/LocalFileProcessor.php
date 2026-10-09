@@ -21,11 +21,10 @@ use Internal\Path;
  */
 final class LocalFileProcessor implements ConfigProcessor
 {
-    public function __invoke(ConfigContext $context): ConfigContext
+    public function process(ConfigContext $context, callable $next): ConfigContext
     {
-        // Early return if no config file
         if ($context->action->configFile === null) {
-            return $context;
+            return $next($context);
         }
 
         $configPath = Path::create($context->action->configFile);
@@ -45,8 +44,10 @@ final class LocalFileProcessor implements ConfigProcessor
         $localData = TomlData::fromString($localToml);
         $mergedData = $context->tomlData->merge($localData);
 
-        return $context->withTomlData($mergedData)
-            ->addMetadata('local_file_applied', true)
-            ->addMetadata('local_file_path', $configPath->__toString());
+        return $next(
+            $context->withTomlData($mergedData)
+                ->addMetadata('local_file_applied', true)
+                ->addMetadata('local_file_path', $configPath->__toString()),
+        );
     }
 }
