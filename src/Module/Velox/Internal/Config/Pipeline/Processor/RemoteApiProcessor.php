@@ -36,13 +36,6 @@ final class RemoteApiProcessor implements ConfigProcessor
             $context->action->roadrunnerVersion,
         );
 
-        $apiData = TomlData::fromString($apiToml);
-        $mergedData = $context->tomlData->merge($apiData);
-
-        return $next(
-            $context->withTomlData($mergedData)
-                ->addMetadata('remote_api_applied', true)
-                ->addMetadata('plugin_count', \count($context->action->plugins)),
-        );
+        return $next($context->withTomlData($context->tomlData->merge(TomlData::fromString($apiToml))));
     }
 }

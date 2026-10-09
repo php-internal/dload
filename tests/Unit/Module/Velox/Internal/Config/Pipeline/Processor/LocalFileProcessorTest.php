@@ -62,7 +62,6 @@ final class LocalFileProcessorTest
             $this->veloxAction,
             $this->buildDir,
             new TomlData(['base' => 'data']),
-            ['initial' => 'metadata'],
         );
 
         $result = $this->process($originalContext);
@@ -79,7 +78,6 @@ final class LocalFileProcessorTest
             $this->veloxAction,
             $this->buildDir,
             new TomlData(),
-            [],
         );
 
         Expect::exception(ConfigException::class)->withMessage("Local config file not found: {$configPath}");
@@ -101,7 +99,6 @@ final class LocalFileProcessorTest
             $this->veloxAction,
             $this->buildDir,
             new TomlData(),
-            [],
         );
 
         // Make file unreadable by changing permissions
@@ -132,7 +129,6 @@ final class LocalFileProcessorTest
             $this->veloxAction,
             $this->buildDir,
             $baseData,
-            ['original' => 'metadata'],
         );
 
         $result = $this->process($context);
@@ -143,10 +139,6 @@ final class LocalFileProcessorTest
         Assert::same($resultData['existing'], 'base_data');
         Assert::same($resultData['binary_name'], 'custom-roadrunner');
         Assert::same($resultData['github']['plugins']['logger']['ref'], 'master');
-
-        Assert::true($result->metadata['local_file_applied']);
-        Assert::same($result->metadata['local_file_path'], \str_replace('\\', '/', $tempFile));
-        Assert::same($result->metadata['original'], 'metadata');
 
         // Clean up
         \unlink($tempFile);
@@ -170,7 +162,6 @@ final class LocalFileProcessorTest
             $this->veloxAction,
             $this->buildDir,
             $baseData,
-            [],
         );
 
         $result = $this->process($context);
@@ -199,7 +190,6 @@ final class LocalFileProcessorTest
             $this->veloxAction,
             $this->buildDir,
             new TomlData(),
-            [],
         );
 
         $result = $this->process($context);
@@ -230,19 +220,16 @@ final class LocalFileProcessorTest
 
         $this->veloxAction->configFile = $tempFile;
         $originalData = new TomlData(['original' => 'data']);
-        $originalMetadata = ['original' => 'metadata'];
         $originalContext = new ConfigContext(
             $this->veloxAction,
             $this->buildDir,
             $originalData,
-            $originalMetadata,
         );
 
         $result = $this->process($originalContext);
 
         // Assert - Original context should remain unchanged
         Assert::same($originalContext->tomlData->getData(), ['original' => 'data']);
-        Assert::same($originalContext->metadata, ['original' => 'metadata']);
         Assert::same($originalContext->action, $this->veloxAction);
         Assert::same($originalContext->buildDir, $this->buildDir);
 
@@ -250,7 +237,6 @@ final class LocalFileProcessorTest
         $resultData = $result->tomlData->getData();
         Assert::same($resultData['original'], 'data');
         Assert::same($resultData['new_key'], 'new_value');
-        Assert::true($result->metadata['local_file_applied']);
 
         // Clean up
         \unlink($tempFile);
@@ -267,41 +253,12 @@ final class LocalFileProcessorTest
             $this->veloxAction,
             $this->buildDir,
             new TomlData(),
-            [],
         );
 
         $result = $this->process($context);
 
         Assert::same($result->action, $this->veloxAction);
         Assert::same($result->buildDir, $this->buildDir);
-
-        // Clean up
-        \unlink($tempFile);
-    }
-
-    #[Test]
-    public function processAddsCorrectMetadata(): void
-    {
-        $tomlContent = 'test_key = "test_value"';
-        $tempFile = $this->createTempFile($tomlContent);
-
-        $this->veloxAction->configFile = $tempFile;
-        $originalMetadata = ['existing' => 'value', 'count' => 42];
-        $context = new ConfigContext(
-            $this->veloxAction,
-            $this->buildDir,
-            new TomlData(),
-            $originalMetadata,
-        );
-
-        $result = $this->process($context);
-
-        Assert::true($result->metadata['local_file_applied']);
-        Assert::same($result->metadata['local_file_path'], \str_replace('\\', '/', $tempFile));
-
-        // Verify existing metadata is preserved
-        Assert::same($result->metadata['existing'], 'value');
-        Assert::same($result->metadata['count'], 42);
 
         // Clean up
         \unlink($tempFile);
@@ -323,14 +280,12 @@ final class LocalFileProcessorTest
             $this->veloxAction,
             $this->buildDir,
             new TomlData(),
-            [],
         );
 
         $result = $this->process($context);
 
         $resultData = $result->tomlData->getData();
         Assert::same($resultData['relative_test'], 'success');
-        Assert::true($result->metadata['local_file_applied']);
 
         // Clean up
         \chdir($originalDir);
