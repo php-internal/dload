@@ -18,7 +18,7 @@ use Internal\Path;
  */
 final class BuildMixinsProcessor implements ConfigProcessor
 {
-    public function __invoke(ConfigContext $context): ConfigContext
+    public function process(ConfigContext $context, callable $next): ConfigContext
     {
         $tomlData = $context->tomlData;
         $appliedMixins = [];
@@ -48,9 +48,11 @@ final class BuildMixinsProcessor implements ConfigProcessor
         $appliedMixins[] = 'debug_enabled';
         $tomlData->toToml();
 
-        return $context
-            ->withTomlData($tomlData)
-            ->addMetadata('build_mixins_applied', true)
-            ->addMetadata('applied_mixins', $appliedMixins);
+        return $next(
+            $context
+                ->withTomlData($tomlData)
+                ->addMetadata('build_mixins_applied', true)
+                ->addMetadata('applied_mixins', $appliedMixins),
+        );
     }
 }

@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace Internal\DLoad\Module\Velox\Internal\Config;
 
 use Internal\Container\Container;
-use Internal\DLoad\Module\Velox\Internal\Config\Pipeline\ConfigPipeline;
+use Internal\DLoad\Module\Common\Pipeline\Pipeline;
+use Internal\DLoad\Module\Velox\Internal\Config\Pipeline\ConfigContext;
 use Internal\DLoad\Module\Velox\Internal\Config\Pipeline\ConfigProcessor;
 use Internal\DLoad\Module\Velox\Internal\Config\Pipeline\Processor\BaseTemplateProcessor;
 use Internal\DLoad\Module\Velox\Internal\Config\Pipeline\Processor\BuildMixinsProcessor;
@@ -38,13 +39,19 @@ final class ConfigPipelineBuilder
         ],
     ) {}
 
-    public function build(): ConfigPipeline
+    /**
+     * @see ConfigProcessor::process()
+     * @return callable(ConfigContext): ConfigContext
+     */
+    public function build(): callable
     {
         $processors = \array_map(
             fn(string $pipe): ConfigProcessor => $this->container->get($pipe),
             $this->pipes,
         );
 
-        return new ConfigPipeline($processors);
+        /** @var callable(ConfigContext): ConfigContext */
+        return Pipeline::prepare(...$processors)
+            ->with(static fn(ConfigContext $context): ConfigContext => $context, 'process');
     }
 }

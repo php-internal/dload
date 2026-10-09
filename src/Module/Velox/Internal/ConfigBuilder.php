@@ -49,7 +49,7 @@ final class ConfigBuilder
         $pipeline = $this->pipelineBuilder->build();
         $context = new ConfigContext($action, $buildDir);
 
-        $result = $pipeline->process($context);
+        $result = $pipeline($context);
         $configContent = $result->tomlData->toToml();
 
         $configPath = $buildDir->join('velox.toml');

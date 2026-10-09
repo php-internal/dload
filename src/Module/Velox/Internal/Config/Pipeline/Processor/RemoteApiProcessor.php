@@ -24,11 +24,10 @@ final class RemoteApiProcessor implements ConfigProcessor
         private readonly ApiClient $apiClient,
     ) {}
 
-    public function __invoke(ConfigContext $context): ConfigContext
+    public function process(ConfigContext $context, callable $next): ConfigContext
     {
-        // Early return if no plugins
         if ($context->action->plugins === []) {
-            return $context;
+            return $next($context);
         }
 
         $apiToml = $this->apiClient->generateConfig(
@@ -40,8 +39,10 @@ final class RemoteApiProcessor implements ConfigProcessor
         $apiData = TomlData::fromString($apiToml);
         $mergedData = $context->tomlData->merge($apiData);
 
-        return $context->withTomlData($mergedData)
-            ->addMetadata('remote_api_applied', true)
-            ->addMetadata('plugin_count', \count($context->action->plugins));
+        return $next(
+            $context->withTomlData($mergedData)
+                ->addMetadata('remote_api_applied', true)
+                ->addMetadata('plugin_count', \count($context->action->plugins)),
+        );
     }
 }

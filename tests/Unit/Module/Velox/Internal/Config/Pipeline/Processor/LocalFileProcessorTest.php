@@ -55,7 +55,7 @@ final class LocalFileProcessorTest
     }
 
     #[Test]
-    public function invokeReturnsOriginalContextWhenConfigFileIsNull(): void
+    public function processReturnsOriginalContextWhenConfigFileIsNull(): void
     {
         $this->veloxAction->configFile = null;
         $originalContext = new ConfigContext(
@@ -65,13 +65,13 @@ final class LocalFileProcessorTest
             ['initial' => 'metadata'],
         );
 
-        $result = $this->processor->__invoke($originalContext);
+        $result = $this->process($originalContext);
 
         Assert::same($result, $originalContext);
     }
 
     #[Test]
-    public function invokeThrowsExceptionWhenConfigFileDoesNotExist(): void
+    public function processThrowsExceptionWhenConfigFileDoesNotExist(): void
     {
         $configPath = '/non/existent/path.toml';
         $this->veloxAction->configFile = $configPath;
@@ -84,11 +84,11 @@ final class LocalFileProcessorTest
 
         Expect::exception(ConfigException::class)->withMessage("Local config file not found: {$configPath}");
 
-        $this->processor->__invoke($context);
+        $this->process($context);
     }
 
     #[Test]
-    public function invokeThrowsExceptionWhenFileCannotBeRead(): void
+    public function processThrowsExceptionWhenFileCannotBeRead(): void
     {
         // Skip this test on Windows as chmod doesn't work the same way
         if (PHP_OS_FAMILY === 'Windows') {
@@ -110,7 +110,7 @@ final class LocalFileProcessorTest
         Expect::exception(ConfigException::class)->withMessageContaining("Failed to read local config file: {$tempFile}");
 
         try {
-            $this->processor->__invoke($context);
+            $this->process($context);
         } finally {
             // Clean up - restore permissions before deletion
             \chmod($tempFile, 0644);
@@ -119,7 +119,7 @@ final class LocalFileProcessorTest
     }
 
     #[Test]
-    public function invokeSuccessfullyProcessesValidTomlFile(): void
+    public function processSuccessfullyProcessesValidTomlFile(): void
     {
         $tomlContent = 'binary_name = "custom-roadrunner"' . "\n" .
                       '[github.plugins.logger]' . "\n" .
@@ -135,7 +135,7 @@ final class LocalFileProcessorTest
             ['original' => 'metadata'],
         );
 
-        $result = $this->processor->__invoke($context);
+        $result = $this->process($context);
 
         Assert::notSame($result, $context);
 
@@ -153,7 +153,7 @@ final class LocalFileProcessorTest
     }
 
     #[Test]
-    public function invokeMergesLocalDataWithExistingData(): void
+    public function processMergesLocalDataWithExistingData(): void
     {
         $tomlContent = '[roadrunner]' . "\n" .
                       'version = "2023.3.0"' . "\n" .
@@ -173,7 +173,7 @@ final class LocalFileProcessorTest
             [],
         );
 
-        $result = $this->processor->__invoke($context);
+        $result = $this->process($context);
 
         $resultData = $result->tomlData->getData();
 
@@ -189,7 +189,7 @@ final class LocalFileProcessorTest
 
     #[DataProvider('provideValidTomlFiles')]
     #[Test]
-    public function invokeHandlesVariousTomlFormats(
+    public function processHandlesVariousTomlFormats(
         string $tomlContent,
         array $expectedKeys,
     ): void {
@@ -202,7 +202,7 @@ final class LocalFileProcessorTest
             [],
         );
 
-        $result = $this->processor->__invoke($context);
+        $result = $this->process($context);
 
         $resultData = $result->tomlData->getData();
 
@@ -223,7 +223,7 @@ final class LocalFileProcessorTest
     }
 
     #[Test]
-    public function invokePreservesContextImmutability(): void
+    public function processPreservesContextImmutability(): void
     {
         $tomlContent = 'new_key = "new_value"';
         $tempFile = $this->createTempFile($tomlContent);
@@ -238,7 +238,7 @@ final class LocalFileProcessorTest
             $originalMetadata,
         );
 
-        $result = $this->processor->__invoke($originalContext);
+        $result = $this->process($originalContext);
 
         // Assert - Original context should remain unchanged
         Assert::same($originalContext->tomlData->getData(), ['original' => 'data']);
@@ -257,7 +257,7 @@ final class LocalFileProcessorTest
     }
 
     #[Test]
-    public function invokePreservesActionAndBuildDir(): void
+    public function processPreservesActionAndBuildDir(): void
     {
         $tomlContent = 'test = "value"';
         $tempFile = $this->createTempFile($tomlContent);
@@ -270,7 +270,7 @@ final class LocalFileProcessorTest
             [],
         );
 
-        $result = $this->processor->__invoke($context);
+        $result = $this->process($context);
 
         Assert::same($result->action, $this->veloxAction);
         Assert::same($result->buildDir, $this->buildDir);
@@ -280,7 +280,7 @@ final class LocalFileProcessorTest
     }
 
     #[Test]
-    public function invokeAddsCorrectMetadata(): void
+    public function processAddsCorrectMetadata(): void
     {
         $tomlContent = 'test_key = "test_value"';
         $tempFile = $this->createTempFile($tomlContent);
@@ -294,7 +294,7 @@ final class LocalFileProcessorTest
             $originalMetadata,
         );
 
-        $result = $this->processor->__invoke($context);
+        $result = $this->process($context);
 
         Assert::true($result->metadata['local_file_applied']);
         Assert::same($result->metadata['local_file_path'], \str_replace('\\', '/', $tempFile));
@@ -308,7 +308,7 @@ final class LocalFileProcessorTest
     }
 
     #[Test]
-    public function invokeWithRelativeConfigPath(): void
+    public function processWithRelativeConfigPath(): void
     {
         $tomlContent = 'relative_test = "success"';
         $tempFile = $this->createTempFile($tomlContent);
@@ -326,7 +326,7 @@ final class LocalFileProcessorTest
             [],
         );
 
-        $result = $this->processor->__invoke($context);
+        $result = $this->process($context);
 
         $resultData = $result->tomlData->getData();
         Assert::same($resultData['relative_test'], 'success');
@@ -343,6 +343,25 @@ final class LocalFileProcessorTest
         $this->processor = new LocalFileProcessor();
         $this->veloxAction = new VeloxAction();
         $this->buildDir = Path::create('/tmp/build');
+    }
+
+    /**
+     * Fails unless the processor passes the context on exactly once.
+     */
+    private function process(ConfigContext $context): ConfigContext
+    {
+        $calls = 0;
+        $result = $this->processor->process(
+            $context,
+            static function (ConfigContext $context) use (&$calls): ConfigContext {
+                ++$calls;
+                return $context;
+            },
+        );
+
+        Assert::same($calls, 1);
+
+        return $result;
     }
 
     private function createTempFile(string $content): string
