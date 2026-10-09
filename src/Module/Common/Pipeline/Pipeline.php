@@ -13,11 +13,11 @@ use Internal\DLoad\Module\Common\Pipeline\Interceptor as TInterceptor;
  * the chain as `$next`, and the last handler ends the chain.
  *
  * ```php
- * $pipeline = Pipeline::prepare(...$interceptors)->with(
- *     static fn(Input $input): Output => new Output($input),
- *     'process',
- * );
- * $output = $pipeline($input);
+ *  $pipeline = Pipeline::prepare(...$interceptors)->with(
+ *      static fn(Input $input): Output => new Output($input),
+ *      'process',
+ *  );
+ *  $output = $pipeline($input);
  * ```
  *
  * @template-covariant TClass of TInterceptor
