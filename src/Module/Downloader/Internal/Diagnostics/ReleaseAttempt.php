@@ -20,6 +20,9 @@ final class ReleaseAttempt
     /** @var string|null Why the release was rejected */
     public ?string $reason = null;
 
+    /** @var list<string> Names of the OS packages for the host, skipped because a binary is expected */
+    public array $skippedPackages = [];
+
     /** @var list<string> Names of all assets in the release */
     private array $assetNames = [];
 
@@ -78,6 +81,11 @@ final class ReleaseAttempt
                 $hidden > 0 ? \sprintf(' and %d more', $hidden) : '',
             );
         }
+
+        $this->skippedPackages === [] or $lines[] = \sprintf(
+            '  OS packages are skipped because a binary is expected: %s',
+            \implode(', ', $this->skippedPackages),
+        );
 
         foreach ($this->failures as $failure) {
             $lines[] = '  Failed asset ' . $failure;

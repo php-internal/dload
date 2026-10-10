@@ -52,10 +52,11 @@ final class AssetSelector
         $pipeline = Pipeline::prepare(
             new NamePatternRule(),
             new FormatRule($archiveFactory),
-            new PackageRule(),
             new CompanionRule(),
             new OperatingSystemRule($operatingSystem),
             new ArchitectureRule($architecture, $operatingSystem),
+            // After the platform rules: the packages it removes are then the host's own, which the report names
+            new PackageRule(),
             new LibcRule($container),
             new ExtrasRule(),
             new ArchiveRule($archiveFactory),

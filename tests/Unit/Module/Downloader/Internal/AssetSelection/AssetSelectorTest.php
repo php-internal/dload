@@ -234,14 +234,6 @@ final class AssetSelectorTest
     }
 
     #[Test]
-    public function aBinaryActionDropsOsPackagesToo(): void
-    {
-        $names = self::select(['tool-linux-amd64.deb', 'tool-linux-amd64.tar.gz'], type: Type::Binary);
-
-        Assert::same($names, ['tool-linux-amd64.tar.gz']);
-    }
-
-    #[Test]
     public function aWindowsExecutableOutlivesTheInstaller(): void
     {
         $names = self::select(['tool-windows-amd64.exe', 'tool-windows-amd64.msi'], os: OperatingSystem::Windows);

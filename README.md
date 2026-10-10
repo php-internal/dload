@@ -297,7 +297,7 @@ When `type` is not specified, DLoad automatically uses all available handlers:
 > Using `type="archive"` will unpack even `.phar` archives.
 
 > [!NOTE]
-> When the software has a `<binary>` and the type is not `phar`, OS packages (`.deb`, `.rpm`, `.apk`, `.msi`, `.dmg`, `.pkg`) are never selected: DLoad cannot unpack them. A release that offers only a package for the host is skipped in favour of an older one.
+> When a `<binary>` is configured, with `type="binary"` or without a `type`, OS packages (`.deb`, `.rpm`, `.apk`, `.snap`, `.flatpak`, `.msi`, `.msix`, `.msixbundle`, `.appx`, `.appxbundle`, `.nupkg`, `.dmg`, `.pkg`) are never selected: DLoad cannot unpack them. A release that offers only a package for the host is skipped, and DLoad takes the next older release that still satisfies the version constraint.
 
 #### Archive Extraction (Preserving Structure)
 

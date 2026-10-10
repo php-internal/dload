@@ -32,6 +32,24 @@ final class SelectionTest
     }
 
     #[Test]
+    public function candidatesRemovedWithAReasonAreKeptUnderIt(): void
+    {
+        $selection = self::selection('a', 'b', 'c', 'd')
+            ->remove(static fn(Candidate $candidate): bool => $candidate->asset->getName() === 'a')
+            ->remove(static fn(Candidate $candidate): bool => $candidate->asset->getName() === 'b', 'package')
+            ->rank('length', static fn(): int => 0)
+            ->remove(static fn(Candidate $candidate): bool => $candidate->asset->getName() === 'c', 'package')
+            ->remove(static fn(): bool => false, 'nothing');
+
+        Assert::same(self::names($selection), ['d']);
+        Assert::same(\array_keys($selection->removed), ['package']);
+        Assert::same(
+            \array_map(static fn(Candidate $candidate): string => $candidate->asset->getName(), $selection->removed['package']),
+            ['b', 'c'],
+        );
+    }
+
+    #[Test]
     public function anEarlierRankOutweighsALaterOne(): void
     {
         $selection = self::selection('a-slow', 'b-fast', 'c-fast')

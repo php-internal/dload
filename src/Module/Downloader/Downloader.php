@@ -19,7 +19,9 @@ use Internal\DLoad\Module\Downloader\Exception\NotFound;
 use Internal\DLoad\Module\Downloader\Exception\ReleaseGone;
 use Internal\DLoad\Module\Downloader\Internal\Diagnostics\DownloadDiagnostics;
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\AssetSelector;
+use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Candidate;
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\ArchitectureRule;
+use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\PackageRule;
 use Internal\DLoad\Module\Downloader\Internal\DownloadContext;
 use Internal\DLoad\Module\Downloader\Task\DownloadResult;
 use Internal\DLoad\Module\Downloader\Task\DownloadTask;
@@ -299,10 +301,16 @@ final class Downloader
             );
             $this->logger->debug('%d matching assets found.', \count($selection->candidates));
 
+            $context->releaseAttempt->skippedPackages = \array_map(
+                static fn(Candidate $candidate): string => $candidate->asset->getName(),
+                $selection->removed[PackageRule::KEY] ?? [],
+            );
+
             $selection->isEmpty() and throw new NotFound(
                 $strict
                     ? \sprintf(
-                        'no asset matches OS `%s`, architecture `%s`, name pattern `%s`%s',
+                        '%s OS `%s`, architecture `%s`, name pattern `%s`%s',
+                        $context->releaseAttempt->skippedPackages === [] ? 'no asset matches' : 'only OS packages match',
                         $this->operatingSystem->value,
                         $this->architecture->value,
                         $context->repoConfig->assetPattern,

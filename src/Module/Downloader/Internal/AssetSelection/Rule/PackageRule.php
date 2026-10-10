@@ -21,12 +21,19 @@ use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Selection;
  */
 final class PackageRule implements AssetRule
 {
-    private const EXTENSIONS = ['deb', 'rpm', 'apk', 'msi', 'dmg', 'pkg'];
+    /** Reason the packages are removed under, see {@see Selection::$removed}. */
+    public const KEY = 'package';
+
+    private const EXTENSIONS = [
+        'deb', 'rpm', 'apk', 'msi', 'dmg', 'pkg',
+        'snap', 'flatpak', 'msix', 'msixbundle', 'appx', 'appxbundle', 'nupkg',
+    ];
 
     public function select(Selection $selection, callable $next): Selection
     {
         $selection->strict and $selection = $selection->remove(
             static fn(Candidate $candidate): bool => $candidate->hasExtension(self::EXTENSIONS),
+            self::KEY,
         );
 
         return $next($selection);

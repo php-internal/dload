@@ -242,6 +242,56 @@ final class DownloaderTest
     }
 
     #[Test]
+    public function aReleaseWithOnlyAPackageForTheHostGivesWayToAnOlderOne(): void
+    {
+        $repository = self::repoWithReleases([
+            'v3.4.0' => ['roadrunner-3.4.0-linux-arm64.deb', 'roadrunner-3.4.0-linux-amd64.tar.gz', 'roadrunner-3.4.0-linux-amd64.deb'],
+            'v3.2.0' => ['roadrunner-3.2.0-linux-arm64.tar.gz', 'roadrunner-3.2.0-linux-amd64.tar.gz'],
+        ]);
+        $config = DownloadConfig::fromSoftwareId('rr');
+        $config->version = '3.*';
+
+        $result = $this->run([$repository], self::software(binary: true), $config, Architecture::ARM_64);
+
+        Assert::same($result->version->string, 'v3.2.0');
+        Assert::same($result->file->getFilename(), 'roadrunner-3.2.0-linux-arm64.tar.gz');
+    }
+
+    #[Test]
+    public function withoutABinaryThePackageIsStillChosen(): void
+    {
+        $repository = self::repoWithReleases([
+            'v3.4.0' => ['roadrunner-3.4.0-linux-arm64.deb', 'roadrunner-3.4.0-linux-amd64.tar.gz'],
+            'v3.2.0' => ['roadrunner-3.2.0-linux-arm64.tar.gz'],
+        ]);
+        $config = DownloadConfig::fromSoftwareId('rr');
+        $config->version = '3.*';
+
+        $result = $this->run([$repository], self::software(), $config, Architecture::ARM_64);
+
+        Assert::same($result->version->string, 'v3.4.0');
+        Assert::same($result->file->getFilename(), 'roadrunner-3.4.0-linux-arm64.deb');
+    }
+
+    #[Test]
+    public function skippedPackagesAreNamedInTheReport(): void
+    {
+        $repository = self::repoWithReleases([
+            'v3.4.0' => ['roadrunner-3.4.0-linux-arm64.deb', 'roadrunner-3.4.0-linux-amd64.deb', 'roadrunner-3.4.0-linux-arm64.rpm', 'roadrunner-3.4.0-linux-amd64.tar.gz'],
+        ]);
+
+        try {
+            $this->run([$repository], self::software(binary: true), architecture: Architecture::ARM_64);
+            Assert::fail('DownloadFailed is expected when the release has only packages for the host.');
+        } catch (DownloadFailed $e) {
+            Assert::string($e->report)
+                ->contains('v3.4.0: 4 asset(s), only OS packages match OS `linux`, architecture `arm64`')
+                ->contains('OS packages are skipped because a binary is expected: roadrunner-3.4.0-linux-arm64.deb, roadrunner-3.4.0-linux-arm64.rpm')
+                ->notContains('no asset matches');
+        }
+    }
+
+    #[Test]
     public function versionConstraintSelectsMatchingRelease(): void
     {
         $repository = new RepositoryStub('owner/repo');
@@ -408,6 +458,32 @@ final class DownloaderTest
     }
 
     /**
+     * A repository with a release for each tag; the OS and architecture of an asset come from its name.
+     *
+     * @param array<non-empty-string, list<non-empty-string>> $releases Asset names by release tag.
+     */
+    private static function repoWithReleases(array $releases): RepositoryStub
+    {
+        $repository = new RepositoryStub('owner/repo');
+        $list = [];
+        foreach ($releases as $tag => $names) {
+            $release = new ReleaseStub($repository, $tag, Version::fromVersionString($tag));
+            $release->setAssets(\array_map(
+                static fn(string $name): ConfigurableAssetStub => new ConfigurableAssetStub(
+                    $release,
+                    $name,
+                    OperatingSystem::tryFromBuildName($name),
+                    Architecture::tryFromBuildName($name),
+                ),
+                $names,
+            ));
+            $list[] = $release;
+        }
+
+        return new RepositoryStub('owner/repo', ReleasesCollection::create($list));
+    }
+
+    /**
      * @param list<Repository>|SequenceRepositoryFactoryStub $repositories
      * @param non-empty-string $uri Repository URI as written in the config.
      */
@@ -449,6 +525,7 @@ final class DownloaderTest
         array|SequenceRepositoryFactoryStub $repositories,
         Software $software,
         ?DownloadConfig $config = null,
+        Architecture $architecture = Architecture::X86_64,
     ): DownloadResult {
         $factory = $repositories instanceof SequenceRepositoryFactoryStub
             ? $repositories
@@ -457,7 +534,7 @@ final class DownloaderTest
         $downloaderConfig = new DownloaderConfig();
         $downloaderConfig->tmpDir = $this->tempDir;
 
-        $task = $this->makeDownloader($factory, $downloaderConfig)->download(
+        $task = $this->makeDownloader($factory, $downloaderConfig, $architecture)->download(
             $software,
             $config ?? DownloadConfig::fromSoftwareId('rr'),
             static fn(): null => null,
@@ -467,18 +544,21 @@ final class DownloaderTest
         return await(($task->handler)());
     }
 
-    private function makeDownloader(SequenceRepositoryFactoryStub $factory, DownloaderConfig $config): Downloader
-    {
+    private function makeDownloader(
+        SequenceRepositoryFactoryStub $factory,
+        DownloaderConfig $config,
+        Architecture $architecture = Architecture::X86_64,
+    ): Downloader {
         return new Downloader(
             config: $config,
             logger: new Logger(),
             repositoryProvider: (new RepositoryProvider())->addRepositoryFactory($factory),
-            architecture: Architecture::tryFromString('amd64') ?? throw new \LogicException(),
+            architecture: $architecture,
             operatingSystem: OperatingSystem::tryFromString('linux') ?? throw new \LogicException(),
             stability: Stability::Stable,
             archiveService: new ArchiveFactory(),
             registry: $this->registry,
-            assetSelector: new AssetSelector(OperatingSystem::Linux, Architecture::X86_64, new LibcContainer(Libc::Gnu), new ArchiveFactory()),
+            assetSelector: new AssetSelector(OperatingSystem::Linux, $architecture, new LibcContainer(Libc::Gnu), new ArchiveFactory()),
         );
     }
 

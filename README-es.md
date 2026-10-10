@@ -295,7 +295,7 @@ Cuando no se especifica `type`, DLoad automáticamente usa todos los manejadores
 > Usar `type="archive"` extraerá incluso archivos `.phar`.
 
 > [!NOTE]
-> Cuando el software tiene un `<binary>` y el tipo no es `phar`, los paquetes del sistema operativo (`.deb`, `.rpm`, `.apk`, `.msi`, `.dmg`, `.pkg`) nunca se seleccionan: DLoad no puede desempaquetarlos. Un release que solo ofrece un paquete para el host se omite en favor de uno anterior.
+> Cuando hay un `<binary>` configurado, con `type="binary"` o sin `type`, los paquetes del sistema operativo (`.deb`, `.rpm`, `.apk`, `.snap`, `.flatpak`, `.msi`, `.msix`, `.msixbundle`, `.appx`, `.appxbundle`, `.nupkg`, `.dmg`, `.pkg`) nunca se seleccionan: DLoad no puede desempaquetarlos. Un release que solo ofrece un paquete para el host se omite, y DLoad toma el siguiente release más antiguo que siga cumpliendo la restricción de versión.
 
 #### Extracción de Archivos (Preservando la Estructura)
 
