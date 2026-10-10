@@ -15,6 +15,41 @@ use Testo\Test;
 #[Covers(Version::class)]
 final class VersionTest
 {
+    public static function providePreReleases(): \Generator
+    {
+        yield 'dotted beta' => ['v3.5.0-beta.1', Stability::Beta, 1];
+        yield 'release candidate' => ['v3.5.0-RC1', Stability::RC, 1];
+        yield 'dotted release candidate' => ['2025.1.0-rc.2', Stability::RC, 2];
+        yield 'nightly date' => ['1.0.0-nightly20250503', Stability::Nightly, 20250503];
+        yield 'beta abbreviation' => ['1.0.0b2', Stability::Beta, 2];
+        yield 'no separator' => ['2.0.0rc1', Stability::RC, 1];
+        yield 'underscore separator' => ['1.0.0-rc_1', Stability::RC, 1];
+        yield 'bare stability' => ['1.2.3-beta', Stability::Beta, 0];
+        yield 'stability before a feature' => ['1.2.3-beta.3-feature', Stability::Beta, 3];
+        yield 'dev branch' => ['v2.0.x-dev', Stability::Dev, 0];
+        yield 'stable release' => ['v3.5.0', Stability::Stable, 0];
+        yield 'feature only' => ['1.2.3-custom', Stability::Preview, 0];
+    }
+
+    public static function provideOrderedVersions(): \Generator
+    {
+        yield 'pre-release numbers' => ['1.0.0-beta.2', '1.0.0-beta.10'];
+        yield 'stability weight' => ['1.0.0-beta.10', '1.0.0-RC1'];
+        yield 'final after its release candidate' => ['1.0.0-rc.9', '1.0.0'];
+        yield 'nightly first' => ['1.0.0-nightly20250503', '1.0.0-alpha.1'];
+        yield 'version number first' => ['1.0.0', '1.0.1-alpha.1'];
+        yield 'feature build before the final' => ['1.0.0-custom', '1.0.0'];
+        yield 'upper case release candidate before the final' => ['1.0.0-RC1', '1.0.0'];
+        yield 'underscore spelling' => ['1.0.0-rc_1', '1.0.0-rc_2'];
+        yield 'fourth number part' => ['1.2.3.4', '1.2.3.5'];
+        yield 'fourth number part over ten' => ['1.2.3.9', '1.2.3.10'];
+        yield 'three parts before four' => ['1.2.3', '1.2.3.4'];
+        yield 'four parts before the next patch' => ['1.2.3.4', '1.2.4'];
+        yield 'feature build number' => ['1.3.1-RC1-priority.0', '1.3.1-RC1-priority.1'];
+        yield 'number after the pre-release' => ['2.0.0-beta.1.2', '2.0.0-beta.1.3'];
+        yield 'number after the pre-release before the final' => ['2.0.0-beta.1.2', '2.0.0'];
+    }
+
     /**
      * Provides test cases for successful version string parsing.
      */
@@ -35,6 +70,7 @@ final class VersionTest
         // Versions with feature suffixes
         yield 'version with feature suffix after stability' => ['1.2.3-beta-feature', '1.2.3-beta-feature', '1.2.3', 'feature', Stability::Beta];
         yield 'version with stability at end' => ['1.2.3-feature-beta', '1.2.3-feature-beta', '1.2.3', 'feature', Stability::Beta];
+        yield 'preview is not read as pre' => ['1.0.0-preview-foo', '1.0.0-preview-foo', '1.0.0', 'foo', Stability::Preview];
         yield 'version with multiple features and stability' => ['2.0.0-feature1-feature2-alpha', '2.0.0-feature1-feature2-alpha', '2.0.0', 'feature1-feature2', Stability::Alpha];
 
         // Versions with plus prefix
@@ -127,6 +163,40 @@ final class VersionTest
         // Real cases
         yield 'real case 2' => ['v1.3.1-nexus-cancellation.0', Stability::Preview, 'Temporal cancellation version'];
         yield 'real case 3' => ['v1.3.0', Stability::Stable, 'Stable version'];
+    }
+
+    #[DataProvider('providePreReleases')]
+    #[Test]
+    public function preReleaseKeepsTheStabilityWithItsNumber(string $input, Stability $stability, int $number): void
+    {
+        $version = Version::fromVersionString($input);
+
+        Assert::same($version->preRelease?->stability, $stability);
+        Assert::same($version->preRelease?->number, $number);
+        Assert::same($version->stability, $stability);
+    }
+
+    #[DataProvider('provideOrderedVersions')]
+    #[Test]
+    public function compareOrdersByNumberThenByPreRelease(string $older, string $newer): void
+    {
+        $a = Version::fromVersionString($older);
+        $b = Version::fromVersionString($newer);
+
+        Assert::same($a->compare($b), -1);
+        Assert::same($b->compare($a), 1);
+    }
+
+    #[Test]
+    public function compareTreatsSpellingsOfOnePreReleaseAsEqual(): void
+    {
+        Assert::same(Version::fromVersionString('v3.5.0-rc.1')->compare(Version::fromVersionString('3.5.0-RC1')), 0);
+    }
+
+    #[Test]
+    public function emptyVersionComesFirst(): void
+    {
+        Assert::same(Version::empty()->compare(Version::fromVersionString('0.0.1')), -1);
     }
 
     /**
