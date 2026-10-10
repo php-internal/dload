@@ -42,7 +42,7 @@ A longer TTL trades freshness for fewer requests: with a floating constraint (`^
 
 Two things together keep CI off the rate limit: **a token** for every request dload does make, and **a carried registry** so it makes few.
 
-- **Token.** Pass `GITHUB_TOKEN` (and `GITLAB_TOKEN` for GitLab sources) into the environment of every step that runs dload — including steps where dload runs indirectly, e.g. from a test suite. Anonymous access is limited to 60 requests per hour per runner IP, which shared runners exhaust quickly. In GitHub Actions `secrets.GITHUB_TOKEN` shares a 1,000 requests/hour limit across all jobs of the repository; a wide matrix that still runs out needs a personal access token.
+- **Token.** Pass `GITHUB_TOKEN` (and `GITLAB_TOKEN` for GitLab sources, `DLOAD_TOKEN_<HOST>` for a [self-hosted `server`](registry-entry.md#server)) into the environment of every step that runs dload — including steps where dload runs indirectly, e.g. from a test suite. Anonymous access is limited to 60 requests per hour per runner IP, which shared runners exhaust quickly. In GitHub Actions `secrets.GITHUB_TOKEN` shares a 1,000 requests/hour limit across all jobs of the repository; a wide matrix that still runs out needs a personal access token.
 - **Registry.** Point `DLOAD_CACHE_DIR` at a directory inside the workspace, as an absolute path, and let the CI cache save and restore it.
 
 ### GitHub Actions

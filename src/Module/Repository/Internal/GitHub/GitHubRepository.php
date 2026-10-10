@@ -37,6 +37,7 @@ final class GitHubRepository implements Repository, Destroyable
     /**
      * @param non-empty-string $org
      * @param non-empty-string $repo
+     * @param non-empty-string|null $server Host and port of a GitHub Enterprise Server, null for the public GitHub.
      */
     public function __construct(
         private readonly RepositoryApi $api,
@@ -45,6 +46,7 @@ final class GitHubRepository implements Repository, Destroyable
         private readonly Logger $logger,
         private readonly VersionRegistry $registry,
         private readonly string $tagPrefix = '',
+        private readonly ?string $server = null,
     ) {
         $this->name = $org . '/' . $repo;
     }
@@ -68,7 +70,7 @@ final class GitHubRepository implements Repository, Destroyable
             yield [];
 
             $pages = $this->registry->releases(
-                new RepositoryId(self::TYPE, $this->name),
+                $this->getId(),
                 new GitHubReleaseSource($this->api),
             );
             $anyPageLoaded = false;
@@ -129,6 +131,11 @@ final class GitHubRepository implements Repository, Destroyable
     public function getName(): string
     {
         return $this->name;
+    }
+
+    public function getId(): RepositoryId
+    {
+        return new RepositoryId(self::TYPE, $this->name, $this->server);
     }
 
     public function destroy(): void

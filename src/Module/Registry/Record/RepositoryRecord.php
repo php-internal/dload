@@ -24,7 +24,7 @@ use Internal\DLoad\Module\Registry\RepositoryId;
  *
  * @psalm-type RepositoryArray = array{
  *     version: int,
- *     repository: array{type: non-empty-string, uri: non-empty-string},
+ *     repository: array{type: non-empty-string, uri: non-empty-string, server?: non-empty-string},
  *     checked_at: int|null,
  *     complete: bool,
  *     software: list<non-empty-string>,
@@ -99,6 +99,13 @@ final class RepositoryRecord
             'Repository record requires a repository type and URI.',
         );
 
+        /** @var mixed $server */
+        $server = \is_array($repository) ? ($repository['server'] ?? null) : null;
+        $server === null or \is_string($server) && $server !== '' or throw new \InvalidArgumentException(
+            'Repository record server must be a non-empty string.',
+        );
+        /** @var non-empty-string|null $server */
+
         $segments = [];
         /** @var mixed $segment */
         foreach (\is_array($data['segments'] ?? null) ? $data['segments'] : [] as $segment) {
@@ -128,7 +135,7 @@ final class RepositoryRecord
         $checkedAt = $data['checked_at'] ?? null;
 
         return new self(
-            id: new RepositoryId($type, $uri),
+            id: new RepositoryId($type, $uri, $server),
             checkedAt: \is_int($checkedAt) ? $checkedAt : null,
             complete: (bool) ($data['complete'] ?? false),
             software: $software,
@@ -369,7 +376,8 @@ final class RepositoryRecord
     {
         return [
             'version' => self::FORMAT_VERSION,
-            'repository' => ['type' => $this->id->type, 'uri' => $this->id->uri],
+            'repository' => ['type' => $this->id->type, 'uri' => $this->id->uri]
+                + ($this->id->server === null ? [] : ['server' => $this->id->server]),
             'checked_at' => $this->checkedAt,
             'complete' => $this->complete,
             'software' => $this->software,

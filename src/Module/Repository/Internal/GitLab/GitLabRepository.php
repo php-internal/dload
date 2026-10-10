@@ -36,6 +36,7 @@ final class GitLabRepository implements Repository, Destroyable
 
     /**
      * @param non-empty-string $projectPath
+     * @param non-empty-string|null $server Host and port of a self-hosted GitLab, null for the public GitLab.
      */
     public function __construct(
         private readonly RepositoryApi $api,
@@ -43,6 +44,7 @@ final class GitLabRepository implements Repository, Destroyable
         private readonly Logger $logger,
         private readonly VersionRegistry $registry,
         private readonly string $tagPrefix = '',
+        private readonly ?string $server = null,
     ) {
         $this->name = $projectPath;
     }
@@ -66,7 +68,7 @@ final class GitLabRepository implements Repository, Destroyable
             yield [];
 
             $pages = $this->registry->releases(
-                new RepositoryId(self::TYPE, $this->name),
+                $this->getId(),
                 new GitLabReleaseSource($this->api),
             );
             $anyPageLoaded = false;
@@ -126,6 +128,11 @@ final class GitLabRepository implements Repository, Destroyable
     public function getName(): string
     {
         return $this->name;
+    }
+
+    public function getId(): RepositoryId
+    {
+        return new RepositoryId(self::TYPE, $this->name, $this->server);
     }
 
     public function destroy(): void

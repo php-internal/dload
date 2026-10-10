@@ -1,6 +1,6 @@
 ---
 name: dload-fetch-tool
-description: Get a CLI tool — native binary or PHAR — from a GitHub release into a project folder with dload (`vendor/bin/dload`). Use when the user wants tool X (rr, temporal, buf, a PHAR…) downloaded into the project or added to `dload.xml`, when a download picks the wrong asset or none, or when setting up dload's release cache (version registry) locally or in CI, including GitHub API rate limits.
+description: Get a CLI tool — native binary or PHAR — from a GitHub or GitLab release (public or self-hosted) into a project folder with dload (`vendor/bin/dload`). Use when the user wants tool X (rr, temporal, buf, a PHAR…) downloaded into the project or added to `dload.xml`, when a download picks the wrong asset or none, or when setting up dload's release cache (version registry) locally or in CI, including GitHub API rate limits.
 ---
 
 # Download a GitHub binary or PHAR into a project with dload

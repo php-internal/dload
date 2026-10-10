@@ -171,6 +171,11 @@
                                                         <xs:documentation>Text before the version in release tags, like "bun-" in "bun-v1.4.2". Releases whose tag does not start with it are ignored, which selects one component of a monorepo (release-please style tags).</xs:documentation>
                                                     </xs:annotation>
                                                 </xs:attribute>
+                                                <xs:attribute name="server" type="xs:string">
+                                                    <xs:annotation>
+                                                        <xs:documentation>Self-hosted instance as "[scheme://]host[:port]", e.g. a GitHub Enterprise Server or a self-hosted GitLab; the scheme defaults to https. Omit for github.com / gitlab.com. The API token is read from DLOAD_TOKEN_&lt;HOST&gt; (host and port upper-cased, other characters replaced with "_", e.g. DLOAD_TOKEN_GHE_EXAMPLE_COM) and is never sent over plain http except to loopback hosts.</xs:documentation>
+                                                    </xs:annotation>
+                                                </xs:attribute>
                                             </xs:complexType>
                                         </xs:element>
                                         <xs:element name="binary" minOccurs="0" maxOccurs="unbounded">

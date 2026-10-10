@@ -23,7 +23,6 @@ use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\ArchitectureRu
 use Internal\DLoad\Module\Downloader\Internal\DownloadContext;
 use Internal\DLoad\Module\Downloader\Task\DownloadResult;
 use Internal\DLoad\Module\Downloader\Task\DownloadTask;
-use Internal\DLoad\Module\Registry\RepositoryId;
 use Internal\DLoad\Module\Registry\VersionRegistry;
 use Internal\DLoad\Module\Repository\AssetInterface;
 use Internal\DLoad\Module\Repository\Collection\ReleasesCollection;
@@ -121,11 +120,13 @@ final class Downloader
                 // The registry keeps track of which software is served from which repository. The
                 // identity comes from the repository, not the config: the factory may have reduced
                 // a full URL to the path the repository stores its releases under.
-                $context->repositoryId = new RepositoryId($context->repoConfig->type, $repository->getName());
+                $context->repositoryId = $repository->getId();
                 $this->registry->attach($context->repositoryId, $context->software->getId());
                 $context->repositoryAttempt = $context->diagnostics->addRepository(
                     type: $context->repoConfig->type,
-                    name: $repository->getName(),
+                    name: $context->repositoryId->server === null
+                        ? $repository->getName()
+                        : $context->repositoryId->server . '/' . $repository->getName(),
                     assetPattern: $context->repoConfig->assetPattern,
                 );
 

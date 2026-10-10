@@ -21,7 +21,7 @@ final class ResponseValidator extends BaseValidator
         return 'GitHub';
     }
 
-    protected function tokenEnvVariable(): string
+    protected function defaultTokenEnvVariable(): string
     {
         return 'GITHUB_TOKEN';
     }
@@ -36,7 +36,13 @@ final class ResponseValidator extends BaseValidator
     {
         // API calls: https://api.github.com/repos/owner/repo/releases
         // Asset downloads: https://github.com/owner/repo/releases/download/v1.0.0/asset.zip
-        foreach (['~/repos/([^/?#]+/[^/?#]+)~', '~github\.com/([^/?#]+/[^/?#]+)~'] as $pattern) {
+        // GitHub Enterprise Server: https://ghe.example.com/owner/repo/releases/download/v1.0.0/asset.zip
+        $patterns = [
+            '~/repos/([^/?#]+/[^/?#]+)~',
+            '~github\.com/([^/?#]+/[^/?#]+)~',
+            '~^[a-z]+://[^/]+/([^/?#]+/[^/?#]+)/releases/download/~i',
+        ];
+        foreach ($patterns as $pattern) {
             if (\preg_match($pattern, $uri, $matches) === 1 && $matches[1] !== '') {
                 /** @var non-empty-string */
                 return $matches[1];

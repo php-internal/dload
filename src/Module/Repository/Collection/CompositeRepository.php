@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Repository\Collection;
 
+use Internal\DLoad\Module\Registry\RepositoryId;
 use Internal\DLoad\Module\Repository\Repository;
 
 /**
@@ -44,6 +45,11 @@ final class CompositeRepository implements Repository
     public function getName(): string
     {
         return 'unknown/unknown';
+    }
+
+    public function getId(): RepositoryId
+    {
+        return new RepositoryId('composite', $this->getName());
     }
 
     /**

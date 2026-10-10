@@ -11,6 +11,7 @@ use Internal\DLoad\Module\Registry\Record\RepositoryRecord;
 use Internal\DLoad\Module\Registry\RepositoryId;
 use Testo\Assert;
 use Testo\Codecov\Covers;
+use Testo\Expect;
 use Testo\Test;
 
 #[Covers(RepositoryRecord::class)]
@@ -386,6 +387,40 @@ final class RepositoryRecordTest
             Assert::fail('A URI without a path must be rejected.');
         } catch (\InvalidArgumentException) {
         }
+    }
+
+    #[Test]
+    public function repositoryIdOfASelfHostedServerIsDistinct(): void
+    {
+        $id = new RepositoryId('github', 'owner/repo', 'GHE.example.com:8443');
+
+        Assert::same((string) $id, 'github@ghe.example.com:8443:owner/repo');
+        Assert::true($id->equals(new RepositoryId('github', 'owner/repo', 'ghe.example.com:8443')));
+        Assert::false($id->equals(new RepositoryId('github', 'owner/repo')));
+        Assert::false($id->equals(new RepositoryId('github', 'owner/repo', 'ghe.example.com')));
+    }
+
+    #[Test]
+    public function serverSurvivesTheArrayRoundTripAndIsOmittedForThePublicHost(): void
+    {
+        $selfHosted = new RepositoryRecord(new RepositoryId('gitlab', 'group/project', 'gitlab.example.com'));
+        $public = new RepositoryRecord(new RepositoryId('gitlab', 'group/project'));
+
+        $restored = RepositoryRecord::fromArray($selfHosted->toArray(), static fn(): array => []);
+
+        Assert::same($restored->id->server, 'gitlab.example.com');
+        Assert::same($public->toArray()['repository'], ['type' => 'gitlab', 'uri' => 'group/project']);
+    }
+
+    #[Test]
+    public function fromArrayRejectsAnInvalidServer(): never
+    {
+        Expect::exception(\InvalidArgumentException::class)->withMessage('Repository record server must be a non-empty string.');
+
+        RepositoryRecord::fromArray(
+            ['version' => RepositoryRecord::FORMAT_VERSION, 'repository' => ['type' => 'github', 'uri' => 'a/b', 'server' => '']],
+            static fn(): array => [],
+        );
     }
 
     private static function id(): RepositoryId

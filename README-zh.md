@@ -60,6 +60,7 @@ DLoad 解决了 PHP 项目中的一个实际问题：如何在分发 PHP 代码�
 - [自定义软件注册表](#自定义软件注册表)
     - [定义软件](#定义软件)
     - [软件要素](#软件要素)
+    - [自托管服务器](#自托管服务器)
 - [使用场景](#使用场景)
     - [开发环境配置](#开发环境配置)
     - [新项目创建](#新项目创建)
@@ -567,10 +568,11 @@ DLoad 会自动处理构建过程：
 
 #### 仓库配置
 
-- **type**：目前支持 "github"
+- **type**："github" 或 "gitlab"
 - **uri**：仓库路径（例如 "username/repo"）
 - **asset-pattern**：匹配发布资源的正则表达式模式
 - **tag-prefix**：发布标签中版本号之前的文本，例如 `bun-v1.4.2` 中的 `bun-`。标签不以它开头的发布会被忽略，因此对于按组件打标签的 monorepo（release-please），只会使用选定的组件
+- **server**：自托管实例，格式为 `[scheme://]host[:port]`，参见 [自托管服务器](#自托管服务器)
 
 #### 二进制要素
 
@@ -583,6 +585,46 @@ DLoad 会自动处理构建过程：
 - **pattern**：匹配文件的正则表达式模式
 - **extract-path**：可选的解压目录
 - 在任何系统上都能工作（无操作系统/架构过滤）
+
+### 自托管服务器
+
+`server` 属性让仓库指向 GitHub Enterprise Server、自托管的 GitLab
+或任何其他本地部署的实例，而不是 `github.com` / `gitlab.com`：
+
+```xml
+<registry>
+    <software name="Tool" alias="tool">
+        <repository type="github" uri="my-org/tool" server="ghe.example.com" />
+    </software>
+    <software name="Other" alias="other">
+        <repository type="gitlab" uri="group/other" server="gitlab.example.com:8443" />
+    </software>
+</registry>
+```
+
+- 该值由协议、主机和可选端口组成，不带路径。协议默认为 `https`。
+- GitHub Enterprise Server 的 API 位于 `{server}/api/v3`，GitLab 的 API 位于 `{server}/api/v4`。
+- 未指定 `server` 时，使用该仓库类型的公共主机。
+
+每个服务器的令牌通过以其命名的环境变量声明：`DLOAD_TOKEN_` 后接大写的主机和端口，
+其余所有字符都替换为 `_`。
+
+| 服务器                    | 令牌变量                                        |
+|---------------------------|-------------------------------------------------|
+| `github.com`              | `DLOAD_TOKEN_GITHUB_COM`，其次是 `GITHUB_TOKEN` |
+| `gitlab.com`              | `DLOAD_TOKEN_GITLAB_COM`，其次是 `GITLAB_TOKEN` |
+| `ghe.example.com`         | `DLOAD_TOKEN_GHE_EXAMPLE_COM`                   |
+| `gitlab.example.com:8443` | `DLOAD_TOKEN_GITLAB_EXAMPLE_COM_8443`           |
+
+```bash
+DLOAD_TOKEN_GHE_EXAMPLE_COM=your_token_here ./vendor/bin/dload get
+```
+
+配置无法选择读取哪个变量，因此第三方的 `dload.xml` 无法把你的令牌发送到任何地方。`GITHUB_TOKEN` 和 `GITLAB_TOKEN`
+永远不会发送到自托管服务器，而某个服务器的令牌只会发送到与之完全一致的协议、主机和端口。
+
+允许使用普通的 `http`，例如用于测试中的本地模拟 API（`server="http://127.0.0.1:8080"`），但令牌
+只会通过它发送到 `localhost`、`127.0.0.0/8` 和 `[::1]`。
 
 ## 使用场景
 
@@ -660,6 +702,9 @@ GITLAB_TOKEN=your_token_here ./vendor/bin/dload get
 ```
 
 在 CI/CD 环境变量中添加此配置，以便自动下载。
+
+`DLOAD_TOKEN_GITHUB_COM` 和 `DLOAD_TOKEN_GITLAB_COM` 优先于 `GITHUB_TOKEN` 和 `GITLAB_TOKEN`，
+当这些名称已被其他工具占用时很有用。自托管服务器有各自的变量，参见 [自托管服务器](#自托管服务器)。
 
 ## Gitlab CI 配置
 

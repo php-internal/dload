@@ -24,7 +24,8 @@ use Internal\DLoad\Module\Common\Internal\Attribute\XPath;
  *     type: non-empty-string,
  *     uri: non-empty-string,
  *     asset-pattern?: non-empty-string,
- *     tag-prefix?: string
+ *     tag-prefix?: string,
+ *     server?: non-empty-string
  * }
  */
 #[InflectableConfig]
@@ -51,6 +52,13 @@ final class Repository
     public string $tagPrefix = '';
 
     /**
+     * @var non-empty-string|null $server Self-hosted instance as `[scheme://]host[:port]`, e.g. a GitHub
+     *      Enterprise Server or a self-hosted GitLab. Null for the public host of the type.
+     */
+    #[XPath('@server')]
+    public ?string $server = null;
+
+    /**
      * Creates a Repository configuration from an array.
      *
      * @param RepositoryArray $repositoryArray Configuration array
@@ -62,6 +70,7 @@ final class Repository
         $self->uri = $repositoryArray['uri'];
         $self->assetPattern = $repositoryArray['asset-pattern'] ?? '/^.*$/';
         $self->tagPrefix = $repositoryArray['tag-prefix'] ?? '';
+        $self->server = $repositoryArray['server'] ?? null;
 
         return $self;
     }

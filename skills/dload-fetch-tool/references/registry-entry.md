@@ -4,7 +4,7 @@ How to describe a tool dload does not ship, as a `<software>` block inside `<reg
 
 ## Facts to collect
 
-1. **GitHub repo** as `owner/repo`.
+1. **GitHub repo** as `owner/repo` — and its host when it is GitHub Enterprise Server or a self-hosted GitLab: that needs a [`server`](#server).
 2. **A real release tag** to inspect — any recent one. Note any text before the version (`bun-v1.4.2`, `cli-v2.0.0`): it needs a [`tag-prefix`](#tag-prefix).
 3. **The asset filename matrix**:
    ```bash
@@ -46,6 +46,12 @@ Patterns are slash-delimited, and in XML attributes backslashes are literal — 
 A literal string the release tags start with, cut off before the version is parsed. dload reads the version from the tag, so a tag like `bun-v1.4.2` is skipped as unparsable until `tag-prefix="bun-"` is set.
 
 It also selects one component of a monorepo with per-component tags (release-please: `cli-v2.0.0`, `sdk-v1.4.0`): releases whose tag does not start with the prefix are ignored. Include the separator in the prefix (`cli-`, `cli/`), leave the `v` out — it is part of the version.
+
+## `server`
+
+The instance the repository lives on, when it is not `github.com` / `gitlab.com`: `[scheme://]host[:port]`, no path, `https` by default — `server="ghe.example.com"`, `server="gitlab.example.com:8443"`. dload calls the API at `{server}/api/v3` for GitHub Enterprise Server and `{server}/api/v4` for GitLab, so inspect releases there: `curl -s https://<server>/api/v3/repos/<owner>/<repo>/releases/tags/<tag>`.
+
+The token comes from `DLOAD_TOKEN_<HOST>` — host and port upper-cased, every other character turned into `_`: `DLOAD_TOKEN_GHE_EXAMPLE_COM`, `DLOAD_TOKEN_GITLAB_EXAMPLE_COM_8443`. `GITHUB_TOKEN` / `GITLAB_TOKEN` stay with the public hosts. `http://` works (e.g. a local fake API in tests) and carries a token only to `localhost`, `127.0.0.0/8` and `[::1]`.
 
 ## `binary.pattern`
 

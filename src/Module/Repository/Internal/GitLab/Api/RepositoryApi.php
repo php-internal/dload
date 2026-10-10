@@ -24,9 +24,12 @@ use Psr\Http\Message\UriInterface;
  */
 final class RepositoryApi
 {
-    private const URL_REPOSITORY = 'https://gitlab.com/api/v4/projects/%s';
-    private const URL_RELEASES = 'https://gitlab.com/api/v4/projects/%s/releases';
-    private const URL_RELEASE_ASSET = 'https://gitlab.com/api/v4/projects/%s/releases/%s/downloads/%s';
+    /** API base of the public GitLab; a self-hosted instance serves it at `{server}/api/v4`. */
+    public const DEFAULT_BASE_URL = 'https://gitlab.com/api/v4';
+
+    private const URL_REPOSITORY = '%s/projects/%s';
+    private const URL_RELEASES = '%s/projects/%s/releases';
+    private const URL_RELEASE_ASSET = '%s/projects/%s/releases/%s/downloads/%s';
 
     /**
      * Number of releases to ask for in a single page. GitLab serves 20 by default and allows up to
@@ -41,11 +44,13 @@ final class RepositoryApi
 
     /**
      * @param non-empty-string $projectPath
+     * @param non-empty-string $baseUrl API base URL without a trailing slash.
      */
     public function __construct(
         private readonly Client $client,
         private readonly HttpFactory $httpFactory,
         string $projectPath,
+        private readonly string $baseUrl = self::DEFAULT_BASE_URL,
     ) {
         $this->repositoryPath = $projectPath;
     }
@@ -58,7 +63,7 @@ final class RepositoryApi
      */
     public function downloadArtifact(string $repositoryPath, string $tag, string $fileName): ResponseInterface
     {
-        $url = \sprintf(self::URL_RELEASE_ASSET, \urlencode($repositoryPath), \rawurlencode($tag), $fileName);
+        $url = \sprintf(self::URL_RELEASE_ASSET, $this->baseUrl, \urlencode($repositoryPath), \rawurlencode($tag), $fileName);
         return $this->client->downloadArtifact($url);
     }
 
@@ -77,7 +82,7 @@ final class RepositoryApi
      */
     public function getRepository(): RepositoryInfo
     {
-        $response = $this->request(Method::Get, \sprintf(self::URL_REPOSITORY, \urlencode($this->repositoryPath)));
+        $response = $this->request(Method::Get, \sprintf(self::URL_REPOSITORY, $this->baseUrl, \urlencode($this->repositoryPath)));
 
         /** @var array{
          *     name: non-empty-string,
@@ -217,7 +222,7 @@ final class RepositoryApi
     private function releasesRequest(int $page): ResponseInterface
     {
         $uri = $this->httpFactory->uri(
-            \sprintf(self::URL_RELEASES, \urlencode($this->repositoryPath)),
+            \sprintf(self::URL_RELEASES, $this->baseUrl, \urlencode($this->repositoryPath)),
             ['page' => $page, 'per_page' => self::RELEASES_PER_PAGE],
         );
 

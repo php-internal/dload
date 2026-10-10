@@ -24,6 +24,7 @@ use Internal\DLoad\Module\Registry\RegistryStorage;
 use Internal\DLoad\Module\Registry\VersionRegistry;
 use Internal\DLoad\Module\Repository\Internal\GitHub\Factory as GithubRepositoryFactory;
 use Internal\DLoad\Module\Repository\Internal\GitLab\Factory as GitLabRepositoryFactory;
+use Internal\DLoad\Module\Repository\Internal\ServerTokens;
 use Internal\DLoad\Module\Repository\RepositoryProvider;
 use Internal\DLoad\Module\Software\SoftwareCollection;
 use Internal\DLoad\Module\Software\SoftwareCollector;
@@ -120,6 +121,7 @@ final class Bootstrap
         $this->container->bind(OperatingSystem::class);
         $this->container->bind(Libc::class);
         $this->container->bind(Stability::class);
+        $this->container->bind(ServerTokens::class, static fn(): ServerTokens => new ServerTokens($environment));
         $this->container->bind(
             RepositoryProvider::class,
             static fn(Container $container): RepositoryProvider => (new RepositoryProvider())

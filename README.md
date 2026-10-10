@@ -61,6 +61,7 @@ With DLoad, you can:
 - [Custom Software Registry](#custom-software-registry)
     - [Defining Software](#defining-software)
     - [Software Elements](#software-elements)
+    - [Self-Hosted Servers](#self-hosted-servers)
 - [Use Cases](#use-cases)
     - [Development Environment Setup](#development-environment-setup)
     - [New Project Setup](#new-project-setup)
@@ -580,10 +581,11 @@ This ensures consistent Velox versions across different environments and team me
 
 #### Repository Configuration
 
-- **type**: Currently supports "github"
+- **type**: "github" or "gitlab"
 - **uri**: Repository path (e.g., "username/repo")
 - **asset-pattern**: Regex pattern to match release assets
 - **tag-prefix**: Text before the version in release tags, e.g. `bun-` for `bun-v1.4.2`. Releases with other tags are ignored, so only the selected component of a monorepo with per-component tags (release-please) is used
+- **server**: Self-hosted instance as `[scheme://]host[:port]`, see [Self-Hosted Servers](#self-hosted-servers)
 
 #### Binary Elements
 
@@ -596,6 +598,47 @@ This ensures consistent Velox versions across different environments and team me
 - **pattern**: Regex pattern to match files
 - **extract-path**: Optional extraction directory
 - Works on any system (no OS/architecture filtering)
+
+### Self-Hosted Servers
+
+The `server` attribute points a repository at GitHub Enterprise Server, a self-hosted GitLab,
+or any other on-premise instance instead of `github.com` / `gitlab.com`:
+
+```xml
+<registry>
+    <software name="Tool" alias="tool">
+        <repository type="github" uri="my-org/tool" server="ghe.example.com" />
+    </software>
+    <software name="Other" alias="other">
+        <repository type="gitlab" uri="group/other" server="gitlab.example.com:8443" />
+    </software>
+</registry>
+```
+
+- The value is a scheme, host and optional port, without a path. The scheme defaults to `https`.
+- The API lives at `{server}/api/v3` for GitHub Enterprise Server and at `{server}/api/v4` for GitLab.
+- Without `server`, the public host of the repository type is used.
+
+A token is declared per server in an environment variable named after it: `DLOAD_TOKEN_` followed by
+the host and port in upper case, with every other character replaced by `_`.
+
+| Server                    | Token variable                                  |
+|---------------------------|-------------------------------------------------|
+| `github.com`              | `DLOAD_TOKEN_GITHUB_COM`, then `GITHUB_TOKEN`   |
+| `gitlab.com`              | `DLOAD_TOKEN_GITLAB_COM`, then `GITLAB_TOKEN`   |
+| `ghe.example.com`         | `DLOAD_TOKEN_GHE_EXAMPLE_COM`                   |
+| `gitlab.example.com:8443` | `DLOAD_TOKEN_GITLAB_EXAMPLE_COM_8443`           |
+
+```bash
+DLOAD_TOKEN_GHE_EXAMPLE_COM=your_token_here ./vendor/bin/dload get
+```
+
+The configuration cannot choose which variable is read, so a `dload.xml` from a third party cannot send
+your tokens anywhere. `GITHUB_TOKEN` and `GITLAB_TOKEN` are never sent to a self-hosted server, and
+a server's token goes only to that exact scheme, host and port.
+
+Plain `http` is allowed, e.g. for a local fake API in tests (`server="http://127.0.0.1:8080"`), but a token
+is sent over it only to `localhost`, `127.0.0.0/8` and `[::1]`.
 
 ## Use Cases
 
@@ -673,6 +716,10 @@ GITLAB_TOKEN=your_token_here ./vendor/bin/dload get
 ```
 
 Add to CI/CD environment variables for automated downloads.
+
+`DLOAD_TOKEN_GITHUB_COM` and `DLOAD_TOKEN_GITLAB_COM` take precedence over `GITHUB_TOKEN` and `GITLAB_TOKEN`,
+which helps when those names are already taken by another tool. Self-hosted servers have their own variables,
+see [Self-Hosted Servers](#self-hosted-servers).
 
 > [!NOTE]
 > In GitHub Actions, `secrets.GITHUB_TOKEN` is scoped to the current repository and shares a limit of
