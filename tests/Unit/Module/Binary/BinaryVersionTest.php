@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Internal\DLoad\Tests\Unit\Module\Binary;
 
 use Internal\DLoad\Module\Binary\BinaryVersion;
+use Internal\DLoad\Module\Common\Stability;
 use Testo\Assert;
 use Testo\Codecov\Covers;
 use Testo\Data\DataProvider;
+use Testo\Data\DataSet;
 use Testo\Test;
 
 #[Covers(BinaryVersion::class)]
@@ -73,6 +75,30 @@ final class BinaryVersionTest
             'tool 1.2.3_amd64',
             '1.2.3',
             null,
+        ];
+
+        yield 'word starting with a stability letter glued to the number' => [
+            'tool 1.2.3arm64',
+            '1.2.3',
+            null,
+        ];
+
+        yield 'platform after a pre-release glued to the number' => [
+            'tool 2.0.0rc1_linux',
+            '2.0.0rc1_linux',
+            '2.0.0',
+        ];
+
+        yield 'letter release glued to the number' => [
+            'OpenSSL 1.1.1b  26 Feb 2019',
+            '1.1.1',
+            null,
+        ];
+
+        yield 'beta abbreviation glued to the number' => [
+            'tool 1.0.0b2',
+            '1.0.0b2',
+            '1.0.0',
         ];
 
         // Case insensitivity
@@ -214,6 +240,27 @@ final class BinaryVersionTest
 
         Assert::same($result->string, $string);
         Assert::same($result->number, $number ?? $string);
+    }
+
+    #[DataSet(['OpenSSL 1.1.1a  20 Nov 2018'], 'patch letter a')]
+    #[DataSet(['OpenSSL 1.1.1b  26 Feb 2019'], 'patch letter b')]
+    #[DataSet(['OpenSSL 1.1.1c  28 May 2019'], 'patch letter c')]
+    #[Test]
+    public function patchLetterIsAStableRelease(string $output): void
+    {
+        $result = BinaryVersion::fromBinaryOutput($output);
+
+        Assert::same($result->string, '1.1.1');
+        Assert::same($result->stability, Stability::Stable);
+    }
+
+    #[DataSet(['tool 1.0.0b2', Stability::Beta], 'beta abbreviation')]
+    #[DataSet(['tool 1.2.3a1', Stability::Alpha], 'alpha abbreviation')]
+    #[DataSet(['tool 2.0.0rc1', Stability::RC], 'release candidate')]
+    #[Test]
+    public function preReleaseGluedToTheNumberKeepsItsStability(string $output, Stability $stability): void
+    {
+        Assert::same(BinaryVersion::fromBinaryOutput($output)->stability, $stability);
     }
 
     /**

@@ -66,6 +66,18 @@ final class PreRelease implements \Stringable
     }
 
     /**
+     * Regular expression of a stability keyword with an optional number, read as a whole word: letters that
+     * run together are one word, so `a1`, `beta.2` and the `rc1` of `2.0.0rc1` or `rc1_linux` are keywords,
+     * while the `a` of `arm64` or `ga` and the `b` of `build.5` are not.
+     *
+     * @return non-empty-string
+     */
+    public static function wordPattern(): string
+    {
+        return '(?<![a-z])(?:' . self::keywordPattern() . ')(?:[._-]?\d+)?(?![a-z\d])';
+    }
+
+    /**
      * @return int<-1, 1> Negative when this pre-release is less stable or older than the other one.
      */
     public function compare(self $other): int

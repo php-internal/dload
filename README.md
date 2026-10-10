@@ -331,6 +331,10 @@ Use Composer-style version constraints:
     <!-- Range constraints -->
     <download software="temporal" version="^1.20.0" />
     <download software="dolt" version="~0.50.0" />
+    <!-- AND by a space or a comma, OR by ||, hyphen ranges, wildcards, exclusions -->
+    <download software="buf" version="^1.28 || ^2.0" />
+    <download software="protoc" version="25.0 - 26.1" />
+    <download software="mago" version="1.0.*, !=1.0.1" />
     
     <!-- Stability constraints -->
     <download software="tool" version="^1.0.0@beta" />
