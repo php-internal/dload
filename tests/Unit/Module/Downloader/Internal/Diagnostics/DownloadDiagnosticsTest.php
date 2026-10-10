@@ -95,8 +95,8 @@ final class DownloadDiagnosticsTest
         $release->registerAssets(['app-1.2.0-linux-amd64.deb', 'app-1.2.0-linux-amd64.rpm']);
         $release->registerSkippedPackages(['app-1.2.0-linux-amd64.deb', 'app-1.2.0-linux-amd64.rpm']);
 
-        Assert::same($release->describe()[2], '  OS packages are skipped because a binary is expected: app-1.2.0-linux-amd64.deb, app-1.2.0-linux-amd64.rpm');
-        Assert::string($diagnostics->render())->contains('OS packages are skipped because a binary is expected');
+        Assert::string($diagnostics->render())
+            ->contains('OS packages are skipped because a binary is expected: app-1.2.0-linux-amd64.deb, app-1.2.0-linux-amd64.rpm');
     }
 
     #[Test]

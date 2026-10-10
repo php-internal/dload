@@ -42,13 +42,6 @@ final class PackageRuleTest
         $selection = RuleRunner::run(new PackageRule(), [...self::OTHERS, ...self::PACKAGES]);
 
         Assert::same(RuleRunner::names($selection), self::OTHERS);
-    }
-
-    #[Test]
-    public function removedPackagesAreKeptForTheReport(): void
-    {
-        $selection = RuleRunner::run(new PackageRule(), [...self::OTHERS, ...self::PACKAGES]);
-
         Assert::same(\array_keys($selection->removed), [PackageRule::KEY]);
         Assert::same(
             \array_map(static fn(Candidate $candidate): string => $candidate->asset->getName(), $selection->removed[PackageRule::KEY]),

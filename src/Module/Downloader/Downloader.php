@@ -66,8 +66,8 @@ final class Downloader
     private const FETCHED_RELEASES_LIMIT = 10;
 
     /**
-     * Number of the newest matching releases tried. A higher cap would load further release pages
-     * whenever the version constraint matches fewer releases than the cap.
+     * Number of the newest matching releases tried. Iteration stops after this many matches; a higher cap
+     * reads further release pages whenever the first pages hold fewer matches.
      */
     private const TRIED_RELEASES_LIMIT = 10;
 
@@ -185,6 +185,7 @@ final class Downloader
     private function processRepository(Repository $repository, DownloadContext $context, bool $mayRetry = true): \Closure
     {
         return function () use ($repository, $context, $mayRetry): ReleaseInterface {
+            $context->packagesOnlyRelease = null;
             // Set when a release turned out to be deleted: the release list is outdated then
             $forgotten = false;
 
@@ -242,6 +243,7 @@ final class Downloader
             try {
                 await(coroutine($this->processRelease($context)));
 
+                /** @var ReleaseInterface|null $skipped */
                 $skipped = $context->packagesOnlyRelease;
                 $skipped === null or $this->logger->warning(
                     '`%s` %s has only OS packages for `%s`/`%s`, downloaded %s instead.',

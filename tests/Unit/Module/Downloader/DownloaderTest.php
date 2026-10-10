@@ -19,6 +19,7 @@ use Internal\DLoad\Module\Downloader\Internal\AssetSelection\AssetSelector;
 use Internal\DLoad\Module\Downloader\Exception\DownloadFailed;
 use Internal\DLoad\Module\Downloader\Task\DownloadResult;
 use Internal\DLoad\Module\Repository\Collection\ReleasesCollection;
+use Internal\DLoad\Module\Repository\Exception\AssetNotFoundException;
 use Internal\DLoad\Module\Repository\Exception\RateLimitException;
 use Internal\DLoad\Module\Repository\Repository;
 use Internal\DLoad\Module\Repository\RepositoryProvider;
@@ -60,6 +61,60 @@ final class DownloaderTest
         yield 'OS and architecture' => [OperatingSystem::Linux, Architecture::X86_64];
         yield 'OS only' => [OperatingSystem::Linux, null];
         yield 'architecture only' => [null, Architecture::X86_64];
+    }
+
+    public static function providePackagesOnlyWarnings(): \Generator
+    {
+        yield 'the newest packages-only release is named' => [
+            [self::repoWithReleases([
+                'v3.5.0' => ['roadrunner-3.5.0-linux-arm64.deb'],
+                'v3.4.0' => ['roadrunner-3.4.0-linux-arm64.rpm'],
+                'v3.2.0' => ['roadrunner-3.2.0-linux-arm64.tar.gz'],
+            ])],
+            'v3.2.0',
+            '`rr` v3.5.0 has only OS packages for `linux`/`arm64`, downloaded v3.2.0 instead.',
+        ];
+        yield 'a failed binary is not a packages-only release' => [
+            [self::repoWithReleases(
+                [
+                    'v3.4.0' => ['roadrunner-3.4.0-linux-arm64.deb', 'roadrunner-3.4.0-linux-arm64.tar.gz'],
+                    'v3.2.0' => ['roadrunner-3.2.0-linux-arm64.tar.gz'],
+                ],
+                ['roadrunner-3.4.0-linux-arm64.tar.gz' => new \RuntimeException('broken')],
+            )],
+            'v3.2.0',
+            null,
+        ];
+        yield 'a release without packages is not a packages-only release' => [
+            [self::repoWithReleases([
+                'v3.4.0' => ['roadrunner-3.4.0-darwin-arm64.tar.gz'],
+                'v3.2.0' => ['roadrunner-3.2.0-linux-arm64.tar.gz'],
+            ])],
+            'v3.2.0',
+            null,
+        ];
+        yield 'a packages-only release of another repository is forgotten' => [
+            [
+                self::repoWithReleases(['v3.4.0' => ['roadrunner-3.4.0-linux-arm64.deb']]),
+                self::repoWithReleases(['v3.4.0' => ['roadrunner-3.4.0-linux-arm64.tar.gz']]),
+            ],
+            'v3.4.0',
+            null,
+        ];
+        yield 'a packages-only release of an outdated list is forgotten' => [
+            new SequenceRepositoryFactoryStub([
+                self::repoWithReleases(
+                    [
+                        'v3.4.0' => ['roadrunner-3.4.0-linux-arm64.deb'],
+                        'v3.3.0' => ['roadrunner-3.3.0-linux-arm64.tar.gz'],
+                    ],
+                    ['roadrunner-3.3.0-linux-arm64.tar.gz' => new AssetNotFoundException('gone', 'owner/repo')],
+                ),
+                self::repoWithReleases(['v3.5.0' => ['roadrunner-3.5.0-linux-arm64.tar.gz']]),
+            ]),
+            'v3.5.0',
+            null,
+        ];
     }
 
     #[Test]
@@ -259,6 +314,29 @@ final class DownloaderTest
         Assert::same($result->version->string, 'v3.2.0');
         Assert::same($result->file->getFilename(), 'roadrunner-3.2.0-linux-arm64.tar.gz');
         Assert::string($output->fetch())->contains('`rr` v3.4.0 has only OS packages for `linux`/`arm64`, downloaded v3.2.0 instead.');
+    }
+
+    /**
+     * @param list<Repository>|SequenceRepositoryFactoryStub $repositories
+     * @param non-empty-string $version Expected downloaded version.
+     * @param non-empty-string|null $warning Expected warning; `null` when none is expected.
+     */
+    #[Test]
+    #[DataProvider('providePackagesOnlyWarnings')]
+    public function packagesOnlyWarningNamesOnlyAReleaseSkippedForItsPackages(
+        array|SequenceRepositoryFactoryStub $repositories,
+        string $version,
+        ?string $warning,
+    ): void {
+        $software = self::software(binary: true, repositories: \is_array($repositories) ? \count($repositories) : 1);
+        $output = new BufferedOutput();
+
+        $result = $this->run($repositories, $software, architecture: Architecture::ARM_64, logger: new Logger($output));
+
+        Assert::same($result->version->string, $version);
+        $warning === null
+            ? Assert::string($output->fetch())->notContains('has only OS packages')
+            : Assert::string($output->fetch())->contains($warning);
     }
 
     #[Test]
@@ -465,8 +543,9 @@ final class DownloaderTest
      * A repository with a release for each tag; the OS and architecture of an asset come from its name.
      *
      * @param array<non-empty-string, list<non-empty-string>> $releases Asset names by release tag.
+     * @param array<non-empty-string, \Throwable> $failures Download failures by asset name.
      */
-    private static function repoWithReleases(array $releases): RepositoryStub
+    private static function repoWithReleases(array $releases, array $failures = []): RepositoryStub
     {
         $repository = new RepositoryStub('owner/repo');
         $list = [];
@@ -478,6 +557,7 @@ final class DownloaderTest
                     $name,
                     OperatingSystem::tryFromBuildName($name),
                     Architecture::tryFromBuildName($name),
+                    $failures[$name] ?? null,
                 ),
                 $names,
             ));

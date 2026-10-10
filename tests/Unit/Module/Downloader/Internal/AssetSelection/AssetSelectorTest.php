@@ -213,18 +213,6 @@ final class AssetSelectorTest
         Assert::same($names, ['tool-linux-amd64.tar.gz', 'tool-linux-amd64', 'tool-linux-amd64.deb']);
     }
 
-    /**
-     * An empty selection sends the downloader to the next release; a selected package would be
-     * downloaded and then fail the installation with nothing extracted.
-     */
-    #[Test]
-    public function osPackagesAreDroppedWhenABinaryIsExpected(): void
-    {
-        $names = self::select(['tool-linux-amd64.deb', 'tool-linux-amd64.rpm', 'tool-linux-amd64.apk']);
-
-        Assert::same($names, []);
-    }
-
     #[Test]
     public function archivesAndPlainBinariesOutliveOsPackages(): void
     {
