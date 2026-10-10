@@ -36,6 +36,9 @@
                                                 • "^2.12.0-feature" - With feature suffix
                                                 • "^2.12.0@beta" - With explicit stability
                                                 • "^2.12.0-hotfix@rc" - Combined feature and stability
+                                                • "2025.1.0-rc.2" - One pre-release
+                                                • "^2025.1.0-rc.1" - Range from a pre-release on
+                                                • ">=1.0 &lt;2.0 || ^3.0" - Range and alternatives
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:attribute>

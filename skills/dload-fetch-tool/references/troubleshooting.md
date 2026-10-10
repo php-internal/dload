@@ -12,6 +12,7 @@ curl -s "https://api.github.com/repos/<owner>/<repo>/releases?per_page=20" \
 ```
 
 - `prerelease: true` while `version` demands stable → lower the stability (`@beta`/`@RC`/`@alpha`).
+- Tag has a word after the number (`1.2.0-linux`, `1.2.0-arm64`) → a feature build of preview stability, skipped while `version` demands stable. Only a whole stability word marks a pre-release (`-beta2`, `rc1`, `-a1`): `-arm64` or `-build.5` is not alpha or beta.
 - `draft: true` → invisible to dload until published.
 - Tags carry text before the version (`bun-v1.4.2`, `cli-v2.0.0`) → set `tag-prefix` on the `<repository>`; without it the tags do not parse and every release is skipped. See [`registry-entry.md`](registry-entry.md#tag-prefix).
 - Tag is on GitHub but dload picks an older one → the version registry still holds a fresh check; rerun with `dload get --refresh`. A release inserted below the top of the listing (e.g. a GitLab release with a backdated date) needs `dload cache:clear <alias>`. See [`version-registry.md`](version-registry.md).

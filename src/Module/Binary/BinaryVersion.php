@@ -44,7 +44,7 @@ final class BinaryVersion extends Version
     private static function outputVersionPattern(): string
     {
         return '/(?:version:?\s*)?(?:v(?:er(?:sion)?)?\.?\s*)?' . parent::VERSION_SEMVER_NUMBER_PATTERN
-            . '((?:[-+]|(?=(?:' . PreRelease::keywordPattern() . ')\d*\b))[\w.-]+)?/i';
+            . '((?:[-+]|(?=' . PreRelease::wordPattern() . '))[\w.-]+)?/i';
     }
 
     /**

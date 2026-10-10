@@ -21,7 +21,6 @@
     ],
     "require": {
         "php": ">=8.2",
-        "composer/semver": "^3.4",
         "internal/container": "^1.0",
         "internal/destroy": "^1.0",
         "internal/path": "^1.2",
@@ -36,6 +35,7 @@
     },
     "require-dev": {
         "buggregator/trap": "^1.15",
+        "composer/semver": "^3.4",
         "dereuromark/composer-prefer-lowest": "^0.1.10",
         "llm/skills": "^1.9",
         "roxblnfk/unpoly": "^1.8.1",

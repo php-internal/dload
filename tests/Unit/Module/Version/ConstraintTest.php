@@ -235,6 +235,10 @@ final class ConstraintTest
             Stability::Preview,
             'feature suffix with multiple dashes',
         ];
+
+        yield 'hyphen range' => ['1.0 - 2.0@beta', '1.0 - 2.0', null, Stability::Beta, 'Hyphen range with a stability'];
+        yield 'alternatives' => ['^1.2 || ^2.0', '^1.2 || ^2.0', null, Stability::Stable, 'Alternatives'];
+        yield 'range' => ['>=1.0 <2.0', '>=1.0 <2.0', null, Stability::Stable, 'Range'];
     }
 
     public static function provideInvalidConstraints(): \Generator
@@ -296,6 +300,12 @@ final class ConstraintTest
             'Invalid stability level: @beta@alpha',
             'Multiple @ symbols in constraint',
         ];
+
+        yield 'base version of a feature build' => ['abc-feature', 'Invalid base version format: abc.', 'Base version of a feature build'];
+        yield 'wildcard with an operator' => ['>=1.*', 'A wildcard version takes no operator', 'Wildcard with an operator'];
+        yield 'reversed operator' => ['=>1.0', 'Unsupported operator `=>`', 'Reversed operator'];
+        yield 'branch' => ['dev-master', 'Invalid base version format: dev.', 'Branch name'];
+        yield 'empty alternative' => ['^1.0 ||', 'Empty alternative', 'Empty alternative'];
     }
 
     public static function provideComparableConstraints(): \Generator
@@ -410,14 +420,48 @@ final class ConstraintTest
         yield 'exact release candidate without a separator in the tag' => ['2.0.0-rc1', 'v2.0.0rc1', true];
         yield 'exact beta abbreviation without a separator in the tag' => ['1.0.0-b2', '1.0.0b2', true];
 
-        // A version Composer cannot read
+        // A long major part is an ordinary number
         yield 'date major part with four parts' => ['^1.0', '20250101.1.2.3', false];
+        yield 'date major part in a caret of its own' => ['^20250101.1', '20250101.1.2.3', true];
         yield 'six digit major part with four parts' => ['^1.0', '123456.1.2.3', false];
-        yield 'six digit major part at least a bound' => ['>=1.0', '100000.0.0.1', false];
+        yield 'six digit major part at least a bound' => ['>=1.0', '100000.0.0.1', true];
         yield 'six digit major part with five parts on a pre-release bound' => ['^1.0.0-beta.1', '123456.0.0.0.1', false];
 
         // A bare stability keyword still matches every pre-release of that stability
         yield 'bare stability keyword' => ['3.5.0-beta', 'v3.5.0-beta.3', true];
+
+        // A numeric tail orders as a part of the number, in matching as in sorting
+        yield 'numeric tail below a pre-release bound' => ['<3.5.0-preview.3', 'v3.5.0-1', false];
+        yield 'numeric tail at least a pre-release bound' => ['>=3.5.0-preview.3', 'v3.5.0-1', true];
+        yield 'numeric tail at most a preview' => ['<=1.0.0@preview', 'v1.0.0-1', false];
+        yield 'numeric tail above its number' => ['>1.0.0@preview', 'v1.0.0-1', true];
+        yield 'numeric tail on an exact number' => ['1.0-dev', 'v1.0.0-1', false];
+
+        // Five and more number parts in the constraint
+        yield 'five parts at least a five parts bound' => ['>=1.2.3.4.5', 'v1.2.3.4.5', true];
+        yield 'four parts at least a five parts bound' => ['>=1.2.3.4.5', 'v1.2.3.4', false];
+        yield 'five parts pre-release' => ['1.2.3.4.5-beta.1', 'v1.2.3.4.5-beta.1', true];
+        yield 'caret on a five parts pre-release' => ['^1.2.3.4.5-beta.1', 'v1.2.3.4.6', true];
+
+        // Composer syntax around the stability and the feature suffix
+        yield 'range with a stability' => ['>=1.0 <2.0@beta', 'v1.5.0-beta.1', true];
+        yield 'range with a stability on the upper bound' => ['>=1.0 <2.0@beta', 'v2.0.0-beta.1', false];
+        yield 'alternatives with a stability' => ['^1.2 || ^2.0@beta', 'v2.1.0-beta', true];
+        yield 'hyphen range' => ['1.0 - 2.0', 'v2.0.5', true];
+        yield 'hyphen range past the upper bound' => ['1.0 - 2.0', 'v2.1', false];
+        yield 'hyphen range with a stability' => ['1.0 - 2.0@beta', 'v1.5.0-beta', true];
+        yield 'wildcard with a stability' => ['1.*@beta', 'v1.5.0-beta', true];
+        yield 'match all' => ['*', 'v20250101.1.2.3', true];
+        yield 'match all keeps the stability' => ['*', 'v1.0.0-beta', false];
+        yield 'not equal' => ['!=1.2.3', 'v1.2.4', true];
+        yield 'not equal on the version' => ['!=1.2.3@beta', 'v1.2.3-beta.1', false];
+        yield 'not equal to a pre-release' => ['!=3.5.0-beta.1', 'v3.5.0-beta.2', true];
+        yield 'prefixed version' => ['v1.2.3', 'v1.2.3', true];
+        yield 'prefixed pre-release' => ['v3.5.0-beta.1', 'v3.5.0-beta.1', true];
+        yield 'space after the operator' => ['>= 1.2', 'v1.3', true];
+        yield 'space after the operator of a pre-release' => ['>= 3.5.0-beta.1', 'v3.5.0-beta.2', true];
+        yield 'feature on a range' => ['^1.0-priority', 'v2.0.0-priority.0', false];
+        yield 'exact number of a feature build' => ['1.3.1-priority', 'v1.3.1-priority.0', true];
     }
 
     public static function providePreReleases(): \Generator
@@ -429,6 +473,9 @@ final class ConstraintTest
         yield 'explicit stability wins' => ['3.5.0-alpha-2@dev', '3.5.0', Stability::Alpha, 2, Stability::Dev];
         yield 'range' => ['^3.5.0-rc.2', '^3.5.0', Stability::RC, 2, Stability::RC];
         yield 'bare stability keyword' => ['3.5.0-beta', '3.5.0', null, null, Stability::Beta];
+        yield 'prefixed version' => ['v3.5.0-beta.1', 'v3.5.0', Stability::Beta, 1, Stability::Beta];
+        yield 'not equal' => ['!=3.5.0-beta.1', '!=3.5.0', Stability::Beta, 1, Stability::Beta];
+        yield 'five number parts' => ['^1.2.3.4.5-rc.1', '^1.2.3.4.5', Stability::RC, 1, Stability::RC];
     }
 
     #[DataProvider('provideValidConstraints')]

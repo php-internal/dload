@@ -58,7 +58,10 @@ class Version implements \Stringable
         \assert($number !== '');
 
         $suffix = $parts[2] ?? '';
-        $preRelease = $suffix === '' ? null : self::preReleaseFromSuffix($suffix);
+        // A lone letter glued to the number is a patch letter, like OpenSSL's `1.1.1b`, not a pre-release
+        $preRelease = $suffix === '' || \preg_match('/^[a-z]$/i', $suffix) === 1
+            ? null
+            : self::preReleaseFromSuffix($suffix);
         $withoutKeyword = $preRelease === null;
 
         $suffix = \trim($suffix, '-_.+');
@@ -88,7 +91,7 @@ class Version implements \Stringable
      */
     public function compare(self $other): int
     {
-        $byNumber = \version_compare($this->comparableNumber(), $other->comparableNumber());
+        $byNumber = $this->compareNumber($other);
         if ($byNumber !== 0 || $this->preRelease === null || $other->preRelease === null) {
             return $byNumber;
         }
@@ -96,6 +99,17 @@ class Version implements \Stringable
         $byPreRelease = $this->preRelease->compare($other->preRelease);
 
         return $byPreRelease !== 0 ? $byPreRelease : \version_compare((string) $this->suffix, (string) $other->suffix);
+    }
+
+    /**
+     * Orders versions by the version number only, the first step of {@see compare()}:
+     * `1.0.0-beta` and `1.0.0` are equal, `1.0.0-1` is above both.
+     *
+     * @return int<-1, 1>
+     */
+    public function compareNumber(self $other): int
+    {
+        return \version_compare($this->comparableNumber(), $other->comparableNumber());
     }
 
     public function __toString(): string
@@ -112,16 +126,13 @@ class Version implements \Stringable
      */
     private static function preReleaseFromSuffix(string &$input): ?PreRelease
     {
-        $reg = '[._-]?(?:(' . PreRelease::keywordPattern() . ')([._-]?\d+)?)?';
+        $reg = '[._-]?' . PreRelease::wordPattern();
 
-        /** @var list<non-empty-string> $parts */
+        /** @var array<0|1, non-empty-string> $parts */
         $parts = [];
 
-        \preg_match(('#' . $reg . '$#i'), $input, $match);
-        isset($match[1]) and $parts[0] = $match[0];
-
-        \preg_match(('#^' . $reg . '#i'), $input, $match);
-        isset($match[1]) and $parts[1] = $match[0];
+        \preg_match('#' . $reg . '$#i', $input, $match) === 1 and $parts[0] = $match[0];
+        \preg_match('#^' . $reg . '#i', $input, $match) === 1 and $parts[1] = $match[0];
 
         foreach ($parts as $k => $fullPart) {
             $preRelease = PreRelease::fromString(\ltrim($fullPart, '._-'));
@@ -140,11 +151,12 @@ class Version implements \Stringable
     /**
      * A numeric suffix without a stability keyword orders as a part of the number: `1.0.0-1 > 1.0.0`.
      * With a keyword it does not: the `.2` of `2.0.0-beta.1.2` belongs to the pre-release.
-     * Trailing zero parts do not count: `1.2.3`, `1.2.3.0` and `1.2.3.0.0` are one number.
+     * Trailing zero parts do not count: `1.2.3`, `1.2.3.0` and `1.2.3.0.0` are one number,
+     * nor does build metadata, as in SemVer: `1.2.3+5` is `1.2.3`.
      */
     private function comparableNumber(): string
     {
-        $number = (string) $this->number;
+        $number = \explode('+', (string) $this->number, 2)[0];
         if ($this->withoutKeyword && $this->suffix !== null && \preg_match('/^\d+(?:\.\d+)*$/', $this->suffix) === 1) {
             $number .= '.' . $this->suffix;
         }

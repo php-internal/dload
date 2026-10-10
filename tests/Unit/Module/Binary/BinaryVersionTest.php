@@ -75,6 +75,24 @@ final class BinaryVersionTest
             null,
         ];
 
+        yield 'word starting with a stability letter glued to the number' => [
+            'tool 1.2.3arm64',
+            '1.2.3',
+            null,
+        ];
+
+        yield 'platform after a pre-release glued to the number' => [
+            'tool 2.0.0rc1_linux',
+            '2.0.0rc1_linux',
+            '2.0.0',
+        ];
+
+        yield 'letter release glued to the number' => [
+            'OpenSSL 1.1.1b  26 Feb 2019',
+            '1.1.1b',
+            '1.1.1',
+        ];
+
         // Case insensitivity
         yield 'mixed case version string' => [
             'VERSION: 5.1.2',
