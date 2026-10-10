@@ -19,6 +19,7 @@ use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\FormatRule;
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\LibcRule;
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\NamePatternRule;
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\OperatingSystemRule;
+use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\PackageRule;
 use Internal\DLoad\Module\Repository\AssetInterface;
 use Internal\DLoad\Tests\Unit\Module\Downloader\Internal\AssetSelection\Stub\NamedAssets;
 use Internal\DLoad\Tests\Unit\Module\Downloader\Internal\AssetSelection\Stub\LibcContainer;
@@ -29,6 +30,7 @@ use Testo\Test;
 #[Covers(AssetSelector::class)]
 #[Covers(NamePatternRule::class)]
 #[Covers(FormatRule::class)]
+#[Covers(PackageRule::class)]
 #[Covers(CompanionRule::class)]
 #[Covers(OperatingSystemRule::class)]
 #[Covers(ArchitectureRule::class)]
@@ -206,9 +208,17 @@ final class AssetSelectorTest
     #[Test]
     public function archivesComeBeforeOtherFiles(): void
     {
-        $names = self::select(['tool-linux-amd64', 'tool-linux-amd64.deb', 'tool-linux-amd64.tar.gz']);
+        $names = self::select(['tool-linux-amd64', 'tool-linux-amd64.deb', 'tool-linux-amd64.tar.gz'], strict: false);
 
         Assert::same($names, ['tool-linux-amd64.tar.gz', 'tool-linux-amd64', 'tool-linux-amd64.deb']);
+    }
+
+    #[Test]
+    public function archivesAndPlainBinariesOutliveOsPackages(): void
+    {
+        $names = self::select(['tool-linux-amd64', 'tool-linux-amd64.deb', 'tool-linux-amd64.tar.gz']);
+
+        Assert::same($names, ['tool-linux-amd64.tar.gz', 'tool-linux-amd64']);
     }
 
     /**

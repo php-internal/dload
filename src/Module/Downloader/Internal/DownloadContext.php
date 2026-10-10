@@ -48,6 +48,13 @@ final class DownloadContext
     public ReleaseAttempt $releaseAttempt;
 
     /**
+     * @var ReleaseInterface|null Newest release of the current repository pass skipped because it has only
+     *      OS packages for the host. Another repository or a refetched release list starts over, so a version
+     *      found elsewhere is not reported against it.
+     */
+    public ?ReleaseInterface $packagesOnlyRelease = null;
+
+    /**
      * Creates a new download context.
      *
      * @param Software $software Software package configuration

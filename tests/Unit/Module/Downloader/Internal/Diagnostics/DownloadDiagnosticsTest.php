@@ -85,6 +85,39 @@ final class DownloadDiagnosticsTest
     }
 
     #[Test]
+    public function reportNamesTheSkippedPackages(): void
+    {
+        $diagnostics = self::diagnostics();
+        $repository = $diagnostics->addRepository('github', 'owner/repo', '/^app-.*/');
+        $repository->matchedReleases = 1;
+
+        $release = $repository->addRelease('v1.2.0');
+        $release->registerAssets(['app-1.2.0-linux-amd64.deb', 'app-1.2.0-linux-amd64.rpm']);
+        $release->registerSkippedPackages(['app-1.2.0-linux-amd64.deb', 'app-1.2.0-linux-amd64.rpm']);
+        $release->addFailure('app-1.2.0-linux-amd64.tar.gz', new \RuntimeException('broken'));
+
+        // Between the asset list and the failures, indented like them
+        Assert::same(\array_slice($release->describe(), 1), [
+            '  Assets: app-1.2.0-linux-amd64.deb, app-1.2.0-linux-amd64.rpm',
+            '  OS packages are skipped because a binary is expected: app-1.2.0-linux-amd64.deb, app-1.2.0-linux-amd64.rpm',
+            '  Failed asset `app-1.2.0-linux-amd64.tar.gz`: broken',
+        ]);
+        Assert::string($diagnostics->render())
+            ->contains('OS packages are skipped because a binary is expected: app-1.2.0-linux-amd64.deb, app-1.2.0-linux-amd64.rpm');
+    }
+
+    #[Test]
+    public function reportOmitsTheSkippedPackagesLineWhenNoneAreSkipped(): void
+    {
+        $diagnostics = self::diagnostics();
+        $repository = $diagnostics->addRepository('github', 'owner/repo', '/^app-.*/');
+        $repository->matchedReleases = 1;
+        $repository->addRelease('v1.2.0')->registerAssets(['app-1.2.0-darwin-arm64.tar.gz']);
+
+        Assert::string($diagnostics->render())->notContains('OS packages are skipped');
+    }
+
+    #[Test]
     public function reportContainsRepositoryLevelError(): void
     {
         $diagnostics = self::diagnostics();
