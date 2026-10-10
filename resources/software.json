@@ -311,7 +311,12 @@
                 "name": "fly",
                 "pattern": "/^flyctl(?:\\.exe)?$/",
                 "version-command": "version"
-            }
+            },
+            "files": [
+                {
+                    "pattern": "/^wintun\\.dll$/"
+                }
+            ]
         }
     ]
 }
