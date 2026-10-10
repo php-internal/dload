@@ -295,7 +295,7 @@ DLoad 支持三种下载类型，它们决定了资源的处理方式：
 > 使用 `type="archive"` 会解包甚至 `.phar` 压缩包。
 
 > [!NOTE]
-> 配置了 `<binary>` 时（无论是 `type="binary"` 还是未指定 `type`），永远不会选择操作系统安装包（`.deb`、`.rpm`、`.apk`、`.snap`、`.flatpak`、`.msi`、`.msix`、`.msixbundle`、`.appx`、`.appxbundle`、`.nupkg`、`.dmg`、`.pkg`）：DLoad 无法解包它们。如果某个发布版本只为当前主机提供安装包，则会跳过它，改用下一个仍满足版本约束的更早版本。
+> 配置了 `<binary>` 时（无论是 `type="binary"` 还是未指定 `type`），永远不会选择操作系统安装包（`.deb`、`.rpm`、`.apk`、`.snap`、`.flatpak`、`.msi`、`.msix`、`.msixbundle`、`.appx`、`.appxbundle`、`.nupkg`、`.dmg`、`.pkg`）：DLoad 无法解包它们。如果某个发布版本只为当前主机提供安装包，则会跳过它，改用更早的版本，范围限于满足版本约束的最新 10 个发布版本；要回溯更早的版本，请固定 `version`。
 
 #### 解包压缩包（保留结构）
 

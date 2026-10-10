@@ -65,6 +65,12 @@ final class Downloader
     /** Number of release names collected for the failure report. */
     private const FETCHED_RELEASES_LIMIT = 10;
 
+    /**
+     * Number of the newest matching releases tried. A higher cap would load further release pages
+     * whenever the version constraint matches fewer releases than the cap.
+     */
+    private const TRIED_RELEASES_LIMIT = 10;
+
     public function __construct(
         private readonly DownloaderConfig $config,
         private readonly Logger $logger,
@@ -201,7 +207,7 @@ final class Downloader
             }
 
             /** @var ReleaseInterface[] $releases */
-            $releases = $releasesCollection->limit(10)->sortByVersion()->toArray();
+            $releases = $releasesCollection->limit(self::TRIED_RELEASES_LIMIT)->sortByVersion()->toArray();
 
             $this->logger->debug('%d releases found.', \count($releases));
 
@@ -235,6 +241,17 @@ final class Downloader
 
             try {
                 await(coroutine($this->processRelease($context)));
+
+                $skipped = $context->packagesOnlyRelease;
+                $skipped === null or $this->logger->warning(
+                    '`%s` %s has only OS packages for `%s`/`%s`, downloaded %s instead.',
+                    $context->software->getId(),
+                    $skipped->getVersion()->string,
+                    $this->operatingSystem->value,
+                    $this->architecture->value,
+                    $context->release->getVersion()->string,
+                );
+
                 return $context->release;
             } catch (ReleaseGone $e) {
                 // The registry must not offer this release again, and the list needs a fresh check
@@ -301,16 +318,18 @@ final class Downloader
             );
             $this->logger->debug('%d matching assets found.', \count($selection->candidates));
 
-            $context->releaseAttempt->skippedPackages = \array_map(
+            $skippedPackages = \array_map(
                 static fn(Candidate $candidate): string => $candidate->asset->getName(),
                 $selection->removed[PackageRule::KEY] ?? [],
             );
+            $context->releaseAttempt->registerSkippedPackages($skippedPackages);
 
+            $selection->isEmpty() && $skippedPackages !== [] and $context->packagesOnlyRelease ??= $context->release;
             $selection->isEmpty() and throw new NotFound(
                 $strict
                     ? \sprintf(
                         '%s OS `%s`, architecture `%s`, name pattern `%s`%s',
-                        $context->releaseAttempt->skippedPackages === [] ? 'no asset matches' : 'only OS packages match',
+                        $skippedPackages === [] ? 'no asset matches' : 'only OS packages match',
                         $this->operatingSystem->value,
                         $this->architecture->value,
                         $context->repoConfig->assetPattern,

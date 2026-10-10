@@ -34,6 +34,7 @@ use Internal\DLoad\Tests\Unit\Module\Repository\Stub\ReleaseStub;
 use Internal\DLoad\Tests\Unit\Module\Repository\Stub\RepositoryStub;
 use Internal\Path;
 use Internal\DLoad\Tests\Unit\Module\Downloader\Internal\AssetSelection\Stub\LibcContainer;
+use Symfony\Component\Console\Output\BufferedOutput;
 use Testo\Assert;
 use Testo\Codecov\Covers;
 use Testo\Data\DataProvider;
@@ -251,10 +252,13 @@ final class DownloaderTest
         $config = DownloadConfig::fromSoftwareId('rr');
         $config->version = '3.*';
 
-        $result = $this->run([$repository], self::software(binary: true), $config, Architecture::ARM_64);
+        $output = new BufferedOutput();
+
+        $result = $this->run([$repository], self::software(binary: true), $config, Architecture::ARM_64, new Logger($output));
 
         Assert::same($result->version->string, 'v3.2.0');
         Assert::same($result->file->getFilename(), 'roadrunner-3.2.0-linux-arm64.tar.gz');
+        Assert::string($output->fetch())->contains('`rr` v3.4.0 has only OS packages for `linux`/`arm64`, downloaded v3.2.0 instead.');
     }
 
     #[Test]
@@ -526,6 +530,7 @@ final class DownloaderTest
         Software $software,
         ?DownloadConfig $config = null,
         Architecture $architecture = Architecture::X86_64,
+        Logger $logger = new Logger(),
     ): DownloadResult {
         $factory = $repositories instanceof SequenceRepositoryFactoryStub
             ? $repositories
@@ -534,7 +539,7 @@ final class DownloaderTest
         $downloaderConfig = new DownloaderConfig();
         $downloaderConfig->tmpDir = $this->tempDir;
 
-        $task = $this->makeDownloader($factory, $downloaderConfig, $architecture)->download(
+        $task = $this->makeDownloader($factory, $downloaderConfig, $architecture, $logger)->download(
             $software,
             $config ?? DownloadConfig::fromSoftwareId('rr'),
             static fn(): null => null,
@@ -548,10 +553,11 @@ final class DownloaderTest
         SequenceRepositoryFactoryStub $factory,
         DownloaderConfig $config,
         Architecture $architecture = Architecture::X86_64,
+        Logger $logger = new Logger(),
     ): Downloader {
         return new Downloader(
             config: $config,
-            logger: new Logger(),
+            logger: $logger,
             repositoryProvider: (new RepositoryProvider())->addRepositoryFactory($factory),
             architecture: $architecture,
             operatingSystem: OperatingSystem::tryFromString('linux') ?? throw new \LogicException(),

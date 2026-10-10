@@ -47,6 +47,9 @@ final class DownloadContext
     /** @var ReleaseAttempt Diagnostics of the release being processed */
     public ReleaseAttempt $releaseAttempt;
 
+    /** @var ReleaseInterface|null Newest release skipped because it has only OS packages for the host */
+    public ?ReleaseInterface $packagesOnlyRelease = null;
+
     /**
      * Creates a new download context.
      *

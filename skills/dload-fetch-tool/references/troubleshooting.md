@@ -44,7 +44,7 @@ A candidate that matches neither is discarded. Common offenders:
 
 Compare with the host: `php -r "echo PHP_OS_FAMILY, ' / ', php_uname('m'), PHP_EOL;"`.
 
-With a `binary`, OS packages for the host (`.deb`, `.msi`… — the list is in [`registry-entry.md`](registry-entry.md#asset-pattern)) are discarded too, since dload cannot unpack them, and a release offering only packages is skipped for the next older one. The report then says "only OS packages match" and lists them under "OS packages are skipped because a binary is expected"; when no older release fits, pin a `version` that ships an archive or a raw binary for the host.
+With a `binary`, OS packages (`.deb`, `.msi`… — the list is in [`registry-entry.md`](registry-entry.md#asset-pattern)) are discarded too, since dload cannot unpack them, and a release offering only packages is skipped for an older one among the 10 newest releases that satisfy `version`, with a warning naming both versions. When the package names carry the host OS and arch, the report says "only OS packages match" and lists them under "OS packages are skipped because a binary is expected"; a package without an OS token (`tool.dmg`) is discarded by the OS check above instead. When no older release fits, pin a `version` that ships an archive or a raw binary for the host — pinning also reaches past the 10 newest.
 
 Several candidates left: dload tries them best first — host libc, then the fewest extra name tokens, then archives, then the release order. Run with `-vvv` to see the rank of every asset (`Asset ... ranked: os=0 arch=0 libc=0 extras=1 archive=0`); a wrong pick usually means the wanted build carries an extra token the others lack.
 

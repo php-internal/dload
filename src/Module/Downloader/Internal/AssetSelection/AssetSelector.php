@@ -55,7 +55,8 @@ final class AssetSelector
             new CompanionRule(),
             new OperatingSystemRule($operatingSystem),
             new ArchitectureRule($architecture, $operatingSystem),
-            // After the platform rules: the packages it removes are then the host's own, which the report names
+            // After the platform rules, so the report names only packages built for the host. A package whose
+            // name carries no OS token, like `tool.dmg`, is already gone then and stays out of the report.
             new PackageRule(),
             new LibcRule($container),
             new ExtrasRule(),

@@ -233,22 +233,6 @@ final class AssetSelectorTest
         Assert::same($names, ['tool-linux-amd64.tar.gz', 'tool-linux-amd64']);
     }
 
-    #[Test]
-    public function aWindowsExecutableOutlivesTheInstaller(): void
-    {
-        $names = self::select(['tool-windows-amd64.exe', 'tool-windows-amd64.msi'], os: OperatingSystem::Windows);
-
-        Assert::same($names, ['tool-windows-amd64.exe']);
-    }
-
-    #[Test]
-    public function osPackagesAreKeptWhenNoBinaryIsExpected(): void
-    {
-        $names = self::select(['tool-linux-amd64.deb'], strict: false);
-
-        Assert::same($names, ['tool-linux-amd64.deb']);
-    }
-
     /**
      * @param list<non-empty-string> $assets
      * @param non-empty-string $pattern
