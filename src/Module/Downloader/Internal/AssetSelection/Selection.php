@@ -24,12 +24,15 @@ final class Selection
      * @param non-empty-string $assetPattern Pattern the asset names must match.
      * @param Type|null $type Download action type restricting the asset format.
      * @param bool $strict Whether assets for another OS or architecture are removed rather than ranked lower.
+     * @param array<non-empty-string, list<Candidate>> $removed Candidates removed with a reason, by the reason,
+     *        for a failure report to name them.
      */
     private function __construct(
         public readonly array $candidates,
         public readonly string $assetPattern,
         public readonly ?Type $type,
         public readonly bool $strict,
+        public readonly array $removed = [],
     ) {}
 
     /**
@@ -53,13 +56,25 @@ final class Selection
      * is a rank, see {@see self::rank()}.
      *
      * @param \Closure(Candidate): bool $predicate
+     * @param non-empty-string|null $reason Key to keep the removed candidates under, see {@see self::$removed}.
      */
-    public function remove(\Closure $predicate): self
+    public function remove(\Closure $predicate, ?string $reason = null): self
     {
-        return $this->withCandidates(\array_values(\array_filter(
-            $this->candidates,
-            static fn(Candidate $candidate): bool => !$predicate($candidate),
-        )));
+        $kept = $removed = [];
+        foreach ($this->candidates as $candidate) {
+            if ($predicate($candidate)) {
+                $removed[] = $candidate;
+            } else {
+                $kept[] = $candidate;
+            }
+        }
+
+        return $this->withCandidates(
+            $kept,
+            $reason === null || $removed === []
+                ? $this->removed
+                : [...$this->removed, $reason => [...$this->removed[$reason] ?? [], ...$removed]],
+        );
     }
 
     /**
@@ -121,9 +136,10 @@ final class Selection
 
     /**
      * @param list<Candidate> $candidates
+     * @param array<non-empty-string, list<Candidate>>|null $removed
      */
-    private function withCandidates(array $candidates): self
+    private function withCandidates(array $candidates, ?array $removed = null): self
     {
-        return new self($candidates, $this->assetPattern, $this->type, $this->strict);
+        return new self($candidates, $this->assetPattern, $this->type, $this->strict, $removed ?? $this->removed);
     }
 }

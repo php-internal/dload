@@ -19,7 +19,9 @@ use Internal\DLoad\Module\Downloader\Exception\NotFound;
 use Internal\DLoad\Module\Downloader\Exception\ReleaseGone;
 use Internal\DLoad\Module\Downloader\Internal\Diagnostics\DownloadDiagnostics;
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\AssetSelector;
+use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Candidate;
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\ArchitectureRule;
+use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\PackageRule;
 use Internal\DLoad\Module\Downloader\Internal\DownloadContext;
 use Internal\DLoad\Module\Downloader\Task\DownloadResult;
 use Internal\DLoad\Module\Downloader\Task\DownloadTask;
@@ -62,6 +64,12 @@ final class Downloader
 {
     /** Number of release names collected for the failure report. */
     private const FETCHED_RELEASES_LIMIT = 10;
+
+    /**
+     * Number of the newest matching releases tried. Iteration stops after this many matches; a higher cap
+     * reads further release pages whenever the first pages hold fewer matches.
+     */
+    private const TRIED_RELEASES_LIMIT = 10;
 
     public function __construct(
         private readonly DownloaderConfig $config,
@@ -177,6 +185,7 @@ final class Downloader
     private function processRepository(Repository $repository, DownloadContext $context, bool $mayRetry = true): \Closure
     {
         return function () use ($repository, $context, $mayRetry): ReleaseInterface {
+            $context->packagesOnlyRelease = null;
             // Set when a release turned out to be deleted: the release list is outdated then
             $forgotten = false;
 
@@ -199,7 +208,7 @@ final class Downloader
             }
 
             /** @var ReleaseInterface[] $releases */
-            $releases = $releasesCollection->limit(10)->sortByVersion()->toArray();
+            $releases = $releasesCollection->limit(self::TRIED_RELEASES_LIMIT)->sortByVersion()->toArray();
 
             $this->logger->debug('%d releases found.', \count($releases));
 
@@ -233,6 +242,18 @@ final class Downloader
 
             try {
                 await(coroutine($this->processRelease($context)));
+
+                /** @var ReleaseInterface|null $skipped */
+                $skipped = $context->packagesOnlyRelease;
+                $skipped === null or $this->logger->warning(
+                    '`%s` %s has only OS packages for `%s`/`%s`, downloaded %s instead.',
+                    $context->software->getId(),
+                    $skipped->getVersion()->string,
+                    $this->operatingSystem->value,
+                    $this->architecture->value,
+                    $context->release->getVersion()->string,
+                );
+
                 return $context->release;
             } catch (ReleaseGone $e) {
                 // The registry must not offer this release again, and the list needs a fresh check
@@ -299,10 +320,18 @@ final class Downloader
             );
             $this->logger->debug('%d matching assets found.', \count($selection->candidates));
 
+            $skippedPackages = \array_map(
+                static fn(Candidate $candidate): string => $candidate->asset->getName(),
+                $selection->removed[PackageRule::KEY] ?? [],
+            );
+            $context->releaseAttempt->registerSkippedPackages($skippedPackages);
+
+            $selection->isEmpty() && $skippedPackages !== [] and $context->packagesOnlyRelease ??= $context->release;
             $selection->isEmpty() and throw new NotFound(
                 $strict
                     ? \sprintf(
-                        'no asset matches OS `%s`, architecture `%s`, name pattern `%s`%s',
+                        '%s OS `%s`, architecture `%s`, name pattern `%s`%s',
+                        $skippedPackages === [] ? 'no asset matches' : 'only OS packages match',
                         $this->operatingSystem->value,
                         $this->architecture->value,
                         $context->repoConfig->assetPattern,

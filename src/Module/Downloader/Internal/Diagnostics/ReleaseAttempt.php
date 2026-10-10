@@ -23,6 +23,9 @@ final class ReleaseAttempt
     /** @var list<string> Names of all assets in the release */
     private array $assetNames = [];
 
+    /** @var list<non-empty-string> Names of the OS packages for the host, skipped because a binary is expected */
+    private array $skippedPackages = [];
+
     /** @var list<non-empty-string> Errors occurred while downloading matched assets */
     private array $failures = [];
 
@@ -40,6 +43,14 @@ final class ReleaseAttempt
     {
         $this->assetsTotal = \count($names);
         $this->assetNames = $names;
+    }
+
+    /**
+     * @param list<non-empty-string> $names Names of the OS packages for the host, skipped because a binary is expected
+     */
+    public function registerSkippedPackages(array $names): void
+    {
+        $this->skippedPackages = $names;
     }
 
     /**
@@ -78,6 +89,11 @@ final class ReleaseAttempt
                 $hidden > 0 ? \sprintf(' and %d more', $hidden) : '',
             );
         }
+
+        $this->skippedPackages === [] or $lines[] = \sprintf(
+            '  OS packages are skipped because a binary is expected: %s',
+            \implode(', ', $this->skippedPackages),
+        );
 
         foreach ($this->failures as $failure) {
             $lines[] = '  Failed asset ' . $failure;
