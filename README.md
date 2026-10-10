@@ -343,6 +343,7 @@ Use Composer-style version constraints:
 ```
 
 A pre-release in a constraint sets the minimum stability for any operator, even for `<3.5.0-beta.2`; lower it with `@alpha` or `@dev`.
+
 ### Advanced Configuration Options
 
 ```xml

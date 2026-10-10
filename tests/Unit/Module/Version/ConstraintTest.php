@@ -355,6 +355,13 @@ final class ConstraintTest
         yield 'nightly range' => ['>=1.0.0-nightly20250503@nightly', 'v1.0.0-nightly20250601', true];
         yield 'caret on a number after the pre-release' => ['^3.5.0-beta.1', 'v3.5.0-beta.1.2', true];
         yield 'at least the bound with a tail after it' => ['>=3.5.0-RC1', 'v3.5.0-RC1-linux', true];
+        yield 'above the bound with a tail after it' => ['>3.5.0-RC1', 'v3.5.0-RC1-linux', true];
+        yield 'above the bound with a number after it' => ['>3.5.0-RC1', 'v3.5.0-RC1.2', true];
+        yield 'caret on the bound with a tail after it' => ['^3.5.0-RC1', 'v3.5.0-RC1-linux', true];
+        yield 'tilde on the bound with a tail after it' => ['~3.5.0-RC1', 'v3.5.0-RC1-linux', true];
+        yield 'below the bound with a tail after it' => ['<3.5.0-RC1', 'v3.5.0-RC1-linux', false];
+        yield 'at most the bound with a tail after it' => ['<=3.5.0-RC1', 'v3.5.0-RC1-linux', false];
+        yield 'below the next pre-release with a tail after the previous one' => ['<3.5.0-RC2', 'v3.5.0-RC1-linux', true];
         yield 'above the bound on a next version below the stability' => ['>3.5.0-beta.2', 'v3.6.0-alpha', false];
         yield 'above the bound on a next version' => ['>3.5.0-beta.2', 'v3.6.0', true];
         yield 'tilde from a pre-release on a later patch' => ['~3.5.0-beta.1', 'v3.5.4', true];
@@ -388,6 +395,14 @@ final class ConstraintTest
         yield 'five parts in a caret' => ['^1.2', 'v1.2.3.4.5', true];
         yield 'five parts in a tilde' => ['~1.2.3.4', 'v1.2.3.4.5', true];
         yield 'six parts above four' => ['>1.2.3.4', 'v1.2.3.4.5.6', true];
+        yield 'trailing zero after four parts on an explicit equality' => ['==1.2.3.4', 'v1.2.3.4.0', true];
+        yield 'trailing zeros after four parts' => ['1.2.3.4', 'v1.2.3.4.0.0', true];
+        yield 'trailing zeros after three parts' => ['1.2.3', 'v1.2.3.0.0', true];
+        yield 'trailing zero after four parts above four' => ['>1.2.3.4', 'v1.2.3.4.0', false];
+        yield 'trailing zero after four parts below four' => ['<1.2.3.4', 'v1.2.3.4.0', false];
+        yield 'zero part before a meaningful one' => ['1.2.3.4', 'v1.2.3.4.0.5', false];
+        yield 'zero parts before a meaningful one' => ['1.0', 'v1.0.0.0.1', false];
+        yield 'trailing zeros before a pre-release' => ['3.5.0-RC1', 'v3.5.0.0.0-RC1', true];
         yield 'five parts above a four parts pre-release' => ['^1.2.3.4-beta.1', 'v1.2.3.4.5', true];
         yield 'five parts on an exact four parts pre-release' => ['1.2.3.4-beta.1', 'v1.2.3.4.5', false];
 

@@ -207,12 +207,18 @@ final class Constraint implements \Stringable
 
     /**
      * Composer reads four number parts at most, so the rest goes to a patch: `1.2.3.4.5` is `1.2.3.4-p5`.
+     * Trailing zero parts past the fourth are dropped, as Composer does for the shorter ones: `1.2.3.4.0` is `1.2.3.4`.
      */
     private static function composerNumber(string $number): string
     {
-        $parts = \explode('.', $number, 5);
+        $parts = \explode('.', $number);
+        while (\count($parts) > 4 && \ltrim(\end($parts), '0') === '') {
+            \array_pop($parts);
+        }
 
-        return \count($parts) === 5 ? \implode('.', \array_slice($parts, 0, 4)) . '-p' . $parts[4] : $number;
+        return \count($parts) > 4
+            ? \implode('.', \array_slice($parts, 0, 4)) . '-p' . \implode('.', \array_slice($parts, 4))
+            : \implode('.', $parts);
     }
 
     /**
@@ -233,7 +239,8 @@ final class Constraint implements \Stringable
     /**
      * The pre-release decides only between versions with the number of the bound itself; versions
      * with another number are left to the operator, like for a constraint without a pre-release.
-     * An exact constraint names one release: a tail after the pre-release, like `3.5.0-RC1-linux`, makes another one.
+     * A tail after the pre-release orders after it, as in sorting: `3.5.0-RC1-linux` is above `3.5.0-RC1`,
+     * so an exact constraint does not match it.
      *
      * @param null|string $suffix Feature suffix of the version
      */
@@ -246,9 +253,10 @@ final class Constraint implements \Stringable
         }
 
         $order = $preRelease->compare($this->preRelease);
+        $order === 0 && $suffix !== null and $order = 1;
 
         return match ($this->operator) {
-            '', '=', '==' => $order === 0 && $suffix === null,
+            '', '=', '==' => $order === 0,
             '^', '~', '>=' => $order >= 0,
             '>' => $order > 0,
             '<' => $order < 0,

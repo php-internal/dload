@@ -80,7 +80,8 @@ class Version implements \Stringable
 
     /**
      * Orders versions by the version number, then by the pre-release: `1.0.0-beta.2 < 1.0.0-RC1 < 1.0.0`,
-     * then by the rest of the suffix: `1.0.0-RC1-priority.0 < 1.0.0-RC1-priority.1`.
+     * then by the rest of the suffix, a version without one first:
+     * `1.0.0-RC1 < 1.0.0-RC1-priority.0 < 1.0.0-RC1-priority.1`.
      * A version without a number comes first.
      *
      * @return int<-1, 1>
@@ -111,11 +112,6 @@ class Version implements \Stringable
      */
     private static function preReleaseFromSuffix(string &$input): ?PreRelease
     {
-        if (\str_starts_with('x-dev', \strtolower($input))) {
-            $input = \substr($input, \strlen('x-dev'));
-            return new PreRelease(Stability::Dev);
-        }
-
         $reg = '[._-]?(?:(' . PreRelease::keywordPattern() . ')([._-]?\d+)?)?';
 
         /** @var list<non-empty-string> $parts */
@@ -144,13 +140,15 @@ class Version implements \Stringable
     /**
      * A numeric suffix without a stability keyword orders as a part of the number: `1.0.0-1 > 1.0.0`.
      * With a keyword it does not: the `.2` of `2.0.0-beta.1.2` belongs to the pre-release.
+     * Trailing zero parts do not count: `1.2.3`, `1.2.3.0` and `1.2.3.0.0` are one number.
      */
     private function comparableNumber(): string
     {
         $number = (string) $this->number;
+        if ($this->withoutKeyword && $this->suffix !== null && \preg_match('/^\d+(?:\.\d+)*$/', $this->suffix) === 1) {
+            $number .= '.' . $this->suffix;
+        }
 
-        return $this->withoutKeyword && $this->suffix !== null && \preg_match('/^\d+(?:\.\d+)*$/', $this->suffix) === 1
-            ? $number . '.' . $this->suffix
-            : $number;
+        return (string) \preg_replace('/(?:\.0+)+$/', '', $number);
     }
 }

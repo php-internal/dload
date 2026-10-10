@@ -66,6 +66,22 @@ final class VersionTest
         yield 'date suffix before the next patch' => ['1.0.0-20250101', '1.0.1'];
         yield 'release candidate without a separator after an alpha' => ['2.0.0-alpha', '2.0.0rc1'];
         yield 'beta abbreviation without a separator after an earlier beta' => ['1.0.0-beta.3', '1.0.0b4'];
+        yield 'tail after the pre-release' => ['3.5.0-RC1', '3.5.0-RC1-linux'];
+        yield 'number after the pre-release after the pre-release itself' => ['3.5.0-RC1', '3.5.0-RC1.2'];
+        yield 'zero parts before a meaningful one' => ['1.0', '1.0.0.1'];
+        yield 'platform build before the final' => ['1.0.0-x86_64', '1.0.0'];
+        yield 'number with a letter before the final' => ['1.0.0-1x', '1.0.0'];
+        yield 'number with an alpha abbreviation before the final' => ['1.0.0-1a', '1.0.0'];
+    }
+
+    public static function provideEqualVersions(): \Generator
+    {
+        yield 'spellings of one pre-release' => ['v3.5.0-rc.1', '3.5.0-RC1'];
+        yield 'trailing zero part' => ['1.2.3', '1.2.3.0'];
+        yield 'trailing zero parts' => ['1.2.3', 'v1.2.3.0.0'];
+        yield 'trailing zero after four parts' => ['1.2.3.4', '1.2.3.4.0'];
+        yield 'trailing zero before a pre-release' => ['1.2.3-RC1', '1.2.3.0-RC1'];
+        yield 'two parts' => ['1.0', '1.0.0'];
     }
 
     /**
@@ -101,13 +117,20 @@ final class VersionTest
 
         // Longer numbers
         yield 'four-part version' => ['1.2.3.4', '1.2.3.4', '1.2.3.4', null, Stability::Stable];
+        yield 'prefixed four-part version' => ['v1.2.3.4', 'v1.2.3.4', '1.2.3.4', null, Stability::Stable];
         yield 'five-part version' => ['v1.2.3.4.5', 'v1.2.3.4.5', '1.2.3.4.5', null, Stability::Stable];
-        yield 'four-part version with pre-release' => ['1.2.3.4-beta.1', '1.2.3.4-beta.1', '1.2.3.4', null, Stability::Beta];
         yield 'four-part version with feature' => ['1.2.3.4-custom', '1.2.3.4-custom', '1.2.3.4', 'custom', Stability::Preview];
         // A suffix glued to the number
         yield 'release candidate without a separator' => ['2.0.0rc1', '2.0.0rc1', '2.0.0', null, Stability::RC];
         yield 'feature after a release candidate without a separator' => ['2.0.0rc1-linux', '2.0.0rc1-linux', '2.0.0', 'linux', Stability::RC];
         yield 'feature without a separator' => ['1.2.3_linux', '1.2.3_linux', '1.2.3', 'linux', Stability::Preview];
+        yield 'letter without a separator' => ['1.0.0x', '1.0.0x', '1.0.0', 'x', Stability::Preview];
+        yield 'dev branch after a letter without a separator' => ['1.0.0x-dev', '1.0.0x-dev', '1.0.0', 'x', Stability::Dev];
+
+        // Dev branches
+        yield 'dev branch of a minor' => ['1.0.x-dev', '1.0.x-dev', '1.0', 'x', Stability::Dev];
+        yield 'dev branch of a major' => ['2.x-dev', '2.x-dev', '2', 'x', Stability::Dev];
+        yield 'dev branch after a full number' => ['1.0.0-x-dev', '1.0.0-x-dev', '1.0.0', 'x', Stability::Dev];
 
         yield 'version with suffix but no recognized stability' => ['1.2.3-custom', '1.2.3-custom', '1.2.3', 'custom', Stability::Preview];
 
@@ -221,16 +244,12 @@ final class VersionTest
         Assert::same($b->compare($a), 1);
     }
 
+    #[DataProvider('provideEqualVersions')]
     #[Test]
-    public function compareTreatsSpellingsOfOnePreReleaseAsEqual(): void
+    public function compareTreatsVersionsAsEqual(string $a, string $b): void
     {
-        Assert::same(Version::fromVersionString('v3.5.0-rc.1')->compare(Version::fromVersionString('3.5.0-RC1')), 0);
-    }
-
-    #[Test]
-    public function compareTreatsAPrefixedFourPartVersionAsEqual(): void
-    {
-        Assert::same(Version::fromVersionString('v1.2.3.4')->compare(Version::fromVersionString('1.2.3.4')), 0);
+        Assert::same(Version::fromVersionString($a)->compare(Version::fromVersionString($b)), 0);
+        Assert::same(Version::fromVersionString($b)->compare(Version::fromVersionString($a)), 0);
     }
 
     #[Test]

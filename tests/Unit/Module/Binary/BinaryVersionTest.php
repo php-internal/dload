@@ -128,6 +128,49 @@ final class BinaryVersionTest
             '30.2.1.4',
             null,
         ];
+
+        // Other numbers around the version
+        yield 'build number after the version' => [
+            'tool 1.2.3 build 4567',
+            '1.2.3',
+            null,
+        ];
+
+        yield 'date after the version' => [
+            'tool 1.2.3 20250101',
+            '1.2.3',
+            null,
+        ];
+
+        yield 'date joined to the version' => [
+            'tool 1.2.3-20250101',
+            '1.2.3-20250101',
+            '1.2.3',
+        ];
+
+        yield 'build metadata after a pre-release' => [
+            'v1.2.3-rc.1+build.5',
+            '1.2.3-rc.1',
+            '1.2.3',
+        ];
+
+        yield 'number before the version' => [
+            'protocol 2 tool 1.2.3',
+            '1.2.3',
+            null,
+        ];
+
+        yield 'Go toolchain before the version' => [
+            'built with go1.21 tool 1.2.3',
+            '1.2.3',
+            null,
+        ];
+
+        yield 'Go toolchain after the version' => [
+            'tool 1.2.3 (go1.22.1)',
+            '1.2.3',
+            null,
+        ];
     }
 
     /**
