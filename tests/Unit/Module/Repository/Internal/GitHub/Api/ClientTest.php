@@ -156,19 +156,12 @@ final class ClientTest
     #[Test]
     public function requestWithAuthTokenAddsAuthorizationHeader(): void
     {
-        $token = new ApiToken('github_pat_test_token_123', 'GITHUB_TOKEN');
-        $method = 'GET';
-        $uri = \Mockery::mock(UriInterface::class)->shouldIgnoreMissing();
-        $request = \Mockery::mock(RequestInterface::class)->shouldIgnoreMissing();
-        $response = ResponseStub::ok();
+        $http = new ClientStub();
+        $client = new Client(new NyholmFactoryImpl(new Logger()), $http, new ApiToken('github_pat_test_token_123', 'GITHUB_TOKEN'));
 
-        $this->httpClient = $this->httpClient->withResponse($request, $response);
+        $client->request('GET', 'https://api.github.com/repos/owner/repo');
 
-        $clientWithToken = new Client($this->httpFactory, $this->httpClient, $token);
-
-        $result = $clientWithToken->request($method, $uri);
-
-        Assert::equals($result, $response);
+        Assert::same($http->sent[0]->getHeaderLine('authorization'), 'Bearer github_pat_test_token_123');
     }
 
     #[Test]
