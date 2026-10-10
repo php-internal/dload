@@ -52,18 +52,6 @@ final class PreRelease implements \Stringable
     }
 
     /**
-     * Resolves a stability keyword, including the `a` and `b` abbreviations of alpha and beta.
-     */
-    public static function stability(string $keyword): ?Stability
-    {
-        return Stability::fromString($keyword) ?? match (\strtolower($keyword)) {
-            'a' => Stability::Alpha,
-            'b' => Stability::Beta,
-            default => null,
-        };
-    }
-
-    /**
      * Regular expression alternation of every keyword {@see stability()} accepts.
      *
      * @return non-empty-string
@@ -93,5 +81,17 @@ final class PreRelease implements \Stringable
     public function __toString(): string
     {
         return $this->number === 0 ? $this->stability->value : $this->stability->value . '.' . $this->number;
+    }
+
+    /**
+     * Resolves a stability keyword, including the `a` and `b` abbreviations of alpha and beta.
+     */
+    private static function stability(string $keyword): ?Stability
+    {
+        return Stability::fromString($keyword) ?? match (\strtolower($keyword)) {
+            'a' => Stability::Alpha,
+            'b' => Stability::Beta,
+            default => null,
+        };
     }
 }

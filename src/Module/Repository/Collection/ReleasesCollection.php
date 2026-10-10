@@ -77,7 +77,10 @@ final class ReleasesCollection extends Collection
     {
         $result = \iterator_to_array($this->getIterator());
 
-        \uasort($result, static fn(ReleaseInterface $a, ReleaseInterface $b): int => $b->getVersion()->compare($a->getVersion()));
+        \uasort(
+            $result,
+            static fn(ReleaseInterface $a, ReleaseInterface $b): int => $b->getVersion()->compare($a->getVersion()),
+        );
 
         return new self($result);
     }

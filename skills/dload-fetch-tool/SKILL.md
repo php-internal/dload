@@ -45,7 +45,7 @@ Done when the block has a `<repository>` whose `asset-pattern` matches every OS/
 | Attribute | Purpose |
 |---|---|
 | `software` | Alias or name of the tool (built-in or inline). Required. |
-| `version` | Composer-style constraint: `^2025.1`, `~1.0.0`, `^2.12.0@beta`, `^2.12.0-hotfix@rc`, one pre-release like `2025.1.0-rc.2`, or a range from one like `^2025.1.0-rc.1`. Omit for latest stable. Pre-releases order by stability (`nightly < snapshot < dev < unstable < alpha < preview < beta < pre < RC < stable`), then by number; `stable` by default. |
+| `version` | Composer-style constraint: `^2025.1`, `~1.0.0`, `^2.12.0@beta`, `^2.12.0-hotfix@rc`, one pre-release like `2025.1.0-rc.2`, or a range from one like `^2025.1.0-rc.1`. Omit for latest stable. Pre-releases order by stability (`nightly < snapshot < dev < unstable < alpha < preview < beta < pre < RC < stable`), then by number; `stable` by default. A pre-release in a constraint sets the minimum stability for any operator, even `<3.5.0-beta.2`; lower it with `@alpha`/`@dev`. An exact pre-release skips tagged builds like `2025.1.0-rc.2-linux`; numbers may have more than three parts (`1.2.3.4`). |
 | `extract-path` | Target folder (default: project root). |
 | `type` | `binary` (default), `phar` (required for PHAR — skips extraction), `archive` (unpack the whole asset keeping its folder layout). |
 

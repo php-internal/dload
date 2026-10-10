@@ -328,6 +328,10 @@ final class ConstraintTest
         yield 'underscore spelling in the tag' => ['1.0.0-alpha_2', 'v1.0.0-alpha_2', true];
         yield 'explicit stability looser than the pre-release' => ['3.5.0-RC1@beta', 'v3.5.0-RC1', true];
         yield 'explicit stability stricter than the pre-release' => ['3.5.0-beta.1@rc', 'v3.5.0-beta.1', false];
+        yield 'feature build after the pre-release' => ['1.3.1-RC1', 'v1.3.1-RC1-priority.0', false];
+        yield 'number after the pre-release' => ['=3.5.0-beta.1', 'v3.5.0-beta.1.2', false];
+        yield 'platform after the pre-release' => ['3.5.0-RC1', 'v3.5.0-RC1-linux', false];
+        yield 'explicit equality with a tail after the pre-release' => ['==3.5.0-RC1', 'v3.5.0-RC1-linux', false];
 
         // A pre-release bound of a range
         yield 'caret above the bound' => ['^3.5.0-beta.1@beta', 'v3.5.0-rc.1', true];
@@ -349,6 +353,43 @@ final class ConstraintTest
         yield 'at most the bound' => ['<=3.5.0-beta.2@beta', 'v3.5.0-beta.2', true];
         yield 'explicit equality' => ['==3.5.0-rc.1', 'v3.5.0-RC1', true];
         yield 'nightly range' => ['>=1.0.0-nightly20250503@nightly', 'v1.0.0-nightly20250601', true];
+        yield 'caret on a number after the pre-release' => ['^3.5.0-beta.1', 'v3.5.0-beta.1.2', true];
+        yield 'at least the bound with a tail after it' => ['>=3.5.0-RC1', 'v3.5.0-RC1-linux', true];
+        yield 'above the bound on a next version below the stability' => ['>3.5.0-beta.2', 'v3.6.0-alpha', false];
+        yield 'above the bound on a next version' => ['>3.5.0-beta.2', 'v3.6.0', true];
+        yield 'tilde from a pre-release on a later patch' => ['~3.5.0-beta.1', 'v3.5.4', true];
+        yield 'tilde from a pre-release past the minor' => ['~3.5.0-beta.1', 'v3.6.0', false];
+
+        // A pre-release in the constraint sets the minimum stability for an upper bound too
+        yield 'below the bound on an earlier pre-release' => ['<3.5.0-beta.2', 'v3.5.0-beta.1', true];
+        yield 'below the bound on a less stable pre-release' => ['<3.5.0-beta.2', 'v3.5.0-alpha.9', false];
+        yield 'below the bound on an older dev build' => ['<3.5.0-beta.2', 'v3.4.0-dev', false];
+        yield 'below the bound on an older release' => ['<3.5.0-beta.2', 'v3.4.0', true];
+        yield 'below the bound on the bound' => ['<3.5.0-beta.2', 'v3.5.0-beta.2', false];
+        yield 'below the bound with alpha on an alpha' => ['<3.5.0-beta.2@alpha', 'v3.5.0-alpha.9', true];
+        yield 'below the bound with alpha on a dev build' => ['<3.5.0-beta.2@alpha', 'v3.4.0-dev', false];
+        yield 'below the bound with dev on an earlier pre-release' => ['<3.5.0-beta.2@dev', 'v3.5.0-beta.1', true];
+        yield 'below the bound with dev on an alpha' => ['<3.5.0-beta.2@dev', 'v3.5.0-alpha.9', true];
+        yield 'below the bound with dev on a dev build' => ['<3.5.0-beta.2@dev', 'v3.4.0-dev', true];
+        yield 'below the bound with dev on an older release' => ['<3.5.0-beta.2@dev', 'v3.4.0', true];
+        yield 'below the bound with dev on the bound' => ['<3.5.0-beta.2@dev', 'v3.5.0-beta.2', false];
+
+        // Versions with more than three number parts
+        yield 'four parts exact' => ['1.2.3.4', 'v1.2.3.4', true];
+        yield 'four parts exact pre-release' => ['1.2.3.4-beta.1', 'v1.2.3.4-beta.1', true];
+        yield 'four parts on another fourth part' => ['1.2.3.4', 'v1.2.3.5', false];
+        yield 'five parts on an exact four' => ['1.2.3.4', 'v1.2.3.4.5', false];
+        yield 'five parts on an explicit equality' => ['==1.2.3.4', 'v1.2.3.4.5', false];
+        yield 'five parts above four' => ['>1.2.3.4', 'v1.2.3.4.5', true];
+        yield 'five parts at least four' => ['>=1.2.3.4', 'v1.2.3.4.5', true];
+        yield 'five parts below four' => ['<1.2.3.4', 'v1.2.3.4.5', false];
+        yield 'five parts at most four' => ['<=1.2.3.4', 'v1.2.3.4.5', false];
+        yield 'five parts below the next fourth part' => ['<1.2.3.5', 'v1.2.3.4.5', true];
+        yield 'five parts in a caret' => ['^1.2', 'v1.2.3.4.5', true];
+        yield 'five parts in a tilde' => ['~1.2.3.4', 'v1.2.3.4.5', true];
+        yield 'six parts above four' => ['>1.2.3.4', 'v1.2.3.4.5.6', true];
+        yield 'five parts above a four parts pre-release' => ['^1.2.3.4-beta.1', 'v1.2.3.4.5', true];
+        yield 'five parts on an exact four parts pre-release' => ['1.2.3.4-beta.1', 'v1.2.3.4.5', false];
 
         // A bare stability keyword still matches every pre-release of that stability
         yield 'bare stability keyword' => ['3.5.0-beta', 'v3.5.0-beta.3', true];
@@ -436,7 +477,7 @@ final class ConstraintTest
         Assert::same($result->preRelease?->stability, $expectedPreReleaseStability);
         Assert::same($result->preRelease?->number, $expectedPreReleaseNumber);
         Assert::same($result->minimumStability, $expectedStability);
-        $expectedPreReleaseStability === null or Assert::null($result->featureSuffix);
+        Assert::null($result->featureSuffix);
     }
 
     #[Test]

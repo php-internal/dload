@@ -175,10 +175,12 @@ final class Constraint implements \Stringable
 
         // Check if a version satisfies the base version constraint
         if ($this->preRelease !== null) {
-            if ($version->preRelease === null || !$this->satisfiesPreRelease($this->preRelease, $number, $version->preRelease)) {
+            // A version with a number always has a pre-release
+            \assert($version->preRelease !== null);
+            if (!$this->satisfiesPreRelease($number, $version->preRelease, $version->suffix)) {
                 return false;
             }
-        } elseif (Semver::satisfies($number, $this->versionConstraint) === false) {
+        } elseif (Semver::satisfies(self::composerNumber($number), $this->versionConstraint) === false) {
             return false;
         }
 
@@ -203,19 +205,34 @@ final class Constraint implements \Stringable
     }
 
     /**
+     * Composer reads four number parts at most, so the rest goes to a patch: `1.2.3.4.5` is `1.2.3.4-p5`.
+     */
+    private static function composerNumber(string $number): string
+    {
+        $parts = \explode('.', $number, 5);
+
+        return \count($parts) === 5 ? \implode('.', \array_slice($parts, 0, 4)) . '-p' . $parts[4] : $number;
+    }
+
+    /**
      * The pre-release decides only between versions with the number of the bound itself; versions
      * with another number are left to the operator, like for a constraint without a pre-release.
+     * An exact constraint names one release: a tail after the pre-release, like `3.5.0-RC1-linux`, makes another one.
+     *
+     * @param null|string $suffix Feature suffix of the version
      */
-    private function satisfiesPreRelease(PreRelease $required, string $number, PreRelease $preRelease): bool
+    private function satisfiesPreRelease(string $number, PreRelease $preRelease, ?string $suffix): bool
     {
+        \assert($this->preRelease !== null);
+        $number = self::composerNumber($number);
         if (!Semver::satisfies($number, '==' . $this->bound)) {
             return Semver::satisfies($number, $this->versionConstraint);
         }
 
-        $order = $preRelease->compare($required);
+        $order = $preRelease->compare($this->preRelease);
 
         return match ($this->operator) {
-            '', '=', '==' => $order === 0,
+            '', '=', '==' => $order === 0 && $suffix === null,
             '^', '~', '>=' => $order >= 0,
             '>' => $order > 0,
             '<' => $order < 0,

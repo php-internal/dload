@@ -13,8 +13,8 @@ use Internal\DLoad\Module\Common\Stability;
  */
 class Version implements \Stringable
 {
-    protected const VERSION_SEMVER_PATTERN = 'v?(\d+\.\d+\.\d+(?:\+\d+)?)([-+][\w.-]+)?';
-    protected const VERSION_FALLBACK_PATTERN = 'v?(\d+(?:\.\d+(?:\.\d+(?:\+\d+)?)?)?)([-+.][\w.-]+)?';
+    protected const VERSION_SEMVER_PATTERN = 'v?(\d+\.\d+\.\d+(?:\.\d+)*(?:\+\d+)?)([-+][\w.-]+)?';
+    protected const VERSION_FALLBACK_PATTERN = 'v?(\d+(?:\.\d+(?:\.\d+(?:\.\d+)*(?:\+\d+)?)?)?)([-+.][\w.-]+)?';
     protected const VERSION_HASH_SUFFIX_PATTERN = '(?:#([a-f0-9]{6,40}))?';
 
     /**
@@ -23,6 +23,7 @@ class Version implements \Stringable
      * @param null|non-empty-string $suffix Feature suffix: the suffix without the stability part
      * @param null|PreRelease $preRelease Stability with its number, e.g. `beta.1` of `1.2.3-beta.1`;
      *        numbered 0 when the version carries none. Null only for an empty version.
+     * @param bool $withoutKeyword The suffix has no stability keyword, like `1` of `1.0.0-1`.
      */
     final protected function __construct(
         public readonly string $string,
@@ -31,6 +32,7 @@ class Version implements \Stringable
         public readonly ?Stability $stability = null,
         public readonly ?string $hash = null,
         public readonly ?PreRelease $preRelease = null,
+        private readonly bool $withoutKeyword = false,
     ) {}
 
     /**
@@ -54,6 +56,7 @@ class Version implements \Stringable
 
         $suffix = $parts[2] ?? '';
         $preRelease = $suffix === '' ? null : self::preReleaseFromSuffix($suffix);
+        $withoutKeyword = $preRelease === null;
 
         $suffix = \trim($suffix, '-_.+');
         $suffix === '' and $suffix = null;
@@ -64,7 +67,7 @@ class Version implements \Stringable
         $hash = $parts[3] ?? null;
         $hash === '' and $hash = null;
 
-        return new static($string, $number, $suffix, $stability, $hash, $preRelease);
+        return new static($string, $number, $suffix, $stability, $hash, $preRelease, $withoutKeyword);
     }
 
     public static function empty(): static
@@ -136,18 +139,14 @@ class Version implements \Stringable
     }
 
     /**
-     * The number keeps three parts at most, so the rest of a longer one, like `.4` of `1.2.3.4`,
-     * lands in the suffix; for ordering it is a part of the number again. Only without a stability
-     * keyword: the `.2` of `2.0.0-beta.1.2` belongs to the pre-release.
+     * A numeric suffix without a stability keyword orders as a part of the number: `1.0.0-1 > 1.0.0`.
+     * With a keyword it does not: the `.2` of `2.0.0-beta.1.2` belongs to the pre-release.
      */
     private function comparableNumber(): string
     {
         $number = (string) $this->number;
-        $withoutKeyword = $this->preRelease !== null
-            && $this->preRelease->stability === Stability::Preview
-            && $this->preRelease->number === 0;
 
-        return $withoutKeyword && $this->suffix !== null && \preg_match('/^\d+(?:\.\d+)*$/', $this->suffix) === 1
+        return $this->withoutKeyword && $this->suffix !== null && \preg_match('/^\d+(?:\.\d+)*$/', $this->suffix) === 1
             ? $number . '.' . $this->suffix
             : $number;
     }

@@ -14,7 +14,7 @@ use Internal\DLoad\Module\Version\Version;
 final class BinaryVersion extends Version
 {
     /**
-     * Pattern to extract semantic version (X.Y.Z) from text.
+     * Pattern to extract semantic version (X.Y.Z, or more parts like X.Y.Z.W) from text.
      */
     private const OUTPUT_VERSION_PATTERN = '/(?:version:?\s*)?(?:v(?:er(?:sion)?)?\.?\s*)?' . parent::VERSION_SEMVER_PATTERN . '/i';
 

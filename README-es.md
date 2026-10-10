@@ -340,6 +340,7 @@ Usa restricciones de versión estilo Composer:
 </actions>
 ```
 
+Un pre-release en una restricción fija la estabilidad mínima con cualquier operador, incluso en `<3.5.0-beta.2`; redúcela con `@alpha` o `@dev`.
 ### Opciones de Configuración Avanzadas
 
 ```xml

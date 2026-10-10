@@ -97,6 +97,25 @@ final class BinaryVersionTest
             '1.51.1',
             null,
         ];
+
+        // More than three parts
+        yield 'four-part version' => [
+            'tool version 1.2.3.4 (build 2025-01-01)',
+            '1.2.3.4',
+            null,
+        ];
+
+        yield 'five-part version with pre-release' => [
+            'Version: v1.2.3.4.5-beta.1',
+            '1.2.3.4.5-beta.1',
+            '1.2.3.4.5',
+        ];
+
+        yield 'four-part version after a name' => [
+            'libtool 30.2.1.4',
+            '30.2.1.4',
+            null,
+        ];
     }
 
     /**
