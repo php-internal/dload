@@ -294,6 +294,9 @@ Cuando no se especifica `type`, DLoad automáticamente usa todos los manejadores
 > Usa `type="phar"` para herramientas PHP que deben mantenerse como archivos `.phar`.
 > Usar `type="archive"` extraerá incluso archivos `.phar`.
 
+> [!NOTE]
+> Cuando el software tiene un `<binary>` y el tipo no es `phar`, los paquetes del sistema operativo (`.deb`, `.rpm`, `.apk`, `.msi`, `.dmg`, `.pkg`) nunca se seleccionan: DLoad no puede desempaquetarlos. Un release que solo ofrece un paquete para el host se omite en favor de uno anterior.
+
 #### Extracción de Archivos (Preservando la Estructura)
 
 `type="archive"` descomprime el asset **completo** en `extract-path`, manteniendo la estructura interna de directorios del archivo en lugar de aplanar los archivos coincidentes en una sola carpeta:

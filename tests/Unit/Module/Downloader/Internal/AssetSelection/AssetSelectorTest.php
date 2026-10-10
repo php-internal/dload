@@ -19,6 +19,7 @@ use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\FormatRule;
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\LibcRule;
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\NamePatternRule;
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\OperatingSystemRule;
+use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\PackageRule;
 use Internal\DLoad\Module\Repository\AssetInterface;
 use Internal\DLoad\Tests\Unit\Module\Downloader\Internal\AssetSelection\Stub\NamedAssets;
 use Internal\DLoad\Tests\Unit\Module\Downloader\Internal\AssetSelection\Stub\LibcContainer;
@@ -29,6 +30,7 @@ use Testo\Test;
 #[Covers(AssetSelector::class)]
 #[Covers(NamePatternRule::class)]
 #[Covers(FormatRule::class)]
+#[Covers(PackageRule::class)]
 #[Covers(CompanionRule::class)]
 #[Covers(OperatingSystemRule::class)]
 #[Covers(ArchitectureRule::class)]
@@ -206,9 +208,53 @@ final class AssetSelectorTest
     #[Test]
     public function archivesComeBeforeOtherFiles(): void
     {
-        $names = self::select(['tool-linux-amd64', 'tool-linux-amd64.deb', 'tool-linux-amd64.tar.gz']);
+        $names = self::select(['tool-linux-amd64', 'tool-linux-amd64.deb', 'tool-linux-amd64.tar.gz'], strict: false);
 
         Assert::same($names, ['tool-linux-amd64.tar.gz', 'tool-linux-amd64', 'tool-linux-amd64.deb']);
+    }
+
+    /**
+     * An empty selection sends the downloader to the next release; a selected package would be
+     * downloaded and then fail the installation with nothing extracted.
+     */
+    #[Test]
+    public function osPackagesAreDroppedWhenABinaryIsExpected(): void
+    {
+        $names = self::select(['tool-linux-amd64.deb', 'tool-linux-amd64.rpm', 'tool-linux-amd64.apk']);
+
+        Assert::same($names, []);
+    }
+
+    #[Test]
+    public function archivesAndPlainBinariesOutliveOsPackages(): void
+    {
+        $names = self::select(['tool-linux-amd64', 'tool-linux-amd64.deb', 'tool-linux-amd64.tar.gz']);
+
+        Assert::same($names, ['tool-linux-amd64.tar.gz', 'tool-linux-amd64']);
+    }
+
+    #[Test]
+    public function aBinaryActionDropsOsPackagesToo(): void
+    {
+        $names = self::select(['tool-linux-amd64.deb', 'tool-linux-amd64.tar.gz'], type: Type::Binary);
+
+        Assert::same($names, ['tool-linux-amd64.tar.gz']);
+    }
+
+    #[Test]
+    public function aWindowsExecutableOutlivesTheInstaller(): void
+    {
+        $names = self::select(['tool-windows-amd64.exe', 'tool-windows-amd64.msi'], os: OperatingSystem::Windows);
+
+        Assert::same($names, ['tool-windows-amd64.exe']);
+    }
+
+    #[Test]
+    public function osPackagesAreKeptWhenNoBinaryIsExpected(): void
+    {
+        $names = self::select(['tool-linux-amd64.deb'], strict: false);
+
+        Assert::same($names, ['tool-linux-amd64.deb']);
     }
 
     /**

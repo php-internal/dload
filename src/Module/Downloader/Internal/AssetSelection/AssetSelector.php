@@ -17,6 +17,7 @@ use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\FormatRule;
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\LibcRule;
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\NamePatternRule;
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\OperatingSystemRule;
+use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\PackageRule;
 use Internal\DLoad\Module\Repository\AssetInterface;
 use Psr\Container\ContainerInterface;
 
@@ -51,6 +52,7 @@ final class AssetSelector
         $pipeline = Pipeline::prepare(
             new NamePatternRule(),
             new FormatRule($archiveFactory),
+            new PackageRule(),
             new CompanionRule(),
             new OperatingSystemRule($operatingSystem),
             new ArchitectureRule($architecture, $operatingSystem),
