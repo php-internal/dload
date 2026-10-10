@@ -94,7 +94,14 @@ final class DownloadDiagnosticsTest
         $release = $repository->addRelease('v1.2.0');
         $release->registerAssets(['app-1.2.0-linux-amd64.deb', 'app-1.2.0-linux-amd64.rpm']);
         $release->registerSkippedPackages(['app-1.2.0-linux-amd64.deb', 'app-1.2.0-linux-amd64.rpm']);
+        $release->addFailure('app-1.2.0-linux-amd64.tar.gz', new \RuntimeException('broken'));
 
+        // Between the asset list and the failures, indented like them
+        Assert::same(\array_slice($release->describe(), 1), [
+            '  Assets: app-1.2.0-linux-amd64.deb, app-1.2.0-linux-amd64.rpm',
+            '  OS packages are skipped because a binary is expected: app-1.2.0-linux-amd64.deb, app-1.2.0-linux-amd64.rpm',
+            '  Failed asset `app-1.2.0-linux-amd64.tar.gz`: broken',
+        ]);
         Assert::string($diagnostics->render())
             ->contains('OS packages are skipped because a binary is expected: app-1.2.0-linux-amd64.deb, app-1.2.0-linux-amd64.rpm');
     }
