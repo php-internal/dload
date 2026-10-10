@@ -20,7 +20,9 @@ class Version implements \Stringable
     /**
      * @param string $string Source of the version string (e.g., 1.2.3-beta-feature)
      * @param null|non-empty-string $number Parsed version number
-     * @param null|non-empty-string $suffix  Stability and feature suffix
+     * @param null|non-empty-string $suffix Feature suffix: the suffix without the stability part
+     * @param null|PreRelease $preRelease Stability with its number, e.g. `beta.1` of `1.2.3-beta.1`;
+     *        numbered 0 when the version carries none. Null only for an empty version.
      */
     final protected function __construct(
         public readonly string $string,
@@ -28,6 +30,7 @@ class Version implements \Stringable
         public readonly ?string $suffix = null,
         public readonly ?Stability $stability = null,
         public readonly ?string $hash = null,
+        public readonly ?PreRelease $preRelease = null,
     ) {}
 
     /**
@@ -50,25 +53,42 @@ class Version implements \Stringable
         \assert($number !== '');
 
         $suffix = $parts[2] ?? '';
-        $stability = null;
-        if ($suffix !== '') {
-            $stability = self::stabilityFromSuffix($suffix);
-        }
+        $preRelease = $suffix === '' ? null : self::preReleaseFromSuffix($suffix);
 
         $suffix = \trim($suffix, '-_.+');
         $suffix === '' and $suffix = null;
 
-        $stability ??= ($suffix === null ? Stability::Stable : Stability::Preview);
+        $stability = $preRelease?->stability ?? ($suffix === null ? Stability::Stable : Stability::Preview);
+        $preRelease ??= new PreRelease($stability);
 
         $hash = $parts[3] ?? null;
         $hash === '' and $hash = null;
 
-        return new static($string, $number, $suffix, $stability, $hash);
+        return new static($string, $number, $suffix, $stability, $hash, $preRelease);
     }
 
     public static function empty(): static
     {
         return new static('');
+    }
+
+    /**
+     * Orders versions by the version number, then by the pre-release: `1.0.0-beta.2 < 1.0.0-RC1 < 1.0.0`,
+     * then by the rest of the suffix: `1.0.0-RC1-priority.0 < 1.0.0-RC1-priority.1`.
+     * A version without a number comes first.
+     *
+     * @return int<-1, 1>
+     */
+    public function compare(self $other): int
+    {
+        $byNumber = \version_compare($this->comparableNumber(), $other->comparableNumber());
+        if ($byNumber !== 0 || $this->preRelease === null || $other->preRelease === null) {
+            return $byNumber;
+        }
+
+        $byPreRelease = $this->preRelease->compare($other->preRelease);
+
+        return $byPreRelease !== 0 ? $byPreRelease : \version_compare((string) $this->suffix, (string) $other->suffix);
     }
 
     public function __toString(): string
@@ -77,55 +97,58 @@ class Version implements \Stringable
     }
 
     /**
-     * Extracts the stability from the version suffix.
+     * Cuts the stability part off the version suffix.
      *
-     * @param non-empty-string $input Version string with suffix
-     * @return null|Stability Stability level or null if not found
+     * @param non-empty-string $input Version suffix; the stability part is removed from it
+     * @param-out string $input
+     * @return null|PreRelease Stability with its number, or null if the suffix has no stability part
      */
-    private static function stabilityFromSuffix(string &$input): ?Stability
+    private static function preReleaseFromSuffix(string &$input): ?PreRelease
     {
         if (\str_starts_with('x-dev', \strtolower($input))) {
             $input = \substr($input, \strlen('x-dev'));
-            return Stability::Dev;
+            return new PreRelease(Stability::Dev);
         }
 
-        // if (\preg_match('{^dev[-_.]}', $input) || \preg_match('{[-_.]dev$}', $input)) {
-        //     return Stability::Dev;
-        // }
+        $reg = '[._-]?(?:(' . PreRelease::keywordPattern() . ')([._-]?\d+)?)?';
 
-        $mods = \implode('|', \array_column(Stability::cases(), 'value')) . '|b|a';
-        $reg = "[._-]?(?:($mods)([.-]?\d+)?)?";
-
-        /** @var list<array{non-empty-string, non-empty-string}> $parts */
+        /** @var list<non-empty-string> $parts */
         $parts = [];
 
         \preg_match(('#' . $reg . '$#i'), $input, $match);
-        isset($match[1]) and $parts[0] = [$match[1], $match[0]];
+        isset($match[1]) and $parts[0] = $match[0];
 
         \preg_match(('#^' . $reg . '#i'), $input, $match);
-        isset($match[1]) and $parts[1] = [$match[1], $match[0]];
+        isset($match[1]) and $parts[1] = $match[0];
 
-        if ($parts === []) {
-            return null;
-        }
-
-        foreach ($parts as $k => [$part, $fullPart]) {
-            $isPrefix = $k === 1;
-            $part = \strtolower($part);
-            $stability = Stability::fromString($part) ?? match ($part) {
-                'a' => Stability::Alpha,
-                'b' => Stability::Beta,
-                default => null,
-            };
-            if ($stability !== null) {
-                $input = $isPrefix
+        foreach ($parts as $k => $fullPart) {
+            $preRelease = PreRelease::fromString(\ltrim($fullPart, '._-'));
+            if ($preRelease !== null) {
+                $input = $k === 1
                     ? \substr($input, \strlen($fullPart))
                     : \substr($input, 0, -\strlen($fullPart));
 
-                return $stability;
+                return $preRelease;
             }
         }
 
         return null;
+    }
+
+    /**
+     * The number keeps three parts at most, so the rest of a longer one, like `.4` of `1.2.3.4`,
+     * lands in the suffix; for ordering it is a part of the number again. Only without a stability
+     * keyword: the `.2` of `2.0.0-beta.1.2` belongs to the pre-release.
+     */
+    private function comparableNumber(): string
+    {
+        $number = (string) $this->number;
+        $withoutKeyword = $this->preRelease !== null
+            && $this->preRelease->stability === Stability::Preview
+            && $this->preRelease->number === 0;
+
+        return $withoutKeyword && $this->suffix !== null && \preg_match('/^\d+(?:\.\d+)*$/', $this->suffix) === 1
+            ? $number . '.' . $this->suffix
+            : $number;
     }
 }

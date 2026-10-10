@@ -77,11 +77,7 @@ final class ReleasesCollection extends Collection
     {
         $result = \iterator_to_array($this->getIterator());
 
-        $sort = function (ReleaseInterface $a, ReleaseInterface $b): int {
-            return \version_compare($this->comparisonVersionString($b), $this->comparisonVersionString($a));
-        };
-
-        \uasort($result, $sort);
+        \uasort($result, static fn(ReleaseInterface $a, ReleaseInterface $b): int => $b->getVersion()->compare($a->getVersion()));
 
         return new self($result);
     }
@@ -119,23 +115,5 @@ final class ReleasesCollection extends Collection
         return $this->filter(
             static fn(ReleaseInterface $release): bool => $release->getVersion()->stability->getWeight() >= $weight,
         );
-    }
-
-    /**
-     * Converts version string to a format suitable for comparison.
-     *
-     * Normalizes version strings to handle stability suffixes properly.
-     *
-     * @return non-empty-string Normalized version string
-     */
-    private function comparisonVersionString(ReleaseInterface $release): string
-    {
-        $stability = $release->getVersion()->stability;
-
-        return \ltrim(\str_replace(
-            '-' . $stability->value,
-            '.' . $stability->getWeight() . '.',
-            $release->getVersion()->string,
-        ), 'v');
     }
 }
