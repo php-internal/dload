@@ -112,6 +112,64 @@ final class ReleasesCollectionTest
     }
 
     #[Test]
+    public function sortByVersionOrdersPreReleasesOfOneVersion(): void
+    {
+        $names = ['2.0.0-beta.2', '2.0.0-rc.1', '1.9.0', '2.0.0', '2.0.0-nightly5', '2.0.0-beta.10', '2.0.0-RC2', '2.0.0-preview1'];
+        $collection = new ReleasesCollection(\array_map(
+            fn(string $name): ReleaseStub => new ReleaseStub($this->repository, $name, Version::fromVersionString($name)),
+            $names,
+        ));
+
+        $versions = $this->getVersionsFromCollection($collection->sortByVersion());
+
+        Assert::same(\array_values($versions), [
+            '2.0.0',
+            '2.0.0-RC2',
+            '2.0.0-rc.1',
+            '2.0.0-beta.10',
+            '2.0.0-beta.2',
+            '2.0.0-preview1',
+            '2.0.0-nightly5',
+            '1.9.0',
+        ]);
+    }
+
+    #[Test]
+    public function sortByVersionOrdersWhatFollowsThePreRelease(): void
+    {
+        $names = ['1.3.1-RC1-priority.0', '1.2.3.4', '1.3.1-RC1-priority.1', '1.2.3', '1.2.3.10', '1.2.3.9'];
+        $collection = new ReleasesCollection(\array_map(
+            fn(string $name): ReleaseStub => new ReleaseStub($this->repository, $name, Version::fromVersionString($name)),
+            $names,
+        ));
+
+        $versions = $this->getVersionsFromCollection($collection->sortByVersion());
+
+        Assert::same(\array_values($versions), [
+            '1.3.1-RC1-priority.1',
+            '1.3.1-RC1-priority.0',
+            '1.2.3.10',
+            '1.2.3.9',
+            '1.2.3.4',
+            '1.2.3',
+        ]);
+    }
+
+    #[Test]
+    public function exactPreReleaseConstraintPicksTheTagWithoutATail(): void
+    {
+        $names = ['3.5.0-RC1-linux', '3.5.0-RC1.2', '3.5.0-RC1', '3.5.0-RC2', '3.5.0-RC1-priority.0'];
+        $collection = new ReleasesCollection(\array_map(
+            fn(string $name): ReleaseStub => new ReleaseStub($this->repository, $name, Version::fromVersionString($name)),
+            $names,
+        ));
+
+        $result = $collection->satisfies(Constraint::fromConstraintString('3.5.0-RC1'))->sortByVersion();
+
+        Assert::same(\array_values($this->getVersionsFromCollection($result)), ['3.5.0-RC1']);
+    }
+
+    #[Test]
     public function chainedFiltersWorkCorrectly(): void
     {
         // Act - Get stable releases that satisfy version constraint and sort them

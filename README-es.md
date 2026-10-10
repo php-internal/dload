@@ -332,11 +332,18 @@ Usa restricciones de versión estilo Composer:
     
     <!-- Restricciones de estabilidad -->
     <download software="tool" version="^1.0.0@beta" />
+
+    <!-- Pre-release exacto: solo ese, su estabilidad se deduce de él -->
+    <download software="rr" version="2025.1.0-rc.2" />
+    <!-- A partir de un pre-release: rc.1, rc.2, el 2025.1.0 final y los 2025.x posteriores con estabilidad RC o superior -->
+    <download software="rr" version="^2025.1.0-rc.1" />
     
     <!-- Releases experimentales (automáticamente establece estabilidad preview) -->
     <download software="experimental" version="^1.0.0-experimental" />
 </actions>
 ```
+
+Un pre-release en una restricción fija la estabilidad mínima con cualquier operador, incluso en `<3.5.0-beta.2`; redúcela con `@alpha` o `@dev`.
 
 ### Opciones de Configuración Avanzadas
 

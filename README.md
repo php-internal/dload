@@ -334,11 +334,18 @@ Use Composer-style version constraints:
     
     <!-- Stability constraints -->
     <download software="tool" version="^1.0.0@beta" />
+
+    <!-- Exact pre-release: only this one, its stability is implied -->
+    <download software="rr" version="2025.1.0-rc.2" />
+    <!-- From a pre-release on: rc.1, rc.2, the final 2025.1.0 and later 2025.x of RC stability or higher -->
+    <download software="rr" version="^2025.1.0-rc.1" />
     
     <!-- Feature releases (automatically sets preview stability) -->
     <download software="experimental" version="^1.0.0-experimental" />
 </actions>
 ```
+
+A pre-release in a constraint sets the minimum stability for any operator, even for `<3.5.0-beta.2`; lower it with `@alpha` or `@dev`.
 
 ### Advanced Configuration Options
 

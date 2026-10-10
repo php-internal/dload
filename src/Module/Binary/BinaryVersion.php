@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Binary;
 
+use Internal\DLoad\Module\Version\PreRelease;
 use Internal\DLoad\Module\Version\Version;
 
 /**
@@ -14,11 +15,6 @@ use Internal\DLoad\Module\Version\Version;
 final class BinaryVersion extends Version
 {
     /**
-     * Pattern to extract semantic version (X.Y.Z) from text.
-     */
-    private const OUTPUT_VERSION_PATTERN = '/(?:version:?\s*)?(?:v(?:er(?:sion)?)?\.?\s*)?' . parent::VERSION_SEMVER_PATTERN . '/i';
-
-    /**
      * Resolves the version from binary command output.
      *
      * @param string $output Output from binary execution
@@ -27,7 +23,7 @@ final class BinaryVersion extends Version
     public static function fromBinaryOutput(string $output): static
     {
         // Try to extract version using semantic version pattern
-        $version = \preg_match(self::OUTPUT_VERSION_PATTERN, $output, $matches)
+        $version = \preg_match(self::outputVersionPattern(), $output, $matches)
             ? $matches[1] . ($matches[2] ?? '')
             : self::extractVersionWithFallbacks($output);
 
@@ -38,6 +34,17 @@ final class BinaryVersion extends Version
         \assert($version !== '');
 
         return self::fromVersionString($version);
+    }
+
+    /**
+     * Pattern to extract semantic version (X.Y.Z, or more parts like X.Y.Z.W) from text.
+     * Only a pre-release may follow the number right away, like `2.0.0rc1`: another word glued to it,
+     * like `1.2.3_amd64`, is not a part of the version.
+     */
+    private static function outputVersionPattern(): string
+    {
+        return '/(?:version:?\s*)?(?:v(?:er(?:sion)?)?\.?\s*)?' . parent::VERSION_SEMVER_NUMBER_PATTERN
+            . '((?:[-+]|(?=(?:' . PreRelease::keywordPattern() . ')\d*\b))[\w.-]+)?/i';
     }
 
     /**

@@ -63,6 +63,18 @@ final class BinaryVersionTest
             '2.3.4+20230415',
         ];
 
+        yield 'pre-release without a separator' => [
+            'tool 2.0.0rc1 (linux)',
+            '2.0.0rc1',
+            '2.0.0',
+        ];
+
+        yield 'word glued to the number' => [
+            'tool 1.2.3_amd64',
+            '1.2.3',
+            null,
+        ];
+
         // Case insensitivity
         yield 'mixed case version string' => [
             'VERSION: 5.1.2',
@@ -95,6 +107,68 @@ final class BinaryVersionTest
         yield 'dolt' => [
             'dolt version 1.51.1',
             '1.51.1',
+            null,
+        ];
+
+        // More than three parts
+        yield 'four-part version' => [
+            'tool version 1.2.3.4 (build 2025-01-01)',
+            '1.2.3.4',
+            null,
+        ];
+
+        yield 'five-part version with pre-release' => [
+            'Version: v1.2.3.4.5-beta.1',
+            '1.2.3.4.5-beta.1',
+            '1.2.3.4.5',
+        ];
+
+        yield 'four-part version after a name' => [
+            'libtool 30.2.1.4',
+            '30.2.1.4',
+            null,
+        ];
+
+        // Other numbers around the version
+        yield 'build number after the version' => [
+            'tool 1.2.3 build 4567',
+            '1.2.3',
+            null,
+        ];
+
+        yield 'date after the version' => [
+            'tool 1.2.3 20250101',
+            '1.2.3',
+            null,
+        ];
+
+        yield 'date joined to the version' => [
+            'tool 1.2.3-20250101',
+            '1.2.3-20250101',
+            '1.2.3',
+        ];
+
+        yield 'build metadata after a pre-release' => [
+            'v1.2.3-rc.1+build.5',
+            '1.2.3-rc.1',
+            '1.2.3',
+        ];
+
+        yield 'number before the version' => [
+            'protocol 2 tool 1.2.3',
+            '1.2.3',
+            null,
+        ];
+
+        yield 'Go toolchain before the version' => [
+            'built with go1.21 tool 1.2.3',
+            '1.2.3',
+            null,
+        ];
+
+        yield 'Go toolchain after the version' => [
+            'tool 1.2.3 (go1.22.1)',
+            '1.2.3',
             null,
         ];
     }
