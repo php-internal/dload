@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.18.1](https://github.com/php-internal/dload/compare/1.18.0...1.18.1) (2026-10-10)
+
+
+### Bug Fixes
+
+* **downloader:** name the skipped OS packages in the failure report and warn when an older release is taken instead ([2ead813](https://github.com/php-internal/dload/commit/2ead8136161084446f2fd5e1932e5f25dfbffe81))
+* **downloader:** skip OS packages when a binary is expected ([#149](https://github.com/php-internal/dload/issues/149)) ([2ead813](https://github.com/php-internal/dload/commit/2ead8136161084446f2fd5e1932e5f25dfbffe81))
+
+
+### Documentation
+
+* note that OS packages are not selected for a binary and how deep the fallback goes ([2ead813](https://github.com/php-internal/dload/commit/2ead8136161084446f2fd5e1932e5f25dfbffe81))
+
+
+### Code Refactoring
+
+* **installer:** install downloads through a pipeline ([4df3181](https://github.com/php-internal/dload/commit/4df31811b103cf2a48aed199bc1a31ae52f5d077))
+* **installer:** make the installation steps readonly classes ([f259dc6](https://github.com/php-internal/dload/commit/f259dc6f62f0b745e2808abe86dfca9fd1403f7d))
+* **installer:** prepare the destination around the steps, not in one ([5174300](https://github.com/php-internal/dload/commit/5174300c2ad8a7001873b68b962405c987e596af))
+* **software:** collect the software registry through a pipeline ([51a3d7e](https://github.com/php-internal/dload/commit/51a3d7ec67a1a12f3f3fc1d8e80e142c644faa2d))
+* **velox:** build the config through the common pipeline ([6e7998e](https://github.com/php-internal/dload/commit/6e7998e8ce8919c79ce9bec1bb865a66d3102993))
+* **velox:** drop the unused config pipeline metadata ([#146](https://github.com/php-internal/dload/issues/146)) ([c61c8f0](https://github.com/php-internal/dload/commit/c61c8f0a475378499556d1daefad1567bca113e4))
+
 ## [1.18.0](https://github.com/php-internal/dload/compare/1.17.0...1.18.0) (2026-10-06)
 
 
