@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Repository\Internal\GitHub\Api;
 
-use Internal\DLoad\Module\Config\Schema\GitHub;
 use Internal\DLoad\Module\HttpClient\Factory as HttpFactory;
 use Internal\DLoad\Module\HttpClient\Method;
 use Internal\DLoad\Module\Repository\Exception\RepositoryException;
+use Internal\DLoad\Module\Repository\Internal\ApiToken;
+use Internal\DLoad\Module\Repository\Internal\Server;
 use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestInterface;
@@ -18,7 +19,8 @@ use Psr\Http\Message\UriInterface;
  * HTTP client wrapper with GitHub-specific error handling and authentication.
  *
  * Converts unsuccessful responses (rate limits, invalid token, missing repository, etc.)
- * into exceptions with actionable messages. Adds the GitHub API token to requests bound for GitHub hosts.
+ * into exceptions with actionable messages. Adds the GitHub API token to requests bound for
+ * the server the client works with.
  *
  * @internal
  * @psalm-internal Internal\DLoad\Module\Repository\Internal\GitHub
@@ -26,9 +28,9 @@ use Psr\Http\Message\UriInterface;
 final class Client
 {
     /**
-     * Hosts the token may be sent to. Asset URLs come from the API response and from the version
-     * registry on disk, so a tampered file must not be able to point a request with the token at
-     * a host of its choosing.
+     * Hosts of the public GitHub the token may be sent to. Asset URLs come from the API response
+     * and from the version registry on disk, so a tampered file must not be able to point
+     * a request with the token at a host of its choosing.
      */
     private const TRUSTED_HOSTS = ['github.com', 'githubusercontent.com'];
 
@@ -41,12 +43,19 @@ final class Client
 
     private readonly ResponseValidator $validator;
 
+    /**
+     * @param Server|null $server GitHub Enterprise Server instance, null for the public GitHub.
+     */
     public function __construct(
         private readonly HttpFactory $httpFactory,
         private readonly ClientInterface $client,
-        private readonly GitHub $gitHubConfig,
+        private readonly ?ApiToken $token = null,
+        private readonly ?Server $server = null,
     ) {
-        $this->validator = new ResponseValidator(authenticated: $this->gitHubConfig->token !== null);
+        $this->validator = new ResponseValidator(
+            authenticated: $this->token !== null,
+            tokenVariable: $this->token?->variable ?? $this->server?->tokenVariable(),
+        );
     }
 
     /**
@@ -57,8 +66,8 @@ final class Client
     public function request(Method|string $method, string|UriInterface $uri, array $headers = []): ResponseInterface
     {
         $headers += $this->defaultHeaders;
-        $this->gitHubConfig->token !== null && self::isTrusted($uri)
-            and $headers += ['authorization' => 'Bearer ' . $this->gitHubConfig->token];
+        $this->token !== null && $this->isTrusted($uri)
+            and $headers += ['authorization' => 'Bearer ' . $this->token->value];
 
         return $this->sendRequest($this->httpFactory->request($method, $uri, $headers));
     }
@@ -79,14 +88,17 @@ final class Client
         return $response;
     }
 
-    private static function isTrusted(string|UriInterface $uri): bool
+    private function isTrusted(string|UriInterface $uri): bool
     {
-        $host = $uri instanceof UriInterface ? $uri->getHost() : \parse_url($uri, \PHP_URL_HOST);
-        if (!\is_string($host) || $host === '') {
+        if ($this->server !== null) {
+            return $this->server->isSecure() && $this->server->serves($uri);
+        }
+
+        [$scheme, $host] = Server::split($uri);
+        if ($host === '' || $scheme !== 'https') {
             return false;
         }
 
-        $host = \strtolower($host);
         foreach (self::TRUSTED_HOSTS as $trusted) {
             if ($host === $trusted || \str_ends_with($host, '.' . $trusted)) {
                 return true;

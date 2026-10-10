@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Repository;
 
+use Internal\DLoad\Module\Registry\RepositoryId;
 use Internal\DLoad\Module\Repository\Collection\ReleasesCollection;
 
 /**
@@ -26,6 +27,11 @@ interface Repository
      * @return non-empty-string Repository identifier, typically in vendor/package format
      */
     public function getName(): string;
+
+    /**
+     * Returns the identity of the repository in the version registry.
+     */
+    public function getId(): RepositoryId;
 
     /**
      * Retrieves all available releases from this repository.

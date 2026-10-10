@@ -249,6 +249,22 @@ final class FileRegistryStorageTest
     }
 
     #[Test]
+    public function selfHostedServerIsStoredApartFromThePublicHost(): void
+    {
+        $storage = $this->storage();
+        $public = new RepositoryId('github', 'owner/repo');
+        $selfHosted = new RepositoryId('github', 'owner/repo', 'ghe.example.com:8443');
+
+        $storage->save(self::record('github', 'owner/repo', ['v1']));
+        $storage->save((new RepositoryRecord(id: $selfHosted, checkedAt: 1_000))->withHead([new ReleaseRecord('v2', 'v2')]));
+
+        Assert::true(\is_file($this->directory . '/repositories/github/owner/repo/index.json'));
+        Assert::true(\is_file($this->directory . '/repositories/github_ghe.example.com_8443/owner/repo/index.json'));
+        Assert::same($storage->load($public)?->releases()[0]->tag, 'v1');
+        Assert::same($storage->load($selfHosted)?->releases()[0]->tag, 'v2');
+    }
+
+    #[Test]
     public function windowsDeviceNamesAreEscaped(): void
     {
         $storage = $this->storage();
@@ -301,7 +317,7 @@ final class FileRegistryStorageTest
         // A directory where the index file belongs makes the rename into place fail once it cannot be
         // emptied: Windows refuses to delete an open file, POSIX a file in a directory without write
         // permission (root ignores permissions, so the test cannot be run as root)
-        \DIRECTORY_SEPARATOR === '\\' || !\function_exists('posix_geteuid') || \posix_geteuid() !== 0
+        \DIRECTORY_SEPARATOR === '\\' || !\function_exists('posix_geteuid') || posix_geteuid() !== 0
             or throw new SkipTest('Root can remove any directory.');
         \mkdir($repo . '/index.json/locked', recursive: true);
         $pin = \fopen($repo . '/index.json/locked/pin', 'w');

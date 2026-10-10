@@ -60,6 +60,7 @@ Con DLoad puedes:
 - [Registro de Software Personalizado](#registro-de-software-personalizado)
     - [Definir Software](#definir-software)
     - [Elementos de Software](#elementos-de-software)
+    - [Servidores Autoalojados](#servidores-autoalojados)
 - [Casos de Uso](#casos-de-uso)
     - [Configurar Entorno de Desarrollo](#configurar-entorno-de-desarrollo)
     - [Configurar Nuevo Proyecto](#configurar-nuevo-proyecto)
@@ -574,10 +575,11 @@ El binario de RoadRunner construido incluirá solo los plugins especificados en 
 
 #### Configuración de Repository
 
-- **type**: Actualmente soporta "github"
+- **type**: "github" o "gitlab"
 - **uri**: Ruta del repositorio (ej., "username/repo")
 - **asset-pattern**: Patrón regex para hacer match con assets de release
 - **tag-prefix**: Texto antes de la versión en los tags de release, p. ej. `bun-` para `bun-v1.4.2`. Los releases con otros tags se ignoran, así que de un monorepo con tags por componente (release-please) solo se usa el componente seleccionado
+- **server**: Instancia autoalojada en formato `[scheme://]host[:port]`, consulta [Servidores Autoalojados](#servidores-autoalojados)
 
 #### Elementos Binary
 
@@ -590,6 +592,47 @@ El binario de RoadRunner construido incluirá solo los plugins especificados en 
 - **pattern**: Patrón regex para hacer match con archivos
 - **extract-path**: Directorio de extracción opcional
 - Funciona en cualquier sistema (sin filtrado por SO/arquitectura)
+
+### Servidores Autoalojados
+
+El atributo `server` apunta un repositorio a GitHub Enterprise Server, a un GitLab autoalojado
+o a cualquier otra instancia on-premise en lugar de `github.com` / `gitlab.com`:
+
+```xml
+<registry>
+    <software name="Tool" alias="tool">
+        <repository type="github" uri="my-org/tool" server="ghe.example.com" />
+    </software>
+    <software name="Other" alias="other">
+        <repository type="gitlab" uri="group/other" server="gitlab.example.com:8443" />
+    </software>
+</registry>
+```
+
+- El valor es un esquema, un host y un puerto opcional, sin ruta. El esquema por defecto es `https`.
+- La API se encuentra en `{server}/api/v3` para GitHub Enterprise Server y en `{server}/api/v4` para GitLab.
+- Sin `server`, se usa el host público del tipo de repositorio.
+
+El token se declara por servidor en una variable de entorno con su nombre: `DLOAD_TOKEN_` seguido del
+host y el puerto en mayúsculas, con cualquier otro carácter reemplazado por `_`.
+
+| Servidor                  | Variable del token                              |
+|---------------------------|-------------------------------------------------|
+| `github.com`              | `DLOAD_TOKEN_GITHUB_COM`, luego `GITHUB_TOKEN`  |
+| `gitlab.com`              | `DLOAD_TOKEN_GITLAB_COM`, luego `GITLAB_TOKEN`  |
+| `ghe.example.com`         | `DLOAD_TOKEN_GHE_EXAMPLE_COM`                   |
+| `gitlab.example.com:8443` | `DLOAD_TOKEN_GITLAB_EXAMPLE_COM_8443`           |
+
+```bash
+DLOAD_TOKEN_GHE_EXAMPLE_COM=your_token_here ./vendor/bin/dload get
+```
+
+La configuración no puede elegir qué variable se lee, así que un `dload.xml` de terceros no puede enviar
+tus tokens a ningún sitio. `GITHUB_TOKEN` y `GITLAB_TOKEN` nunca se envían a un servidor autoalojado, y
+el token de un servidor solo va a ese esquema, host y puerto exactos.
+
+Se permite `http` sin cifrar, p. ej. para una API falsa local en tests (`server="http://127.0.0.1:8080"`), pero el token
+solo se envía por él a `localhost`, `127.0.0.0/8` y `[::1]`.
 
 ## Casos de Uso
 
@@ -667,6 +710,10 @@ GITLAB_TOKEN=your_token_here ./vendor/bin/dload get
 ```
 
 Agrégalo a las variables de entorno CI/CD para descargas automatizadas.
+
+`DLOAD_TOKEN_GITHUB_COM` y `DLOAD_TOKEN_GITLAB_COM` tienen prioridad sobre `GITHUB_TOKEN` y `GITLAB_TOKEN`,
+lo que ayuda cuando esos nombres ya los usa otra herramienta. Los servidores autoalojados tienen sus propias variables,
+consulta [Servidores Autoalojados](#servidores-autoalojados).
 
 ## Configuración de Gitlab CI
 

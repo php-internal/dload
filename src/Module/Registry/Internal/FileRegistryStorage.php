@@ -320,7 +320,10 @@ final class FileRegistryStorage implements RegistryStorage
 
     private function directoryOf(RepositoryId $id): Path
     {
-        return $this->root->join(...\array_map(self::sanitize(...), [$id->type, ...\explode('/', $id->uri)]));
+        // A self-hosted server gets its own type directory, so the public host keeps the paths it always had
+        $type = $id->server === null ? $id->type : $id->type . '@' . $id->server;
+
+        return $this->root->join(...\array_map(self::sanitize(...), [$type, ...\explode('/', $id->uri)]));
     }
 
     /**

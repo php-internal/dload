@@ -4,18 +4,18 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Unit\Module\Repository\Internal\GitHub\Api;
 
-use Internal\DLoad\Module\Config\Schema\GitHub;
 use Internal\DLoad\Module\HttpClient\Internal\NyholmFactoryImpl;
 use Internal\DLoad\Module\Repository\Exception\AccessDeniedException;
 use Internal\DLoad\Module\Repository\Exception\ApiException;
 use Internal\DLoad\Module\Repository\Exception\AuthenticationException;
 use Internal\DLoad\Module\Repository\Exception\RateLimitException;
 use Internal\DLoad\Module\Repository\Exception\RepositoryNotFoundException;
+use Internal\DLoad\Module\Repository\Internal\ApiToken;
 use Internal\DLoad\Module\Repository\Internal\GitHub\Api\Client;
+use Internal\DLoad\Module\Repository\Internal\Server;
 use Internal\DLoad\Service\Logger;
 use Internal\DLoad\Tests\Unit\Module\Repository\Internal\GitHub\Stub\ClientExceptionStub;
 use Internal\DLoad\Tests\Unit\Module\Repository\Internal\GitHub\Stub\ClientStub;
-use Internal\DLoad\Tests\Unit\Module\Repository\Internal\GitHub\Stub\GitHubConfigStub;
 use Internal\DLoad\Tests\Unit\Module\Repository\Internal\GitHub\Stub\HttpFactoryStub;
 use Internal\DLoad\Tests\Unit\Module\Repository\Stub\ResponseStub;
 use Psr\Http\Client\ClientInterface;
@@ -33,7 +33,7 @@ final class ClientTest
 {
     private HttpFactoryStub $httpFactory;
     private ClientStub $httpClient;
-    private GitHub $gitHubConfig;
+    private ?ApiToken $token;
     private Client $client;
 
     public static function provideRequestHeaders(): \Generator
@@ -146,7 +146,7 @@ final class ClientTest
 
         $this->httpFactory = $this->httpFactory->withRequest($method, $uri, $request);
         $this->httpClient = $this->httpClient->withResponse($request, $response);
-        $this->client = new Client($this->httpFactory, $this->httpClient, $this->gitHubConfig);
+        $this->client = new Client($this->httpFactory, $this->httpClient, $this->token);
 
         $result = $this->client->request($method, $uri);
 
@@ -156,16 +156,15 @@ final class ClientTest
     #[Test]
     public function requestWithAuthTokenAddsAuthorizationHeader(): void
     {
-        $token = 'github_pat_test_token_123';
+        $token = new ApiToken('github_pat_test_token_123', 'GITHUB_TOKEN');
         $method = 'GET';
         $uri = \Mockery::mock(UriInterface::class)->shouldIgnoreMissing();
         $request = \Mockery::mock(RequestInterface::class)->shouldIgnoreMissing();
         $response = ResponseStub::ok();
 
-        $gitHubConfigWithToken = GitHubConfigStub::withToken($token);
         $this->httpClient = $this->httpClient->withResponse($request, $response);
 
-        $clientWithToken = new Client($this->httpFactory, $this->httpClient, $gitHubConfigWithToken);
+        $clientWithToken = new Client($this->httpFactory, $this->httpClient, $token);
 
         $result = $clientWithToken->request($method, $uri);
 
@@ -177,7 +176,7 @@ final class ClientTest
     {
         // Asset URLs may come from a registry file on disk, so the token must not follow them anywhere
         $http = new ClientStub();
-        $client = new Client(new NyholmFactoryImpl(new Logger()), $http, GitHubConfigStub::withToken('secret'));
+        $client = new Client(new NyholmFactoryImpl(new Logger()), $http, new ApiToken('secret', 'GITHUB_TOKEN'));
 
         $client->request('GET', 'https://api.github.com/repos/owner/repo/releases');
         $client->request('GET', 'https://objects.githubusercontent.com/asset');
@@ -191,6 +190,81 @@ final class ClientTest
         Assert::same($http->sent[3]->getHeaderLine('authorization'), '');
         Assert::same($http->sent[4]->getHeaderLine('authorization'), '');
         Assert::same($http->sent[3]->getHeaderLine('accept'), 'application/vnd.github.v3+json');
+    }
+
+    #[Test]
+    public function tokenIsNotSentToPublicGitHubOverPlainHttp(): void
+    {
+        $http = new ClientStub();
+        $client = new Client(new NyholmFactoryImpl(new Logger()), $http, new ApiToken('secret', 'GITHUB_TOKEN'));
+
+        $client->request('GET', 'http://github.com/owner/repo/releases/download/v1/rr.tar.gz');
+
+        Assert::same($http->sent[0]->getHeaderLine('authorization'), '');
+    }
+
+    #[Test]
+    public function enterpriseTokenIsSentToItsServerOnly(): void
+    {
+        $http = new ClientStub();
+        $client = new Client(
+            new NyholmFactoryImpl(new Logger()),
+            $http,
+            new ApiToken('secret', 'DLOAD_TOKEN_GHE_EXAMPLE_COM'),
+            Server::fromString('ghe.example.com'),
+        );
+
+        $client->request('GET', 'https://ghe.example.com/api/v3/repos/owner/repo/releases');
+        $client->request('GET', 'https://ghe.example.com/owner/repo/releases/download/v1/rr.tar.gz');
+        $client->request('GET', 'https://api.github.com/repos/owner/repo/releases');
+        $client->request('GET', 'https://media.ghe.example.com/asset');
+        $client->request('GET', 'http://ghe.example.com/owner/repo/releases/download/v1/rr.tar.gz');
+
+        Assert::same($http->sent[0]->getHeaderLine('authorization'), 'Bearer secret');
+        Assert::same($http->sent[1]->getHeaderLine('authorization'), 'Bearer secret');
+        Assert::same($http->sent[2]->getHeaderLine('authorization'), '');
+        Assert::same($http->sent[3]->getHeaderLine('authorization'), '');
+        Assert::same($http->sent[4]->getHeaderLine('authorization'), '');
+    }
+
+    #[Test]
+    public function tokenIsNotSentToARemoteServerOverPlainHttp(): void
+    {
+        $http = new ClientStub();
+        $client = new Client(
+            new NyholmFactoryImpl(new Logger()),
+            $http,
+            new ApiToken('secret', 'DLOAD_TOKEN_GHE_EXAMPLE_COM'),
+            Server::fromString('http://ghe.example.com'),
+        );
+
+        $client->request('GET', 'http://ghe.example.com/api/v3/repos/owner/repo/releases');
+
+        Assert::same($http->sent[0]->getHeaderLine('authorization'), '');
+    }
+
+    #[Test]
+    public function enterpriseErrorsNameTheVariableOfTheServer(): never
+    {
+        $request = \Mockery::mock(RequestInterface::class)->shouldIgnoreMissing();
+        $this->httpClient = $this->httpClient->withResponse($request, new ResponseStub(401, [], '{"message":"Bad credentials"}'));
+        $client = new Client($this->httpFactory, $this->httpClient, null, Server::fromString('ghe.example.com'));
+
+        Expect::exception(AuthenticationException::class)->withMessageContaining('DLOAD_TOKEN_GHE_EXAMPLE_COM');
+
+        $client->sendRequest($request);
+    }
+
+    #[Test]
+    public function errorsNameTheVariableTheTokenCameFrom(): never
+    {
+        $request = \Mockery::mock(RequestInterface::class)->shouldIgnoreMissing();
+        $this->httpClient = $this->httpClient->withResponse($request, new ResponseStub(401, [], '{"message":"Bad credentials"}'));
+        $client = new Client($this->httpFactory, $this->httpClient, new ApiToken('bad', 'DLOAD_TOKEN_GITHUB_COM'));
+
+        Expect::exception(AuthenticationException::class)->withMessageContaining('DLOAD_TOKEN_GITHUB_COM');
+
+        $client->sendRequest($request);
     }
 
     #[Test]
@@ -218,7 +292,7 @@ final class ClientTest
 
         $this->httpFactory = $this->httpFactory->withRequest($method, $uri, $request);
         $this->httpClient = $this->httpClient->withResponse($request, $rateLimitResponse);
-        $this->client = new Client($this->httpFactory, $this->httpClient, $this->gitHubConfig);
+        $this->client = new Client($this->httpFactory, $this->httpClient, $this->token);
 
         Expect::exception(RateLimitException::class)->withMessageContaining('rate limit exceeded');
 
@@ -230,7 +304,7 @@ final class ClientTest
     {
         $request = \Mockery::mock(RequestInterface::class)->shouldIgnoreMissing();
         $this->httpClient = $this->httpClient->withResponse($request, ResponseStub::githubRateLimit());
-        $this->client = new Client($this->httpFactory, $this->httpClient, $this->gitHubConfig);
+        $this->client = new Client($this->httpFactory, $this->httpClient, $this->token);
 
         try {
             $this->client->sendRequest($request);
@@ -248,7 +322,7 @@ final class ClientTest
         $response = new ResponseStub(401, [], \json_encode(['message' => 'Bad credentials']));
 
         $this->httpClient = $this->httpClient->withResponse($request, $response);
-        $client = new Client($this->httpFactory, $this->httpClient, GitHubConfigStub::withToken('invalid-token'));
+        $client = new Client($this->httpFactory, $this->httpClient, new ApiToken('invalid-token', 'GITHUB_TOKEN'));
 
         try {
             $client->sendRequest($request);
@@ -266,7 +340,7 @@ final class ClientTest
         $response = ResponseStub::ok();
 
         $this->httpClient = $this->httpClient->withResponse($request, $response);
-        $this->client = new Client($this->httpFactory, $this->httpClient, $this->gitHubConfig);
+        $this->client = new Client($this->httpFactory, $this->httpClient, $this->token);
 
         $result = $this->client->sendRequest($request);
 
@@ -280,7 +354,7 @@ final class ClientTest
         $clientException = new ClientExceptionStub('connection reset');
 
         $this->httpClient = $this->httpClient->withException($request, $clientException);
-        $this->client = new Client($this->httpFactory, $this->httpClient, $this->gitHubConfig);
+        $this->client = new Client($this->httpFactory, $this->httpClient, $this->token);
 
         try {
             $this->client->sendRequest($request);
@@ -302,7 +376,7 @@ final class ClientTest
 
         $this->httpFactory = $this->httpFactory->withRequest($method, $uri, $request);
         $this->httpClient = $this->httpClient->withResponse($request, $response);
-        $this->client = new Client($this->httpFactory, $this->httpClient, $this->gitHubConfig);
+        $this->client = new Client($this->httpFactory, $this->httpClient, $this->token);
 
         $result = $this->client->request($method, $uri, $additionalHeaders);
 
@@ -325,7 +399,7 @@ final class ClientTest
         $response = new ResponseStub($statusCode, $headers, $responseBody);
 
         $this->httpClient = $this->httpClient->withResponse($request, $response);
-        $this->client = new Client($this->httpFactory, $this->httpClient, $this->gitHubConfig);
+        $this->client = new Client($this->httpFactory, $this->httpClient, $this->token);
 
         $expectedException === null or Expect::exception($expectedException);
 
@@ -343,7 +417,7 @@ final class ClientTest
             clientFactory: static fn() => \Mockery::mock(ClientInterface::class)->shouldIgnoreMissing(),
         );
         $this->httpClient = new ClientStub();
-        $this->gitHubConfig = GitHubConfigStub::withoutToken();
-        $this->client = new Client($this->httpFactory, $this->httpClient, $this->gitHubConfig);
+        $this->token = null;
+        $this->client = new Client($this->httpFactory, $this->httpClient, $this->token);
     }
 }

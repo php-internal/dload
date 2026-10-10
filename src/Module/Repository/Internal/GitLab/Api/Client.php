@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Repository\Internal\GitLab\Api;
 
-use Internal\DLoad\Module\Config\Schema\GitLab;
 use Internal\DLoad\Module\HttpClient\Factory as HttpFactory;
 use Internal\DLoad\Module\HttpClient\Method;
 use Internal\DLoad\Module\Repository\Exception\RepositoryException;
+use Internal\DLoad\Module\Repository\Internal\ApiToken;
+use Internal\DLoad\Module\Repository\Internal\Server;
 use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestInterface;
@@ -18,13 +19,16 @@ use Psr\Http\Message\UriInterface;
  * HTTP client wrapper with GitLab-specific error handling and authentication.
  *
  * Converts unsuccessful responses (rate limits, invalid token, missing project, etc.)
- * into exceptions with actionable messages. Adds GitLab API token authentication when available.
+ * into exceptions with actionable messages. Adds the GitLab API token to requests bound for
+ * the server the client works with.
  *
  * @internal
  * @psalm-internal Internal\DLoad\Module\Repository\Internal\GitLab
  */
 final class Client
 {
+    public const PUBLIC_SERVER = 'https://gitlab.com';
+
     /**
      * @var array<non-empty-string, non-empty-string>
      */
@@ -33,16 +37,22 @@ final class Client
     ];
 
     private readonly ResponseValidator $validator;
+    private readonly Server $server;
 
+    /**
+     * @param Server|null $server Self-hosted GitLab instance, null for the public GitLab.
+     */
     public function __construct(
         private readonly HttpFactory $httpFactory,
         private readonly ClientInterface $client,
-        private readonly GitLab $gitLabConfig,
+        private readonly ?ApiToken $token = null,
+        ?Server $server = null,
     ) {
-        // Add authorization header if token is available
-        $this->gitLabConfig->token !== null and $this->defaultHeaders['authorization'] = 'Bearer ' . $this->gitLabConfig->token;
-
-        $this->validator = new ResponseValidator(authenticated: $this->gitLabConfig->token !== null);
+        $this->server = $server ?? Server::fromString(self::PUBLIC_SERVER);
+        $this->validator = new ResponseValidator(
+            authenticated: $this->token !== null,
+            tokenVariable: $this->token?->variable ?? $server?->tokenVariable(),
+        );
     }
 
     /**
@@ -50,16 +60,9 @@ final class Client
      */
     public function downloadArtifact(string|UriInterface $uri): ResponseInterface
     {
-        $headers = [];
-        if ($this->gitLabConfig->token !== null) {
-            $headers = [
-                'PRIVATE-TOKEN' =>  $this->gitLabConfig->token,
-            ];
-        }
+        $headers = $this->isTrusted($uri) ? ['PRIVATE-TOKEN' => $this->token->value] : [];
 
-        $request = $this->httpFactory->request(Method::Get, $uri, $headers);
-
-        return $this->sendRequest($request);
+        return $this->sendRequest($this->httpFactory->request(Method::Get, $uri, $headers));
     }
 
     /**
@@ -69,9 +72,10 @@ final class Client
      */
     public function request(Method|string $method, string|UriInterface $uri, array $headers = []): ResponseInterface
     {
-        $request = $this->httpFactory->request($method, $uri, $headers + $this->defaultHeaders);
+        $headers += $this->defaultHeaders;
+        $this->isTrusted($uri) and $headers += ['authorization' => 'Bearer ' . $this->token->value];
 
-        return $this->sendRequest($request);
+        return $this->sendRequest($this->httpFactory->request($method, $uri, $headers));
     }
 
     /**
@@ -88,5 +92,13 @@ final class Client
         $this->validator->validate($request, $response);
 
         return $response;
+    }
+
+    /**
+     * @psalm-assert-if-true !null $this->token
+     */
+    private function isTrusted(string|UriInterface $uri): bool
+    {
+        return $this->token !== null && $this->server->isSecure() && $this->server->serves($uri);
     }
 }

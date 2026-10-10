@@ -27,4 +27,20 @@ final class RepositoryTest
 
         Assert::same($repository->tagPrefix, '');
     }
+
+    #[Test]
+    public function serverIsReadFromTheArray(): void
+    {
+        $repository = Repository::fromArray(['type' => 'github', 'uri' => 'owner/repo', 'server' => 'ghe.example.com']);
+
+        Assert::same($repository->server, 'ghe.example.com');
+    }
+
+    #[Test]
+    public function serverIsThePublicHostByDefault(): void
+    {
+        $repository = Repository::fromArray(['type' => 'github', 'uri' => 'owner/repo']);
+
+        Assert::null($repository->server);
+    }
 }
