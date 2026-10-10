@@ -20,11 +20,13 @@ use Internal\DLoad\Module\Installer\Internal\Step\PharStep;
 use Internal\DLoad\Module\Installer\Internal\Step\PlainFileStep;
 use Internal\DLoad\Module\Version\Version;
 use Internal\DLoad\Service\Logger;
+use Internal\DLoad\Tests\Unit\Module\Installer\Stub\ListedArchive;
 use Internal\Path;
 use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 use Testo\Assert;
 use Testo\Codecov\Covers;
+use Testo\Expect;
 use Testo\Lifecycle\AfterTest;
 use Testo\Lifecycle\BeforeTest;
 use Testo\Test;
@@ -79,6 +81,76 @@ final class InstallerTest
         Assert::true($this->destination->join('lib', 'app', 'libphp.so')->isFile());
         Assert::true($this->destination->join('share', 'app', 'VERSION.txt')->isFile());
         Assert::false($this->destination->join('pkg-1.0')->exists());
+    }
+
+    #[Test]
+    public function archiveFiltersKeepTheMatchedFilesAndTheBinaryInPlace(): void
+    {
+        $download = $this->downloadOf(self::NESTED_ZIP);
+        $software = Software::fromArray([
+            'name' => 'App',
+            'binary' => ['name' => 'app'],
+            'files' => [['pattern' => '/^libphp\.so$/']],
+        ]);
+        $binary = \Mockery::mock(Binary::class);
+
+        $binaryProvider = \Mockery::mock(BinaryProvider::class);
+        $binaryProvider->expects('getLocalBinary')
+            ->with(
+                \Mockery::on(fn(Path $dir): bool => (string) $dir === (string) $this->destination->join('bin')),
+                $software->binary,
+            )
+            ->andReturn($binary);
+
+        $result = $this->installer($binaryProvider)->install($download, $software, Type::Archive, $this->destination, removeDownload: true);
+
+        Assert::same(self::paths($result->files), [
+            (string) $this->destination->join('bin', 'app'),
+            (string) $this->destination->join('lib', 'app', 'libphp.so'),
+        ]);
+        Assert::same($result->binary, $binary);
+        Assert::false($this->destination->join('share')->exists());
+    }
+
+    #[Test]
+    public function archiveEntriesEscapingTheDestinationAreSkipped(): void
+    {
+        $download = $this->download('evil.stub', '');
+        $archiveFactory = new ArchiveFactory();
+        $archiveFactory->extend(
+            static fn(\SplFileInfo $file): ?ListedArchive => $file->getExtension() === 'stub'
+                ? new ListedArchive(['pkg/../escaped.txt' => 'evil', 'pkg/kept.txt' => 'good'])
+                : null,
+            ['stub'],
+        );
+
+        $result = $this->installer(archiveFactory: $archiveFactory)
+            ->install($download, Software::fromArray(['name' => 'pkg']), Type::Archive, $this->destination, removeDownload: true);
+
+        Assert::same(self::paths($result->files), [(string) $this->destination->join('kept.txt')]);
+        Assert::false($this->dir->join('escaped.txt')->exists());
+    }
+
+    #[Test]
+    public function archiveWithNothingMatchingTheFiltersFails(): void
+    {
+        $download = $this->downloadOf(self::NESTED_ZIP);
+        $software = Software::fromArray(['name' => 'pkg', 'files' => [['pattern' => '/^missing$/']]]);
+
+        Expect::exception(NothingExtracted::class);
+
+        $this->installer()->install($download, $software, Type::Archive, $this->destination, removeDownload: true);
+    }
+
+    #[Test]
+    public function ruleRenameKeepsTheFileExtension(): void
+    {
+        $download = $this->downloadOf(self::NESTED_ZIP);
+        $software = Software::fromArray(['name' => 'pkg', 'files' => [['pattern' => '/^libphp\.so$/', 'rename' => 'php']]]);
+
+        $result = $this->installer()->install($download, $software, null, $this->destination, removeDownload: true);
+
+        Assert::same(self::paths($result->files), [(string) $this->destination->join('php.so')]);
     }
 
     #[Test]
@@ -180,14 +252,16 @@ final class InstallerTest
         return $result;
     }
 
-    private function installer(?BinaryProvider $binaryProvider = null): Installer
-    {
+    private function installer(
+        ?BinaryProvider $binaryProvider = null,
+        ArchiveFactory $archiveFactory = new ArchiveFactory(),
+    ): Installer {
         if ($binaryProvider === null) {
             $binaryProvider = \Mockery::mock(BinaryProvider::class);
             $binaryProvider->allows('getLocalBinary')->andReturnNull();
         }
 
-        return new Installer(new Logger($this->log), new BufferedOutput(), new ArchiveFactory(), $binaryProvider, OperatingSystem::Linux);
+        return new Installer(new Logger($this->log), new BufferedOutput(), $archiveFactory, $binaryProvider, OperatingSystem::Linux);
     }
 
     /**
