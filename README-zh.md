@@ -329,6 +329,11 @@ DLoad 支持三种下载类型，它们决定了资源的处理方式：
     
     <!-- 稳定性约束 -->
     <download software="tool" version="^1.0.0@beta" />
+
+    <!-- 指定预发布版本：只匹配该版本，稳定性由其推断 -->
+    <download software="rr" version="2025.1.0-rc.2" />
+    <!-- 从某个预发布版本起：rc.1、rc.2、正式版 2025.1.0 及之后稳定性不低于 RC 的 2025.x -->
+    <download software="rr" version="^2025.1.0-rc.1" />
     
     <!-- 功能版本（自动设置预览稳定性） -->
     <download software="experimental" version="^1.0.0-experimental" />

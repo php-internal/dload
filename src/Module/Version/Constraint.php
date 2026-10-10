@@ -16,6 +16,7 @@ use Internal\DLoad\Module\Common\Stability;
  *   * Explicit: ^2.12.0@beta, ~1.20.0@stable
  *   * Implicit: ^2.12.0-beta, ~1.20.0-stable
  * - Combined constraints: ^2.12.0-feature@beta
+ * - Numbered pre-releases: 3.5.0-beta.1, ^3.5.0-RC2, 1.0.0-nightly20250503
  *
  * Stability keywords (from Stability enum) as suffixes are automatically
  * converted to stability constraints.
@@ -24,6 +25,9 @@ use Internal\DLoad\Module\Common\Stability;
  */
 final class Constraint implements \Stringable
 {
+    /** Operators a constraint bound to a pre-release may carry. */
+    private const OPERATORS = ['', '=', '==', '^', '~', '>=', '>', '<', '<='];
+
     /** @var non-empty-string $versionConstraint Base version constraint (e.g. "^2.12.0") */
     public readonly string $versionConstraint;
 
@@ -35,6 +39,18 @@ final class Constraint implements \Stringable
 
     /** @var Stability $minimumStability Minimum stability level for this constraint */
     public readonly Stability $minimumStability;
+
+    /**
+     * @var PreRelease|null $preRelease Numbered pre-release the version constraint is bound to,
+     *      e.g. `beta.1` of `3.5.0-beta.1`. If null, pre-releases are matched by stability only.
+     */
+    public readonly ?PreRelease $preRelease;
+
+    /** Operator of a constraint bound to a pre-release, e.g. `^` of `^3.5.0-beta.1`. */
+    private readonly string $operator;
+
+    /** Version number of a constraint bound to a pre-release, e.g. `3.5.0` of `^3.5.0-beta.1`. */
+    private readonly string $bound;
 
     /**
      * @param non-empty-string $origin Original constraint string used for parsing.
@@ -56,6 +72,26 @@ final class Constraint implements \Stringable
                 "Invalid stability level: @{$stabilityPart}.",
             );
         }
+
+        # A numbered pre-release is a part of the version, not a feature suffix: "3.5.0-beta.1" names one
+        # release, and "3.5.0-beta.2" or "3.5.0" must not satisfy it. A bare "-beta" stays a stability.
+        $preRelease = null;
+        $operator = $bound = '';
+        $pattern = '/^([~^>=<]*)(\d+(?:\.\d+)*)-((?:' . PreRelease::keywordPattern() . ')[._-]?\d+)$/i';
+        if (\preg_match($pattern, $origin, $matches) === 1) {
+            [, $operator, $bound, $preReleasePart] = $matches;
+            \in_array($operator, self::OPERATORS, true) or throw new \InvalidArgumentException(
+                "Unsupported operator `{$operator}` in a constraint with a pre-release.",
+            );
+
+            $preRelease = PreRelease::fromString($preReleasePart);
+            \assert($preRelease !== null);
+            $stability ??= $preRelease->stability;
+            $origin = $operator . $bound;
+        }
+        $this->preRelease = $preRelease;
+        $this->operator = $operator;
+        $this->bound = $bound;
 
         [$version, $suffix] = \explode('-', $origin, 2) + [1 => ''];
         if ($suffix !== '') {
@@ -112,6 +148,7 @@ final class Constraint implements \Stringable
      * - "^2.12.0-beta" -> baseVersion: "^2.12.0", featureSuffix: null, minimumStability: Beta (auto-converted)
      * - "^2.12.0-feature@beta" -> baseVersion: "^2.12.0", featureSuffix: "feature", minimumStability: Beta
      * - "^2.12.0-my-beta-feature@stable" -> baseVersion: "^2.12.0-my-beta", featureSuffix: "feature", minimumStability: Stable
+     * - "3.5.0-beta.1" -> baseVersion: "3.5.0", preRelease: beta.1, minimumStability: Beta
      *
      * @param string $constraint Version constraint string
      * @return self Parsed version constraint
@@ -137,7 +174,11 @@ final class Constraint implements \Stringable
         }
 
         // Check if a version satisfies the base version constraint
-        if (Semver::satisfies($number, $this->versionConstraint) === false) {
+        if ($this->preRelease !== null) {
+            if ($version->preRelease === null || !$this->satisfiesPreRelease($this->preRelease, $number, $version->preRelease)) {
+                return false;
+            }
+        } elseif (Semver::satisfies($number, $this->versionConstraint) === false) {
             return false;
         }
 
@@ -159,5 +200,27 @@ final class Constraint implements \Stringable
     public function __toString(): string
     {
         return $this->origin;
+    }
+
+    /**
+     * The pre-release decides only between versions with the number of the bound itself; versions
+     * with another number are left to the operator, like for a constraint without a pre-release.
+     */
+    private function satisfiesPreRelease(PreRelease $required, string $number, PreRelease $preRelease): bool
+    {
+        if (!Semver::satisfies($number, '==' . $this->bound)) {
+            return Semver::satisfies($number, $this->versionConstraint);
+        }
+
+        $order = $preRelease->compare($required);
+
+        return match ($this->operator) {
+            '', '=', '==' => $order === 0,
+            '^', '~', '>=' => $order >= 0,
+            '>' => $order > 0,
+            '<' => $order < 0,
+            '<=' => $order <= 0,
+            default => throw new \LogicException("Unsupported operator `{$this->operator}`."),
+        };
     }
 }

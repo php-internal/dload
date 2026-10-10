@@ -330,6 +330,11 @@ DLoad поддерживает три типа загрузки, которые 
     
     <!-- Ограничения стабильности -->
     <download software="tool" version="^1.0.0@beta" />
+
+    <!-- Конкретный pre-release: только он, стабильность берётся из него -->
+    <download software="rr" version="2025.1.0-rc.2" />
+    <!-- Начиная с pre-release: rc.1, rc.2, финальный 2025.1.0 и более поздние 2025.x со стабильностью не ниже RC -->
+    <download software="rr" version="^2025.1.0-rc.1" />
     
     <!-- Feature-релизы (автоматически устанавливает preview-стабильность) -->
     <download software="experimental" version="^1.0.0-experimental" />
