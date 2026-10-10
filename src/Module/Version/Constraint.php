@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Internal\DLoad\Module\Version;
 
 use Composer\Semver\Semver;
+use Composer\Semver\VersionParser;
 use Internal\DLoad\Module\Common\Stability;
 
 /**
@@ -180,7 +181,7 @@ final class Constraint implements \Stringable
             if (!$this->satisfiesPreRelease($number, $version->preRelease, $version->suffix)) {
                 return false;
             }
-        } elseif (Semver::satisfies(self::composerNumber($number), $this->versionConstraint) === false) {
+        } elseif (!self::satisfies(self::composerNumber($number), $this->versionConstraint)) {
             return false;
         }
 
@@ -215,6 +216,21 @@ final class Constraint implements \Stringable
     }
 
     /**
+     * A version Composer cannot read, like `20250101.1.2.3`, satisfies no constraint.
+     * An unreadable constraint still throws.
+     */
+    private static function satisfies(string $number, string $constraint): bool
+    {
+        try {
+            (new VersionParser())->normalize($number);
+        } catch (\UnexpectedValueException) {
+            return false;
+        }
+
+        return Semver::satisfies($number, $constraint);
+    }
+
+    /**
      * The pre-release decides only between versions with the number of the bound itself; versions
      * with another number are left to the operator, like for a constraint without a pre-release.
      * An exact constraint names one release: a tail after the pre-release, like `3.5.0-RC1-linux`, makes another one.
@@ -225,8 +241,8 @@ final class Constraint implements \Stringable
     {
         \assert($this->preRelease !== null);
         $number = self::composerNumber($number);
-        if (!Semver::satisfies($number, '==' . $this->bound)) {
-            return Semver::satisfies($number, $this->versionConstraint);
+        if (!self::satisfies($number, '==' . $this->bound)) {
+            return self::satisfies($number, $this->versionConstraint);
         }
 
         $order = $preRelease->compare($this->preRelease);

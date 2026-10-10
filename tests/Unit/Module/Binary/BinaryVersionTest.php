@@ -63,6 +63,18 @@ final class BinaryVersionTest
             '2.3.4+20230415',
         ];
 
+        yield 'pre-release without a separator' => [
+            'tool 2.0.0rc1 (linux)',
+            '2.0.0rc1',
+            '2.0.0',
+        ];
+
+        yield 'word glued to the number' => [
+            'tool 1.2.3_amd64',
+            '1.2.3',
+            null,
+        ];
+
         // Case insensitivity
         yield 'mixed case version string' => [
             'VERSION: 5.1.2',

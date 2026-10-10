@@ -391,6 +391,16 @@ final class ConstraintTest
         yield 'five parts above a four parts pre-release' => ['^1.2.3.4-beta.1', 'v1.2.3.4.5', true];
         yield 'five parts on an exact four parts pre-release' => ['1.2.3.4-beta.1', 'v1.2.3.4.5', false];
 
+        // A pre-release glued to the number
+        yield 'exact release candidate without a separator in the tag' => ['2.0.0-rc1', 'v2.0.0rc1', true];
+        yield 'exact beta abbreviation without a separator in the tag' => ['1.0.0-b2', '1.0.0b2', true];
+
+        // A version Composer cannot read
+        yield 'date major part with four parts' => ['^1.0', '20250101.1.2.3', false];
+        yield 'six digit major part with four parts' => ['^1.0', '123456.1.2.3', false];
+        yield 'six digit major part at least a bound' => ['>=1.0', '100000.0.0.1', false];
+        yield 'six digit major part with five parts on a pre-release bound' => ['^1.0.0-beta.1', '123456.0.0.0.1', false];
+
         // A bare stability keyword still matches every pre-release of that stability
         yield 'bare stability keyword' => ['3.5.0-beta', 'v3.5.0-beta.3', true];
     }
