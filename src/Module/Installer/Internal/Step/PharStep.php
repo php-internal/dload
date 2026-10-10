@@ -16,10 +16,10 @@ use Internal\DLoad\Service\Logger;
  * @internal
  * @psalm-internal Internal\DLoad\Module\Installer
  */
-final class PharStep implements InstallStep
+final readonly class PharStep implements InstallStep
 {
     public function __construct(
-        private readonly Logger $logger,
+        private Logger $logger,
     ) {}
 
     public function install(Installation $installation, callable $next): DloadResult
