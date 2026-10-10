@@ -8,12 +8,12 @@ namespace Internal\DLoad\Module\Version;
  * Version range of a constraint in the Composer syntax, matched with DLoad's version ordering.
  *
  * Supports:
- * - Comparisons: `1.2.3`, `=1.2.3`, `==1.2.3`, `!=1.2.3`, `>1.2`, `>=1.2`, `<2`, `<=2.0`
+ * - Comparisons: `1.2.3`, `=1.2.3`, `==1.2.3`, `!=1.2.3`, `<>1.2.3`, `>1.2`, `>=1.2`, `<2`, `<=2.0`
  * - Caret and tilde ranges: `^1.2.3`, `^0.3`, `~1.2`, `~1.2.3`
  * - Wildcards: `*`, `1.*`, `1.2.x`
  * - Hyphen ranges: `1.0 - 2.0`
  * - AND by a space or a comma, OR by `||` or `|`: `>=1.0 <2.0 || ^3.0`
- * - A `v` prefix and numbered pre-releases in bounds: `v1.2.3`, `^3.5.0-beta.1`
+ * - A `v` prefix, pre-releases and numeric tails in bounds: `v1.2.3`, `^3.5.0-beta.1`, `>=1.0.0-1`
  *
  * Any count of number parts is supported on both sides, and trailing zero parts do not count.
  *
@@ -71,16 +71,17 @@ final class Range
     {
         $group === '' and throw new \InvalidArgumentException("Empty alternative in the version constraint `{$constraint}`.");
 
-        $version = '(v?\d+(?:\.\d+)*(?:\+\d+)?(?:-(?:' . PreRelease::keywordPattern() . ')(?:[._-]?\d+)?)?)';
+        $version = '(v?\d+(?:\.\d+)*(?:\+\d+)?(?:-(?:' . self::preReleasePattern() . '))?)';
         if (\preg_match("/^{$version}\\s+-\\s+{$version}$/i", $group, $matches) === 1) {
             return self::parseHyphenRange($matches[1], $matches[2]);
         }
 
-        # Composer allows a space after an operator: `>= 1.0` is one term, not two
-        $group = (string) \preg_replace('/(?<=^|[\s,])([<>=!~^]+)\s+/', '$1', $group);
+        # Composer allows a space after an operator: `>= 1.0` is one term, not two, while `> =1.0` is no term
+        $group = (string) \preg_replace('/(?<=^|[\s,])([<>=!~^]+)\s+(?=[v\d])/i', '$1', $group);
 
         $comparisons = [];
         foreach (\preg_split('/\s*,\s*|\s+/', $group) ?: [] as $term) {
+            $term === '' and throw new \InvalidArgumentException("Empty term in the version constraint `{$constraint}`.");
             $comparisons = [...$comparisons, ...self::parseTerm($term)];
         }
 
@@ -173,7 +174,8 @@ final class Range
      */
     private static function parseVersion(string $version): ?array
     {
-        $pattern = '/^v?(\d+(?:\.\d+)*(?:\+\d+)?)(?:-((?:' . PreRelease::keywordPattern() . ')(?:[._-]?\d+)?))?$/i';
+        # Build metadata does not count, so the number goes without it
+        $pattern = '/^v?(\d+(?:\.\d+)*)(?:\+\d+)?(?:-(' . self::preReleasePattern() . '))?$/i';
         if (\preg_match($pattern, $version, $matches) !== 1) {
             return null;
         }
@@ -201,14 +203,23 @@ final class Range
 
     /**
      * Cuts the number after the given part and increments that part: `1.2.3` at 2 is `1.3`.
+     * Parts are digit strings of any length, so `^99999999999999999999` does not overflow an integer.
      *
      * @param int<1, max> $position Not past the last part of the number
      * @return non-empty-string
      */
     private static function increment(string $number, int $position): string
     {
-        $parts = \array_map(intval(...), \array_slice(self::parts($number), 0, $position));
-        ++$parts[$position - 1];
+        $parts = \array_map(
+            static fn(string $part): string => \ltrim($part, '0') ?: '0',
+            \array_slice(self::parts($number), 0, $position),
+        );
+
+        $last = $parts[$position - 1];
+        $nines = \strlen($last) - \strlen(\rtrim($last, '9'));
+        $parts[$position - 1] = $nines === \strlen($last)
+            ? '1' . \str_repeat('0', $nines)
+            : \substr($last, 0, -$nines - 1) . ((int) $last[-$nines - 1] + 1) . \str_repeat('0', $nines);
 
         return \implode('.', $parts);
     }
@@ -226,6 +237,17 @@ final class Range
      */
     private static function parts(string $number): array
     {
-        return \explode('.', \explode('+', $number, 2)[0]);
+        return \explode('.', $number);
+    }
+
+    /**
+     * Regular expression of a bound pre-release after its hyphen: a stability keyword with an optional number,
+     * like `beta.1`, or a numeric tail, like `1` of `1.0.0-1`, that orders as a part of the number.
+     *
+     * @return non-empty-string
+     */
+    private static function preReleasePattern(): string
+    {
+        return '(?:' . PreRelease::keywordPattern() . ')(?:[._-]?\d+)?|\d+(?:\.\d+)*';
     }
 }

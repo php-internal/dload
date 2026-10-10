@@ -74,6 +74,8 @@ final class RangeTest
         yield ['!=1.2.3', '1.2.3', false];
         yield ['!=1.2.3', '1.2.3-beta', false];
         yield ['!=1.2.3', '1.2.4', true];
+        yield ['<>1.2.3', '1.2.3', false];
+        yield ['<>1.2.3', '1.2.4', true];
         yield ['>1.2', '1.2.0.1', true];
         yield ['>1.2', '1.2.0', false];
         yield ['>1.2', '1.2.0-beta', false];
@@ -169,6 +171,9 @@ final class RangeTest
         yield ['1.0.0-beta.2 - 2.0', '1.0.0-beta.1', false];
         yield ['1.0 - 2.0.0-beta.1', '2.0.0-beta.1', true];
         yield ['1.0 - 2.0.0-beta.1', '2.0.0-beta.2', false];
+        yield ['1.0 - 2.0-beta.1', '2.0.0-beta.1', true];
+        yield ['1.0 - 2.0-beta.1', '2.0.0-beta.2', false];
+        yield ['1.0.0-1 - 2.0', '1.0.0', false];
 
         // OR and AND
         yield ['^1.2 || ^2.0', '1.5', true];
@@ -245,12 +250,27 @@ final class RangeTest
         yield ['1.0.0', '1.0.0-1', false];
         yield ['<1.0.0.1', '1.0.0-1', false];
         yield ['1.0.0.1', '1.0.0-1', true];
+        yield ['1.0.0-1', '1.0.0-1', true];
+        yield ['1.0.0-1', '1.0.0', false];
+        yield ['>=1.0.0-1', '1.0.0-2', true];
+        yield ['^1.0.0-1', '1.9', true];
+        yield ['~1.0.0-1', '1.0.9', true];
+        yield ['~1.0.0-1', '1.1', false];
+
+        // Number parts past the integer range
+        yield ['^99999999999999999999', '1.0', false];
+        yield ['~9223372036854775807', '1.0', false];
+        yield ['9223372036854775807.*', '1.0', false];
+        yield ['^0.99999999999999999999', '1.0', false];
 
         // Build metadata does not count
         yield ['1.2.3', '1.2.3+5', true];
         yield ['>1.2.3', '1.2.3+5', false];
         yield ['1.2.3.5', '1.2.3+5', false];
         yield ['1.2.3+5', '1.2.3', true];
+        yield ['^1.2.3+5', '1.9', true];
+        yield ['~1.2.3+5', '1.3', false];
+        yield ['1.0 - 2+5', '2.5', true];
     }
 
     public static function provideInvalidConstraints(): \Generator
@@ -274,6 +294,11 @@ final class RangeTest
         yield 'empty first alternative' => ['|| 1.0', 'Empty alternative'];
         yield 'open hyphen range' => ['1.0 -', 'Invalid base version format: -.'];
         yield 'hyphen range of a wildcard' => ['1.* - 2.0', 'Invalid base version format: -.'];
+        yield 'empty last term' => ['1.2,', 'Empty term in the version constraint `1.2,`.'];
+        yield 'empty first term' => [',1.2', 'Empty term'];
+        yield 'empty middle term' => ['^1.0,,^2', 'Empty term'];
+        yield 'space inside an operator' => ['> =1.0', 'Invalid base version format: >.'];
+        yield 'feature after a numeric tail' => ['1.0.0-1-feature', 'Invalid base version format: 1.0.0-1-feature.'];
     }
 
     #[DataProvider('provideMatches')]

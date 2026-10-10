@@ -83,6 +83,8 @@ final class VersionTest
         yield 'trailing zero before a pre-release' => ['1.2.3-RC1', '1.2.3.0-RC1'];
         yield 'two parts' => ['1.0', '1.0.0'];
         yield 'build metadata' => ['1.2.3', '1.2.3+5'];
+        yield 'build metadata after two parts' => ['1.2', '1.2+5'];
+        yield 'build metadata after one part' => ['1', '1+2'];
     }
 
     /**

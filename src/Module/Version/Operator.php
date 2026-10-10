@@ -19,7 +19,7 @@ enum Operator: string
     case LessOrEqual = '<=';
 
     /**
-     * Resolves an operator of the constraint syntax: none and `==` are {@see Equal}.
+     * Resolves an operator of the constraint syntax: none and `==` are {@see Equal}, `<>` is {@see NotEqual}.
      *
      * @return self|null Null when the text is not an operator.
      */
@@ -27,6 +27,7 @@ enum Operator: string
     {
         return match ($operator) {
             '', '==' => self::Equal,
+            '<>' => self::NotEqual,
             default => self::tryFrom($operator),
         };
     }

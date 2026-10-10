@@ -16,7 +16,7 @@ class Version implements \Stringable
     protected const VERSION_SEMVER_NUMBER_PATTERN = 'v?(\d+\.\d+\.\d+(?:\.\d+)*(?:\+\d+)?)';
 
     /** A suffix starting with a letter may follow the number right away: `2.0.0rc1`, `1.2.3_beta2`. */
-    protected const VERSION_FALLBACK_PATTERN = 'v?(\d+(?:\.\d+(?:\.\d+(?:\.\d+)*(?:\+\d+)?)?)?)((?:[-+.]|(?=[a-z_]))[\w.-]+)?';
+    protected const VERSION_FALLBACK_PATTERN = 'v?(\d+(?:\.\d+)*(?:\+\d+)?)((?:[-+.]|(?=[a-z_]))[\w.-]+)?';
 
     protected const VERSION_HASH_SUFFIX_PATTERN = '(?:#([a-f0-9]{6,40}))?';
 

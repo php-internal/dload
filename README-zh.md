@@ -329,6 +329,10 @@ DLoad 支持三种下载类型，它们决定了资源的处理方式：
     <!-- 范围约束 -->
     <download software="temporal" version="^1.20.0" />
     <download software="dolt" version="~0.50.0" />
+    <!-- 空格或逗号表示“与”，|| 表示“或”，连字符范围、通配符、排除 -->
+    <download software="buf" version="^1.28 || ^2.0" />
+    <download software="protoc" version="25.0 - 26.1" />
+    <download software="mago" version="1.0.*, !=1.0.1" />
     
     <!-- 稳定性约束 -->
     <download software="tool" version="^1.0.0@beta" />

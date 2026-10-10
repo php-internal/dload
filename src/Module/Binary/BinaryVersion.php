@@ -39,12 +39,13 @@ final class BinaryVersion extends Version
     /**
      * Pattern to extract semantic version (X.Y.Z, or more parts like X.Y.Z.W) from text.
      * Only a pre-release may follow the number right away, like `2.0.0rc1`: another word glued to it,
-     * like `1.2.3_amd64`, is not a part of the version.
+     * like `1.2.3_amd64`, is not a part of the version. Nor is a lone `a` or `b`: like the `c` of
+     * OpenSSL's `1.1.1c`, it is a patch letter, not an alpha or a beta.
      */
     private static function outputVersionPattern(): string
     {
         return '/(?:version:?\s*)?(?:v(?:er(?:sion)?)?\.?\s*)?' . parent::VERSION_SEMVER_NUMBER_PATTERN
-            . '((?:[-+]|(?=' . PreRelease::wordPattern() . '))[\w.-]+)?/i';
+            . '((?:[-+]|(?=(?![ab](?![a-z]|[._-]?\d))' . PreRelease::wordPattern() . '))[\w.-]+)?/i';
     }
 
     /**

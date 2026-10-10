@@ -330,6 +330,10 @@ DLoad поддерживает три типа загрузки, которые 
     <!-- Диапазонные ограничения -->
     <download software="temporal" version="^1.20.0" />
     <download software="dolt" version="~0.50.0" />
+    <!-- И через пробел или запятую, ИЛИ через ||, диапазоны через дефис, маски, исключения -->
+    <download software="buf" version="^1.28 || ^2.0" />
+    <download software="protoc" version="25.0 - 26.1" />
+    <download software="mago" version="1.0.*, !=1.0.1" />
     
     <!-- Ограничения стабильности -->
     <download software="tool" version="^1.0.0@beta" />

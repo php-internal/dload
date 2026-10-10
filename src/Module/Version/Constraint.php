@@ -17,6 +17,8 @@ use Internal\DLoad\Module\Common\Stability;
  *   * Implicit: ^2.12.0-beta, ~1.20.0-stable
  * - Combined constraints: ^2.12.0-feature@beta
  * - Numbered pre-releases: 3.5.0-beta.1, ^3.5.0-RC2, 1.0.0-nightly20250503
+ * - Pre-release bounds of ranges: >=3.5.0-beta.1 <3.5.0-RC1, ^1.0 || ^2.0-beta.1
+ * - Numeric tails: 1.0.0-1, >=1.0.0-1
  *
  * Stability keywords (from Stability enum) as suffixes are automatically
  * converted to stability constraints.
@@ -38,8 +40,9 @@ final class Constraint implements \Stringable
     public readonly Stability $minimumStability;
 
     /**
-     * @var PreRelease|null $preRelease Numbered pre-release the version constraint is bound to,
-     *      e.g. `beta.1` of `3.5.0-beta.1`. If null, pre-releases are matched by stability only.
+     * @var PreRelease|null $preRelease Numbered pre-release of a single version the constraint is bound to,
+     *      e.g. `beta.1` of `3.5.0-beta.1`. Null when there is none, or when the constraint has several terms:
+     *      their pre-releases stay in {@see $versionConstraint}.
      */
     public readonly ?PreRelease $preRelease;
 
@@ -67,21 +70,24 @@ final class Constraint implements \Stringable
             );
         }
 
-        # A numbered pre-release is a part of the version, not a feature suffix: "3.5.0-beta.1" names one
-        # release, and "3.5.0-beta.2" or "3.5.0" must not satisfy it. A bare "-beta" stays a stability.
+        # A pre-release bound is a part of the version, not a feature suffix: "3.5.0-beta.1" names one
+        # release, and "3.5.0-beta.2" or "3.5.0" must not satisfy it. So is a numeric tail, as in "1.0.0-1".
+        # A bare "-beta" of a single version stays a stability; in a range, like ">=1.0-beta <2.0", it is a bound.
         $preRelease = $range = null;
-        $pattern = '/^([~^>=<!]*\s*v?\d+(?:\.\d+)*)-((?:' . PreRelease::keywordPattern() . ')[._-]?\d+)$/i';
-        if (\preg_match($pattern, $origin, $matches) === 1) {
-            $preRelease = PreRelease::fromString($matches[2]);
-            \assert($preRelease !== null);
-            $stability ??= $preRelease->stability;
+        $bounds = self::preReleaseBounds($origin);
+        $singleTerm = \preg_match('/[\s,|]/', (string) \preg_replace('/^[<>=!~^]*\s*/', '', $origin)) !== 1;
+        if ($bounds !== [] && (!$singleTerm || \preg_match('/\d/', \implode('', $bounds)) === 1)) {
             $range = Range::fromString($origin);
-            $origin = $matches[1];
+            $stability ??= self::lowestStability($bounds);
+
+            if ($singleTerm && ($preRelease = PreRelease::fromString($bounds[0])) !== null) {
+                $origin = \substr($origin, 0, -\strlen($bounds[0]) - 1);
+            }
         }
         $this->preRelease = $preRelease;
 
         # The hyphen of a range like "1.0 - 2.0" stands between spaces and does not start a suffix
-        [$version, $suffix] = \preg_match('/\s-\s/', $origin) === 1
+        [$version, $suffix] = $range !== null || \preg_match('/\s-\s/', $origin) === 1
             ? [$origin, '']
             : \explode('-', $origin, 2) + [1 => ''];
         if ($suffix !== '') {
@@ -148,11 +154,9 @@ final class Constraint implements \Stringable
     /**
      * Checks if the given version satisfies this constraint.
      *
-     * @param Version $version Version to check against this constraint
-     * @return null|bool True if the version satisfies the constraint, false if it does not,
-     *         null if the version is invalid or not applicable.
+     * A version without a number satisfies no constraint.
      */
-    public function isSatisfiedBy(Version $version): ?bool
+    public function isSatisfiedBy(Version $version): bool
     {
         if ($version->number === null || !$this->range->isSatisfiedBy($version)) {
             return false;
@@ -176,5 +180,40 @@ final class Constraint implements \Stringable
     public function __toString(): string
     {
         return $this->origin;
+    }
+
+    /**
+     * Pre-releases of the version bounds, like `beta.1` and `1` of `>=1.0.0-1 <2.0.0-beta.1`.
+     * A suffix that runs on past a pre-release, like `-beta.1-feature`, is not a bound.
+     *
+     * @return list<non-empty-string>
+     */
+    private static function preReleaseBounds(string $constraint): array
+    {
+        \preg_match_all(
+            '/(?<=\d)-((?:' . PreRelease::keywordPattern() . ')(?:[._-]?\d+)?|\d+(?:\.\d+)*)(?=$|[\s,|])/i',
+            $constraint,
+            $matches,
+        );
+
+        /** @var list<non-empty-string> */
+        return $matches[1];
+    }
+
+    /**
+     * A numeric tail, like `1` of `1.0.0-1`, is a {@see Stability::Preview}, as {@see Version} reads it.
+     *
+     * @param non-empty-list<non-empty-string> $preReleases
+     */
+    private static function lowestStability(array $preReleases): Stability
+    {
+        $stabilities = \array_map(
+            static fn(string $preRelease): Stability => PreRelease::fromString($preRelease)?->stability
+                ?? Stability::Preview,
+            $preReleases,
+        );
+        \usort($stabilities, static fn(Stability $a, Stability $b): int => $a->getWeight() <=> $b->getWeight());
+
+        return $stabilities[0];
     }
 }
