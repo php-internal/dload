@@ -34,13 +34,13 @@ use Symfony\Component\Console\Output\OutputInterface;
  * @internal
  * @psalm-internal Internal\DLoad\Module\Installer
  */
-final class ArchiveStep implements InstallStep
+final readonly class ArchiveStep implements InstallStep
 {
     public function __construct(
-        private readonly Logger $logger,
-        private readonly OutputInterface $output,
-        private readonly ArchiveFactory $archiveFactory,
-        private readonly BinaryProvider $binaryProvider,
+        private Logger $logger,
+        private OutputInterface $output,
+        private ArchiveFactory $archiveFactory,
+        private BinaryProvider $binaryProvider,
     ) {}
 
     /**
