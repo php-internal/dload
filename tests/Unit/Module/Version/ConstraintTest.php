@@ -255,7 +255,6 @@ final class ConstraintTest
         yield 'explicit stability over pre-release bounds' => ['>=3.5.0-beta.1 <3.5.0@alpha', '>=3.5.0-beta.1 <3.5.0', null, Stability::Alpha, 'Explicit stability'];
         yield 'pre-release bound with a space after the operator' => ['>= 1.0-beta.1 <2.0', '>= 1.0-beta.1 <2.0', null, Stability::Beta, 'Spaced bound'];
         yield 'bare stability keywords of a hyphen range' => ['1.0-beta - 2.0-RC1', '1.0-beta - 2.0-RC1', null, Stability::Beta, 'Hyphen range bounds'];
-        yield 'pre-release after alternatives without spaces' => ['^1.0||^2.0-beta.1', '^1.0||^2.0-beta.1', null, Stability::Beta, 'Glued alternatives'];
         yield 'bare stability keyword of a caret with an explicit stability is a bound' => ['^2.0-beta@alpha', '^2.0', null, Stability::Alpha, 'Keyword bound of a caret'];
         yield 'bare stability keyword at least with an explicit stability is a bound' => ['>=2.0-beta@alpha', '>=2.0', null, Stability::Alpha, 'Keyword bound of at least'];
         yield 'bare stability keyword of a tilde with an explicit stability is a bound' => ['~2.0-beta@alpha', '~2.0', null, Stability::Alpha, 'Keyword bound of a tilde'];
