@@ -72,6 +72,9 @@ final class VersionTest
         yield 'platform build before the final' => ['1.0.0-x86_64', '1.0.0'];
         yield 'number with a letter before the final' => ['1.0.0-1x', '1.0.0'];
         yield 'number with an alpha abbreviation before the final' => ['1.0.0-1a', '1.0.0'];
+        yield 'words of the suffix' => ['1.0.0-amd64', '1.0.0-arm64'];
+        yield 'words after the pre-release' => ['1.0.0-RC1-darwin', '1.0.0-RC1-linux'];
+        yield 'patch abbreviation and the whole word' => ['1.0.0-p1', '1.0.0-patch1'];
     }
 
     public static function provideEqualVersions(): \Generator
@@ -85,6 +88,7 @@ final class VersionTest
         yield 'build metadata' => ['1.2.3', '1.2.3+5'];
         yield 'build metadata after two parts' => ['1.2', '1.2+5'];
         yield 'build metadata after one part' => ['1', '1+2'];
+        yield 'case, separators and leading zeros of the suffix' => ['1.0.0-Linux_x64.01', '1.0.0-linux-x64.1'];
     }
 
     /**

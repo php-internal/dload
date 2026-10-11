@@ -347,7 +347,7 @@ Usa restricciones de versión estilo Composer:
 </actions>
 ```
 
-Un pre-release en una restricción fija la estabilidad mínima con cualquier operador, incluso en `<3.5.0-beta.2`; redúcela con `@alpha` o `@dev`. Tras `>`, `<`, `<=` o `!=`, una palabra clave sin número también es un límite, como en Composer: `>2.0-beta` acepta `2.0.0-RC1` y `2.0.0`.
+Un pre-release en una restricción fija la estabilidad mínima con cualquier operador, incluso en `<3.5.0-beta.2`; redúcela con `@alpha` o `@dev`. Una palabra clave sin número también es un límite, como en Composer: `>2.0-beta` acepta `2.0.0-RC1` y `2.0.0`. Una versión exacta con pre-release u otro sufijo solo coincide con esa etiqueta: `2.0-beta` no acepta `2.0.0-beta.3` ni `2.0.0`, y `2.12.0-hotfix` no acepta `2.12.0-hotfix.2`.
 
 ### Opciones de Configuración Avanzadas
 

@@ -253,9 +253,9 @@ final class ConstraintTest
         yield 'pre-release bound with a space after the operator' => ['>= 1.0-beta.1 <2.0', '>= 1.0-beta.1 <2.0', null, Stability::Beta, 'Spaced bound'];
         yield 'bare stability keywords of a hyphen range' => ['1.0-beta - 2.0-RC1', '1.0-beta - 2.0-RC1', null, Stability::Beta, 'Hyphen range bounds'];
         yield 'pre-release after alternatives without spaces' => ['^1.0||^2.0-beta.1', '^1.0||^2.0-beta.1', null, Stability::Beta, 'Glued alternatives'];
-        yield 'bare stability keyword with an explicit stability is a feature' => ['^2.0-beta@alpha', '^2.0', 'beta', Stability::Alpha, 'Keyword feature of a caret'];
-        yield 'bare stability keyword at least with an explicit stability is a feature' => ['>=2.0-beta@alpha', '>=2.0', 'beta', Stability::Alpha, 'Keyword feature of at least'];
-        yield 'bare stability keyword of a tilde with an explicit stability is a feature' => ['~2.0-beta@alpha', '~2.0', 'beta', Stability::Alpha, 'Keyword feature of a tilde'];
+        yield 'bare stability keyword of a caret with an explicit stability is a bound' => ['^2.0-beta@alpha', '^2.0', null, Stability::Alpha, 'Keyword bound of a caret'];
+        yield 'bare stability keyword at least with an explicit stability is a bound' => ['>=2.0-beta@alpha', '>=2.0', null, Stability::Alpha, 'Keyword bound of at least'];
+        yield 'bare stability keyword of a tilde with an explicit stability is a bound' => ['~2.0-beta@alpha', '~2.0', null, Stability::Alpha, 'Keyword bound of a tilde'];
         yield 'pre-release bound after a comma without a space' => ['>=1.0,<2.0-RC1', '>=1.0,<2.0-RC1', null, Stability::RC, 'Comma before a bound'];
 
         // A digit within a feature suffix is no pre-release bound
@@ -263,7 +263,12 @@ final class ConstraintTest
         yield 'numbered pre-release after a feature' => ['^1.0-arm64-beta.1', '^1.0', 'arm64-beta.1', Stability::Preview, 'Pre-release after a feature'];
         yield 'glued pre-release after a feature' => ['^1.0.0-x64-rc1', '^1.0.0', 'x64-rc1', Stability::Preview, 'Glued pre-release after a feature'];
         yield 'numeric tail of a feature with a digit' => ['^2.0-php8-1', '^2.0', 'php8-1', Stability::Preview, 'Feature with a digit'];
-        yield 'numeric tail after a numbered pre-release' => ['1.0.0-beta.1-2', '1.0.0', 'beta.1-2', Stability::Preview, 'Tail after a pre-release'];
+
+        // A single version with a tail is one release, its stability taken from that release
+        yield 'exact tail after a numbered pre-release' => ['1.0.0-beta.1-2', '1.0.0-beta.1-2', null, Stability::Beta, 'Tail after a pre-release'];
+        yield 'exact feature build' => ['2.12.0-hotfix', '2.12.0-hotfix', null, Stability::Preview, 'Exact feature build'];
+        yield 'exact pre-release after a feature' => ['=1.0-arm64-beta.1', '=1.0-arm64-beta.1', null, Stability::Beta, 'Exact pre-release after a feature'];
+        yield 'exact feature build with an explicit stability' => ['2.12.0-hotfix@rc', '2.12.0-hotfix', null, Stability::RC, 'Explicit stability of an exact build'];
     }
 
     public static function provideInvalidConstraints(): \Generator
@@ -454,10 +459,44 @@ final class ConstraintTest
         yield 'six digit major part at least a bound' => ['>=1.0', '100000.0.0.1', true];
         yield 'six digit major part with five parts on a pre-release bound' => ['^1.0.0-beta.1', '123456.0.0.0.1', false];
 
-        // A bare stability keyword still matches every pre-release of that stability
-        yield 'bare stability keyword' => ['3.5.0-beta', 'v3.5.0-beta.3', true];
-        yield 'bare stability keyword after an equal sign' => ['=3.5.0-beta', 'v3.5.0-beta.3', true];
-        yield 'bare stability keyword after a double equal sign' => ['==3.5.0-beta', 'v3.5.0-beta.3', true];
+        // A single version with a pre-release or a tail is one release
+        yield 'exact bare keyword on its release' => ['2.0-beta', 'v2.0.0-beta', true];
+        yield 'exact bare keyword on a zero numbered spelling' => ['2.0-beta', 'v2.0.0-beta.0', true];
+        yield 'exact bare keyword on a numbered pre-release' => ['3.5.0-beta', 'v3.5.0-beta.3', false];
+        yield 'exact bare keyword after an equal sign on a numbered pre-release' => ['=3.5.0-beta', 'v3.5.0-beta.3', false];
+        yield 'exact bare keyword after a double equal sign on a numbered pre-release' => ['==3.5.0-beta', 'v3.5.0-beta.3', false];
+        yield 'exact bare keyword on a release candidate' => ['2.0-beta', 'v2.0.0-RC1', false];
+        yield 'exact bare keyword on the final release' => ['2.0-beta', 'v2.0.0', false];
+        yield 'exact bare keyword after an equal sign on its release' => ['=2.0-beta', '2.0.0-beta', true];
+        yield 'exact bare keyword after a double equal sign on its release' => ['==2.0-beta', 'v2.0.0-beta', true];
+        yield 'exact pre-release after a feature' => ['1.0-arm64-beta.1', 'v1.0-arm64-beta.1', true];
+        yield 'exact pre-release after a feature on another pre-release' => ['1.0-arm64-beta.1', 'v1.0-arm64-beta.2', false];
+        yield 'exact pre-release after a feature on another feature' => ['1.0-arm64-beta.1', 'v1.0-amd64-beta.1', false];
+        yield 'exact feature build' => ['2.12.0-hotfix', 'v2.12.0-hotfix', true];
+        yield 'exact feature build on a numbered one' => ['2.12.0-hotfix', 'v2.12.0-hotfix.2', false];
+        yield 'exact feature build on a platform build of it' => ['2.12.0-hotfix', 'v2.12.0-hotfix-linux', false];
+        yield 'exact feature build on another feature' => ['=2.12.0-hotfix', 'v2.12.0-musl', false];
+        yield 'exact feature build on its final release' => ['==2.12.0-hotfix', 'v2.12.0', false];
+        yield 'exact feature build with a stricter explicit stability' => ['2.12.0-hotfix@stable', 'v2.12.0-hotfix', false];
+        yield 'exact tail after a pre-release on itself' => ['1.0.0-beta.1-2', 'v1.0.0-beta.1-2', true];
+        yield 'exact tail after a release candidate on itself' => ['3.5.0-RC1-linux', 'v3.5.0-RC1-linux', true];
+        yield 'exact pre-release before a tail on itself' => ['1.2.3-rc1-arm64', 'v1.2.3-rc1-arm64', true];
+
+        // A bare number covers every build of that number the stability allows
+        yield 'bare number on a platform build' => ['1.2.3', 'v1.2.3-linux', false];
+        yield 'bare number with a looser stability on a platform build' => ['1.2.3@preview', 'v1.2.3-linux', true];
+        yield 'bare number with a looser stability on a pre-release' => ['=1.2.3@beta', 'v1.2.3-beta.1', true];
+        yield 'bare number on build metadata' => ['1.2.3', 'v1.2.3+5', true];
+
+        // A bare stability keyword with an explicit stability is a bound too
+        yield 'caret from a bare keyword with a looser stability on its bound' => ['^2.0-beta@alpha', 'v2.0.0-beta', true];
+        yield 'caret from a bare keyword with a looser stability on a release candidate' => ['^2.0-beta@alpha', 'v2.0.0-RC1', true];
+        yield 'caret from a bare keyword with a looser stability on a later alpha' => ['^2.0-beta@alpha', 'v2.1.0-alpha', true];
+        yield 'caret from a bare keyword with a looser stability below the bound' => ['^2.0-beta@alpha', 'v2.0.0-alpha', false];
+
+        // A feature suffix of a range is still a part the version must contain
+        yield 'tilde feature' => ['~1.2-feature', 'v1.2.5-feature-linux', true];
+        yield 'tilde feature on a release' => ['~1.2-feature', 'v1.2.5', false];
 
         // A numeric tail orders as a part of the number, in matching as in sorting
         yield 'numeric tail below a pre-release bound' => ['<3.5.0-preview.3', 'v3.5.0-1', false];
@@ -490,7 +529,7 @@ final class ConstraintTest
         yield 'space after the operator' => ['>= 1.2', 'v1.3', true];
         yield 'space after the operator of a pre-release' => ['>= 3.5.0-beta.1', 'v3.5.0-beta.2', true];
         yield 'feature on a range' => ['^1.0-priority', 'v2.0.0-priority.0', false];
-        yield 'exact number of a feature build' => ['1.3.1-priority', 'v1.3.1-priority.0', true];
+        yield 'exact feature build on a numbered one of the same feature' => ['1.3.1-priority', 'v1.3.1-priority.0', false];
         yield 'not equal in the Composer spelling' => ['<>1.2.3', 'v1.2.4', true];
 
         // A numeric tail is a part of the version number
@@ -555,19 +594,15 @@ final class ConstraintTest
     }
 
     /**
-     * Bare stability keywords that match alone as in a range.
-     * Without an operator or after `=`, a bare keyword is a stability of the single version;
-     * after `^`, `~` or `>=` with an explicit stability, it is a feature suffix.
+     * Bare stability keywords that match alone as in a range, after every operator.
      */
     public static function provideBareKeywordConstraints(): \Generator
     {
-        foreach (['^', '~', '>=', '>', '<', '<=', '!=', '<>'] as $operator) {
+        foreach (['', '=', '==', '^', '~', '>=', '>', '<', '<=', '!=', '<>'] as $operator) {
             foreach (['dev', 'alpha', 'beta', 'RC'] as $keyword) {
-                yield "{$operator}2.0-{$keyword}" => ["{$operator}2.0-{$keyword}", ''];
-                \in_array($operator, ['^', '~', '>='], true) or yield "{$operator}2.0-{$keyword}@alpha" => [
-                    "{$operator}2.0-{$keyword}",
-                    '@alpha',
-                ];
+                foreach (['', '@alpha'] as $stability) {
+                    yield "{$operator}2.0-{$keyword}{$stability}" => ["{$operator}2.0-{$keyword}", $stability];
+                }
             }
         }
     }
@@ -580,7 +615,9 @@ final class ConstraintTest
         yield 'nightly' => ['1.0.0-nightly20250503', '1.0.0', Stability::Nightly, 20250503, Stability::Nightly];
         yield 'explicit stability wins' => ['3.5.0-alpha-2@dev', '3.5.0', Stability::Alpha, 2, Stability::Dev];
         yield 'range' => ['^3.5.0-rc.2', '^3.5.0', Stability::RC, 2, Stability::RC];
-        yield 'bare stability keyword' => ['3.5.0-beta', '3.5.0', null, null, Stability::Beta];
+        yield 'bare stability keyword' => ['3.5.0-beta', '3.5.0', Stability::Beta, 0, Stability::Beta];
+        yield 'bare stability keyword after an equal sign' => ['=3.5.0-beta', '=3.5.0', Stability::Beta, 0, Stability::Beta];
+        yield 'bare stability keyword with an explicit stability' => ['^3.5.0-beta@alpha', '^3.5.0', Stability::Beta, 0, Stability::Alpha];
         yield 'prefixed version' => ['v3.5.0-beta.1', 'v3.5.0', Stability::Beta, 1, Stability::Beta];
         yield 'not equal' => ['!=3.5.0-beta.1', '!=3.5.0', Stability::Beta, 1, Stability::Beta];
         yield 'bare stability keyword after a comparison' => ['>3.5.0-beta', '>3.5.0', Stability::Beta, 0, Stability::Beta];

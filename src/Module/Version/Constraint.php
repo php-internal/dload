@@ -11,17 +11,14 @@ use Internal\DLoad\Module\Common\Stability;
  *
  * Encapsulates version constraint logic supporting:
  * - Version ranges in the Composer syntax, see {@see Range}: ^2.12.0, ~1.20, >=1.0 <2.0 || ^3.0
- * - Feature suffixes: ^2.12.0-feature, ~1.20.0-hotfix, ^1.0.0-my-feature
- * - Stability constraints with two equivalent syntaxes:
- *   * Explicit: ^2.12.0@beta, ~1.20.0@stable
- *   * Implicit: ^2.12.0-beta, ~1.20.0-stable
+ * - Feature suffixes of ranges: ^2.12.0-feature, ~1.20.0-hotfix, ^1.0.0-my-feature
+ * - Minimum stability, explicit or taken from the pre-releases of the constraint: ^2.12.0@beta, ^2.12.0-beta
  * - Combined constraints: ^2.12.0-feature@beta
- * - Numbered pre-releases: 3.5.0-beta.1, ^3.5.0-RC2, 1.0.0-nightly20250503
+ * - Exact releases, a pre-release or a tail included: 3.5.0-beta.1, 2.0-beta, 1.0.0-1, 2.12.0-hotfix
  * - Pre-release bounds of ranges and comparisons: >=3.5.0-beta.1 <3.5.0-RC1, ^1.0 || ^2.0-beta.1, >2.0-beta
- * - Numeric tails: 1.0.0-1, >=1.0.0-1
  *
- * Stability keywords (from Stability enum) as suffixes are automatically
- * converted to stability constraints.
+ * A stability keyword at the start or the end of a feature suffix sets the minimum stability
+ * unless an explicit one is given: ^2.12.0-my-feature-beta.
  *
  * @internal
  */
@@ -40,14 +37,14 @@ final class Constraint implements \Stringable
     public readonly Stability $minimumStability;
 
     /**
-     * @var PreRelease|null $preRelease Numbered pre-release of a single version the constraint is bound to,
-     *      e.g. `beta.1` of `3.5.0-beta.1`. Null when there is none, or when the constraint has several terms:
-     *      their pre-releases stay in {@see $versionConstraint}.
+     * @var PreRelease|null $preRelease Pre-release of a single version the constraint is bound to,
+     *      e.g. `beta.1` of `3.5.0-beta.1`. Null when there is none, when a tail follows it, or when
+     *      the constraint has several terms: their pre-releases stay in {@see $versionConstraint}.
      */
     public readonly ?PreRelease $preRelease;
 
     /** Versions the constraint accepts, the pre-release included. */
-    private readonly Range $range;
+    private readonly Range|Comparison $range;
 
     /**
      * @param non-empty-string $origin Original constraint string used for parsing.
@@ -70,26 +67,27 @@ final class Constraint implements \Stringable
             );
         }
 
-        # A pre-release bound is a part of the version, not a feature suffix: "3.5.0-beta.1" names one
-        # release, and "3.5.0-beta.2" or "3.5.0" must not satisfy it. So is a numeric tail, as in "1.0.0-1".
-        # A bare "-beta" is a bound of a range and of a comparison, as in Composer: ">2.0-beta" accepts
-        # "2.0.0-RC1" and "<=2.0-beta" rejects "2.0.0". After other operators of a single term it stays
-        # a stability: "3.5.0-beta" accepts "3.5.0-beta.3".
-        $preRelease = $range = null;
-        $bounds = self::preReleaseBounds($origin);
-        $singleTerm = \preg_match('/[\s,|]/', (string) \preg_replace('/^[<>=!~^]*\s*/', '', $origin)) !== 1;
-        \preg_match('/^[<>=!~^]*/', $origin, $operator);
-        if ($bounds !== [] && (
-            !$singleTerm
-            || \preg_match('/\d/', \implode('', $bounds)) === 1
-            || \in_array($operator[0], ['>', '<', '<=', '!=', '<>'], true)
-        )) {
+        # A single version with a pre-release or any other tail names one release: "2.0-beta" accepts neither
+        # "2.0.0-beta.3" nor "2.0.0", and "2.12.0-hotfix" not "2.12.0-hotfix.2"; a bare number covers every build
+        # of that number, see Comparison. In a range, a pre-release bound, a bare "-beta" included, is a part of
+        # the version as in Composer, ">2.0-beta" accepts "2.0.0-RC1", and any other suffix is a feature.
+        $range = null;
+        $tail = '';
+        if (\preg_match('/^(?:==?)?\s*v?(\d+(?:\.\d+)*(?:\+\d+)?)(?:-([\w.-]+))?$/i', $origin, $exact) === 1) {
+            /** @var non-empty-string $number */
+            $number = $exact[1];
+            $tail = $exact[2] ?? '';
+            $range = Comparison::create(Operator::Equal, $number, $tail);
+            $stability ??= $range->bound->stability;
+        } elseif (($bounds = self::preReleaseBounds($origin)) !== []) {
             $range = Range::fromString($origin);
             $stability ??= self::lowestStability($bounds);
+            $singleTerm = \preg_match('/[\s,|]/', (string) \preg_replace('/^[<>=!~^]*\s*/', '', $origin)) !== 1;
+            $singleTerm and $tail = $bounds[0];
+        }
 
-            if ($singleTerm && ($preRelease = PreRelease::fromString($bounds[0])) !== null) {
-                $origin = \substr($origin, 0, -\strlen($bounds[0]) - 1);
-            }
+        if (($preRelease = PreRelease::fromString($tail)) !== null) {
+            $origin = \substr($origin, 0, -\strlen($tail) - 1);
         }
         $this->preRelease = $preRelease;
 
@@ -136,18 +134,17 @@ final class Constraint implements \Stringable
     /**
      * Parse version constraint string into DTO.
      *
-     * Handles both @stability and -stability syntax equivalence.
-     * Auto-converts stability keywords in suffixes to stability constraints.
-     *
      * Examples:
      * - "^2.12.0" -> baseVersion: "^2.12.0", featureSuffix: null, minimumStability: Stable
-     * - "^2.12.0-feature" -> baseVersion: "^2.12.0", featureSuffix: "feature", minimumStability: Stable
-     * - "^2.12.0-my-feature" -> baseVersion: "^2.12.0", featureSuffix: "my-feature", minimumStability: Stable
+     * - "^2.12.0-feature" -> baseVersion: "^2.12.0", featureSuffix: "feature", minimumStability: Preview
+     * - "^2.12.0-my-feature" -> baseVersion: "^2.12.0", featureSuffix: "my-feature", minimumStability: Preview
      * - "^2.12.0@beta" -> baseVersion: "^2.12.0", featureSuffix: null, minimumStability: Beta
-     * - "^2.12.0-beta" -> baseVersion: "^2.12.0", featureSuffix: null, minimumStability: Beta (auto-converted)
+     * - "^2.12.0-beta" -> baseVersion: "^2.12.0", preRelease: beta, minimumStability: Beta
+     * - "^2.12.0-beta@alpha" -> baseVersion: "^2.12.0", preRelease: beta, minimumStability: Alpha
      * - "^2.12.0-feature@beta" -> baseVersion: "^2.12.0", featureSuffix: "feature", minimumStability: Beta
-     * - "^2.12.0-my-beta-feature@stable" -> baseVersion: "^2.12.0-my-beta", featureSuffix: "feature", minimumStability: Stable
+     * - "^2.12.0-my-beta-feature@stable" -> baseVersion: "^2.12.0", featureSuffix: "my-beta-feature", minimumStability: Stable
      * - "3.5.0-beta.1" -> baseVersion: "3.5.0", preRelease: beta.1, minimumStability: Beta
+     * - "2.12.0-hotfix" -> baseVersion: "2.12.0-hotfix", featureSuffix: null, minimumStability: Preview
      *
      * @param string $constraint Version constraint string
      * @return self Parsed version constraint

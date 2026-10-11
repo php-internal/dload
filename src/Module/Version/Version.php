@@ -85,6 +85,8 @@ class Version implements \Stringable
      * Orders versions by the version number, then by the pre-release: `1.0.0-beta.2 < 1.0.0-RC1 < 1.0.0`,
      * then by the rest of the suffix, a version without one first:
      * `1.0.0-RC1 < 1.0.0-RC1-priority.0 < 1.0.0-RC1-priority.1`.
+     * Only the same release compares as 0: words of the suffix tell builds apart, `1.0.0-amd64 < 1.0.0-arm64`,
+     * while case, separators and leading zeros do not, `1.0.0-Linux_x64.01` equals `1.0.0-linux-x64.1`.
      * A version without a number comes first.
      *
      * @return int<-1, 1>
@@ -97,8 +99,13 @@ class Version implements \Stringable
         }
 
         $byPreRelease = $this->preRelease->compare($other->preRelease);
+        if ($byPreRelease !== 0) {
+            return $byPreRelease;
+        }
 
-        return $byPreRelease !== 0 ? $byPreRelease : \version_compare((string) $this->suffix, (string) $other->suffix);
+        # version_compare() takes every word it does not know for the same one, `arm` for `amd`
+        return \version_compare((string) $this->suffix, (string) $other->suffix)
+            ?: self::words($this->suffix) <=> self::words($other->suffix);
     }
 
     /**
@@ -146,6 +153,16 @@ class Version implements \Stringable
         }
 
         return null;
+    }
+
+    /**
+     * Letter runs of the suffix in lower case, like `linux.x` of `Linux_x64`.
+     */
+    private static function words(?string $suffix): string
+    {
+        \preg_match_all('/[a-z]+/i', (string) $suffix, $matches);
+
+        return \strtolower(\implode('.', $matches[0]));
     }
 
     /**
