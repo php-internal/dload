@@ -13,7 +13,7 @@ namespace Internal\DLoad\Module\Version;
  * - Wildcards: `*`, `1.*`, `1.2.x`
  * - Hyphen ranges: `1.0 - 2.0`
  * - AND by a space or a comma, OR by `||` or `|`: `>=1.0 <2.0 || ^3.0`
- * - A `v` prefix, pre-releases and numeric tails in bounds: `v1.2.3`, `^3.5.0-beta.1`, `>=1.0.0-1`
+ * - A `v` prefix, pre-releases and numeric tails in bounds: `v1.2.3`, `^3.5.0-beta.1`, `^2.0.0rc1`, `>=1.0.0-1`
  *
  * Any count of number parts is supported on both sides, and trailing zero parts do not count.
  *
@@ -49,6 +49,23 @@ final class Range
         return new self($groups);
     }
 
+    /**
+     * Regular expression of a bound pre-release with its separator, to follow the version number: after a hyphen,
+     * a stability keyword with an optional number, like `-beta.1`, or a numeric tail, like `-1` of `1.0.0-1`,
+     * that orders as a part of the number; a keyword may also follow a dot, an underscore or the number itself,
+     * like `rc1` of `2.0.0rc1`. As {@see Version} reads tags, a lone `a` or `b` glued to the number is a patch
+     * letter, like the `b` of OpenSSL's `1.1.1b`, not a pre-release. The pattern ends at the keyword or its number:
+     * the caller makes sure no letter follows.
+     *
+     * @return non-empty-string
+     */
+    public static function preReleasePattern(): string
+    {
+        $keyword = '(?:' . PreRelease::keywordPattern() . ')(?:[._-]?\d+)?';
+
+        return "-(?:{$keyword}|\\d+(?:\\.\\d+)*)|(?:[._]|(?![ab](?![a-z]|[._-]?\\d))){$keyword}";
+    }
+
     public function isSatisfiedBy(Version $version): bool
     {
         foreach ($this->groups as $comparisons) {
@@ -71,7 +88,7 @@ final class Range
     {
         $group === '' and throw new \InvalidArgumentException("Empty alternative in the version constraint `{$constraint}`.");
 
-        $version = '(v?\d+(?:\.\d+)*(?:\+\d+)?(?:-(?:' . self::preReleasePattern() . '))?)';
+        $version = '(v?\d+(?:\.\d+)*(?:\+\d+)?(?:' . self::preReleasePattern() . ')?)';
         if (\preg_match("/^{$version}\\s+-\\s+{$version}$/i", $group, $matches) === 1) {
             return self::parseHyphenRange($matches[1], $matches[2]);
         }
@@ -170,12 +187,13 @@ final class Range
     }
 
     /**
-     * @return array{non-empty-string, string}|null Version number and pre-release, or null if the text is not a version.
+     * @return array{non-empty-string, string}|null Version number and pre-release with its separator,
+     *         or null if the text is not a version.
      */
     private static function parseVersion(string $version): ?array
     {
         # Build metadata does not count, so the number goes without it
-        $pattern = '/^v?(\d+(?:\.\d+)*)(?:\+\d+)?(?:-(' . self::preReleasePattern() . '))?$/i';
+        $pattern = '/^v?(\d+(?:\.\d+)*)(?:\+\d+)?(' . self::preReleasePattern() . ')?$/i';
         if (\preg_match($pattern, $version, $matches) !== 1) {
             return null;
         }
@@ -238,16 +256,5 @@ final class Range
     private static function parts(string $number): array
     {
         return \explode('.', $number);
-    }
-
-    /**
-     * Regular expression of a bound pre-release after its hyphen: a stability keyword with an optional number,
-     * like `beta.1`, or a numeric tail, like `1` of `1.0.0-1`, that orders as a part of the number.
-     *
-     * @return non-empty-string
-     */
-    private static function preReleasePattern(): string
-    {
-        return '(?:' . PreRelease::keywordPattern() . ')(?:[._-]?\d+)?|\d+(?:\.\d+)*';
     }
 }

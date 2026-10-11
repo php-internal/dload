@@ -242,6 +242,21 @@ final class RangeTest
         yield ['^1.2.3.4.5-beta.1', '1.2.3.4.5-alpha', false];
         yield ['>=1.0.0-beta', '1.0.0-beta.3', true];
 
+        // A pre-release glued to the number, as tags spell it
+        yield ['^2.0.0rc1', '2.0.0rc1', true];
+        yield ['^2.0.0rc1', '2.0.0-RC2', true];
+        yield ['^2.0.0rc1', '2.0.0-beta', false];
+        yield ['>=1.21rc1', '1.21.0-RC1', true];
+        yield ['>=1.21rc1', '1.21.0-beta.9', false];
+        yield ['2.0.0RC1', '2.0.0-rc.1', true];
+        yield ['^2.0.0.rc1', '2.0.0-RC2', true];
+        yield ['^2.0.0_rc1', '2.0.0-RC1', true];
+        yield ['^1.0b2', '1.0.0-beta.2', true];
+        yield ['^1.0b2', '1.0.0-beta.1', false];
+        yield ['1.2a.3', '1.2.0-alpha.3', true];
+        yield ['1.0 - 2.0rc1', '2.0.0-RC1', true];
+        yield ['1.0 - 2.0rc1', '2.0.0', false];
+
         // A numeric tail is a part of the number, in matching as in sorting
         yield ['<3.5.0-preview.3', '3.5.0-1', false];
         yield ['>=3.5.0-preview.3', '3.5.0-1', true];
@@ -280,7 +295,10 @@ final class RangeTest
         yield 'word' => ['abc', 'Invalid base version format: abc.'];
         yield 'branch' => ['dev-master', 'Invalid base version format: dev-master.'];
         yield 'feature suffix' => ['1.2.3-feature', 'Invalid base version format: 1.2.3-feature.'];
-        yield 'letter in the number' => ['1.2a.3', 'Invalid base version format: 1.2a.3.'];
+        yield 'letter in the number' => ['1.2x.3', 'Invalid base version format: 1.2x.3.'];
+        yield 'lone patch letter' => ['^1.1.1b', 'Invalid base version format: ^1.1.1b.'];
+        yield 'word glued to a pre-release' => ['^2.0.0rc1x', 'Invalid base version format: ^2.0.0rc1x.'];
+        yield 'word starting with a pre-release' => ['^2.0.0prerelease', 'Invalid base version format: ^2.0.0prerelease.'];
         yield 'wildcard inside the number' => ['1.*.2', 'Invalid base version format: 1.*.2.'];
         yield 'operator without a version' => ['>=', 'Invalid base version format: >=.'];
         yield 'reversed operator' => ['=>1.0', 'Unsupported operator `=>` in the version constraint `=>1.0`.'];

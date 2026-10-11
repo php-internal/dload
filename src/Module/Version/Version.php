@@ -83,10 +83,7 @@ class Version implements \Stringable
 
     /**
      * Orders versions by the version number, then by the pre-release: `1.0.0-beta.2 < 1.0.0-RC1 < 1.0.0`,
-     * then by the rest of the suffix, a version without one first:
-     * `1.0.0-RC1 < 1.0.0-RC1-priority.0 < 1.0.0-RC1-priority.1`.
-     * Only the same release compares as 0: words of the suffix tell builds apart, `1.0.0-amd64 < 1.0.0-arm64`,
-     * while case, separators and leading zeros do not, `1.0.0-Linux_x64.01` equals `1.0.0-linux-x64.1`.
+     * then by the rest of the suffix, see {@see compareTail()}: `1.0.0-RC1 < 1.0.0-RC1-priority.0`.
      * A version without a number comes first.
      *
      * @return int<-1, 1>
@@ -103,9 +100,7 @@ class Version implements \Stringable
             return $byPreRelease;
         }
 
-        # version_compare() takes every word it does not know for the same one, `arm` for `amd`
-        return \version_compare((string) $this->suffix, (string) $other->suffix)
-            ?: self::words($this->suffix) <=> self::words($other->suffix);
+        return self::compareTail($this->suffix, $other->suffix);
     }
 
     /**
@@ -156,13 +151,53 @@ class Version implements \Stringable
     }
 
     /**
-     * Letter runs of the suffix in lower case, like `linux.x` of `Linux_x64`.
+     * Orders the suffixes left after the pre-release token by token, a token being a run of digits or of letters.
+     * A suffix that ends where the other goes on comes first: `RC1 < RC1-priority.0`. A word comes before
+     * a number, as a word suffix sorts below the final release and a numeric one above it:
+     * `beta.1-linux < beta.1.2`. Numbers compare by value, words alphabetically. Stability keywords mean
+     * nothing here, so `arm64` is no alpha, and neither do case, separators and leading zeros:
+     * `Linux_x64.01` equals `linux-x64.1`.
+     *
+     * @return int<-1, 1>
      */
-    private static function words(?string $suffix): string
+    private static function compareTail(?string $suffix, ?string $other): int
     {
-        \preg_match_all('/[a-z]+/i', (string) $suffix, $matches);
+        $tokens = self::tokens($suffix);
+        $otherTokens = self::tokens($other);
+        foreach ($tokens as $i => $token) {
+            if (!isset($otherTokens[$i])) {
+                return 1;
+            }
 
-        return \strtolower(\implode('.', $matches[0]));
+            $otherToken = $otherTokens[$i];
+            $isNumber = \ctype_digit($token);
+            $byToken = match (true) {
+                $isNumber !== \ctype_digit($otherToken) => $isNumber ? 1 : -1,
+                # Digit strings of any length: as integers, long ones would overflow
+                $isNumber => (\strlen($token) <=> \strlen($otherToken)) ?: \strcmp($token, $otherToken) <=> 0,
+                default => \strcmp($token, $otherToken) <=> 0,
+            };
+            if ($byToken !== 0) {
+                return $byToken;
+            }
+        }
+
+        return \count($tokens) <=> \count($otherTokens);
+    }
+
+    /**
+     * Words in lower case and numbers without leading zeros, like `linux`, `x`, `64` and `1` of `Linux_x64.01`.
+     *
+     * @return list<string>
+     */
+    private static function tokens(?string $suffix): array
+    {
+        \preg_match_all('/\d+|[a-z]+/i', (string) $suffix, $matches);
+
+        return \array_map(
+            static fn(string $token): string => \ctype_digit($token) ? (\ltrim($token, '0') ?: '0') : \strtolower($token),
+            $matches[0],
+        );
     }
 
     /**

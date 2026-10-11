@@ -23,15 +23,12 @@ final class Comparison
 
     /**
      * @param non-empty-string $number Version number, e.g. `1.2.3`
-     * @param string $preRelease Pre-release or another tail of the bound, e.g. `beta.1` or `hotfix`; empty for none
+     * @param string $tail Pre-release or another tail of the bound with its separator, e.g. `-beta.1`, `rc1`
+     *        or `-hotfix`, read as {@see Version} reads it; empty for none
      */
-    public static function create(Operator $operator, string $number, string $preRelease = ''): self
+    public static function create(Operator $operator, string $number, string $tail = ''): self
     {
-        return new self(
-            $operator,
-            Version::fromVersionString($preRelease === '' ? $number : "{$number}-{$preRelease}"),
-            $preRelease !== '',
-        );
+        return new self($operator, Version::fromVersionString($number . $tail), $tail !== '');
     }
 
     public function isSatisfiedBy(Version $version): bool

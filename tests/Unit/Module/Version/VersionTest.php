@@ -75,6 +75,13 @@ final class VersionTest
         yield 'words of the suffix' => ['1.0.0-amd64', '1.0.0-arm64'];
         yield 'words after the pre-release' => ['1.0.0-RC1-darwin', '1.0.0-RC1-linux'];
         yield 'patch abbreviation and the whole word' => ['1.0.0-p1', '1.0.0-patch1'];
+        yield 'word before a number' => ['2.0.0-beta.1-linux', '2.0.0-beta.1.2'];
+        yield 'word before a number at the start of the tail' => ['1.0.0-x.1', '1.0.0-1.x'];
+        yield 'platform word is no alpha' => ['1.0.0-arm64', '1.0.0-linux'];
+        yield 'patch abbreviation is no patch level' => ['1.0.0-p1', '1.0.0-x1'];
+        yield 'number after a word' => ['1.0.0-build.9', '1.0.0-build.10'];
+        yield 'long numbers' => ['1.0.0-build.99999999999999999998', '1.0.0-build.99999999999999999999'];
+        yield 'words alphabetically in any case' => ['1.0.0-Darwin', '1.0.0-linux'];
     }
 
     public static function provideEqualVersions(): \Generator
@@ -89,6 +96,13 @@ final class VersionTest
         yield 'build metadata after two parts' => ['1.2', '1.2+5'];
         yield 'build metadata after one part' => ['1', '1+2'];
         yield 'case, separators and leading zeros of the suffix' => ['1.0.0-Linux_x64.01', '1.0.0-linux-x64.1'];
+        yield 'case of a platform word' => ['1.0.0-arm64', '1.0.0-ARM64'];
+        yield 'case of a patch word' => ['2.12.0-patch1', '2.12.0-Patch1'];
+        yield 'case of a platform word after a pre-release' => ['1.0.0-beta-amd64', '1.0.0-beta-AMD64'];
+        yield 'case of a patch abbreviation' => ['1.0.0-p1', '1.0.0-P1'];
+        yield 'case of a release candidate' => ['1.0.0-RC', '1.0.0-rc'];
+        yield 'case and separator of a word' => ['1.0.0-final', '1.0.0.Final'];
+        yield 'pre-release before or after a platform' => ['1.0.0-rc1-arm64', '1.0.0-arm64-rc1'];
     }
 
     /**

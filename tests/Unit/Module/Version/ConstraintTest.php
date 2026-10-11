@@ -269,6 +269,10 @@ final class ConstraintTest
         yield 'exact feature build' => ['2.12.0-hotfix', '2.12.0-hotfix', null, Stability::Preview, 'Exact feature build'];
         yield 'exact pre-release after a feature' => ['=1.0-arm64-beta.1', '=1.0-arm64-beta.1', null, Stability::Beta, 'Exact pre-release after a feature'];
         yield 'exact feature build with an explicit stability' => ['2.12.0-hotfix@rc', '2.12.0-hotfix', null, Stability::RC, 'Explicit stability of an exact build'];
+        yield 'exact patch letter' => ['1.1.1w', '1.1.1w', null, Stability::Preview, 'Patch letter'];
+        yield 'exact patch letter of an alpha abbreviation' => ['1.1.1a', '1.1.1a', null, Stability::Preview, 'Patch letter a'];
+        yield 'exact word after a dot' => ['1.0.0.Final', '1.0.0.Final', null, Stability::Preview, 'Word after a dot'];
+        yield 'glued release candidate with an explicit stability' => ['^2.0.0rc1@beta', '^2.0.0', null, Stability::Beta, 'Glued bound'];
     }
 
     public static function provideInvalidConstraints(): \Generator
@@ -591,6 +595,42 @@ final class ConstraintTest
         yield 'not equal to a bare keyword on its release' => ['!=2.0-beta', 'v2.0.0', true];
         yield 'not equal to a bare keyword on an earlier stability' => ['!=2.0-beta', 'v2.0.0-alpha', false];
         yield 'not equal to a bare keyword in the Composer spelling' => ['<>2.0-beta', 'v2.0.0-RC1', true];
+
+        // Case does not matter, neither in a tail nor in a feature
+        yield 'exact platform build in another case' => ['1.0.0-arm64', 'v1.0.0-ARM64', true];
+        yield 'exact platform build in mixed case' => ['1.0.0-arm64', 'v1.0.0-Arm64', true];
+        yield 'exact patch build in another case' => ['2.12.0-patch1', 'v2.12.0-Patch1', true];
+        yield 'exact platform build of a pre-release in another case' => ['1.0.0-beta-amd64', 'v1.0.0-beta-AMD64', true];
+        yield 'exact patch abbreviation in another case' => ['1.0.0-p1', 'v1.0.0-P1', true];
+        yield 'exact release candidate in another case' => ['2.0.0-RC', 'v2.0.0-rc', true];
+        yield 'feature in another case' => ['^1.0-Linux', 'v1.0.0-linux', true];
+        yield 'feature in another case on another feature' => ['^1.0-Linux', 'v1.0.0-darwin', false];
+
+        // A `v` prefix or build metadata before a tail
+        yield 'prefixed exact feature build on a numbered one' => ['v2.12.0-hotfix', '2.12.0-hotfix.2', false];
+        yield 'prefixed exact feature build' => ['v2.12.0-hotfix', '2.12.0-hotfix', true];
+        yield 'exact feature build after build metadata on a numbered one' => ['1.2.3+5-hotfix', '1.2.3-hotfix.2', false];
+        yield 'exact feature build after build metadata' => ['1.2.3+5-hotfix', '1.2.3-hotfix', true];
+        yield 'above a prefixed bare keyword on a release candidate' => ['>v2.0-beta', '2.0.0-RC1', true];
+        yield 'caret from a bare keyword after build metadata on a release candidate' => ['^1.2.3+5-beta@alpha', '1.2.3-RC1', true];
+
+        // A pre-release glued to the number
+        yield 'caret from a glued release candidate on itself' => ['^2.0.0rc1', '2.0.0rc1', true];
+        yield 'caret from a glued release candidate on the next one' => ['^2.0.0rc1', 'v2.0.0-RC2', true];
+        yield 'caret from a glued release candidate on its release' => ['^2.0.0rc1', '2.0.0', true];
+        yield 'caret from a glued release candidate on a later release' => ['^2.0.0rc1', '2.1.0', true];
+        yield 'caret from a glued release candidate on a beta' => ['^2.0.0rc1@beta', '2.0.0-beta', false];
+        yield 'at least a glued release candidate on its release' => ['>=1.21rc1', '1.21.0', true];
+        yield 'at least a glued release candidate on a later beta' => ['>=1.21rc1', '1.22.0-beta', false];
+        yield 'exact glued release candidate' => ['2.0.0rc1', 'v2.0.0-RC1', true];
+        yield 'exact glued release candidate on its release' => ['2.0.0rc1', '2.0.0', false];
+        yield 'exact glued release candidate on a platform build' => ['2.0.0rc1', '2.0.0rc1-linux', false];
+        yield 'exact patch letter' => ['1.1.1w', '1.1.1w', true];
+        yield 'exact patch letter on its number' => ['1.1.1w', '1.1.1', false];
+        yield 'exact patch letter a' => ['1.1.1a', '1.1.1a', true];
+        yield 'exact patch letter a on an alpha' => ['1.1.1a@alpha', '1.1.1-alpha', false];
+        yield 'exact word after a dot' => ['1.0.0.Final', '1.0.0-final', true];
+        yield 'dev branch is no exact word after a dot' => ['1.0.x-dev', '1.0.5-dev', true];
     }
 
     /**
@@ -623,6 +663,10 @@ final class ConstraintTest
         yield 'bare stability keyword after a comparison' => ['>3.5.0-beta', '>3.5.0', Stability::Beta, 0, Stability::Beta];
         yield 'five number parts' => ['^1.2.3.4.5-rc.1', '^1.2.3.4.5', Stability::RC, 1, Stability::RC];
         yield 'build metadata before a pre-release' => ['1.2.3+5-beta.1', '1.2.3+5', Stability::Beta, 1, Stability::Beta];
+        yield 'release candidate glued to the number of a caret' => ['^2.0.0rc1', '^2.0.0', Stability::RC, 1, Stability::RC];
+        yield 'release candidate glued to an exact number' => ['2.0.0rc1', '2.0.0', Stability::RC, 1, Stability::RC];
+        yield 'release candidate after a dot' => ['=2.0.0.RC2', '=2.0.0', Stability::RC, 2, Stability::RC];
+        yield 'beta abbreviation glued to the number of at least' => ['>=1.21b3', '>=1.21', Stability::Beta, 3, Stability::Beta];
     }
 
     #[DataProvider('provideValidConstraints')]
