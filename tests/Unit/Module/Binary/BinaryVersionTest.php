@@ -263,6 +263,23 @@ final class BinaryVersionTest
         Assert::same(BinaryVersion::fromBinaryOutput($output)->stability, $stability);
     }
 
+    #[DataSet(['tool 1.2.3beta2', '1.2.3', Stability::Beta, 2], 'beta word with a number')]
+    #[DataSet(['tool 2.0.0alpha', '2.0.0', Stability::Alpha, 0], 'alpha word')]
+    #[Test]
+    public function preReleaseWordGluedToTheNumberIsNotAPatchLetter(
+        string $output,
+        string $number,
+        Stability $stability,
+        int $preReleaseNumber,
+    ): void {
+        $result = BinaryVersion::fromBinaryOutput($output);
+
+        Assert::same($result->number, $number);
+        Assert::same($result->stability, $stability);
+        Assert::same($result->preRelease?->stability, $stability);
+        Assert::same($result->preRelease?->number, $preReleaseNumber);
+    }
+
     /**
      * Tests that the resolver correctly extracts versions using fallback patterns.
      */
