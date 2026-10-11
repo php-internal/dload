@@ -349,7 +349,7 @@ Use Composer-style version constraints:
 </actions>
 ```
 
-A pre-release in a constraint sets the minimum stability for any operator, even for `<3.5.0-beta.2`; lower it with `@alpha` or `@dev`.
+A pre-release in a constraint sets the minimum stability for any operator, even for `<3.5.0-beta.2`; lower it with `@alpha` or `@dev`. After `>`, `<`, `<=` or `!=` a keyword without a number is a bound too, as in Composer: `>2.0-beta` takes `2.0.0-RC1` and `2.0.0`.
 
 ### Advanced Configuration Options
 

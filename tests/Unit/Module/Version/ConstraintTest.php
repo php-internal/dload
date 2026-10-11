@@ -250,6 +250,20 @@ final class ConstraintTest
         yield 'least stable of pre-release bounds' => ['>=1.0.0-alpha.1 <2.0.0-RC1', '>=1.0.0-alpha.1 <2.0.0-RC1', null, Stability::Alpha, 'Least stable bound'];
         yield 'bare stability keyword in a range' => ['>=1.0-beta <2.0', '>=1.0-beta <2.0', null, Stability::Beta, 'Bare keyword bound'];
         yield 'explicit stability over pre-release bounds' => ['>=3.5.0-beta.1 <3.5.0@alpha', '>=3.5.0-beta.1 <3.5.0', null, Stability::Alpha, 'Explicit stability'];
+        yield 'pre-release bound with a space after the operator' => ['>= 1.0-beta.1 <2.0', '>= 1.0-beta.1 <2.0', null, Stability::Beta, 'Spaced bound'];
+        yield 'bare stability keywords of a hyphen range' => ['1.0-beta - 2.0-RC1', '1.0-beta - 2.0-RC1', null, Stability::Beta, 'Hyphen range bounds'];
+        yield 'pre-release after alternatives without spaces' => ['^1.0||^2.0-beta.1', '^1.0||^2.0-beta.1', null, Stability::Beta, 'Glued alternatives'];
+        yield 'bare stability keyword with an explicit stability is a feature' => ['^2.0-beta@alpha', '^2.0', 'beta', Stability::Alpha, 'Keyword feature of a caret'];
+        yield 'bare stability keyword at least with an explicit stability is a feature' => ['>=2.0-beta@alpha', '>=2.0', 'beta', Stability::Alpha, 'Keyword feature of at least'];
+        yield 'bare stability keyword of a tilde with an explicit stability is a feature' => ['~2.0-beta@alpha', '~2.0', 'beta', Stability::Alpha, 'Keyword feature of a tilde'];
+        yield 'pre-release bound after a comma without a space' => ['>=1.0,<2.0-RC1', '>=1.0,<2.0-RC1', null, Stability::RC, 'Comma before a bound'];
+
+        // A digit within a feature suffix is no pre-release bound
+        yield 'numeric tail of a feature suffix' => ['^1.0.0-x64-1', '^1.0.0', 'x64-1', Stability::Preview, 'Numeric tail of a feature'];
+        yield 'numbered pre-release after a feature' => ['^1.0-arm64-beta.1', '^1.0', 'arm64-beta.1', Stability::Preview, 'Pre-release after a feature'];
+        yield 'glued pre-release after a feature' => ['^1.0.0-x64-rc1', '^1.0.0', 'x64-rc1', Stability::Preview, 'Glued pre-release after a feature'];
+        yield 'numeric tail of a feature with a digit' => ['^2.0-php8-1', '^2.0', 'php8-1', Stability::Preview, 'Feature with a digit'];
+        yield 'numeric tail after a numbered pre-release' => ['1.0.0-beta.1-2', '1.0.0', 'beta.1-2', Stability::Preview, 'Tail after a pre-release'];
     }
 
     public static function provideInvalidConstraints(): \Generator
@@ -442,6 +456,8 @@ final class ConstraintTest
 
         // A bare stability keyword still matches every pre-release of that stability
         yield 'bare stability keyword' => ['3.5.0-beta', 'v3.5.0-beta.3', true];
+        yield 'bare stability keyword after an equal sign' => ['=3.5.0-beta', 'v3.5.0-beta.3', true];
+        yield 'bare stability keyword after a double equal sign' => ['==3.5.0-beta', 'v3.5.0-beta.3', true];
 
         // A numeric tail orders as a part of the number, in matching as in sorting
         yield 'numeric tail below a pre-release bound' => ['<3.5.0-preview.3', 'v3.5.0-1', false];
@@ -509,6 +525,51 @@ final class ConstraintTest
         yield 'feature with a stability on a feature build' => ['^2.12.0-hotfix@rc', 'v2.12.0-hotfix', false];
         yield 'single word feature' => ['^2.12.0-experimental', 'v2.12.0-experimental', true];
         yield 'single word feature on a release' => ['^2.12.0-experimental', 'v2.13.0', false];
+
+        // A digit within a feature suffix is no pre-release bound
+        yield 'numeric tail of a feature suffix' => ['^1.0.0-x64-1', 'v1.0.0-x64-1', true];
+        yield 'numeric tail of a feature with a digit' => ['^2.0-php8-1', 'v2.0.0-php8-1', true];
+
+        // A bare stability keyword after a comparison is a bound, as in Composer
+        yield 'above a bare keyword on a later pre-release' => ['>2.0-beta', 'v2.0.0-beta.1', true];
+        yield 'above a bare keyword on a release candidate' => ['>2.0-beta', 'v2.0.0-RC1', true];
+        yield 'above a bare keyword on its release' => ['>2.0-beta', 'v2.0.0', true];
+        yield 'above a bare keyword on a later release' => ['>2.0-beta', 'v2.1.0', true];
+        yield 'above a bare keyword on its bound' => ['>2.0-beta', 'v2.0.0-beta', false];
+        yield 'above a bare keyword on an earlier stability' => ['>2.0-beta', 'v2.0.0-alpha', false];
+        yield 'above a bare keyword with a looser stability' => ['>2.0-beta@alpha', 'v2.0.0-alpha', false];
+        yield 'above a zero numbered pre-release on a release candidate' => ['>2.0-beta.0', 'v2.0.0-RC1', true];
+        yield 'above a zero numbered pre-release on the bare keyword' => ['>2.0-beta.0', 'v2.0.0-beta', false];
+        yield 'at most a bare keyword on its release' => ['<=2.0-beta', 'v2.0.0', false];
+        yield 'at most a bare keyword on a later pre-release' => ['<=2.0-beta', 'v2.0.0-beta.1', false];
+        yield 'at most a bare keyword on its bound' => ['<=2.0-beta', 'v2.0.0-beta', true];
+        yield 'at most a bare keyword on an earlier release' => ['<=2.0-beta', 'v1.9.0', true];
+        yield 'at most a bare keyword with a looser stability' => ['<=2.0-beta@alpha', 'v2.0.0-alpha', true];
+        yield 'below a bare keyword on an earlier stability' => ['<2.0-beta', 'v2.0.0-alpha', false];
+        yield 'not equal to a bare keyword on its bound' => ['!=2.0-beta', 'v2.0.0-beta', false];
+        yield 'not equal to a bare keyword on a zero numbered spelling' => ['!=2.0-beta', 'v2.0.0-beta.0', false];
+        yield 'not equal to a bare keyword on a later pre-release' => ['!=2.0-beta', 'v2.0.0-beta.1', true];
+        yield 'not equal to a bare keyword on its release' => ['!=2.0-beta', 'v2.0.0', true];
+        yield 'not equal to a bare keyword on an earlier stability' => ['!=2.0-beta', 'v2.0.0-alpha', false];
+        yield 'not equal to a bare keyword in the Composer spelling' => ['<>2.0-beta', 'v2.0.0-RC1', true];
+    }
+
+    /**
+     * Bare stability keywords that match alone as in a range.
+     * Without an operator or after `=`, a bare keyword is a stability of the single version;
+     * after `^`, `~` or `>=` with an explicit stability, it is a feature suffix.
+     */
+    public static function provideBareKeywordConstraints(): \Generator
+    {
+        foreach (['^', '~', '>=', '>', '<', '<=', '!=', '<>'] as $operator) {
+            foreach (['dev', 'alpha', 'beta', 'RC'] as $keyword) {
+                yield "{$operator}2.0-{$keyword}" => ["{$operator}2.0-{$keyword}", ''];
+                \in_array($operator, ['^', '~', '>='], true) or yield "{$operator}2.0-{$keyword}@alpha" => [
+                    "{$operator}2.0-{$keyword}",
+                    '@alpha',
+                ];
+            }
+        }
     }
 
     public static function providePreReleases(): \Generator
@@ -522,7 +583,9 @@ final class ConstraintTest
         yield 'bare stability keyword' => ['3.5.0-beta', '3.5.0', null, null, Stability::Beta];
         yield 'prefixed version' => ['v3.5.0-beta.1', 'v3.5.0', Stability::Beta, 1, Stability::Beta];
         yield 'not equal' => ['!=3.5.0-beta.1', '!=3.5.0', Stability::Beta, 1, Stability::Beta];
+        yield 'bare stability keyword after a comparison' => ['>3.5.0-beta', '>3.5.0', Stability::Beta, 0, Stability::Beta];
         yield 'five number parts' => ['^1.2.3.4.5-rc.1', '^1.2.3.4.5', Stability::RC, 1, Stability::RC];
+        yield 'build metadata before a pre-release' => ['1.2.3+5-beta.1', '1.2.3+5', Stability::Beta, 1, Stability::Beta];
     }
 
     #[DataProvider('provideValidConstraints')]
@@ -623,5 +686,31 @@ final class ConstraintTest
         $result = $constraintObj->isSatisfiedBy($versionObj);
 
         Assert::same($result, $expected, "Constraint: {$constraint}, Version: {$version}");
+    }
+
+    #[DataProvider('provideBareKeywordConstraints')]
+    #[Test]
+    public function bareKeywordMatchesAloneAsInRanges(string $constraint, string $stability): void
+    {
+        $alone = Constraint::fromConstraintString($constraint . $stability);
+        $ranges = [
+            Constraint::fromConstraintString("{$constraint} >=0{$stability}"),
+            Constraint::fromConstraintString("{$constraint} || <0{$stability}"),
+        ];
+
+        foreach (['1.9.0', '2.0.0-dev', '2.0.0-alpha', '2.0.0-alpha.2', '2.0.0-beta', '2.0.0-beta.0', '2.0.0-beta.1',
+            '2.0.0-beta-linux', '2.0.0-RC', '2.0.0-RC1', '2.0.0-linux', '2.0.0-1', '2.0.0', '2.0.1-beta', '2.0.1',
+            '2.1.0', '3.0.0-beta', '3.0.0'] as $string) {
+            $version = Version::fromVersionString($string);
+            foreach ($ranges as $range) {
+                Assert::same(
+                    $alone->isSatisfiedBy($version),
+                    $range->isSatisfiedBy($version),
+                    "{$alone} and {$range} on {$string}",
+                );
+            }
+        }
+
+        Assert::same($alone->minimumStability, $ranges[0]->minimumStability);
     }
 }

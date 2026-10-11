@@ -17,7 +17,7 @@ use Internal\DLoad\Module\Common\Stability;
  *   * Implicit: ^2.12.0-beta, ~1.20.0-stable
  * - Combined constraints: ^2.12.0-feature@beta
  * - Numbered pre-releases: 3.5.0-beta.1, ^3.5.0-RC2, 1.0.0-nightly20250503
- * - Pre-release bounds of ranges: >=3.5.0-beta.1 <3.5.0-RC1, ^1.0 || ^2.0-beta.1
+ * - Pre-release bounds of ranges and comparisons: >=3.5.0-beta.1 <3.5.0-RC1, ^1.0 || ^2.0-beta.1, >2.0-beta
  * - Numeric tails: 1.0.0-1, >=1.0.0-1
  *
  * Stability keywords (from Stability enum) as suffixes are automatically
@@ -72,11 +72,18 @@ final class Constraint implements \Stringable
 
         # A pre-release bound is a part of the version, not a feature suffix: "3.5.0-beta.1" names one
         # release, and "3.5.0-beta.2" or "3.5.0" must not satisfy it. So is a numeric tail, as in "1.0.0-1".
-        # A bare "-beta" of a single version stays a stability; in a range, like ">=1.0-beta <2.0", it is a bound.
+        # A bare "-beta" is a bound of a range and of a comparison, as in Composer: ">2.0-beta" accepts
+        # "2.0.0-RC1" and "<=2.0-beta" rejects "2.0.0". After other operators of a single term it stays
+        # a stability: "3.5.0-beta" accepts "3.5.0-beta.3".
         $preRelease = $range = null;
         $bounds = self::preReleaseBounds($origin);
         $singleTerm = \preg_match('/[\s,|]/', (string) \preg_replace('/^[<>=!~^]*\s*/', '', $origin)) !== 1;
-        if ($bounds !== [] && (!$singleTerm || \preg_match('/\d/', \implode('', $bounds)) === 1)) {
+        \preg_match('/^[<>=!~^]*/', $origin, $operator);
+        if ($bounds !== [] && (
+            !$singleTerm
+            || \preg_match('/\d/', \implode('', $bounds)) === 1
+            || \in_array($operator[0], ['>', '<', '<=', '!=', '<>'], true)
+        )) {
             $range = Range::fromString($origin);
             $stability ??= self::lowestStability($bounds);
 
@@ -184,14 +191,16 @@ final class Constraint implements \Stringable
 
     /**
      * Pre-releases of the version bounds, like `beta.1` and `1` of `>=1.0.0-1 <2.0.0-beta.1`.
-     * A suffix that runs on past a pre-release, like `-beta.1-feature`, is not a bound.
+     * A bound follows the version number right away: neither a suffix that runs on past a pre-release,
+     * like `-beta.1-feature`, nor a pre-release within a suffix, like `-1` of `1.0.0-x64-1`, is a bound.
      *
      * @return list<non-empty-string>
      */
     private static function preReleaseBounds(string $constraint): array
     {
         \preg_match_all(
-            '/(?<=\d)-((?:' . PreRelease::keywordPattern() . ')(?:[._-]?\d+)?|\d+(?:\.\d+)*)(?=$|[\s,|])/i',
+            '/(?:^|[\s,|])[<>=!~^]*v?\d+(?:\.\d+)*(?:\+\d+)?-((?:' . PreRelease::keywordPattern()
+            . ')(?:[._-]?\d+)?|\d+(?:\.\d+)*)(?=$|[\s,|])/i',
             $constraint,
             $matches,
         );
