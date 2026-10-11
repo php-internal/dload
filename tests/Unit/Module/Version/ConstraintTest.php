@@ -249,6 +249,9 @@ final class ConstraintTest
         yield 'pre-release lower bound of a hyphen range' => ['1.0.0-beta.1 - 2.0.0', '1.0.0-beta.1 - 2.0.0', null, Stability::Beta, 'Pre-release hyphen range'];
         yield 'least stable of pre-release bounds' => ['>=1.0.0-alpha.1 <2.0.0-RC1', '>=1.0.0-alpha.1 <2.0.0-RC1', null, Stability::Alpha, 'Least stable bound'];
         yield 'bare stability keyword in a range' => ['>=1.0-beta <2.0', '>=1.0-beta <2.0', null, Stability::Beta, 'Bare keyword bound'];
+        yield 'bare stability keyword before alternatives without spaces' => ['^1.0-beta||^2.0', '^1.0-beta||^2.0', null, Stability::Beta, 'Bare keyword before ||'];
+        yield 'pre-release after alternatives without spaces' => ['^1.0||^2.0-beta.1', '^1.0||^2.0-beta.1', null, Stability::Beta, 'Pre-release after ||'];
+        yield 'least stable bound last' => ['>=1.0-RC1 || ^2.0-alpha.1', '>=1.0-RC1 || ^2.0-alpha.1', null, Stability::Alpha, 'Least stable bound last'];
         yield 'explicit stability over pre-release bounds' => ['>=3.5.0-beta.1 <3.5.0@alpha', '>=3.5.0-beta.1 <3.5.0', null, Stability::Alpha, 'Explicit stability'];
         yield 'pre-release bound with a space after the operator' => ['>= 1.0-beta.1 <2.0', '>= 1.0-beta.1 <2.0', null, Stability::Beta, 'Spaced bound'];
         yield 'bare stability keywords of a hyphen range' => ['1.0-beta - 2.0-RC1', '1.0-beta - 2.0-RC1', null, Stability::Beta, 'Hyphen range bounds'];
@@ -548,6 +551,17 @@ final class ConstraintTest
         yield 'upper bound without a pre-release below every build of its number' => ['>=3.5.0-beta.1 <3.5.0', 'v3.5.0-beta.2', false];
         yield 'pre-release alternative on its bound' => ['^1.0 || ^2.0-beta.1', 'v2.0.0-beta.1', true];
         yield 'pre-release alternative on another alternative' => ['^1.0 || ^2.0-beta.1', 'v1.5.0', true];
+        yield 'bare keyword before alternatives without spaces on its bound' => ['^1.0-beta||^2.0', 'v1.0.0-beta', true];
+        yield 'bare keyword before alternatives without spaces below its bound' => ['^1.0-beta||^2.0', 'v1.0.0-alpha', false];
+        yield 'bare keyword before alternatives without spaces on another alternative' => ['^1.0-beta||^2.0', 'v2.5.0', true];
+        yield 'bare keyword before alternatives without spaces past them' => ['^1.0-beta||^2.0', 'v3.0.0', false];
+        yield 'pre-release after alternatives without spaces on its bound' => ['^1.0||^2.0-beta.1', 'v2.0.0-beta.1', true];
+        yield 'pre-release after alternatives without spaces below its bound' => ['^1.0||^2.0-beta.1', 'v2.0.0-alpha.1', false];
+        yield 'pre-release after alternatives without spaces on another alternative' => ['^1.0||^2.0-beta.1', 'v1.5.0', true];
+        yield 'pre-release after alternatives without spaces past them' => ['^1.0||^2.0-beta.1', 'v3.0.0', false];
+        yield 'least stable bound last on its bound' => ['>=1.0-RC1 || ^2.0-alpha.1', 'v2.0.0-alpha.1', true];
+        yield 'least stable bound last on a later alpha' => ['>=1.0-RC1 || ^2.0-alpha.1', 'v2.1.0-alpha', true];
+        yield 'least stable bound last below the first bound' => ['>=1.0-RC1 || ^2.0-alpha.1', 'v1.0.0-beta', false];
         yield 'pre-release upper bound on a release below it' => ['>=1.0 <2.0-RC1', 'v1.5.0', true];
         yield 'pre-release upper bound on its bound' => ['>=1.0 <2.0-RC1', 'v2.0.0-RC1', false];
         yield 'pre-release upper bound below the stability' => ['>=1.0 <2.0-RC1', 'v2.0.0-beta', false];

@@ -257,6 +257,20 @@ final class RangeTest
         yield ['~1.0.0-1', '1.0.9', true];
         yield ['~1.0.0-1', '1.1', false];
 
+        // Incrementing a part that ends in nines carries over
+        yield ['9.*', '9.5', true];
+        yield ['9.*', '10.0', false];
+        yield ['~1.9', '1.10', true];
+        yield ['~9.9', '9.10', true];
+        yield ['~9.9', '10.0', false];
+        yield ['^0.99', '0.99.5', true];
+        yield ['^0.99', '0.100', false];
+        yield ['1.99.*', '1.99.5', true];
+        yield ['1.99.*', '1.100.0', false];
+        yield ['1.19.*', '1.19.9', true];
+        yield ['1.19.*', '1.25', false];
+        yield ['^0.199', '0.200', false];
+
         // Number parts past the integer range
         yield ['^99999999999999999999', '1.0', false];
         yield ['~9223372036854775807', '1.0', false];
