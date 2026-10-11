@@ -16,7 +16,7 @@ class Version implements \Stringable
     protected const VERSION_SEMVER_NUMBER_PATTERN = 'v?(\d+\.\d+\.\d+(?:\.\d+)*(?:\+\d+)?)';
 
     /** A suffix starting with a letter may follow the number right away: `2.0.0rc1`, `1.2.3_beta2`. */
-    protected const VERSION_FALLBACK_PATTERN = 'v?(\d+(?:\.\d+(?:\.\d+(?:\.\d+)*(?:\+\d+)?)?)?)((?:[-+.]|(?=[a-z_]))[\w.-]+)?';
+    protected const VERSION_FALLBACK_PATTERN = 'v?(\d+(?:\.\d+)*(?:\+\d+)?)((?:[-+.]|(?=[a-z_]))[\w.-]+)?';
 
     protected const VERSION_HASH_SUFFIX_PATTERN = '(?:#([a-f0-9]{6,40}))?';
 
@@ -58,7 +58,10 @@ class Version implements \Stringable
         \assert($number !== '');
 
         $suffix = $parts[2] ?? '';
-        $preRelease = $suffix === '' ? null : self::preReleaseFromSuffix($suffix);
+        // A lone letter glued to the number is a patch letter, like OpenSSL's `1.1.1b`, not a pre-release
+        $preRelease = $suffix === '' || \preg_match('/^[a-z]$/i', $suffix) === 1
+            ? null
+            : self::preReleaseFromSuffix($suffix);
         $withoutKeyword = $preRelease === null;
 
         $suffix = \trim($suffix, '-_.+');
@@ -80,22 +83,35 @@ class Version implements \Stringable
 
     /**
      * Orders versions by the version number, then by the pre-release: `1.0.0-beta.2 < 1.0.0-RC1 < 1.0.0`,
-     * then by the rest of the suffix, a version without one first:
-     * `1.0.0-RC1 < 1.0.0-RC1-priority.0 < 1.0.0-RC1-priority.1`.
+     * then by the rest of the suffix, see {@see compareTail()}: `1.0.0-RC1 < 1.0.0-RC1-priority.0`.
      * A version without a number comes first.
      *
      * @return int<-1, 1>
      */
     public function compare(self $other): int
     {
-        $byNumber = \version_compare($this->comparableNumber(), $other->comparableNumber());
+        $byNumber = $this->compareNumber($other);
         if ($byNumber !== 0 || $this->preRelease === null || $other->preRelease === null) {
             return $byNumber;
         }
 
         $byPreRelease = $this->preRelease->compare($other->preRelease);
+        if ($byPreRelease !== 0) {
+            return $byPreRelease;
+        }
 
-        return $byPreRelease !== 0 ? $byPreRelease : \version_compare((string) $this->suffix, (string) $other->suffix);
+        return self::compareTail($this->suffix, $other->suffix);
+    }
+
+    /**
+     * Orders versions by the version number only, the first step of {@see compare()}:
+     * `1.0.0-beta` and `1.0.0` are equal, `1.0.0-1` is above both.
+     *
+     * @return int<-1, 1>
+     */
+    public function compareNumber(self $other): int
+    {
+        return \version_compare($this->comparableNumber(), $other->comparableNumber());
     }
 
     public function __toString(): string
@@ -112,16 +128,13 @@ class Version implements \Stringable
      */
     private static function preReleaseFromSuffix(string &$input): ?PreRelease
     {
-        $reg = '[._-]?(?:(' . PreRelease::keywordPattern() . ')([._-]?\d+)?)?';
+        $reg = '[._-]?' . PreRelease::wordPattern();
 
-        /** @var list<non-empty-string> $parts */
+        /** @var array<0|1, non-empty-string> $parts */
         $parts = [];
 
-        \preg_match(('#' . $reg . '$#i'), $input, $match);
-        isset($match[1]) and $parts[0] = $match[0];
-
-        \preg_match(('#^' . $reg . '#i'), $input, $match);
-        isset($match[1]) and $parts[1] = $match[0];
+        \preg_match('#' . $reg . '$#i', $input, $match) === 1 and $parts[0] = $match[0];
+        \preg_match('#^' . $reg . '#i', $input, $match) === 1 and $parts[1] = $match[0];
 
         foreach ($parts as $k => $fullPart) {
             $preRelease = PreRelease::fromString(\ltrim($fullPart, '._-'));
@@ -138,13 +151,64 @@ class Version implements \Stringable
     }
 
     /**
+     * Orders the suffixes left after the pre-release token by token, a token being a run of digits or of letters.
+     * A suffix that ends where the other goes on comes first: `RC1 < RC1-priority.0`. A word comes before
+     * a number, as a word suffix sorts below the final release and a numeric one above it:
+     * `beta.1-linux < beta.1.2`. Numbers compare by value, words alphabetically. Stability keywords mean
+     * nothing here, so `arm64` is no alpha, and neither do case, separators and leading zeros:
+     * `Linux_x64.01` equals `linux-x64.1`.
+     *
+     * @return int<-1, 1>
+     */
+    private static function compareTail(?string $suffix, ?string $other): int
+    {
+        $tokens = self::tokens($suffix);
+        $otherTokens = self::tokens($other);
+        foreach ($tokens as $i => $token) {
+            if (!isset($otherTokens[$i])) {
+                return 1;
+            }
+
+            $otherToken = $otherTokens[$i];
+            $isNumber = \ctype_digit($token);
+            $byToken = match (true) {
+                $isNumber !== \ctype_digit($otherToken) => $isNumber ? 1 : -1,
+                # Digit strings of any length: as integers, long ones would overflow
+                $isNumber => (\strlen($token) <=> \strlen($otherToken)) ?: \strcmp($token, $otherToken) <=> 0,
+                default => \strcmp($token, $otherToken) <=> 0,
+            };
+            if ($byToken !== 0) {
+                return $byToken;
+            }
+        }
+
+        return \count($tokens) <=> \count($otherTokens);
+    }
+
+    /**
+     * Words in lower case and numbers without leading zeros, like `linux`, `x`, `64` and `1` of `Linux_x64.01`.
+     *
+     * @return list<string>
+     */
+    private static function tokens(?string $suffix): array
+    {
+        \preg_match_all('/\d+|[a-z]+/i', (string) $suffix, $matches);
+
+        return \array_map(
+            static fn(string $token): string => \ctype_digit($token) ? (\ltrim($token, '0') ?: '0') : \strtolower($token),
+            $matches[0],
+        );
+    }
+
+    /**
      * A numeric suffix without a stability keyword orders as a part of the number: `1.0.0-1 > 1.0.0`.
      * With a keyword it does not: the `.2` of `2.0.0-beta.1.2` belongs to the pre-release.
-     * Trailing zero parts do not count: `1.2.3`, `1.2.3.0` and `1.2.3.0.0` are one number.
+     * Trailing zero parts do not count: `1.2.3`, `1.2.3.0` and `1.2.3.0.0` are one number,
+     * nor does build metadata, as in SemVer: `1.2.3+5` is `1.2.3`.
      */
     private function comparableNumber(): string
     {
-        $number = (string) $this->number;
+        $number = \explode('+', (string) $this->number, 2)[0];
         if ($this->withoutKeyword && $this->suffix !== null && \preg_match('/^\d+(?:\.\d+)*$/', $this->suffix) === 1) {
             $number .= '.' . $this->suffix;
         }

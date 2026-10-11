@@ -329,6 +329,10 @@ Usa restricciones de versión estilo Composer:
     <!-- Restricciones de rango -->
     <download software="temporal" version="^1.20.0" />
     <download software="dolt" version="~0.50.0" />
+    <!-- Y con un espacio o una coma, O con ||, rangos con guion, comodines, exclusiones -->
+    <download software="buf" version="^1.28 || ^2.0" />
+    <download software="protoc" version="25.0 - 26.1" />
+    <download software="mago" version="1.0.*, !=1.0.1" />
     
     <!-- Restricciones de estabilidad -->
     <download software="tool" version="^1.0.0@beta" />
@@ -343,7 +347,7 @@ Usa restricciones de versión estilo Composer:
 </actions>
 ```
 
-Un pre-release en una restricción fija la estabilidad mínima con cualquier operador, incluso en `<3.5.0-beta.2`; redúcela con `@alpha` o `@dev`.
+Un pre-release en una restricción fija la estabilidad mínima con cualquier operador, incluso en `<3.5.0-beta.2`; redúcela con `@alpha` o `@dev`. Una palabra clave sin número también es un límite, como en Composer: `>2.0-beta` acepta `2.0.0-RC1` y `2.0.0`. Una versión exacta con pre-release u otro sufijo solo coincide con esa etiqueta: `2.0-beta` no acepta `2.0.0-beta.3` ni `2.0.0`, y `2.12.0-hotfix` no acepta `2.12.0-hotfix.2`. Las mayúsculas no importan: `1.0.0-arm64` coincide con la etiqueta `1.0.0-ARM64`, y `^1.0-Linux` acepta `1.0.0-linux`. Un pre-release puede ir pegado al número, como en las etiquetas: `^2.0.0rc1`.
 
 ### Opciones de Configuración Avanzadas
 

@@ -331,6 +331,10 @@ Use Composer-style version constraints:
     <!-- Range constraints -->
     <download software="temporal" version="^1.20.0" />
     <download software="dolt" version="~0.50.0" />
+    <!-- AND by a space or a comma, OR by ||, hyphen ranges, wildcards, exclusions -->
+    <download software="buf" version="^1.28 || ^2.0" />
+    <download software="protoc" version="25.0 - 26.1" />
+    <download software="mago" version="1.0.*, !=1.0.1" />
     
     <!-- Stability constraints -->
     <download software="tool" version="^1.0.0@beta" />
@@ -345,7 +349,7 @@ Use Composer-style version constraints:
 </actions>
 ```
 
-A pre-release in a constraint sets the minimum stability for any operator, even for `<3.5.0-beta.2`; lower it with `@alpha` or `@dev`.
+A pre-release in a constraint sets the minimum stability for any operator, even for `<3.5.0-beta.2`; lower it with `@alpha` or `@dev`. A keyword without a number is a bound too, as in Composer: `>2.0-beta` takes `2.0.0-RC1` and `2.0.0`. An exact version with a pre-release or another suffix matches only that tag: `2.0-beta` takes neither `2.0.0-beta.3` nor `2.0.0`, and `2.12.0-hotfix` not `2.12.0-hotfix.2`. Case does not matter: `1.0.0-arm64` matches the tag `1.0.0-ARM64`, and `^1.0-Linux` takes `1.0.0-linux`. A pre-release may follow the number right away, as in tags: `^2.0.0rc1`.
 
 ### Advanced Configuration Options
 

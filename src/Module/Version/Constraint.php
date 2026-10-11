@@ -4,36 +4,32 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Version;
 
-use Composer\Semver\Semver;
-use Composer\Semver\VersionParser;
 use Internal\DLoad\Module\Common\Stability;
 
 /**
  * Version constraint DTO for parsing and handling complex version requirements.
  *
  * Encapsulates version constraint logic supporting:
- * - Feature suffixes: ^2.12.0-feature, ~1.20.0-hotfix, ^1.0.0-my-feature
- * - Stability constraints with two equivalent syntaxes:
- *   * Explicit: ^2.12.0@beta, ~1.20.0@stable
- *   * Implicit: ^2.12.0-beta, ~1.20.0-stable
+ * - Version ranges in the Composer syntax, see {@see Range}: ^2.12.0, ~1.20, >=1.0 <2.0 || ^3.0
+ * - Feature suffixes of ranges: ^2.12.0-feature, ~1.20.0-hotfix, ^1.0.0-my-feature
+ * - Minimum stability, explicit or taken from the pre-releases of the constraint: ^2.12.0@beta, ^2.12.0-beta
  * - Combined constraints: ^2.12.0-feature@beta
- * - Numbered pre-releases: 3.5.0-beta.1, ^3.5.0-RC2, 1.0.0-nightly20250503
+ * - Exact releases, a pre-release or a tail included: 3.5.0-beta.1, 2.0-beta, 1.0.0-1, 2.12.0-hotfix, 2.0.0rc1
+ * - Pre-release bounds of ranges and comparisons: >=3.5.0-beta.1 <3.5.0-RC1, ^1.0 || ^2.0-beta.1, >2.0-beta, ^2.0.0rc1
  *
- * Stability keywords (from Stability enum) as suffixes are automatically
- * converted to stability constraints.
+ * A stability keyword at the start or the end of a feature suffix sets the minimum stability
+ * unless an explicit one is given: ^2.12.0-my-feature-beta.
  *
  * @internal
  */
 final class Constraint implements \Stringable
 {
-    /** Operators a constraint bound to a pre-release may carry. */
-    private const OPERATORS = ['', '=', '==', '^', '~', '>=', '>', '<', '<='];
-
     /** @var non-empty-string $versionConstraint Base version constraint (e.g. "^2.12.0") */
     public readonly string $versionConstraint;
 
     /**
      * @var non-empty-string|null $featureSuffix Optional feature suffix (e.g. "feature", "my-feature")
+     *      the version suffix must contain, in any case.
      *      If null, no feature suffix is specified.
      */
     public readonly ?string $featureSuffix;
@@ -42,16 +38,14 @@ final class Constraint implements \Stringable
     public readonly Stability $minimumStability;
 
     /**
-     * @var PreRelease|null $preRelease Numbered pre-release the version constraint is bound to,
-     *      e.g. `beta.1` of `3.5.0-beta.1`. If null, pre-releases are matched by stability only.
+     * @var PreRelease|null $preRelease Pre-release of a single version the constraint is bound to,
+     *      e.g. `beta.1` of `3.5.0-beta.1`. Null when there is none, when a tail follows it, or when
+     *      the constraint has several terms: their pre-releases stay in {@see $versionConstraint}.
      */
     public readonly ?PreRelease $preRelease;
 
-    /** Operator of a constraint bound to a pre-release, e.g. `^` of `^3.5.0-beta.1`. */
-    private readonly string $operator;
-
-    /** Version number of a constraint bound to a pre-release, e.g. `3.5.0` of `^3.5.0-beta.1`. */
-    private readonly string $bound;
+    /** Versions the constraint accepts, the pre-release included. */
+    private readonly Range|Comparison $matcher;
 
     /**
      * @param non-empty-string $origin Original constraint string used for parsing.
@@ -74,27 +68,40 @@ final class Constraint implements \Stringable
             );
         }
 
-        # A numbered pre-release is a part of the version, not a feature suffix: "3.5.0-beta.1" names one
-        # release, and "3.5.0-beta.2" or "3.5.0" must not satisfy it. A bare "-beta" stays a stability.
+        # A single version with a pre-release or any other tail names one release: "2.0-beta" accepts neither
+        # "2.0.0-beta.3" nor "2.0.0", and "2.12.0-hotfix" not "2.12.0-hotfix.2"; a bare number covers every build
+        # of that number, see Comparison. In a range, a pre-release bound, a bare "-beta" included, is a part of
+        # the version as in Composer, ">2.0-beta" accepts "2.0.0-RC1", and any other suffix is a feature.
+        # Without a hyphen, a tail starts with a letter, as in "2.0.0rc1" or "1.0.0.Final"; ".x" is a wildcard, a glued "x" a patch letter.
+        $matcher = null;
+        $tail = '';
         $preRelease = null;
-        $operator = $bound = '';
-        $pattern = '/^([~^>=<]*)(\d+(?:\.\d+)*)-((?:' . PreRelease::keywordPattern() . ')[._-]?\d+)$/i';
-        if (\preg_match($pattern, $origin, $matches) === 1) {
-            [, $operator, $bound, $preReleasePart] = $matches;
-            \in_array($operator, self::OPERATORS, true) or throw new \InvalidArgumentException(
-                "Unsupported operator `{$operator}` in a constraint with a pre-release.",
-            );
-
-            $preRelease = PreRelease::fromString($preReleasePart);
-            \assert($preRelease !== null);
-            $stability ??= $preRelease->stability;
-            $origin = $operator . $bound;
+        if (\preg_match(
+            '/^(?:==?)?\s*v?(\d+(?:\.\d+)*(?:\+\d+)?)(-[\w.-]+|[._]?(?=[a-z])(?!(?<=\.)x(?![a-z\d]))[\w.-]+)?$/i',
+            $origin,
+            $exact,
+        ) === 1) {
+            /** @var non-empty-string $number */
+            $number = $exact[1];
+            $tail = $exact[2] ?? '';
+            $matcher = Comparison::create(Operator::Equal, $number, $tail);
+            $stability ??= $matcher->bound->stability;
+            $tail !== '' && $matcher->bound->suffix === null and $preRelease = $matcher->bound->preRelease;
+        } elseif (($bounds = self::preReleaseBounds($origin)) !== []) {
+            $matcher = Range::fromString($origin);
+            $stability ??= self::lowestStability($bounds);
+            $singleTerm = \preg_match('/[\s,|]/', (string) \preg_replace('/^[<>=!~^]*\s*/', '', $origin)) !== 1;
+            $singleTerm and $tail = $bounds[0];
+            $preRelease = PreRelease::fromString(\ltrim($tail, '-._'));
         }
-        $this->preRelease = $preRelease;
-        $this->operator = $operator;
-        $this->bound = $bound;
 
-        [$version, $suffix] = \explode('-', $origin, 2) + [1 => ''];
+        $preRelease === null or $origin = \substr($origin, 0, -\strlen($tail));
+        $this->preRelease = $preRelease;
+
+        # The hyphen of a range like "1.0 - 2.0" stands between spaces and does not start a suffix
+        [$version, $suffix] = $matcher !== null || \preg_match('/\s-\s/', $origin) === 1
+            ? [$origin, '']
+            : \explode('-', $origin, 2) + [1 => ''];
         if ($suffix !== '') {
             // Check if suffix is a stability keyword (only if no explicit stability provided)
             if ($stability === null) {
@@ -118,17 +125,13 @@ final class Constraint implements \Stringable
                 throw new \InvalidArgumentException("Invalid feature suffix format: {$suffix}.");
             }
         }
-
-        // Validate base version format for non-empty suffixes
-        $suffix === '' and !\preg_match('/^[~^>=<]*\d+(\.\d+)*/', $version) and throw new \InvalidArgumentException(
-            "Invalid base version format: {$version}.",
-        );
         $suffix === '' and $suffix = null;
 
         // Determine final stability (explicit takes precedence over implicit)
         $stability ??= $suffix === null ? Stability::Stable : Stability::Preview;
 
         $version === '' and throw new \InvalidArgumentException('Base version cannot be empty.');
+        $this->matcher = $matcher ?? Range::fromString($version);
 
         $this->versionConstraint = $version;
         $this->featureSuffix = $suffix;
@@ -138,18 +141,17 @@ final class Constraint implements \Stringable
     /**
      * Parse version constraint string into DTO.
      *
-     * Handles both @stability and -stability syntax equivalence.
-     * Auto-converts stability keywords in suffixes to stability constraints.
-     *
      * Examples:
      * - "^2.12.0" -> baseVersion: "^2.12.0", featureSuffix: null, minimumStability: Stable
-     * - "^2.12.0-feature" -> baseVersion: "^2.12.0", featureSuffix: "feature", minimumStability: Stable
-     * - "^2.12.0-my-feature" -> baseVersion: "^2.12.0", featureSuffix: "my-feature", minimumStability: Stable
+     * - "^2.12.0-feature" -> baseVersion: "^2.12.0", featureSuffix: "feature", minimumStability: Preview
+     * - "^2.12.0-my-feature" -> baseVersion: "^2.12.0", featureSuffix: "my-feature", minimumStability: Preview
      * - "^2.12.0@beta" -> baseVersion: "^2.12.0", featureSuffix: null, minimumStability: Beta
-     * - "^2.12.0-beta" -> baseVersion: "^2.12.0", featureSuffix: null, minimumStability: Beta (auto-converted)
+     * - "^2.12.0-beta" -> baseVersion: "^2.12.0", preRelease: beta, minimumStability: Beta
+     * - "^2.12.0-beta@alpha" -> baseVersion: "^2.12.0", preRelease: beta, minimumStability: Alpha
      * - "^2.12.0-feature@beta" -> baseVersion: "^2.12.0", featureSuffix: "feature", minimumStability: Beta
-     * - "^2.12.0-my-beta-feature@stable" -> baseVersion: "^2.12.0-my-beta", featureSuffix: "feature", minimumStability: Stable
+     * - "^2.12.0-my-beta-feature@stable" -> baseVersion: "^2.12.0", featureSuffix: "my-beta-feature", minimumStability: Stable
      * - "3.5.0-beta.1" -> baseVersion: "3.5.0", preRelease: beta.1, minimumStability: Beta
+     * - "2.12.0-hotfix" -> baseVersion: "2.12.0-hotfix", featureSuffix: null, minimumStability: Preview
      *
      * @param string $constraint Version constraint string
      * @return self Parsed version constraint
@@ -163,31 +165,17 @@ final class Constraint implements \Stringable
     /**
      * Checks if the given version satisfies this constraint.
      *
-     * @param Version $version Version to check against this constraint
-     * @return null|bool True if the version satisfies the constraint, false if it does not,
-     *         null if the version is invalid or not applicable.
+     * A version without a number satisfies no constraint.
      */
-    public function isSatisfiedBy(Version $version): ?bool
+    public function isSatisfiedBy(Version $version): bool
     {
-        $number = $version->number;
-        if ($number === null) {
-            return false;
-        }
-
-        // Check if a version satisfies the base version constraint
-        if ($this->preRelease !== null) {
-            // A version with a number always has a pre-release
-            \assert($version->preRelease !== null);
-            if (!$this->satisfiesPreRelease($number, $version->preRelease, $version->suffix)) {
-                return false;
-            }
-        } elseif (!self::satisfies(self::composerNumber($number), $this->versionConstraint)) {
+        if ($version->number === null || !$this->matcher->isSatisfiedBy($version)) {
             return false;
         }
 
         // Check if the version satisfies the feature suffix constraint
         if ($this->featureSuffix !== null) {
-            if (!\str_contains((string) $version->suffix, $this->featureSuffix)) {
+            if (\stripos((string) $version->suffix, $this->featureSuffix) === false) {
                 return false;
             }
         }
@@ -206,62 +194,39 @@ final class Constraint implements \Stringable
     }
 
     /**
-     * Composer reads four number parts at most, so the rest goes to a patch: `1.2.3.4.5` is `1.2.3.4-p5`.
-     * Trailing zero parts past the fourth are dropped, as Composer does for the shorter ones: `1.2.3.4.0` is `1.2.3.4`.
-     */
-    private static function composerNumber(string $number): string
-    {
-        $parts = \explode('.', $number);
-        while (\count($parts) > 4 && \ltrim(\end($parts), '0') === '') {
-            \array_pop($parts);
-        }
-
-        return \count($parts) > 4
-            ? \implode('.', \array_slice($parts, 0, 4)) . '-p' . \implode('.', \array_slice($parts, 4))
-            : \implode('.', $parts);
-    }
-
-    /**
-     * A version Composer cannot read, like `20250101.1.2.3`, satisfies no constraint.
-     * An unreadable constraint still throws.
-     */
-    private static function satisfies(string $number, string $constraint): bool
-    {
-        try {
-            (new VersionParser())->normalize($number);
-        } catch (\UnexpectedValueException) {
-            return false;
-        }
-
-        return Semver::satisfies($number, $constraint);
-    }
-
-    /**
-     * The pre-release decides only between versions with the number of the bound itself; versions
-     * with another number are left to the operator, like for a constraint without a pre-release.
-     * A tail after the pre-release orders after it, as in sorting: `3.5.0-RC1-linux` is above `3.5.0-RC1`,
-     * so an exact constraint does not match it.
+     * Pre-releases of the version bounds with their separators, like `-1`, `-beta.1` and `rc2`
+     * of `>=1.0.0-1 <2.0.0-beta.1 || ^2.0rc2`, see {@see Range::preReleasePattern()}.
+     * A bound follows the version number right away: neither a suffix that runs on past a pre-release,
+     * like `-beta.1-feature`, nor a pre-release within a suffix, like `-1` of `1.0.0-x64-1`, is a bound.
      *
-     * @param null|string $suffix Feature suffix of the version
+     * @return list<non-empty-string>
      */
-    private function satisfiesPreRelease(string $number, PreRelease $preRelease, ?string $suffix): bool
+    private static function preReleaseBounds(string $constraint): array
     {
-        \assert($this->preRelease !== null);
-        $number = self::composerNumber($number);
-        if (!self::satisfies($number, '==' . $this->bound)) {
-            return self::satisfies($number, $this->versionConstraint);
-        }
+        \preg_match_all(
+            '/(?:^|[\s,|])[<>=!~^]*v?\d+(?:\.\d+)*(?:\+\d+)?(' . Range::preReleasePattern() . ')(?=$|[\s,|])/i',
+            $constraint,
+            $matches,
+        );
 
-        $order = $preRelease->compare($this->preRelease);
-        $order === 0 && $suffix !== null and $order = 1;
+        /** @var list<non-empty-string> */
+        return $matches[1];
+    }
 
-        return match ($this->operator) {
-            '', '=', '==' => $order === 0,
-            '^', '~', '>=' => $order >= 0,
-            '>' => $order > 0,
-            '<' => $order < 0,
-            '<=' => $order <= 0,
-            default => throw new \LogicException("Unsupported operator `{$this->operator}`."),
-        };
+    /**
+     * A numeric tail, like `-1` of `1.0.0-1`, is a {@see Stability::Preview}, as {@see Version} reads it.
+     *
+     * @param non-empty-list<non-empty-string> $preReleases
+     */
+    private static function lowestStability(array $preReleases): Stability
+    {
+        $stabilities = \array_map(
+            static fn(string $preRelease): Stability => PreRelease::fromString(\ltrim($preRelease, '-._'))?->stability
+                ?? Stability::Preview,
+            $preReleases,
+        );
+        \usort($stabilities, static fn(Stability $a, Stability $b): int => $a->getWeight() <=> $b->getWeight());
+
+        return $stabilities[0];
     }
 }
