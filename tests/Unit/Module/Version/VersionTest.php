@@ -35,6 +35,7 @@ final class VersionTest
         yield 'feature only' => ['1.2.3-custom', '1.2.3', Stability::Preview, 0];
         yield 'four number parts' => ['1.2.3.4-beta.1', '1.2.3.4', Stability::Beta, 1];
         yield 'five number parts' => ['v1.2.3.4.5-rc.2', '1.2.3.4.5', Stability::RC, 2];
+        yield 'pre-release before build metadata' => ['1.2.3-rc.2+build.5', '1.2.3', Stability::RC, 2];
     }
 
     public static function provideOrderedVersions(): \Generator
@@ -77,6 +78,12 @@ final class VersionTest
         yield 'patch abbreviation and the whole word' => ['1.0.0-p1', '1.0.0-patch1'];
         yield 'word before a number' => ['2.0.0-beta.1-linux', '2.0.0-beta.1.2'];
         yield 'word before a number at the start of the tail' => ['1.0.0-x.1', '1.0.0-1.x'];
+        yield 'long number parts' => ['1.99999999999999999998', '1.99999999999999999999'];
+        yield 'long number part after a short one' => ['1.9', '1.10000000000000000000'];
+        yield 'long first number parts' => ['99999999999999999998.1', '99999999999999999999.0'];
+        yield 'part after a long number part' => ['1.99999999999999999999', '1.99999999999999999999.1'];
+        yield 'long numeric suffixes' => ['1.0.0-99999999999999999998', '1.0.0-99999999999999999999'];
+        yield 'pre-release before build metadata like a stability' => ['1.2.3-beta', '1.2.3+beta'];
         yield 'platform word is no alpha' => ['1.0.0-arm64', '1.0.0-linux'];
         yield 'patch abbreviation is no patch level' => ['1.0.0-p1', '1.0.0-x1'];
         yield 'number after a word' => ['1.0.0-build.9', '1.0.0-build.10'];
@@ -96,6 +103,12 @@ final class VersionTest
         yield 'build metadata' => ['1.2.3', '1.2.3+5'];
         yield 'build metadata after two parts' => ['1.2', '1.2+5'];
         yield 'build metadata after one part' => ['1', '1+2'];
+        yield 'build metadata with words' => ['1.2.3', 'v1.2.3+build.5'];
+        yield 'other build metadata' => ['1.2.3+build.5', '1.2.3+build.6'];
+        yield 'build metadata after a pre-release' => ['1.2.3-beta.1', '1.2.3-beta.1+build.5'];
+        yield 'build metadata after a tail' => ['1.2.3-linux', '1.2.3-linux+exp.sha.5114f85'];
+        yield 'leading zeros of number parts' => ['1.2.3', '01.002.3'];
+        yield 'leading zeros of a long number part' => ['1.99999999999999999999', '1.0099999999999999999999'];
         yield 'case, separators and leading zeros of the suffix' => ['1.0.0-Linux_x64.01', '1.0.0-linux-x64.1'];
         yield 'case of a platform word' => ['1.0.0-arm64', '1.0.0-ARM64'];
         yield 'case of a patch word' => ['2.12.0-patch1', '2.12.0-Patch1'];
@@ -114,7 +127,7 @@ final class VersionTest
         // Semantic versions
         yield 'basic semantic version' => ['1.2.3', '1.2.3', '1.2.3', null, Stability::Stable];
         yield 'semantic version with patch number' => ['2.12.5', '2.12.5', '2.12.5', null, Stability::Stable];
-        yield 'semantic version with build number' => ['1.0.0+123', '1.0.0+123', '1.0.0+123', null, Stability::Stable];
+        yield 'semantic version with build number' => ['1.0.0+123', '1.0.0+123', '1.0.0', null, Stability::Stable];
 
         // Versions with stability suffixes
         yield 'version with beta suffix' => ['1.2.3-beta', '1.2.3-beta', '1.2.3', null, Stability::Beta];
@@ -129,9 +142,17 @@ final class VersionTest
         yield 'preview is not read as pre' => ['1.0.0-preview-foo', '1.0.0-preview-foo', '1.0.0', 'foo', Stability::Preview];
         yield 'version with multiple features and stability' => ['2.0.0-feature1-feature2-alpha', '2.0.0-feature1-feature2-alpha', '2.0.0', 'feature1-feature2', Stability::Alpha];
 
-        // Versions with plus prefix
-        yield 'version with plus prefix stability' => ['1.2.3+beta', '1.2.3+beta', '1.2.3', null, Stability::Beta];
-        yield 'version with plus prefix feature' => ['1.2.3+feature-alpha', '1.2.3+feature-alpha', '1.2.3', 'feature', Stability::Alpha];
+        // Build metadata counts for nothing, whatever it looks like
+        yield 'build metadata with words' => ['1.2.3+build.5', '1.2.3+build.5', '1.2.3', null, Stability::Stable];
+        yield 'build metadata like a stability' => ['1.2.3+beta', '1.2.3+beta', '1.2.3', null, Stability::Stable];
+        yield 'build metadata like a feature with a stability' => ['1.2.3+feature-alpha', '1.2.3+feature-alpha', '1.2.3', null, Stability::Stable];
+        yield 'build metadata after a pre-release' => ['1.2.3-beta.1+build.5', '1.2.3-beta.1+build.5', '1.2.3', null, Stability::Beta];
+        yield 'numeric build metadata after a pre-release' => ['1.2.3-beta.1+5', '1.2.3-beta.1+5', '1.2.3', null, Stability::Beta];
+        yield 'build metadata after a tail' => ['1.2.3-linux+build.5', '1.2.3-linux+build.5', '1.2.3', 'linux', Stability::Preview];
+        yield 'build metadata with hyphens' => ['1.0.0-alpha11+cs-1.1.0', '1.0.0-alpha11+cs-1.1.0', '1.0.0', null, Stability::Alpha];
+        yield 'build metadata after two parts' => ['v1.2+exp.sha.5114f85', 'v1.2+exp.sha.5114f85', '1.2', null, Stability::Stable];
+        yield 'build metadata before a hash' => ['1.2.3+build.5#abcdef1', '1.2.3+build.5#abcdef1', '1.2.3', null, Stability::Stable];
+        yield 'plus before a suffix that is no build metadata' => ['1.2.3+linux_x64', '1.2.3+linux_x64', '1.2.3', 'linux_x64', Stability::Preview];
 
         // Partial semantic versions (fallback pattern)
         yield 'two-part version' => ['1.2', '1.2', '1.2', null, Stability::Stable];
@@ -173,7 +194,6 @@ final class VersionTest
         yield 'version starting with text' => ['version1.2.3'];
         yield 'dev-master' => ['dev-master'];
         yield 'dev-feature+issue-1' => ['dev-feature+issue-1'];
-        yield '1.0.0-alpha11+cs-1.1.0' => ['1.0.0-alpha11+cs-1.1.0'];
         yield '1.0.0-beta#comment-part' => ['1.0.0-beta#comment-part'];
     }
 
@@ -309,6 +329,9 @@ final class VersionTest
     public function emptyVersionComesFirst(): void
     {
         Assert::same(Version::empty()->compare(Version::fromVersionString('0.0.1')), -1);
+        Assert::same(Version::empty()->compare(Version::fromVersionString('0.0')), -1);
+        Assert::same(Version::fromVersionString('0')->compare(Version::empty()), 1);
+        Assert::same(Version::empty()->compare(Version::empty()), 0);
     }
 
     /**

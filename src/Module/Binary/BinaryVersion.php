@@ -24,7 +24,7 @@ final class BinaryVersion extends Version
     {
         // Try to extract version using semantic version pattern
         $version = \preg_match(self::outputVersionPattern(), $output, $matches)
-            ? $matches[1] . ($matches[2] ?? '')
+            ? $matches[1] . ($matches[2] ?? '') . ($matches[3] ?? '')
             : self::extractVersionWithFallbacks($output);
 
         if ($version === null) {
@@ -45,7 +45,8 @@ final class BinaryVersion extends Version
     private static function outputVersionPattern(): string
     {
         return '/(?:version:?\s*)?(?:v(?:er(?:sion)?)?\.?\s*)?' . parent::VERSION_SEMVER_NUMBER_PATTERN
-            . '((?:[-+]|(?=(?![ab](?![a-z]|[._-]?\d))' . PreRelease::wordPattern() . '))[\w.-]+)?/i';
+            . '((?:[-+]|(?=(?![ab](?![a-z]|[._-]?\d))' . PreRelease::wordPattern() . '))[\w.-]+)?'
+            . '(' . parent::buildPattern() . ')?/i';
     }
 
     /**
