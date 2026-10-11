@@ -640,6 +640,10 @@ final class ConstraintTest
         yield 'exact glued release candidate on a platform build' => ['2.0.0rc1', '2.0.0rc1-linux', false];
         yield 'exact patch letter' => ['1.1.1w', '1.1.1w', true];
         yield 'exact patch letter on its number' => ['1.1.1w', '1.1.1', false];
+        yield 'exact patch letter x' => ['0.9.8x', '0.9.8x', true];
+        yield 'exact patch letter x on another letter' => ['0.9.8x', '0.9.8w', false];
+        yield 'wildcard x after a dot' => ['1.x', '1.5.0', true];
+        yield 'wildcard x of a dev branch after a dot' => ['1.0.x-dev', '1.0.3-dev', true];
         yield 'exact patch letter a' => ['1.1.1a', '1.1.1a', true];
         yield 'exact patch letter a on an alpha' => ['1.1.1a@alpha', '1.1.1-alpha', false];
         yield 'exact word after a dot' => ['1.0.0.Final', '1.0.0-final', true];

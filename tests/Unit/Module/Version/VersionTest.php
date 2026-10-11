@@ -80,6 +80,7 @@ final class VersionTest
         yield 'platform word is no alpha' => ['1.0.0-arm64', '1.0.0-linux'];
         yield 'patch abbreviation is no patch level' => ['1.0.0-p1', '1.0.0-x1'];
         yield 'number after a word' => ['1.0.0-build.9', '1.0.0-build.10'];
+        yield 'number glued to a word' => ['1.0.0-build9', '1.0.0-build10'];
         yield 'long numbers' => ['1.0.0-build.99999999999999999998', '1.0.0-build.99999999999999999999'];
         yield 'words alphabetically in any case' => ['1.0.0-Darwin', '1.0.0-linux'];
     }

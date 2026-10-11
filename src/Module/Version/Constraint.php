@@ -72,12 +72,12 @@ final class Constraint implements \Stringable
         # "2.0.0-beta.3" nor "2.0.0", and "2.12.0-hotfix" not "2.12.0-hotfix.2"; a bare number covers every build
         # of that number, see Comparison. In a range, a pre-release bound, a bare "-beta" included, is a part of
         # the version as in Composer, ">2.0-beta" accepts "2.0.0-RC1", and any other suffix is a feature.
-        # Without a hyphen, a tail starts with a letter, as in "2.0.0rc1" or "1.0.0.Final"; ".x" is a wildcard.
+        # Without a hyphen, a tail starts with a letter, as in "2.0.0rc1" or "1.0.0.Final"; ".x" is a wildcard, a glued "x" a patch letter.
         $matcher = null;
         $tail = '';
         $preRelease = null;
         if (\preg_match(
-            '/^(?:==?)?\s*v?(\d+(?:\.\d+)*(?:\+\d+)?)(-[\w.-]+|[._]?(?=[a-z])(?!x(?![a-z\d]))[\w.-]+)?$/i',
+            '/^(?:==?)?\s*v?(\d+(?:\.\d+)*(?:\+\d+)?)(-[\w.-]+|[._]?(?=[a-z])(?!(?<=\.)x(?![a-z\d]))[\w.-]+)?$/i',
             $origin,
             $exact,
         ) === 1) {
