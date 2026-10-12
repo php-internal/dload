@@ -27,6 +27,9 @@ final class ArrayReleaseSource implements ReleaseSource
     /** When set, every page request fails with this exception. */
     public ?\Throwable $failure = null;
 
+    /** Number of pages served before every further request fails. */
+    public int $failAfter = \PHP_INT_MAX;
+
     /**
      * Tags of releases the source cannot read: they are left out of the pages and counted as skipped.
      *
@@ -81,24 +84,33 @@ final class ArrayReleaseSource implements ReleaseSource
 
     public function pages(int $offset = 0): \Generator
     {
-        // Align with a page boundary and skip within the page, like a real paged API
+        // Whole pages from the one holding the offset, like a real paged API
         $page = \intdiv($offset, $this->perPage);
-        $skip = $offset % $this->perPage;
 
         do {
             $this->failure === null or throw $this->failure;
+            \count($this->served) < $this->failAfter or throw new ApiException('API is unavailable.', 'stub/stub');
 
             $this->served[] = $page * $this->perPage;
             $items = \array_slice($this->releases, $page * $this->perPage, $this->perPage);
+
+            // A page past the end of the listing is no page at all, so the listing is served
+            // from its last page
+            if ($items === [] && $page > 0) {
+                --$page;
+                $last = false;
+                continue;
+            }
+
             $last = ($page + 1) * $this->perPage >= \count($this->releases);
             $readable = \array_values(\array_filter(
                 $items,
                 fn(ReleaseRecord $release): bool => !\in_array($release->tag, $this->unreadable, true),
             ));
 
-            yield new ReleasePage(\array_slice($readable, $skip), $last, \count($items) - \count($readable));
+            // Unreadable releases hold their positions on the page, so the offset counts them
+            yield new ReleasePage($readable, $last, \count($items) - \count($readable), $page * $this->perPage);
 
-            $skip = 0;
             ++$page;
         } while (!$last);
     }

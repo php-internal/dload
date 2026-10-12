@@ -11,8 +11,9 @@ use Internal\DLoad\Module\Registry\RepositoryId;
  *
  * Releases are kept newest first, exactly in the order the source lists them, and they form
  * a contiguous prefix of that listing: the registry only ever extends the list at the head (new
- * releases found on a check) or at the tail (older releases loaded on demand). `complete` tells
- * whether the tail has reached the end of the listing.
+ * releases found on a check) or at the tail (older releases loaded on demand). A release deleted
+ * upstream below the span of the last check stays until its download fails and it is forgotten.
+ * `complete` tells whether the tail has reached the end of the listing.
  *
  * The list is split into segments of at most `SEGMENT_SIZE` releases, so a repository with
  * thousands of releases costs one small index read plus the segments the run actually iterates.
@@ -204,9 +205,8 @@ final class RepositoryRecord
      * The fetched releases are the newest ones, and sources only ever add releases at the top,
      * so from the first stored release they contain onwards both lists walk the same listing
      * positions. A stored release missing from the fetched span at its position was deleted
-     * upstream and is dropped: keeping it would inflate `count()`, which the registry uses as
-     * the offset for loading the tail. Stored releases beyond the span are kept, and when the
-     * fetched releases contain no stored one they are the whole listing.
+     * upstream and is dropped. Stored releases beyond the span are kept, and when the fetched
+     * releases contain no stored one they are the whole listing.
      *
      * @param list<ReleaseRecord> $fetched Newest first.
      */

@@ -10,6 +10,7 @@ use Internal\DLoad\Module\Registry\VersionRegistry;
 use Internal\DLoad\Module\Repository\Collection\ReleasesCollection;
 use Internal\DLoad\Module\Repository\Exception\RateLimitException;
 use Internal\DLoad\Module\Repository\Internal\GitLab\Api\RepositoryApi;
+use Internal\DLoad\Module\Repository\Internal\PagedReleaseSource;
 use Internal\DLoad\Module\Repository\Internal\Paginator;
 use Internal\DLoad\Module\Repository\Repository;
 use Internal\DLoad\Service\Logger;
@@ -69,7 +70,7 @@ final class GitLabRepository implements Repository, Destroyable
 
             $pages = $this->registry->releases(
                 $this->getId(),
-                new GitLabReleaseSource($this->api),
+                new PagedReleaseSource($this->api->releasePages(...), RepositoryApi::RELEASES_PER_PAGE),
             );
             $anyPageLoaded = false;
 

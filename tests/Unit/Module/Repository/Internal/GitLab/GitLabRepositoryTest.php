@@ -16,8 +16,8 @@ use Internal\DLoad\Module\Repository\Exception\RateLimitException;
 use Internal\DLoad\Module\Repository\Internal\GitLab\Api\Client;
 use Internal\DLoad\Module\Repository\Internal\GitLab\Api\RepositoryApi;
 use Internal\DLoad\Module\Repository\Internal\GitLab\GitLabAsset;
-use Internal\DLoad\Module\Repository\Internal\GitLab\GitLabReleaseSource;
 use Internal\DLoad\Module\Repository\Internal\GitLab\GitLabRepository;
+use Internal\DLoad\Module\Repository\Internal\PagedReleaseSource;
 use Internal\DLoad\Module\Repository\ReleaseInterface;
 use Internal\DLoad\Service\Logger;
 use Internal\DLoad\Tests\Unit\Module\Registry\Stub\InMemoryRegistryStorage;
@@ -29,7 +29,7 @@ use Testo\Expect;
 use Testo\Test;
 
 #[Covers(GitLabRepository::class)]
-#[Covers(GitLabReleaseSource::class)]
+#[Covers(PagedReleaseSource::class)]
 #[Covers(GitLabAsset::class)]
 final class GitLabRepositoryTest
 {
@@ -116,8 +116,38 @@ final class GitLabRepositoryTest
         $all = self::names(self::createRepository($secondClient, self::registry($storage)));
 
         Assert::same($firstClient->requestedPages(), [1]);
-        Assert::same($secondClient->requestedPages(), [2, 3]);
+        Assert::same($secondClient->requestedPages(), [1, 2, 3]);
         Assert::same(\count($all), 300);
+    }
+
+    #[Test]
+    public function projectWithoutReleasesListsNothing(): void
+    {
+        $client = new PagedClientStub(pages: 0);
+
+        Assert::same(self::names(self::createRepository($client, self::registry(new InMemoryRegistryStorage()))), []);
+        Assert::same($client->requestedPages(), [1]);
+        Assert::same(\iterator_to_array(self::source($client)->pages(150), false), []);
+    }
+
+    #[Test]
+    public function serverCappingThePageSizeIsAskedForEveryPageOnce(): void
+    {
+        // Four releases, two per page whatever `per_page` says
+        $client = new PagedClientStub(pages: 2, releasesPerPage: 2, perPageLimit: 2);
+        $all = self::names(self::createRepository($client, self::registry(new InMemoryRegistryStorage())));
+
+        // The first page tells the page size, so the tail continues on page 2, not on page 1 again
+        Assert::same($client->requestedPages(), [1, 2]);
+        Assert::same(\count($all), 4);
+
+        // A source that does not know the page size yet learns it from page 1 and jumps to the right one
+        $client = new PagedClientStub(pages: 3, releasesPerPage: 2, perPageLimit: 2);
+        $pages = \iterator_to_array(self::source($client)->pages(4), false);
+
+        Assert::same($client->requestedPages(), [1, 3]);
+        Assert::count($pages, 1);
+        Assert::same($pages[0]->releases[0]->tag, 'v1.0.5');
     }
 
     #[Test]
@@ -281,6 +311,15 @@ final class GitLabRepositoryTest
     private static function registry(InMemoryRegistryStorage $storage): StoredVersionRegistry
     {
         return new StoredVersionRegistry($storage, 600, new Logger());
+    }
+
+    private static function source(PagedClientStub $client): PagedReleaseSource
+    {
+        $httpFactory = new NyholmFactoryImpl(new Logger());
+
+        $api = new RepositoryApi(new Client($httpFactory, $client), $httpFactory, 'group/project');
+
+        return new PagedReleaseSource($api->releasePages(...), RepositoryApi::RELEASES_PER_PAGE);
     }
 
     /**
