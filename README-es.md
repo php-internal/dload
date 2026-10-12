@@ -69,6 +69,7 @@ Con DLoad puedes:
     - [Gestión de Herramientas PHAR](#gestión-de-herramientas-phar)
     - [Distribución de Assets Frontend](#distribución-de-assets-frontend)
 - [Límites de Rate de la API](#límites-de-rate-de-la-api)
+- [Informe de Fallos](#informe-de-fallos)
 - [Configuración de Gitlab CI](#configuración-de-gitlab-ci)
 - [Contribuir](#contribuir)
 
@@ -736,6 +737,29 @@ Agrégalo a las variables de entorno CI/CD para descargas automatizadas.
 `DLOAD_TOKEN_GITHUB_COM` y `DLOAD_TOKEN_GITLAB_COM` tienen prioridad sobre `GITHUB_TOKEN` y `GITLAB_TOKEN`,
 lo que ayuda cuando esos nombres ya los usa otra herramienta. Los servidores autoalojados tienen sus propias variables,
 consulta [Servidores Autoalojados](#servidores-autoalojados).
+
+## Informe de Fallos
+
+`dload get` termina con un código distinto de cero cuando al menos un paquete solicitado no se instaló, e imprime
+el motivo de cada descarga fallida: el error de la API (token inválido, límite de rate agotado, repositorio
+inexistente), el número de releases coincidentes, los assets de cada release revisado y los filtros que los rechazaron.
+
+Si un software tiene varios `<repository>`, un repositorio que falla (error de la API, ningún release o asset
+adecuado, `uri` inválido o `type` desconocido) se incluye en el informe y DLoad pasa al siguiente.
+
+```
+ Failed to download `rr` 
+Requested: version `any`, OS `linux`, architecture `amd64`, minimum stability `stable`, asset type `any`.
+Tried 1 repository(ies):
+  1) github `roadrunner-server/roadrunner`
+    GitHub API rejected the credentials (HTTP 401: Bad credentials).
+    The API token from the GITHUB_TOKEN environment variable is invalid, expired or revoked. Provide a valid
+    token or unset the variable to use anonymous access.
+
+1 of 1 download(s) failed.
+```
+
+Ejecuta con `-vvv` para obtener también las trazas de pila y el registro completo de peticiones.
 
 ## Configuración de Gitlab CI
 

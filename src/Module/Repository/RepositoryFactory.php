@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Internal\DLoad\Module\Repository;
 
 use Internal\DLoad\Module\Config\Schema\Embed\Repository as RepositoryConfig;
+use Internal\DLoad\Module\Repository\Exception\InvalidRepositoryConfigException;
 
 /**
  * Interface for repository factory implementations.
@@ -24,7 +25,7 @@ interface RepositoryFactory
      *
      * @param RepositoryConfig $config Repository configuration
      * @return Repository Created repository instance
-     * @throws \RuntimeException If repository cannot be created
+     * @throws InvalidRepositoryConfigException If the config does not address a repository
      */
     public function create(RepositoryConfig $config): Repository;
 }

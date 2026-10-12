@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Module\Repository\Internal;
 
+use Internal\DLoad\Module\Repository\Exception\InvalidRepositoryConfigException;
+
 /**
  * Where a repository lives, read from the `uri` of its configuration: the server and the path there.
  *
@@ -41,13 +43,13 @@ final class RepositoryLocation
 
     /**
      * @param non-empty-string $publicServer URL of the public host of the repository type.
-     * @throws \InvalidArgumentException When the value is neither a repository path nor a repository URL.
+     * @throws InvalidRepositoryConfigException When the value is neither a repository path nor a repository URL.
      */
     public static function fromUri(string $uri, string $publicServer): self
     {
         $value = \trim($uri);
-        $value === '' and throw new \InvalidArgumentException('Repository URI is empty.');
-        $fail = static fn(string $reason): \InvalidArgumentException => self::error($value, $reason);
+        $value === '' and throw new InvalidRepositoryConfigException('Repository URI is empty.');
+        $fail = static fn(string $reason): InvalidRepositoryConfigException => self::error($value, $reason);
         $public = Server::fromString($publicServer);
 
         $server = null;
@@ -56,7 +58,7 @@ final class RepositoryLocation
             try {
                 $server = Server::fromString($match[1]);
             } catch (\InvalidArgumentException $e) {
-                throw $fail(\lcfirst($e->getMessage()));
+                throw self::error($value, \lcfirst($e->getMessage()), $e);
             }
 
             $path = $match[2];
@@ -99,13 +101,13 @@ final class RepositoryLocation
     /**
      * An error about this repository, for checks that depend on the repository type.
      */
-    public function invalid(string $reason): \InvalidArgumentException
+    public function invalid(string $reason): InvalidRepositoryConfigException
     {
         return self::error($this->uri, $reason);
     }
 
-    private static function error(string $uri, string $reason): \InvalidArgumentException
+    private static function error(string $uri, string $reason, ?\Throwable $previous = null): InvalidRepositoryConfigException
     {
-        return new \InvalidArgumentException(\sprintf('Repository `%s`: %s', $uri, $reason));
+        return new InvalidRepositoryConfigException(\sprintf('Repository `%s`: %s', $uri, $reason), previous: $previous);
     }
 }

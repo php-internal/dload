@@ -30,6 +30,7 @@ use Internal\DLoad\Module\Registry\VersionRegistry;
 use Internal\DLoad\Module\Repository\AssetInterface;
 use Internal\DLoad\Module\Repository\Collection\ReleasesCollection;
 use Internal\DLoad\Module\Repository\Exception\AssetNotFoundException;
+use Internal\DLoad\Module\Repository\Exception\InvalidRepositoryConfigException;
 use Internal\DLoad\Module\Repository\Exception\RateLimitException;
 use Internal\DLoad\Module\Repository\Exception\RepositoryException;
 use Internal\DLoad\Module\Repository\ReleaseInterface;
@@ -124,11 +125,15 @@ final class Downloader
                     report: $context->diagnostics->render(),
                 );
                 $context->repoConfig = \array_shift($repositories);
-                $repository = $this->repositoryProvider->getByConfig($context->repoConfig);
+                $repository = $this->createRepository($context);
+                if ($repository === null) {
+                    goto start;
+                }
 
                 // The registry keeps track of which software is served from which repository. The
                 // identity comes from the repository, not the config: the factory may have reduced
                 // a full URL to the path the repository stores its releases under.
+                /** @var Repository $repository */
                 $context->repositoryId = $repository->getId();
                 $this->registry->attach($context->repositoryId, $context->software->getId());
                 $context->repositoryAttempt = $context->diagnostics->addRepository(
@@ -150,13 +155,13 @@ final class Downloader
                     );
                 } catch (NotFound $e) {
                     // Nothing suitable in this repository: the reason is already in the diagnostics
-                    $this->logger->debug($e->getMessage());
+                    $this->logger->debug('%s', $e->getMessage());
                     goto start;
                 } catch (RepositoryException $e) {
                     // The repository is unusable (API error, invalid token, rate limit, etc.):
                     // remember the reason and fall back to the next repository.
                     $context->repositoryAttempt->error = $e;
-                    $this->logger->debug($e->getMessage());
+                    $this->logger->debug('%s', $e->getMessage());
                     $this->logger->exception($e, important: false);
                     goto start;
                 } catch (\Throwable $e) {
@@ -182,6 +187,29 @@ final class Downloader
     private static function assetNames(array $candidates): array
     {
         return \array_map(static fn(Candidate $candidate): string => $candidate->asset->getName(), $candidates);
+    }
+
+    /**
+     * Creates the repository of the current config.
+     *
+     * @return Repository|null `null` when the config can't address a repository; the reason is in the diagnostics.
+     */
+    private function createRepository(DownloadContext $context): ?Repository
+    {
+        try {
+            return $this->repositoryProvider->getByConfig($context->repoConfig);
+        } catch (InvalidRepositoryConfigException $e) {
+            // No repository object exists, so the config names the attempt
+            $context->diagnostics->addRepository(
+                type: $context->repoConfig->type,
+                name: $context->repoConfig->uri,
+                assetPattern: $context->repoConfig->assetPattern,
+            )->error = $e;
+            $this->logger->debug('%s', $e->getMessage());
+            $this->logger->exception($e, important: false);
+
+            return null;
+        }
     }
 
     /**
@@ -274,11 +302,11 @@ final class Downloader
                 $forgotten = true;
 
                 $context->releaseAttempt->reason ??= $e->getMessage();
-                $this->logger->debug($e->getMessage());
+                $this->logger->debug('%s', $e->getMessage());
                 goto process_release;
             } catch (NotFound $e) {
                 $context->releaseAttempt->reason ??= $e->getMessage();
-                $this->logger->debug($e->getMessage());
+                $this->logger->debug('%s', $e->getMessage());
                 $this->logger->exception($e, important: false);
                 goto process_release;
             }
