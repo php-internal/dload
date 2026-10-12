@@ -1,5 +1,52 @@
 # Changelog
 
+## [1.19.0](https://github.com/php-internal/dload/compare/1.18.0...1.19.0) (2026-10-12)
+
+
+### Features
+
+* **archive:** extract .tgz and .tar assets ([9cc255c](https://github.com/php-internal/dload/commit/9cc255c7a87935ce18c49937fe53fc2c1cbe8334)), closes [#152](https://github.com/php-internal/dload/issues/152)
+* **repository:** support self-hosted servers via repository URLs ([d78400a](https://github.com/php-internal/dload/commit/d78400ae90dfe33d21ee67d807e74a1a0d67eb16))
+* **software:** address the entry of a package as `<package>#<id>` and report shadowed entries ([03878e9](https://github.com/php-internal/dload/commit/03878e9ae8cafd395b222d74536b9bb33248b3bb))
+* **software:** read software definitions from Composer packages ([#169](https://github.com/php-internal/dload/issues/169)) ([03878e9](https://github.com/php-internal/dload/commit/03878e9ae8cafd395b222d74536b9bb33248b3bb))
+* **version:** match constraints with DLoad's own version ordering ([#155](https://github.com/php-internal/dload/issues/155)) ([fbdca9d](https://github.com/php-internal/dload/commit/fbdca9d33fb1aaa68bc1f06b479fc37d3ece6d03))
+* **version:** support hyphen ranges, `!=`/`<>`, a `v` prefix and constraints with five or more number parts ([fbdca9d](https://github.com/php-internal/dload/commit/fbdca9d33fb1aaa68bc1f06b479fc37d3ece6d03)), closes [#153](https://github.com/php-internal/dload/issues/153) [#154](https://github.com/php-internal/dload/issues/154)
+
+
+### Bug Fixes
+
+* **downloader:** fall back to the next repository when one has an invalid URI ([405f712](https://github.com/php-internal/dload/commit/405f712cc8b33a1806d241be4157f24fb8e7aaf4))
+* **downloader:** fall back to the next repository when one has an unknown type ([dfba2be](https://github.com/php-internal/dload/commit/dfba2be88055ff62021787acd873c5fbe334db7f))
+* **downloader:** log repository errors whose messages contain a percent sign ([405f712](https://github.com/php-internal/dload/commit/405f712cc8b33a1806d241be4157f24fb8e7aaf4))
+* **downloader:** name the skipped OS packages in the failure report and warn when an older release is taken instead ([2ead813](https://github.com/php-internal/dload/commit/2ead8136161084446f2fd5e1932e5f25dfbffe81))
+* **downloader:** rank universal macOS builds and x86-64 microarchitecture levels ([#167](https://github.com/php-internal/dload/issues/167)) ([ac6d681](https://github.com/php-internal/dload/commit/ac6d681e990319809e490d3157e31419f812b1a4))
+* **downloader:** remove the partial file of a failed download ([#166](https://github.com/php-internal/dload/issues/166)) ([9251857](https://github.com/php-internal/dload/commit/925185775b79f8325ed0b0dd6ff04461b09e1691))
+* **downloader:** skip archives DLoad cannot unpack when a binary is expected ([#164](https://github.com/php-internal/dload/issues/164)) ([9cc255c](https://github.com/php-internal/dload/commit/9cc255c7a87935ce18c49937fe53fc2c1cbe8334))
+* **downloader:** skip OS packages when a binary is expected ([#149](https://github.com/php-internal/dload/issues/149)) ([2ead813](https://github.com/php-internal/dload/commit/2ead8136161084446f2fd5e1932e5f25dfbffe81))
+* **registry:** continue the tail from the last stored release ([#160](https://github.com/php-internal/dload/issues/160)) ([b345838](https://github.com/php-internal/dload/commit/b345838b6cefe4912ce329261609408b3dc0f967))
+* **repository:** keep API tokens on their server across redirects ([fdb1aeb](https://github.com/php-internal/dload/commit/fdb1aeb008ee1d31076e2b0941faf621828b94b8))
+* **repository:** send the GitLab token only to the GitLab server ([d78400a](https://github.com/php-internal/dload/commit/d78400ae90dfe33d21ee67d807e74a1a0d67eb16)), closes [#143](https://github.com/php-internal/dload/issues/143)
+* **repository:** sort pre-releases by stability weight and number ([0331f5d](https://github.com/php-internal/dload/commit/0331f5dd8f7cd08132bf7059ea248a5134ae6910))
+* **version:** accept build metadata like `+build.5` in constraints again, as 1.18.0 did, and after a pre-release ([0bb33e1](https://github.com/php-internal/dload/commit/0bb33e1bc759cc4a111230eccfe81937abcffd18))
+* **version:** ignore SemVer build metadata and compare long numbers ([#158](https://github.com/php-internal/dload/issues/158)) ([0bb33e1](https://github.com/php-internal/dload/commit/0bb33e1bc759cc4a111230eccfe81937abcffd18))
+* **version:** match a constraint with a numbered pre-release ([0331f5d](https://github.com/php-internal/dload/commit/0331f5dd8f7cd08132bf7059ea248a5134ae6910))
+* **version:** read a pre-release before a feature as a range bound ([#162](https://github.com/php-internal/dload/issues/162)) ([3faa49a](https://github.com/php-internal/dload/commit/3faa49affbaa1ce7447d0bff04bb400468e9767e))
+
+
+### Documentation
+
+* note that OS packages are not selected for a binary and how deep the fallback goes ([2ead813](https://github.com/php-internal/dload/commit/2ead8136161084446f2fd5e1932e5f25dfbffe81))
+
+
+### Code Refactoring
+
+* **installer:** install downloads through a pipeline ([4df3181](https://github.com/php-internal/dload/commit/4df31811b103cf2a48aed199bc1a31ae52f5d077))
+* **installer:** make the installation steps readonly classes ([f259dc6](https://github.com/php-internal/dload/commit/f259dc6f62f0b745e2808abe86dfca9fd1403f7d))
+* **installer:** prepare the destination around the steps, not in one ([5174300](https://github.com/php-internal/dload/commit/5174300c2ad8a7001873b68b962405c987e596af))
+* **software:** collect the software registry through a pipeline ([51a3d7e](https://github.com/php-internal/dload/commit/51a3d7ec67a1a12f3f3fc1d8e80e142c644faa2d))
+* **velox:** build the config through the common pipeline ([6e7998e](https://github.com/php-internal/dload/commit/6e7998e8ce8919c79ce9bec1bb865a66d3102993))
+* **velox:** drop the unused config pipeline metadata ([#146](https://github.com/php-internal/dload/issues/146)) ([c61c8f0](https://github.com/php-internal/dload/commit/c61c8f0a475378499556d1daefad1567bca113e4))
+
 ## [1.18.0](https://github.com/php-internal/dload/compare/1.17.0...1.18.0) (2026-10-06)
 
 
