@@ -79,10 +79,10 @@ final class RuleExtraction
             $this->output->writeln(
                 \sprintf(
                     '%s (<comment>%s</comment>) has been %sinstalled into <info>%s</info>',
-                    $to->getFilename(),
-                    $installation->download->version,
+                    Logger::text($to->getFilename()),
+                    Logger::text((string) $installation->download->version),
                     $isOverwriting ? 're' : '',
-                    $path,
+                    Logger::text($path),
                 ),
             );
 

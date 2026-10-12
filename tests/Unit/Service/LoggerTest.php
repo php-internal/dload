@@ -101,15 +101,17 @@ final class LoggerTest
     public function tagsInStackTraceArgumentsArePrintedLiterally(string $argument, string $rendered): void
     {
         $output = new BufferedOutput(decorated: true);
-        // php.ini-production, as on CI, drops the arguments from traces
+        // php.ini-production, as on CI, drops the arguments from traces and cuts strings to nothing;
+        // the trace is rendered when the logger prints it, so the settings hold until then
         $ignoreArgs = \ini_set('zend.exception_ignore_args', '0');
+        $maxLength = \ini_set('zend.exception_string_param_max_len', '15');
         try {
             $exception = (static fn(string $id): \RuntimeException => new \RuntimeException('failed'))($argument);
+            (new Logger($output))->exception($exception, important: true);
         } finally {
             $ignoreArgs === false or \ini_set('zend.exception_ignore_args', $ignoreArgs);
+            $maxLength === false or \ini_set('zend.exception_string_param_max_len', $maxLength);
         }
-
-        (new Logger($output))->exception($exception, important: true);
 
         Assert::string($output->fetch())
             ->contains("'$argument'")

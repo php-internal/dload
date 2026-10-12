@@ -271,6 +271,22 @@ final class InstallerTest
     }
 
     #[Test]
+    public function aBinaryNameWithConsoleTagsIsInstalledAndPrintedLiterally(): void
+    {
+        \PHP_OS_FAMILY === 'Windows' and throw new SkipTest('A Windows file name cannot contain `<` and `>`.');
+        $name = 'x<fg=nope>y';
+        $download = $this->download('tool.stub', '');
+        $software = Software::fromArray(['name' => 'Tool', 'binary' => ['name' => $name, 'pattern' => '/./']]);
+        $output = new BufferedOutput(decorated: true);
+
+        $this->installer(archiveFactory: self::listed(['pkg/app' => 'binary']), output: $output)
+            ->install($download, $software, null, $this->destination, removeDownload: true);
+
+        Assert::string($output->fetch())->contains($name);
+        Assert::true(\is_executable((string) $this->destination->join($name)));
+    }
+
+    #[Test]
     #[DataSet([['files' => [['pattern' => '/^app$/', 'rename' => '../escaped']]]], 'a rename above the destination')]
     #[DataSet([['files' => [['pattern' => '/^app$/', 'rename' => 'sub/app']]]], 'a rename into a subdirectory')]
     #[DataSet([['files' => [['pattern' => '/^app$/', 'rename' => 'C:app']]]], 'a drive-relative rename')]
@@ -347,13 +363,14 @@ final class InstallerTest
     private function installer(
         ?BinaryProvider $binaryProvider = null,
         ArchiveFactory $archiveFactory = new ArchiveFactory(),
+        OutputInterface $output = new BufferedOutput(),
     ): Installer {
         if ($binaryProvider === null) {
             $binaryProvider = \Mockery::mock(BinaryProvider::class);
             $binaryProvider->allows('getLocalBinary')->andReturnNull();
         }
 
-        return new Installer(new Logger($this->log), new BufferedOutput(), $archiveFactory, $binaryProvider, OperatingSystem::Linux);
+        return new Installer(new Logger($this->log), $output, $archiveFactory, $binaryProvider, OperatingSystem::Linux);
     }
 
     /**
