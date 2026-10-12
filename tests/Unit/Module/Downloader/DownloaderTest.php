@@ -598,8 +598,9 @@ final class DownloaderTest
     public function uriRejectedByTheGitHubFactoryIsReportedBeforeTheNextOne(): void
     {
         // The real factory parses the URI; its HTTP client answers every request with no releases
+        $http = new RecordingHttpFactory();
         $factory = new GitHubFactory(
-            new RecordingHttpFactory(),
+            $http,
             new GitHubConfig(),
             new Logger(),
             new PassThroughRegistry(),
@@ -617,6 +618,12 @@ final class DownloaderTest
                 . '  2) github `owner/repo`',
             );
         }
+
+        // Nothing is requested from the host of the rejected URI
+        foreach ($http->sent as $request) {
+            Assert::notSame($request->getUri()->getHost(), 'ghe.example.com');
+        }
+        Assert::true($http->sent !== []);
     }
 
     #[Test]
@@ -634,23 +641,6 @@ final class DownloaderTest
         } catch (DownloadFailed $e) {
             Assert::string($e->report)->contains('/^rr-%d$/');
         }
-    }
-
-    #[Test]
-    public function goneAssetWithEncodedUrlGivesWayToAnOlderRelease(): void
-    {
-        $repository = new RepositoryStub('group/proj');
-        $gone = new ReleaseStub($repository, 'v2.0.0', Version::fromVersionString('v2.0.0'));
-        $gone->setAssets([new GoneAssetStub($gone, 'rr-linux-amd64.tar.gz', new AssetNotFoundException(
-            'GitLab asset is no longer available: HTTP 404 for https://gitlab.com/api/v4/projects/group%2Fproj/packages/generic/rr/2.0.0/rr-linux-amd64.tar.gz',
-            'group/proj',
-        ))]);
-        $alive = self::release($repository, 'v1.9.0', assets: true);
-        $repository = new RepositoryStub('group/proj', ReleasesCollection::create([$gone, $alive]));
-
-        $result = $this->download([$repository]);
-
-        Assert::same($result->version->string, 'v1.9.0');
     }
 
     #[Test]

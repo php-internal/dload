@@ -58,7 +58,7 @@ final class RepositoryLocation
             try {
                 $server = Server::fromString($match[1]);
             } catch (\InvalidArgumentException $e) {
-                throw $fail(\lcfirst($e->getMessage()));
+                throw self::error($value, \lcfirst($e->getMessage()), $e);
             }
 
             $path = $match[2];
@@ -106,8 +106,8 @@ final class RepositoryLocation
         return self::error($this->uri, $reason);
     }
 
-    private static function error(string $uri, string $reason): InvalidRepositoryConfigException
+    private static function error(string $uri, string $reason, ?\Throwable $previous = null): InvalidRepositoryConfigException
     {
-        return new InvalidRepositoryConfigException(\sprintf('Repository `%s`: %s', $uri, $reason));
+        return new InvalidRepositoryConfigException(\sprintf('Repository `%s`: %s', $uri, $reason), previous: $previous);
     }
 }
