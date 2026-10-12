@@ -101,12 +101,13 @@ final class ArrayReleaseSource implements ReleaseSource
             }
 
             $last = ($page + 1) * $this->perPage >= \count($this->releases);
-            $readable = \array_values(\array_filter(
-                $items,
+            $readable = fn(array $releases): array => \array_values(\array_filter(
+                $releases,
                 fn(ReleaseRecord $release): bool => !\in_array($release->tag, $this->unreadable, true),
             ));
 
-            yield new ReleasePage(\array_slice($readable, $skip), $last, \count($items) - \count($readable));
+            // Unreadable releases hold their positions on the page, so the offset counts them
+            yield new ReleasePage($readable(\array_slice($items, $skip)), $last, \count($items) - \count($readable($items)));
 
             $skip = 0;
             ++$page;

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Internal\DLoad\Tests\Unit\Module\Repository\Internal\GitLab;
 
 use Internal\DLoad\Module\HttpClient\Internal\NyholmFactoryImpl;
-use Internal\DLoad\Module\Registry\Internal\PagedReleaseSource;
 use Internal\DLoad\Module\Registry\Internal\PassThroughRegistry;
 use Internal\DLoad\Module\Registry\Internal\StoredVersionRegistry;
 use Internal\DLoad\Module\Registry\Record\AssetRecord;
@@ -18,6 +17,7 @@ use Internal\DLoad\Module\Repository\Internal\GitLab\Api\Client;
 use Internal\DLoad\Module\Repository\Internal\GitLab\Api\RepositoryApi;
 use Internal\DLoad\Module\Repository\Internal\GitLab\GitLabAsset;
 use Internal\DLoad\Module\Repository\Internal\GitLab\GitLabRepository;
+use Internal\DLoad\Module\Repository\Internal\PagedReleaseSource;
 use Internal\DLoad\Module\Repository\ReleaseInterface;
 use Internal\DLoad\Service\Logger;
 use Internal\DLoad\Tests\Unit\Module\Registry\Stub\InMemoryRegistryStorage;

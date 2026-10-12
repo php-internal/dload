@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Internal\DLoad\Tests\Unit\Module\Repository\Internal\GitHub;
 
 use Internal\DLoad\Module\HttpClient\Internal\NyholmFactoryImpl;
-use Internal\DLoad\Module\Registry\Internal\PagedReleaseSource;
 use Internal\DLoad\Module\Registry\Internal\PassThroughRegistry;
 use Internal\DLoad\Module\Registry\Internal\StoredVersionRegistry;
 use Internal\DLoad\Module\Registry\Record\ReleaseRecord;
@@ -16,6 +15,7 @@ use Internal\DLoad\Module\Repository\Exception\RateLimitException;
 use Internal\DLoad\Module\Repository\Internal\GitHub\Api\Client;
 use Internal\DLoad\Module\Repository\Internal\GitHub\Api\RepositoryApi;
 use Internal\DLoad\Module\Repository\Internal\GitHub\GitHubRepository;
+use Internal\DLoad\Module\Repository\Internal\PagedReleaseSource;
 use Internal\DLoad\Module\Repository\ReleaseInterface;
 use Internal\DLoad\Service\Logger;
 use Internal\DLoad\Tests\Unit\Module\Registry\Stub\InMemoryRegistryStorage;

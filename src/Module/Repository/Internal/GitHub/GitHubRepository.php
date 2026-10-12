@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Internal\DLoad\Module\Repository\Internal\GitHub;
 
 use Internal\Destroy\Destroyable;
-use Internal\DLoad\Module\Registry\Internal\PagedReleaseSource;
 use Internal\DLoad\Module\Registry\RepositoryId;
 use Internal\DLoad\Module\Registry\VersionRegistry;
 use Internal\DLoad\Module\Repository\Collection\ReleasesCollection;
 use Internal\DLoad\Module\Repository\Exception\RateLimitException;
 use Internal\DLoad\Module\Repository\Internal\GitHub\Api\RepositoryApi;
+use Internal\DLoad\Module\Repository\Internal\PagedReleaseSource;
 use Internal\DLoad\Module\Repository\Internal\Paginator;
 use Internal\DLoad\Module\Repository\Repository;
 use Internal\DLoad\Service\Logger;
