@@ -275,6 +275,13 @@ final class ConstraintTest
         yield 'exact patch letter of an alpha abbreviation' => ['1.1.1a', '1.1.1a', null, Stability::Preview, 'Patch letter a'];
         yield 'exact word after a dot' => ['1.0.0.Final', '1.0.0.Final', null, Stability::Preview, 'Word after a dot'];
         yield 'glued release candidate with an explicit stability' => ['^2.0.0rc1@beta', '^2.0.0', null, Stability::Beta, 'Glued bound'];
+
+        // Build metadata counts for nothing
+        yield 'build metadata with words' => ['>=1.2.3+build.5', '>=1.2.3', null, Stability::Stable, 'Build metadata'];
+        yield 'build metadata like a stability' => ['1.2.3+beta', '1.2.3', null, Stability::Stable, 'Build metadata like a stability'];
+        yield 'build metadata with a hyphen' => ['^1.2.3+build-5', '^1.2.3', null, Stability::Stable, 'No feature in build metadata'];
+        yield 'feature before build metadata' => ['^1.2.3-feature+build.5', '^1.2.3', 'feature', Stability::Preview, 'Feature before build metadata'];
+        yield 'build metadata in a range' => ['>=1.0+5 <2.0+build.1 || ^3.0+x', '>=1.0 <2.0 || ^3.0', null, Stability::Stable, 'Build metadata of every term'];
     }
 
     public static function provideInvalidConstraints(): \Generator
@@ -343,6 +350,9 @@ final class ConstraintTest
         yield 'branch' => ['dev-master', 'Invalid base version format: dev.', 'Branch name'];
         yield 'empty alternative' => ['^1.0 ||', 'Empty alternative', 'Empty alternative'];
         yield 'empty term' => ['1.2,', 'Empty term in the version constraint `1.2,`.', 'Empty term'];
+        yield 'plus is no operator' => ['+1.2.3', 'Invalid base version format: +1.2.3.', 'Plus before the version'];
+        yield 'plus without build metadata' => ['>=1.2.3+', 'Invalid base version format: >=1.2.3+.', 'Empty build metadata'];
+        yield 'underscore in build metadata' => ['1.2.3+5_beta', 'Invalid base version format: 1.2.3+5_beta.', 'Underscore in build metadata'];
         yield 'feature suffix after a pre-release bound of a range' => ['>=3.5.0-beta.1 <3.5.0-custom', 'Invalid base version format: <3.5.0-custom.', 'Feature in a range'];
     }
 
@@ -493,6 +503,25 @@ final class ConstraintTest
         yield 'bare number with a looser stability on a platform build' => ['1.2.3@preview', 'v1.2.3-linux', true];
         yield 'bare number with a looser stability on a pre-release' => ['=1.2.3@beta', 'v1.2.3-beta.1', true];
         yield 'bare number on build metadata' => ['1.2.3', 'v1.2.3+5', true];
+        yield 'bare number on build metadata with words' => ['1.2.3', 'v1.2.3+build.5', true];
+
+        // Build metadata counts for nothing on either side
+        yield 'at least with build metadata on its number' => ['>=1.2.3+build.5', 'v1.2.3', true];
+        yield 'above with build metadata on other build metadata' => ['>1.2.3+build.5', 'v1.2.3+build.6', false];
+        yield 'exact pre-release with build metadata on itself' => ['1.2.3-beta.1+build.5', 'v1.2.3-beta.1', true];
+        yield 'exact pre-release with build metadata on the next one' => ['1.2.3-beta.1+build.5', 'v1.2.3-beta.2', false];
+        yield 'exact pre-release on itself with build metadata' => ['1.2.3-beta.1', 'v1.2.3-beta.1+build.5', true];
+        yield 'above a pre-release with build metadata on the next one' => ['>1.2.3-beta.1+5', 'v1.2.3-beta.2', true];
+        yield 'build metadata like a stability on its release' => ['1.2.3+beta', 'v1.2.3', true];
+        yield 'build metadata like a stability on a beta' => ['1.2.3+beta', 'v1.2.3-beta', false];
+        yield 'caret with build metadata with a hyphen' => ['^1.2.3+build-5', 'v1.4.0', true];
+        yield 'feature before build metadata' => ['^1.2.3-feature+build.5', 'v1.4.0-feature', true];
+        yield 'hyphen range with build metadata' => ['1.0+build.1 - 2.0+build.2', 'v2.0.0', true];
+
+        // Number parts past the integer range
+        yield 'above a long number part on the next one' => ['>1.99999999999999999998', 'v1.99999999999999999999', true];
+        yield 'below a long number part on the previous one' => ['<1.99999999999999999999', 'v1.99999999999999999998', true];
+        yield 'exact long number part on the next one' => ['1.99999999999999999998', 'v1.99999999999999999999', false];
 
         // A bare stability keyword with an explicit stability is a bound too
         yield 'caret from a bare keyword with a looser stability on its bound' => ['^2.0-beta@alpha', 'v2.0.0-beta', true];
@@ -622,10 +651,13 @@ final class ConstraintTest
         // A `v` prefix or build metadata before a tail
         yield 'prefixed exact feature build on a numbered one' => ['v2.12.0-hotfix', '2.12.0-hotfix.2', false];
         yield 'prefixed exact feature build' => ['v2.12.0-hotfix', '2.12.0-hotfix', true];
-        yield 'exact feature build after build metadata on a numbered one' => ['1.2.3+5-hotfix', '1.2.3-hotfix.2', false];
-        yield 'exact feature build after build metadata' => ['1.2.3+5-hotfix', '1.2.3-hotfix', true];
+        yield 'exact feature build before build metadata on a numbered one' => ['1.2.3-hotfix+5', '1.2.3-hotfix.2', false];
+        yield 'exact feature build before build metadata' => ['1.2.3-hotfix+5', '1.2.3-hotfix', true];
+        yield 'build metadata with a hyphen is no feature build' => ['1.2.3+5-hotfix', '1.2.3-hotfix', false];
+        yield 'build metadata with a hyphen on its number' => ['1.2.3+5-hotfix', '1.2.3', true];
         yield 'above a prefixed bare keyword on a release candidate' => ['>v2.0-beta', '2.0.0-RC1', true];
-        yield 'caret from a bare keyword after build metadata on a release candidate' => ['^1.2.3+5-beta@alpha', '1.2.3-RC1', true];
+        yield 'caret from a bare keyword before build metadata on a release candidate' => ['^1.2.3-beta+5', '1.2.3-RC1', true];
+        yield 'caret with build metadata like a bare keyword on a release candidate' => ['^1.2.3+5-beta', '1.2.3-RC1', false];
 
         // A pre-release glued to the number
         yield 'caret from a glued release candidate on itself' => ['^2.0.0rc1', '2.0.0rc1', true];
@@ -679,7 +711,8 @@ final class ConstraintTest
         yield 'not equal' => ['!=3.5.0-beta.1', '!=3.5.0', Stability::Beta, 1, Stability::Beta];
         yield 'bare stability keyword after a comparison' => ['>3.5.0-beta', '>3.5.0', Stability::Beta, 0, Stability::Beta];
         yield 'five number parts' => ['^1.2.3.4.5-rc.1', '^1.2.3.4.5', Stability::RC, 1, Stability::RC];
-        yield 'build metadata before a pre-release' => ['1.2.3+5-beta.1', '1.2.3+5', Stability::Beta, 1, Stability::Beta];
+        yield 'pre-release before build metadata' => ['1.2.3-beta.1+build.5', '1.2.3', Stability::Beta, 1, Stability::Beta];
+        yield 'pre-release bound before build metadata' => ['>=1.2.3-rc.2+5', '>=1.2.3', Stability::RC, 2, Stability::RC];
         yield 'release candidate glued to the number of a caret' => ['^2.0.0rc1', '^2.0.0', Stability::RC, 1, Stability::RC];
         yield 'release candidate glued to an exact number' => ['2.0.0rc1', '2.0.0', Stability::RC, 1, Stability::RC];
         yield 'release candidate after a dot' => ['=2.0.0.RC2', '=2.0.0', Stability::RC, 2, Stability::RC];
@@ -772,6 +805,7 @@ final class ConstraintTest
     public function toStringKeepsThePreRelease(): void
     {
         Assert::same((string) Constraint::fromConstraintString('^3.5.0-beta.1@beta'), '^3.5.0-beta.1@beta');
+        Assert::same((string) Constraint::fromConstraintString('>=1.2.3-beta.1+build.5'), '>=1.2.3-beta.1+build.5');
     }
 
     #[DataProvider('provideComparableConstraints')]

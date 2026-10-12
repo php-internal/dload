@@ -14,6 +14,7 @@ namespace Internal\DLoad\Module\Version;
  * - Hyphen ranges: `1.0 - 2.0`
  * - AND by a space or a comma, OR by `||` or `|`: `>=1.0 <2.0 || ^3.0`
  * - A `v` prefix, pre-releases and numeric tails in bounds: `v1.2.3`, `^3.5.0-beta.1`, `^2.0.0rc1`, `>=1.0.0-1`
+ * - Build metadata, which does not count: `>=1.2.3+build.5`, `^1.2.3-beta.1+5`
  *
  * Any count of number parts is supported on both sides, and trailing zero parts do not count.
  *
@@ -88,7 +89,7 @@ final class Range
     {
         $group === '' and throw new \InvalidArgumentException("Empty alternative in the version constraint `{$constraint}`.");
 
-        $version = '(v?\d+(?:\.\d+)*(?:\+\d+)?(?:' . self::preReleasePattern() . ')?)';
+        $version = '(v?\d+(?:\.\d+)*(?:' . self::preReleasePattern() . ')?(?:' . Version::buildPattern() . ')?)';
         if (\preg_match("/^{$version}\\s+-\\s+{$version}$/i", $group, $matches) === 1) {
             return self::parseHyphenRange($matches[1], $matches[2]);
         }
@@ -193,7 +194,7 @@ final class Range
     private static function parseVersion(string $version): ?array
     {
         # Build metadata does not count, so the number goes without it
-        $pattern = '/^v?(\d+(?:\.\d+)*)(?:\+\d+)?(' . self::preReleasePattern() . ')?$/i';
+        $pattern = '/^v?(\d+(?:\.\d+)*)(' . self::preReleasePattern() . ')?(?:' . Version::buildPattern() . ')?$/i';
         if (\preg_match($pattern, $version, $matches) !== 1) {
             return null;
         }

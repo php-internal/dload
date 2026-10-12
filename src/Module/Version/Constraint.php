@@ -16,6 +16,7 @@ use Internal\DLoad\Module\Common\Stability;
  * - Combined constraints: ^2.12.0-feature@beta
  * - Exact releases, a pre-release or a tail included: 3.5.0-beta.1, 2.0-beta, 1.0.0-1, 2.12.0-hotfix, 2.0.0rc1
  * - Pre-release bounds of ranges and comparisons: >=3.5.0-beta.1 <3.5.0-RC1, ^1.0 || ^2.0-beta.1, >2.0-beta, ^2.0.0rc1
+ * - Build metadata, which does not count: >=1.2.3+build.5, 3.5.0-beta.1+5
  *
  * A stability keyword at the start or the end of a feature suffix sets the minimum stability
  * unless an explicit one is given: ^2.12.0-my-feature-beta.
@@ -68,6 +69,9 @@ final class Constraint implements \Stringable
             );
         }
 
+        # Build metadata does not count, and a hyphen within it, as in "1.2.3+build-5", starts no feature suffix
+        $origin = (string) \preg_replace('/(?<=[a-z\d])' . Version::buildPattern() . '(?=$|[\s,|])/i', '', $origin);
+
         # A single version with a pre-release or any other tail names one release: "2.0-beta" accepts neither
         # "2.0.0-beta.3" nor "2.0.0", and "2.12.0-hotfix" not "2.12.0-hotfix.2"; a bare number covers every build
         # of that number, see Comparison. In a range, a pre-release bound, a bare "-beta" included, is a part of
@@ -77,7 +81,7 @@ final class Constraint implements \Stringable
         $tail = '';
         $preRelease = null;
         if (\preg_match(
-            '/^(?:==?)?\s*v?(\d+(?:\.\d+)*(?:\+\d+)?)(-[\w.-]+|[._]?(?=[a-z])(?!(?<=\.)x(?![a-z\d]))[\w.-]+)?$/i',
+            '/^(?:==?)?\s*v?(\d+(?:\.\d+)*)(-[\w.-]+|[._]?(?=[a-z])(?!(?<=\.)x(?![a-z\d]))[\w.-]+)?$/i',
             $origin,
             $exact,
         ) === 1) {
@@ -204,7 +208,7 @@ final class Constraint implements \Stringable
     private static function preReleaseBounds(string $constraint): array
     {
         \preg_match_all(
-            '/(?:^|[\s,|])[<>=!~^]*v?\d+(?:\.\d+)*(?:\+\d+)?(' . Range::preReleasePattern() . ')(?=$|[\s,|])/i',
+            '/(?:^|[\s,|])[<>=!~^]*v?\d+(?:\.\d+)*(' . Range::preReleasePattern() . ')(?=$|[\s,|])/i',
             $constraint,
             $matches,
         );
