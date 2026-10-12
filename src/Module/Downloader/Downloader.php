@@ -507,26 +507,30 @@ final class Downloader
 
             $this->logger->info('Downloading into %s', (string) $temp);
 
-            await(coroutine(
-                (static function () use ($context, $file): void {
-                    $generator = $context->asset->download(
-                        // static fn(int $dlNow, int $dlSize, array $info): mixed => ($context->onProgress)(
-                        //     new Progress(
-                        //         total: $dlSize,
-                        //         current: $dlNow,
-                        //         message: 'downloading...',
-                        //     ),
-                        // ),
-                    );
+            try {
+                await(coroutine(
+                    (static function () use ($context, $file): void {
+                        $generator = $context->asset->download(
+                            // static fn(int $dlNow, int $dlSize, array $info): mixed => ($context->onProgress)(
+                            //     new Progress(
+                            //         total: $dlSize,
+                            //         current: $dlNow,
+                            //         message: 'downloading...',
+                            //     ),
+                            // ),
+                        );
 
-                    foreach ($generator as $chunk) {
-                        $file->fwrite($chunk);
-                    }
-                }),
-            )->then(null, static function (\Throwable $e) use ($file): void {
-                @\unlink($file->getPath());
+                        foreach ($generator as $chunk) {
+                            $file->fwrite($chunk);
+                        }
+                    }),
+                ));
+            } catch (\Throwable $e) {
+                // Released before the delete: on Windows a file deleted while open can keep its name until the handle closes
+                $file = null;
+                @\unlink((string) $temp);
                 throw $e;
-            }));
+            }
 
             return $context->file = $file;
         };
