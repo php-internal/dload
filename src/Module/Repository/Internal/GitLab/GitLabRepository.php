@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Internal\DLoad\Module\Repository\Internal\GitLab;
 
 use Internal\Destroy\Destroyable;
+use Internal\DLoad\Module\Registry\Internal\PagedReleaseSource;
 use Internal\DLoad\Module\Registry\RepositoryId;
 use Internal\DLoad\Module\Registry\VersionRegistry;
 use Internal\DLoad\Module\Repository\Collection\ReleasesCollection;
@@ -69,7 +70,7 @@ final class GitLabRepository implements Repository, Destroyable
 
             $pages = $this->registry->releases(
                 $this->getId(),
-                new GitLabReleaseSource($this->api),
+                new PagedReleaseSource($this->api->releasePages(...), RepositoryApi::RELEASES_PER_PAGE),
             );
             $anyPageLoaded = false;
 

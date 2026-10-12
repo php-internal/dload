@@ -27,6 +27,9 @@ final class ArrayReleaseSource implements ReleaseSource
     /** When set, every page request fails with this exception. */
     public ?\Throwable $failure = null;
 
+    /** Number of pages served before every further request fails. */
+    public int $failAfter = \PHP_INT_MAX;
+
     /**
      * Tags of releases the source cannot read: they are left out of the pages and counted as skipped.
      *
@@ -87,9 +90,16 @@ final class ArrayReleaseSource implements ReleaseSource
 
         do {
             $this->failure === null or throw $this->failure;
+            \count($this->served) < $this->failAfter or throw new ApiException('API is unavailable.', 'stub/stub');
 
             $this->served[] = $page * $this->perPage;
             $items = \array_slice($this->releases, $page * $this->perPage, $this->perPage);
+
+            // Like a real API, a page past the end of the listing is no page at all
+            if ($items === [] && $page > 0) {
+                return;
+            }
+
             $last = ($page + 1) * $this->perPage >= \count($this->releases);
             $readable = \array_values(\array_filter(
                 $items,

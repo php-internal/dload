@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Internal\DLoad\Tests\Unit\Module\Repository\Internal\GitHub;
 
 use Internal\DLoad\Module\HttpClient\Internal\NyholmFactoryImpl;
+use Internal\DLoad\Module\Registry\Internal\PagedReleaseSource;
 use Internal\DLoad\Module\Registry\Internal\PassThroughRegistry;
 use Internal\DLoad\Module\Registry\Internal\StoredVersionRegistry;
 use Internal\DLoad\Module\Registry\Record\ReleaseRecord;
@@ -14,7 +15,6 @@ use Internal\DLoad\Module\Registry\VersionRegistry;
 use Internal\DLoad\Module\Repository\Exception\RateLimitException;
 use Internal\DLoad\Module\Repository\Internal\GitHub\Api\Client;
 use Internal\DLoad\Module\Repository\Internal\GitHub\Api\RepositoryApi;
-use Internal\DLoad\Module\Repository\Internal\GitHub\GitHubReleaseSource;
 use Internal\DLoad\Module\Repository\Internal\GitHub\GitHubRepository;
 use Internal\DLoad\Module\Repository\ReleaseInterface;
 use Internal\DLoad\Service\Logger;
@@ -27,7 +27,7 @@ use Testo\Expect;
 use Testo\Test;
 
 #[Covers(GitHubRepository::class)]
-#[Covers(GitHubReleaseSource::class)]
+#[Covers(PagedReleaseSource::class)]
 final class GitHubRepositoryTest
 {
     #[Test]
@@ -102,6 +102,55 @@ final class GitHubRepositoryTest
     }
 
     #[Test]
+    public function shortPageBelowTheFirstOneDoesNotChangeThePageSize(): void
+    {
+        // The first run stores two full pages
+        $storage = new InMemoryRegistryStorage();
+        $firstClient = new PagedClientStub(pages: 4);
+        $seen = 0;
+        foreach (self::createRepository($firstClient, self::registry($storage))->getReleases() as $release) {
+            unset($release);
+            if (++$seen === 150) {
+                break;
+            }
+        }
+
+        // Page 3 comes back one release short, as a server filtering after paging answers; the
+        // fresh record is extended from the stored count and page 4 keeps its position
+        $secondClient = new PagedClientStub(pages: 4, withheld: ['v1.0.250']);
+        $all = self::names(self::createRepository($secondClient, self::registry($storage)));
+
+        Assert::same($secondClient->requestedPages(), [3, 4]);
+        Assert::same(\count($all), 399);
+        Assert::true(\in_array('v1.0.201', $all, true));
+        Assert::true(\in_array('v1.0.300', $all, true));
+    }
+
+    #[Test]
+    public function unreadableReleaseAboveTheTailDoesNotMakeEveryRunReloadIt(): void
+    {
+        // One release of page 1 cannot be read from the start; the first run stores two pages
+        $storage = new InMemoryRegistryStorage();
+        $firstClient = new PagedClientStub(pages: 4, broken: 1);
+        $seen = 0;
+        foreach (self::createRepository($firstClient, self::registry($storage))->getReleases() as $release) {
+            unset($release);
+            if (++$seen === 150) {
+                break;
+            }
+        }
+
+        // A check that bails out on the unreadable release leaves the record as it is and does
+        // not go looking for a shift it could not tell from the missing release
+        $secondClient = new PagedClientStub(pages: 4, broken: 1);
+        $all = self::names(self::createRepository($secondClient, self::registry($storage, refresh: true)));
+
+        Assert::same($secondClient->requestedPages(), [1, 2, 3, 4]);
+        Assert::same(\count($all), 399);
+        Assert::same(\count(\array_unique($all)), 399);
+    }
+
+    #[Test]
     public function olderReleasesAreLoadedFromTheApiWhenTheRegistryRunsOut(): void
     {
         $storage = new InMemoryRegistryStorage();
@@ -145,7 +194,7 @@ final class GitHubRepositoryTest
     #[Test]
     public function unreadableReleasesAreCountedOnThePage(): void
     {
-        $page = (new GitHubReleaseSource(self::api(new PagedClientStub(pages: 1, broken: 2))))->pages()->current();
+        $page = self::source(new PagedClientStub(pages: 1, broken: 2))->pages()->current();
 
         Assert::same(\count($page->releases), 98);
         Assert::same($page->skipped, 2);
@@ -188,7 +237,7 @@ final class GitHubRepositoryTest
 
         Assert::same(self::names(self::createRepository($client, self::registry(new InMemoryRegistryStorage()))), []);
         Assert::same($client->requestedPages(), [1]);
-        Assert::same(\iterator_to_array((new GitHubReleaseSource(self::api($client)))->pages(150), false), []);
+        Assert::same(\iterator_to_array(self::source($client)->pages(150), false), []);
     }
 
     #[Test]
@@ -342,9 +391,14 @@ final class GitHubRepositoryTest
         );
     }
 
-    private static function registry(InMemoryRegistryStorage $storage): StoredVersionRegistry
+    private static function source(PagedClientStub $client): PagedReleaseSource
     {
-        return new StoredVersionRegistry($storage, 600, new Logger());
+        return new PagedReleaseSource(self::api($client)->releasePages(...), RepositoryApi::RELEASES_PER_PAGE);
+    }
+
+    private static function registry(InMemoryRegistryStorage $storage, bool $refresh = false): StoredVersionRegistry
+    {
+        return new StoredVersionRegistry($storage, 600, new Logger(), $refresh);
     }
 
     /**

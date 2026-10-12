@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Internal\DLoad\Tests\Unit\Module\Repository\Internal\GitLab;
 
 use Internal\DLoad\Module\HttpClient\Internal\NyholmFactoryImpl;
+use Internal\DLoad\Module\Registry\Internal\PagedReleaseSource;
 use Internal\DLoad\Module\Registry\Internal\PassThroughRegistry;
 use Internal\DLoad\Module\Registry\Internal\StoredVersionRegistry;
 use Internal\DLoad\Module\Registry\Record\AssetRecord;
@@ -16,7 +17,6 @@ use Internal\DLoad\Module\Repository\Exception\RateLimitException;
 use Internal\DLoad\Module\Repository\Internal\GitLab\Api\Client;
 use Internal\DLoad\Module\Repository\Internal\GitLab\Api\RepositoryApi;
 use Internal\DLoad\Module\Repository\Internal\GitLab\GitLabAsset;
-use Internal\DLoad\Module\Repository\Internal\GitLab\GitLabReleaseSource;
 use Internal\DLoad\Module\Repository\Internal\GitLab\GitLabRepository;
 use Internal\DLoad\Module\Repository\ReleaseInterface;
 use Internal\DLoad\Service\Logger;
@@ -29,7 +29,7 @@ use Testo\Expect;
 use Testo\Test;
 
 #[Covers(GitLabRepository::class)]
-#[Covers(GitLabReleaseSource::class)]
+#[Covers(PagedReleaseSource::class)]
 #[Covers(GitLabAsset::class)]
 final class GitLabRepositoryTest
 {
@@ -313,11 +313,13 @@ final class GitLabRepositoryTest
         return new StoredVersionRegistry($storage, 600, new Logger());
     }
 
-    private static function source(PagedClientStub $client): GitLabReleaseSource
+    private static function source(PagedClientStub $client): PagedReleaseSource
     {
         $httpFactory = new NyholmFactoryImpl(new Logger());
 
-        return new GitLabReleaseSource(new RepositoryApi(new Client($httpFactory, $client), $httpFactory, 'group/project'));
+        $api = new RepositoryApi(new Client($httpFactory, $client), $httpFactory, 'group/project');
+
+        return new PagedReleaseSource($api->releasePages(...), RepositoryApi::RELEASES_PER_PAGE);
     }
 
     /**

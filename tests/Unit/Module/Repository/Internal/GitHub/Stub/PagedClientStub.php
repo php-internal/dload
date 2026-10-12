@@ -31,6 +31,7 @@ final class PagedClientStub implements ClientInterface
      * @param int<0, max> $drafts Draft releases listed on top, as the API shows them to the token holder.
      * @param int<0, max> $broken Number of the newest published releases that cannot be decoded.
      * @param int<1, max>|null $perPageLimit Greatest number of releases served per page whatever `per_page` asks for.
+     * @param list<non-empty-string> $withheld Tags left out of a page after it was cut, as a server filtering after paging does.
      */
     public function __construct(
         private readonly int $pages = 1,
@@ -38,6 +39,7 @@ final class PagedClientStub implements ClientInterface
         private readonly int $drafts = 0,
         private readonly int $broken = 0,
         private readonly ?int $perPageLimit = null,
+        private readonly array $withheld = [],
     ) {}
 
     public function sendRequest(RequestInterface $request): ResponseInterface
@@ -58,6 +60,11 @@ final class PagedClientStub implements ClientInterface
         $headers = $page * $perPage < \count($all)
             ? ['link' => [\sprintf('<https://api.github.com/repositories/1/releases?page=%d>; rel="next"', $page + 1)]]
             : [];
+
+        $releases = \array_values(\array_filter(
+            $releases,
+            fn(array $release): bool => !\in_array($release['name'], $this->withheld, true),
+        ));
 
         return new ResponseStub(200, $headers, \json_encode($releases));
     }

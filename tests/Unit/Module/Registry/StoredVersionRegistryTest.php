@@ -241,7 +241,7 @@ final class StoredVersionRegistryTest
     }
 
     #[Test]
-    public function failedCheckLeavesTheStoredTailUnconfirmed(): void
+    public function failedCheckLeavesTheStoredTailAsItIs(): void
     {
         $source = ArrayReleaseSource::ofTags(['v6', 'v5', 'v4', 'v3', 'v2', 'v1']);
         self::take($this->registry()->releases($this->id, $source), 4);
@@ -252,10 +252,57 @@ final class StoredVersionRegistryTest
         $pages = $this->registry()->releases($this->id, $source);
         Assert::same(self::tagsOf($pages->current()), ['v6', 'v5', 'v4', 'v3']);
 
-        // The source is back: the tail is confirmed from its last stored release on
+        // The source is back: nothing was compared, so nothing is suspected and the tail goes
+        // on without a confirmation, which a rate limit could not afford anyway
         $source->failure = null;
         Assert::same(self::flatten($pages), ['v6', 'v5', 'v4', 'v3', 'v2', 'v1']);
-        Assert::same($source->served, [2, 4]);
+        Assert::same($source->served, [4]);
+    }
+
+    #[Test]
+    public function anchorBeyondTheEndOfTheListingReloadsTheTail(): void
+    {
+        $source = ArrayReleaseSource::ofTags(['v8', 'v7', 'v6', 'v5', 'v4', 'v3', 'v2', 'v1']);
+        self::take($this->registry()->releases($this->id, $source), 6);
+        $source->served = [];
+
+        // Three releases below page 1 are gone: the last stored one would sit past the end now,
+        // and the source has no page to answer with
+        $source->delete('v4');
+        $source->delete('v3');
+        $source->delete('v2');
+        $this->now += 601;
+        $again = self::flatten($this->registry()->releases($this->id, $source));
+
+        Assert::same($again, ['v8', 'v7', 'v6', 'v5', 'v4', 'v3', 'v1']);
+        Assert::same($source->served, [0, 4, 2, 4]);
+        Assert::same(self::tagsOf($this->storage->load($this->id)->releases()), ['v8', 'v7', 'v6', 'v5', 'v1']);
+    }
+
+    #[Test]
+    public function failureWhileReloadingTheTailKeepsTheStoredReleases(): void
+    {
+        $source = ArrayReleaseSource::ofTags(['v6', 'v5', 'v4', 'v3', 'v2', 'v1']);
+        self::take($this->registry()->releases($this->id, $source), 4);
+        $source->served = [];
+
+        $source->delete('v3');
+        $this->now += 601;
+        $pages = $this->registry()->releases($this->id, $source);
+        $pages->current();
+
+        // The anchor misses, and the source fails on the very next page
+        $source->served = [];
+        $source->failAfter = 1;
+        try {
+            $pages->next();
+            Assert::fail('The failure of the reload must reach the caller.');
+        } catch (ApiException) {
+        }
+
+        // Nothing was dropped: the stored list serves the next run under the same failure
+        Assert::same($source->served, [2]);
+        Assert::same(self::tagsOf($this->storage->load($this->id)->releases()), ['v6', 'v5', 'v4', 'v3']);
     }
 
     #[Test]
