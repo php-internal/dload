@@ -157,9 +157,10 @@ final class StoredVersionRegistryTest
         $again = self::flatten($this->registry()->releases($this->id, $source));
 
         // The stored `v3` is served as it was, but `v2` is not skipped: the check confirms
-        // page 1 only, the tail is found shifted at offset 5 and is loaded again from offset 2
+        // page 1 only, `v3` is on neither the page at offset 5 nor the one after it, and the
+        // tail is loaded again from offset 2
         Assert::same($again, ['v8', 'v7', 'v6', 'v5', 'v4', 'v3', 'v2', 'v1']);
-        Assert::same($source->served, [0, 4, 2, 4, 6]);
+        Assert::same($source->served, [0, 4, 6, 2, 4, 6]);
 
         $record = $this->storage->load($this->id);
         Assert::same(self::tagsOf($record->releases()), ['v8', 'v7', 'v6', 'v5', 'v4', 'v2', 'v1']);
@@ -187,7 +188,7 @@ final class StoredVersionRegistryTest
         $again = self::flatten($this->registry()->releases($this->id, $source));
 
         Assert::same($again, ['v6', 'v5', 'v4', 'v2', 'v1']);
-        Assert::same($source->served, [0, 2, 2, 4]);
+        Assert::same($source->served, [0, 2, 4, 2, 4]);
         Assert::false($this->storage->load($this->id)->has('draft'));
     }
 
@@ -275,7 +276,7 @@ final class StoredVersionRegistryTest
 
         $source->failure = null;
         Assert::same(self::flatten($pages), ['v8', 'v7', 'v6', 'v5', 'v4', 'v3', 'v2', 'v1']);
-        Assert::same($source->served, [4, 0, 2, 4, 6]);
+        Assert::same($source->served, [4, 6, 0, 2, 4, 6]);
 
         // Neither a lost release nor a ghost is left behind
         Assert::same(self::tagsOf($this->storage->load($this->id)->releases()), ['v8', 'v7', 'v6', 'v5', 'v4', 'v2', 'v1']);
@@ -300,14 +301,58 @@ final class StoredVersionRegistryTest
         Assert::same(self::tagsOf($this->storage->load($this->id)->releases()), ['v10', 'v8', 'v7', 'v6', 'v5', 'v4', 'v3']);
         $source->served = [];
 
-        // Now `v5` is deleted upstream too: the anchor misses and the tail is loaded again
+        // Now `v5` and `v4` are deleted upstream too: the stored `v3` moved up past the page
+        // start, the last page has no further one to look at, and the tail is loaded again
         $source->delete('v5');
+        $source->delete('v4');
         $this->now += 601;
         $again = self::flatten($this->registry()->releases($this->id, $source));
 
         Assert::same($again, ['v10', 'v8', 'v7', 'v6', 'v5', 'v4', 'v3', 'v2', 'v1']);
-        Assert::same($source->served, [0, 6, 0, 2, 4, 6, 8]);
-        Assert::same(self::tagsOf($this->storage->load($this->id)->releases()), ['v10', 'v8', 'v7', 'v6', 'v4', 'v3', 'v2', 'v1']);
+        Assert::same($source->served, [0, 6, 0, 2, 4, 6]);
+        Assert::same(self::tagsOf($this->storage->load($this->id)->releases()), ['v10', 'v8', 'v7', 'v6', 'v3', 'v2', 'v1']);
+    }
+
+    #[Test]
+    public function unreadableReleaseBelowTheCheckedPageDoesNotMakeEveryCheckReloadTheTail(): void
+    {
+        $source = ArrayReleaseSource::ofTags(['v10', 'v9', 'v8', 'v7', 'v6', 'v5', 'v4', 'v3', 'v2', 'v1']);
+        $source->unreadable = ['v6'];
+        self::take($this->registry()->releases($this->id, $source), 7);
+        Assert::same(self::tagsOf($this->storage->load($this->id)->releases()), ['v10', 'v9', 'v8', 'v7', 'v5', 'v4', 'v3']);
+        $source->served = [];
+
+        // The check confirms page 1 and knows nothing of `v6`; the stored `v3` lies one position
+        // further than the stored count says and is found on the page fetched for it
+        $this->now += 601;
+        $again = self::flatten($this->registry()->releases($this->id, $source));
+
+        Assert::same($again, ['v10', 'v9', 'v8', 'v7', 'v5', 'v4', 'v3', 'v2', 'v1']);
+        Assert::same($source->served, [0, 6, 8]);
+        Assert::same(self::tagsOf($this->storage->load($this->id)->releases()), ['v10', 'v9', 'v8', 'v7', 'v5', 'v4', 'v3', 'v2', 'v1']);
+
+        $source->served = [];
+        $this->now += 601;
+        self::flatten($this->registry()->releases($this->id, $source));
+        Assert::same($source->served, [0]);
+    }
+
+    #[Test]
+    public function lastStoredReleaseMovedDownToTheNextPageIsStillFound(): void
+    {
+        $source = ArrayReleaseSource::ofTags(['v10', 'v9', 'v8', 'v7', 'v6', 'v5', 'v4', 'v3', 'v2', 'v1']);
+        $source->unreadable = ['v9', 'v5'];
+        self::take($this->registry()->releases($this->id, $source), 4);
+        Assert::same(self::tagsOf($this->storage->load($this->id)->releases()), ['v10', 'v8', 'v7', 'v6']);
+        $source->served = [];
+
+        // The stored `v6` opens page 3 while the stored count points at page 2: the next page
+        // is looked at before the tail is given up
+        $this->now += 601;
+        $again = self::flatten($this->registry()->releases($this->id, $source));
+
+        Assert::same($again, ['v10', 'v8', 'v7', 'v6', 'v4', 'v3', 'v2', 'v1']);
+        Assert::same($source->served, [0, 2, 4, 6, 8]);
     }
 
     #[Test]

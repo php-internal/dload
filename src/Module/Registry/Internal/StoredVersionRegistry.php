@@ -65,9 +65,8 @@ final class StoredVersionRegistry implements VersionRegistry
 
         // Within the TTL the stored list is taken as it is, head and tail alike
         $verified = $record->count();
-        $unreadable = 0;
         if ($this->refresh || $record->isStale(($this->clock)(), $this->ttl)) {
-            [$record, $verified, $unreadable] = $this->check($record, $source);
+            [$record, $verified] = $this->check($record, $source);
         } else {
             $this->logger->debug('Releases of `%s` are served from the version registry.', (string) $id);
         }
@@ -81,7 +80,7 @@ final class StoredVersionRegistry implements VersionRegistry
         }
 
         // Older releases are loaded only when the consumer actually needs them
-        yield from $this->extend($record, $source, $verified, $unreadable);
+        yield from $this->extend($record, $source, $verified);
     }
 
     public function attach(RepositoryId $id, string $software): void
@@ -106,6 +105,22 @@ final class StoredVersionRegistry implements VersionRegistry
     }
 
     /**
+     * @param list<ReleaseRecord> $releases
+     * @param non-empty-string $tag
+     * @return int<0, max>|false Index of the release with the tag, or `false` when there is none.
+     */
+    private static function position(array $releases, string $tag): int|false
+    {
+        foreach ($releases as $index => $release) {
+            if ($release->tag === $tag) {
+                return $index;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * @param list<ReleaseRecord> $page
      */
     private static function hasKnown(RepositoryRecord $record, array $page): bool
@@ -122,24 +137,20 @@ final class StoredVersionRegistry implements VersionRegistry
     /**
      * Fetches the releases published since the last check and stores the result.
      *
-     * Besides the record, tells how many of its leading releases the check has seen in place,
-     * as the stored releases beyond them may have shifted since they were stored, and how many
-     * listing positions among the pages it fetched hold a release the record cannot account
-     * for, as an unreadable one. A check that leaves the record untouched confirms nothing.
+     * Besides the record, tells how many of its leading releases the check has seen in place:
+     * the stored releases beyond them may have shifted since they were stored. A check that
+     * leaves the record untouched confirms nothing.
      *
-     * @return array{RepositoryRecord, int<0, max>, int<0, max>}
+     * @return array{RepositoryRecord, int<0, max>}
      * @throws RepositoryException When the source fails and nothing is stored to fall back on.
      */
     private function check(RepositoryRecord $record, ReleaseSource $source): array
     {
         try {
             $fetched = [];
-            $unreadable = 0;
             $complete = $record->complete;
 
             foreach ($source->pages() as $page) {
-                $unreadable += $page->skipped;
-
                 // A release the source could not read is missing from the page exactly like a
                 // deleted one, and `withHead()` would drop it; the stored list stays untouched
                 // and the next run checks again
@@ -151,7 +162,7 @@ final class StoredVersionRegistry implements VersionRegistry
                         $record->count(),
                     );
 
-                    return [$record, 0, $unreadable];
+                    return [$record, 0];
                 }
 
                 $fetched = [...$fetched, ...$page->releases];
@@ -176,51 +187,64 @@ final class StoredVersionRegistry implements VersionRegistry
                     ->withCheckedAt(($this->clock)()),
             );
 
-            return [$record, \count($fetched), 0];
+            return [$record, \count($fetched)];
         } catch (RepositoryException $e) {
             $record->count() > 0 or throw $e;
 
             $this->report($e, $record);
 
-            return [$record, 0, 0];
+            return [$record, 0];
         }
     }
 
     /**
      * Loads the releases older than the stored ones page by page, persisting every page.
      *
-     * The source pages by position, and a stored release deleted upstream below the verified
-     * ones moves every older release up by one. So past them the loading starts one release
-     * earlier and expects the last stored release there; when another one shows up, or no page
-     * at all, the unverified tail is dropped and loaded again, without repeating to the consumer
-     * what it was served from the stored list. The dropped tail is written only along with the
-     * first page that replaces it, so a source failing right there leaves the record as it was.
+     * The source pages by position, and the stored count is not quite the position of the last
+     * stored release: a stored release deleted upstream below the verified ones moves it up,
+     * while a release the record does not hold, an unreadable one or one published while the
+     * check could not store it, moves it down. So past the verified releases the loading starts
+     * one release earlier and looks for the last stored release on that page and, as the way
+     * down is open, on the next one; everything up to it is known. When it is on neither, the
+     * unverified tail is dropped and loaded again, without repeating to the consumer what it was
+     * served from the stored list. The dropped tail is written only along with the first page
+     * that replaces it, so a source failing right there leaves the record as it was.
      *
      * The extra release lies on the page needed anyway when the stored list ends inside a page.
      * A list ending on a page boundary, as one made of fully loaded pages does, costs one more
-     * request for the page that ends with the release.
+     * request for the page that ends with the release. A release moved down past the end of the
+     * page after that is taken for a deletion. A deletion and an unreadable release above the
+     * tail cancel each other out, and the deleted release stays stored.
      *
      * @param int<0, max> $verified Number of leading stored releases known to be in place.
-     * @param int<0, max> $unreadable Listing positions above the stored tail that hold no stored
-     *        release, so the last stored release sits that many positions below the stored count.
      * @return \Generator<int, list<ReleaseRecord>, mixed, void>
      * @throws RepositoryException
      */
-    private function extend(RepositoryRecord $record, ReleaseSource $source, int $verified, int $unreadable): \Generator
+    private function extend(RepositoryRecord $record, ReleaseSource $source, int $verified): \Generator
     {
         $served = $record;
         $anchor = $verified < $record->count() ? $record->lastTag() : null;
         /** @var int<0, max> $offset */
-        $offset = $record->count() + $unreadable - ($anchor === null ? 0 : 1);
+        $offset = $anchor === null ? $record->count() : $record->count() - 1;
 
         $pages = $source->pages($offset);
         $page = $pages->current();
+        $ahead = 1;
 
         while (true) {
             if ($anchor !== null) {
-                if ($page === null || ($page->releases[0] ?? null)?->tag !== $anchor) {
+                $at = $page === null ? false : self::position($page->releases, $anchor);
+
+                if ($page === null || $at === false) {
+                    if ($page !== null && !$page->last && $ahead-- > 0) {
+                        $pages->next();
+                        $page = $pages->current();
+
+                        continue;
+                    }
+
                     $this->logger->debug(
-                        'The stored tail of `%s` has shifted: %d release(s) are kept, the rest is loaded again.',
+                        'The stored tail of `%s` is not where it was; the stored releases after the first %d are loaded again.',
                         (string) $record->id,
                         $verified,
                     );
@@ -234,7 +258,7 @@ final class StoredVersionRegistry implements VersionRegistry
                 }
 
                 $anchor = null;
-                $page = new ReleasePage(\array_slice($page->releases, 1), $page->last, $page->skipped);
+                $page = new ReleasePage(\array_slice($page->releases, $at + 1), $page->last, $page->skipped);
             }
 
             if ($page === null) {

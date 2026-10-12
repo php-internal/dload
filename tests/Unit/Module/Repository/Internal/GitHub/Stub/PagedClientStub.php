@@ -32,6 +32,7 @@ final class PagedClientStub implements ClientInterface
      * @param int<0, max> $broken Number of the newest published releases that cannot be decoded.
      * @param int<1, max>|null $perPageLimit Greatest number of releases served per page whatever `per_page` asks for.
      * @param list<non-empty-string> $withheld Tags left out of a page after it was cut, as a server filtering after paging does.
+     * @param list<non-empty-string> $unreadable Tags of releases that cannot be decoded, wherever they are listed.
      */
     public function __construct(
         private readonly int $pages = 1,
@@ -40,6 +41,7 @@ final class PagedClientStub implements ClientInterface
         private readonly int $broken = 0,
         private readonly ?int $perPageLimit = null,
         private readonly array $withheld = [],
+        private readonly array $unreadable = [],
     ) {}
 
     public function sendRequest(RequestInterface $request): ResponseInterface
@@ -106,7 +108,7 @@ final class PagedClientStub implements ClientInterface
             $releases[] = [
                 'name' => $tag,
                 // A number where a string belongs fails the strict constructor of the response object
-                'tag_name' => $i >= 1 && $i <= $this->broken ? $i : $tag,
+                'tag_name' => ($i >= 1 && $i <= $this->broken) || \in_array($tag, $this->unreadable, true) ? $i : $tag,
                 'published_at' => $i < 1 ? null : '2024-01-01T00:00:00Z',
                 'assets' => [[
                     'name' => 'rr-linux-amd64.tar.gz',

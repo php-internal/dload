@@ -127,6 +127,34 @@ final class GitHubRepositoryTest
     }
 
     #[Test]
+    public function unreadableReleaseAfterTheLastStoredOneOnItsPageDoesNotReloadTheTail(): void
+    {
+        // Three pages are stored; the last release of page 3 cannot be read, so the page the tail
+        // continues from starts one release before the last stored one
+        $storage = new InMemoryRegistryStorage();
+        $firstClient = new PagedClientStub(pages: 4, unreadable: ['v1.0.300']);
+        $seen = 0;
+        foreach (self::createRepository($firstClient, self::registry($storage))->getReleases() as $release) {
+            unset($release);
+            if (++$seen === 250) {
+                break;
+            }
+        }
+        Assert::same($storage->load(new RepositoryId(GitHubRepository::TYPE, 'owner/repo'))?->count(), 299);
+
+        $secondClient = new PagedClientStub(pages: 4, unreadable: ['v1.0.300']);
+        $all = self::names(self::createRepository($secondClient, self::registry($storage, refresh: true)));
+
+        Assert::same($secondClient->requestedPages(), [1, 3, 4]);
+        Assert::same(\count($all), 399);
+        Assert::same(\count(\array_unique($all)), 399);
+
+        $thirdClient = new PagedClientStub(pages: 4, unreadable: ['v1.0.300']);
+        self::names(self::createRepository($thirdClient, self::registry($storage, refresh: true)));
+        Assert::same($thirdClient->requestedPages(), [1]);
+    }
+
+    #[Test]
     public function unreadableReleaseAboveTheTailDoesNotMakeEveryRunReloadIt(): void
     {
         // One release of page 1 cannot be read from the start; the first run stores two pages
