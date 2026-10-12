@@ -27,7 +27,7 @@ interface Binary
     public function exists(): bool;
 
     /**
-     * Gets the binary version.
+     * Gets the binary version as printed, with its pre-release and build metadata, e.g. `2.3.4+20230415`.
      *
      * @return non-empty-string|null Version string or null if not available
      */
