@@ -102,11 +102,11 @@ final class GitHubRepositoryTest
     }
 
     #[Test]
-    public function shortPageBelowTheFirstOneDoesNotChangeThePageSize(): void
+    public function firstPageShortOfAFewReleasesDoesNotChangeThePageSize(): void
     {
-        // The first run stores two full pages
+        // Page 1 comes back one release short, as a server filtering after paging answers
         $storage = new InMemoryRegistryStorage();
-        $firstClient = new PagedClientStub(pages: 4);
+        $firstClient = new PagedClientStub(pages: 4, withheld: ['v1.0.3']);
         $seen = 0;
         foreach (self::createRepository($firstClient, self::registry($storage))->getReleases() as $release) {
             unset($release);
@@ -115,15 +115,13 @@ final class GitHubRepositoryTest
             }
         }
 
-        // Page 3 comes back one release short, as a server filtering after paging answers; the
-        // fresh record is extended from the stored count and page 4 keeps its position
-        $secondClient = new PagedClientStub(pages: 4, withheld: ['v1.0.250']);
-        $all = self::names(self::createRepository($secondClient, self::registry($storage)));
+        // Every page keeps its place: the tail continues on page 2, after the last stored release
+        $secondClient = new PagedClientStub(pages: 4, withheld: ['v1.0.3']);
+        $all = self::names(self::createRepository($secondClient, self::registry($storage, refresh: true)));
 
-        Assert::same($secondClient->requestedPages(), [3, 4]);
+        Assert::same($secondClient->requestedPages(), [1, 2, 3, 4]);
         Assert::same(\count($all), 399);
-        Assert::true(\in_array('v1.0.201', $all, true));
-        Assert::true(\in_array('v1.0.300', $all, true));
+        Assert::same(\count(\array_unique($all)), 399);
     }
 
     #[Test]
@@ -190,12 +188,13 @@ final class GitHubRepositoryTest
             break;
         }
 
-        // The second run needs everything: the stored page costs nothing, the rest is fetched
+        // The second run needs everything: the stored page is served without a request, and
+        // fetched once more only to find where the tail continues
         $secondClient = new PagedClientStub(pages: 3);
         $all = self::names(self::createRepository($secondClient, self::registry($storage)));
 
         Assert::same($firstClient->requestedPages(), [1]);
-        Assert::same($secondClient->requestedPages(), [2, 3]);
+        Assert::same($secondClient->requestedPages(), [1, 2, 3]);
         Assert::same(\count($all), 300);
     }
 
@@ -285,11 +284,12 @@ final class GitHubRepositoryTest
         // The first page tells the page size, so the tail continues on page 2, not on page 1 again
         Assert::same($firstClient->requestedPages(), [1, 2]);
 
-        // A later run learns the page size from the first page anew and jumps to the right one
+        // A later run learns the page size from the first page anew and jumps to the page
+        // ending with the last stored release
         $secondClient = new PagedClientStub(pages: 3, releasesPerPage: 2, perPageLimit: 2);
         $all = self::names(self::createRepository($secondClient, self::registry($storage)));
 
-        Assert::same($secondClient->requestedPages(), [1, 3]);
+        Assert::same($secondClient->requestedPages(), [1, 2, 3]);
         Assert::same(\count($all), 6);
         Assert::same(\count(\array_unique($all)), 6);
     }

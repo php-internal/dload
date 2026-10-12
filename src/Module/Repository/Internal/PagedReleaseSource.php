@@ -11,16 +11,11 @@ use Internal\DLoad\Module\Repository\Exception\RepositoryException;
 /**
  * Source over an API that lists releases in numbered pages of a fixed size.
  *
- * Translates a release offset into the page number and the number of releases to drop from
- * that page. The page size is the one the API is asked for, until the first page shows that
- * the server serves fewer releases per page, as a mirror or a server that caps `per_page` does.
- * Only the first page can tell: it is the one page whose start is known, so its length is the
- * page size and not the sign of a release filtered out after paging.
- *
- * The page size is learned per instance, not stored: the registry maps offsets through the
- * source and knows nothing of pages. So a server capping `per_page` costs the first page again
- * on every run that does not fetch it anyway, and a server serving more releases per page than
- * asked for is not supported: GitHub and GitLab both stop at the number asked for.
+ * A listing position is mapped onto the page holding it by the page size the API is asked for.
+ * A first page holding at most half of that, as a mirror or a server capping `per_page` serves,
+ * tells the real size for the rest of the instance's life. A page only slightly shorter is taken
+ * for releases filtered out after paging and changes nothing. A page size the source gets wrong
+ * costs the registry a step to the neighbouring page, never a release.
  *
  * @internal
  * @psalm-internal Internal\DLoad\Module\Repository
@@ -47,48 +42,42 @@ final class PagedReleaseSource implements ReleaseSource
      */
     public function pages(int $offset = 0): \Generator
     {
-        $first = $this->pageOf($offset);
-        $pages = ($this->pages)($first);
+        $number = $this->pageOf($offset);
+        $pages = ($this->pages)($number);
         $page = $pages->current();
 
-        if ($first === 1 && $page !== null && !$page->last && $this->learn($page) && $this->pageOf($offset) !== 1) {
-            $pages = ($this->pages)($this->pageOf($offset));
+        if ($number === 1 && $page !== null && !$page->last && $this->learn($page) && $this->pageOf($offset) > 1) {
+            $number = $this->pageOf($offset);
+            $pages = ($this->pages)($number);
+            $page = $pages->current();
+        }
+
+        // The listing ends before the position: it is listed from its last page
+        while ($page === null && $number > 1) {
+            $pages = ($this->pages)(--$number);
             $page = $pages->current();
         }
 
         // The generator is walked by hand: one that ended before its first page is closed, and
         // `foreach` cannot start it over
-        $skip = $offset % $this->perPage;
+        $size = $this->perPage;
         while ($page !== null) {
-            yield $skip === 0 ? $page : self::from($page, $skip);
-            $skip = 0;
+            yield new ReleasePage($page->releases, $page->last, $page->skipped, ($number - 1) * $size);
 
+            ++$number;
             $pages->next();
             $page = $pages->current();
         }
     }
 
     /**
-     * Drops the releases before the given position of the page.
-     *
-     * The unreadable releases of a page are not in its list, yet they hold positions on it.
-     * They are taken as lying before the position: when one lies after it instead, a release is
-     * repeated rather than lost, and the registry drops repeated ones.
-     *
-     * @param int<0, max> $skip
-     */
-    private static function from(ReleasePage $page, int $skip): ReleasePage
-    {
-        return new ReleasePage(\array_slice($page->releases, \max(0, $skip - $page->skipped)), $page->last, $page->skipped);
-    }
-
-    /**
-     * Takes the length of a page followed by another one as the page size; tells whether it changed.
+     * Takes the length of a short first page followed by another one as the page size; tells
+     * whether it changed.
      */
     private function learn(ReleasePage $page): bool
     {
         $size = \count($page->releases) + $page->skipped;
-        if ($size < 1 || $size >= $this->perPage) {
+        if ($size < 1 || $size * 2 > $this->perPage) {
             return false;
         }
 

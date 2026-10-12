@@ -84,9 +84,8 @@ final class ArrayReleaseSource implements ReleaseSource
 
     public function pages(int $offset = 0): \Generator
     {
-        // Align with a page boundary and skip within the page, like a real paged API
+        // Whole pages from the one holding the offset, like a real paged API
         $page = \intdiv($offset, $this->perPage);
-        $skip = $offset % $this->perPage;
 
         do {
             $this->failure === null or throw $this->failure;
@@ -95,21 +94,23 @@ final class ArrayReleaseSource implements ReleaseSource
             $this->served[] = $page * $this->perPage;
             $items = \array_slice($this->releases, $page * $this->perPage, $this->perPage);
 
-            // Like a real API, a page past the end of the listing is no page at all
+            // A page past the end of the listing is no page at all, so the listing is served
+            // from its last page
             if ($items === [] && $page > 0) {
-                return;
+                --$page;
+                $last = false;
+                continue;
             }
 
             $last = ($page + 1) * $this->perPage >= \count($this->releases);
-            $readable = fn(array $releases): array => \array_values(\array_filter(
-                $releases,
+            $readable = \array_values(\array_filter(
+                $items,
                 fn(ReleaseRecord $release): bool => !\in_array($release->tag, $this->unreadable, true),
             ));
 
             // Unreadable releases hold their positions on the page, so the offset counts them
-            yield new ReleasePage($readable(\array_slice($items, $skip)), $last, \count($items) - \count($readable($items)));
+            yield new ReleasePage($readable, $last, \count($items) - \count($readable), $page * $this->perPage);
 
-            $skip = 0;
             ++$page;
         } while (!$last);
     }

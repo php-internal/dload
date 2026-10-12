@@ -116,7 +116,7 @@ final class GitLabRepositoryTest
         $all = self::names(self::createRepository($secondClient, self::registry($storage)));
 
         Assert::same($firstClient->requestedPages(), [1]);
-        Assert::same($secondClient->requestedPages(), [2, 3]);
+        Assert::same($secondClient->requestedPages(), [1, 2, 3]);
         Assert::same(\count($all), 300);
     }
 

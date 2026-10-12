@@ -23,15 +23,17 @@ final class PagedReleaseSourceTest
     private array $requested = [];
 
     #[Test]
-    public function offsetIsMappedOntoThePageAndThePositionInIt(): void
+    public function pagesStartWithTheOneHoldingTheOffset(): void
     {
         $source = $this->source(total: 250, perPage: 100);
 
         $pages = \iterator_to_array($source->pages(150), false);
 
         Assert::same($this->requested, [2, 3]);
-        Assert::same(self::tagsOf($pages[0]), self::tags(150, 200));
+        Assert::same(self::tagsOf($pages[0]), self::tags(100, 200));
+        Assert::same($pages[0]->offset, 100);
         Assert::same(self::tagsOf($pages[1]), self::tags(200, 250));
+        Assert::same($pages[1]->offset, 200);
         Assert::true($pages[1]->last);
     }
 
@@ -51,17 +53,30 @@ final class PagedReleaseSourceTest
     }
 
     #[Test]
+    public function listingEndingBeforeTheOffsetStartsWithItsLastPage(): void
+    {
+        $source = $this->source(total: 250, perPage: 100);
+
+        $pages = \iterator_to_array($source->pages(450), false);
+
+        Assert::same($this->requested, [5, 4, 3]);
+        Assert::count($pages, 1);
+        Assert::same($pages[0]->offset, 200);
+        Assert::true($pages[0]->last);
+    }
+
+    #[Test]
     public function emptyListingYieldsNoPage(): void
     {
         $source = $this->source(total: 0, perPage: 100);
 
         Assert::same(\iterator_to_array($source->pages(), false), []);
         Assert::same(\iterator_to_array($source->pages(150), false), []);
-        Assert::same($this->requested, [1, 2]);
+        Assert::same($this->requested, [1, 2, 1]);
     }
 
     #[Test]
-    public function shortFirstPageTellsThePageSizeAndTheOffsetIsMappedAgain(): void
+    public function smallFirstPageTellsThePageSize(): void
     {
         // The server puts two releases on a page whatever is asked for
         $source = $this->source(total: 10, perPage: 100, served: 2);
@@ -70,13 +85,26 @@ final class PagedReleaseSourceTest
 
         // Page 1 was fetched on the assumption of a hundred per page; it showed the real size
         Assert::same($this->requested, [1, 3, 4, 5]);
-        Assert::same(self::tagsOf($pages[0]), self::tags(5, 6));
-        Assert::same(self::tagsOf($pages[1]), self::tags(6, 8));
+        Assert::same(self::tagsOf($pages[0]), self::tags(4, 6));
+        Assert::same($pages[0]->offset, 4);
 
         // The size learned serves the next listing of the same source
         $this->requested = [];
         \iterator_to_array($source->pages(8), false);
         Assert::same($this->requested, [5]);
+    }
+
+    #[Test]
+    public function firstPageShortOfAFewReleasesKeepsThePageSize(): void
+    {
+        // A release filtered out after paging, not a smaller page
+        $source = $this->source(total: 300, perPage: 100, missing: ['v3']);
+
+        $source->pages()->current();
+        $pages = \iterator_to_array($source->pages(200), false);
+
+        Assert::same($this->requested, [1, 3]);
+        Assert::same($pages[0]->offset, 200);
     }
 
     #[Test]
@@ -91,21 +119,15 @@ final class PagedReleaseSourceTest
     }
 
     #[Test]
-    public function unreadableReleasesOfThePageCountTowardsTheSkippedPositions(): void
+    public function unreadableReleasesHoldTheirPositionsOnThePage(): void
     {
         $source = $this->source(total: 300, perPage: 100, unreadable: ['v102']);
 
-        $pages = \iterator_to_array($source->pages(105), false);
+        $page = $source->pages(105)->current();
 
-        // Position 105 is the fourth readable release of the page, not the fifth
-        Assert::same($this->requested, [2, 3]);
-        Assert::same(self::tagsOf($pages[0])[0], 'v105');
-        Assert::same($pages[0]->skipped, 1);
-
-        // An unreadable release after the position makes the page start one release early,
-        // which the registry filters as a known one, rather than lose a release
-        $source = $this->source(total: 300, perPage: 100, unreadable: ['v180']);
-        Assert::same(self::tagsOf(\iterator_to_array($source->pages(105), false)[0])[0], 'v104');
+        Assert::same($page->offset, 100);
+        Assert::same($page->skipped, 1);
+        Assert::count($page->releases, 99);
     }
 
     #[BeforeTest]

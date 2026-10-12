@@ -19,10 +19,12 @@ final class ReleasePage
      * @param bool $last Whether the listing has no page after this one.
      * @param int<0, max> $skipped Number of releases of the page the source could not read. They
      *        are absent from `$releases` although they exist upstream.
+     * @param int<0, max> $offset Listing position the page starts at, unreadable releases included.
      */
     public function __construct(
         public readonly array $releases,
         public readonly bool $last,
         public readonly int $skipped = 0,
+        public readonly int $offset = 0,
     ) {}
 }

@@ -18,12 +18,14 @@ use Internal\DLoad\Module\Repository\Exception\RepositoryException;
 interface ReleaseSource
 {
     /**
-     * Lists releases newest first, skipping the given number of them.
+     * Lists releases newest first in whole pages, from the page holding the given position on.
      *
+     * Positions count every release of the listing, unreadable ones included. The first page may
+     * start before the position; when the listing ends before it, its last page comes first.
      * A page is requested only when the generator advances to it. The generator ends when the
      * listing ends.
      *
-     * @param int<0, max> $offset Number of newest releases to skip.
+     * @param int<0, max> $offset Listing position of the first release wanted.
      * @return \Generator<int, ReleasePage, mixed, void> Pages of releases.
      * @throws RepositoryException When a page cannot be loaded.
      */
