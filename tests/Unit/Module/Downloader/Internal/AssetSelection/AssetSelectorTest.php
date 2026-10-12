@@ -18,6 +18,7 @@ use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\CompanionRule;
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\ExtrasRule;
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\FormatRule;
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\LibcRule;
+use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\MicroarchitectureLevelRule;
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\NamePatternRule;
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\OperatingSystemRule;
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\PackageRule;
@@ -38,6 +39,7 @@ use Testo\Test;
 #[Covers(CompanionRule::class)]
 #[Covers(OperatingSystemRule::class)]
 #[Covers(ArchitectureRule::class)]
+#[Covers(MicroarchitectureLevelRule::class)]
 #[Covers(LibcRule::class)]
 #[Covers(ExtrasRule::class)]
 #[Covers(ArchiveRule::class)]
@@ -109,6 +111,70 @@ final class AssetSelectorTest
         );
 
         Assert::same($names, ['tool-darwin-amd64.zip']);
+    }
+
+    #[Test]
+    public function appleSiliconPrefersAUniversalBuildToAnX86One(): void
+    {
+        $names = self::select(
+            ['hugo_0.139.0_darwin-amd64.tar.gz', 'hugo_0.139.0_darwin-universal.tar.gz', 'hugo_0.139.0_linux-arm64.tar.gz'],
+            os: OperatingSystem::Darwin,
+            arch: Architecture::ARM_64,
+        );
+
+        Assert::same($names, ['hugo_0.139.0_darwin-universal.tar.gz', 'hugo_0.139.0_darwin-amd64.tar.gz']);
+    }
+
+    #[Test]
+    public function aUniversalOnlyMacOsReleaseIsSelectedOnAMac(): void
+    {
+        $names = self::select(
+            ['tool_1.0.0_macOS_all.tar.gz', 'tool_1.0.0_linux_amd64.tar.gz'],
+            os: OperatingSystem::Darwin,
+            arch: Architecture::X86_64,
+        );
+
+        Assert::same($names, ['tool_1.0.0_macOS_all.tar.gz']);
+    }
+
+    #[Test]
+    public function aUniversalMacOsBuildIsNotSelectedOnLinux(): void
+    {
+        $names = self::select(['tool-darwin-universal.zip', 'tool-linux-amd64.zip']);
+
+        Assert::same($names, ['tool-linux-amd64.zip']);
+    }
+
+    #[Test]
+    public function aHigherMicroarchitectureLevelComesAfterTheBaseline(): void
+    {
+        $names = self::select([
+            'tool_1.0.0_linux_amd64_v3.tar.gz',
+            'tool_1.0.0_linux_amd64_v1.tar.gz',
+            'tool_1.0.0_linux_amd64_v2.tar.gz',
+        ]);
+
+        Assert::same($names, [
+            'tool_1.0.0_linux_amd64_v1.tar.gz',
+            'tool_1.0.0_linux_amd64_v2.tar.gz',
+            'tool_1.0.0_linux_amd64_v3.tar.gz',
+        ]);
+    }
+
+    #[Test]
+    public function aPlainBuildComesBeforeAHigherLevel(): void
+    {
+        $names = self::select(['tool-x86-64-v3-linux.tar.gz', 'tool-x86_64-linux.tar.gz']);
+
+        Assert::same($names, ['tool-x86_64-linux.tar.gz', 'tool-x86-64-v3-linux.tar.gz']);
+    }
+
+    #[Test]
+    public function aHigherLevelOnlyReleaseIsStillSelected(): void
+    {
+        $names = self::select(['tool_1.0.0_linux_amd64_v3.tar.gz', 'tool_1.0.0_linux_arm64.tar.gz']);
+
+        Assert::same($names, ['tool_1.0.0_linux_amd64_v3.tar.gz']);
     }
 
     #[Test]

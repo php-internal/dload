@@ -28,6 +28,12 @@ final class ArchitectureRuleTest
         yield 'Windows' => [OperatingSystem::Windows];
     }
 
+    public static function provideMacArchitectures(): iterable
+    {
+        yield 'Apple Silicon' => [Architecture::ARM_64, ArchitectureRule::EMULATED];
+        yield 'Intel' => [Architecture::X86_64, 0];
+    }
+
     #[Test]
     public function aStrictSelectionKeepsOnlyTheHostArchitecture(): void
     {
@@ -71,5 +77,33 @@ final class ArchitectureRuleTest
         $selection = RuleRunner::run(new ArchitectureRule(Architecture::X86_64, $os), self::ASSETS);
 
         Assert::same(RuleRunner::ranks($selection, 'arch'), ['tool-x86_64.zip' => 0]);
+    }
+
+    #[DataProvider('provideMacArchitectures')]
+    #[Test]
+    public function aUniversalBuildIsNativeOnMacOs(Architecture $arch, int $x86Rank): void
+    {
+        $selection = RuleRunner::run(new ArchitectureRule($arch, OperatingSystem::Darwin), [
+            'tool-darwin-universal.zip',
+            'tool-darwin-x86_64.zip',
+        ]);
+
+        Assert::same(RuleRunner::ranks($selection, 'arch'), [
+            'tool-darwin-universal.zip' => 0,
+            'tool-darwin-x86_64.zip' => $x86Rank,
+        ]);
+    }
+
+    #[Test]
+    public function aUniversalMacOsBuildHasNoArchitectureElsewhere(): void
+    {
+        $rule = new ArchitectureRule(Architecture::X86_64, OperatingSystem::Linux);
+        $assets = ['tool-darwin-universal.zip', 'tool-linux-x86_64.zip'];
+
+        Assert::same(RuleRunner::ranks(RuleRunner::run($rule, $assets), 'arch'), ['tool-linux-x86_64.zip' => 0]);
+        Assert::same(RuleRunner::ranks(RuleRunner::run($rule, $assets, strict: false), 'arch'), [
+            'tool-darwin-universal.zip' => 2,
+            'tool-linux-x86_64.zip' => 0,
+        ]);
     }
 }
