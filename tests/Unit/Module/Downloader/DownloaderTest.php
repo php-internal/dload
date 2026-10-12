@@ -340,6 +340,55 @@ final class DownloaderTest
     }
 
     #[Test]
+    public function aReleaseWithOnlyAnUnsupportedArchiveForTheHostGivesWayToAnOlderOne(): void
+    {
+        $repository = self::repoWithReleases([
+            'v3.4.0' => ['roadrunner-3.4.0-linux-amd64.tar.xz', 'roadrunner-3.4.0-darwin-amd64.tar.gz'],
+            'v3.2.0' => ['roadrunner-3.2.0-linux-amd64.tar.gz'],
+        ]);
+        $output = new BufferedOutput();
+
+        $result = $this->run([$repository], self::software(binary: true), logger: new Logger($output));
+
+        Assert::same($result->version->string, 'v3.2.0');
+        Assert::same($result->file->getFilename(), 'roadrunner-3.2.0-linux-amd64.tar.gz');
+        Assert::string($output->fetch())
+            ->contains('`rr` v3.4.0 has only archives of an unsupported format for `linux`/`amd64`, downloaded v3.2.0 instead.');
+    }
+
+    #[Test]
+    public function skippedArchivesAreNamedInTheReport(): void
+    {
+        $repository = self::repoWithReleases([
+            'v3.4.0' => ['roadrunner-3.4.0-linux-amd64.tar.xz', 'roadrunner-3.4.0-linux-amd64.deb', 'roadrunner-3.4.0-darwin-amd64.7z'],
+        ]);
+
+        try {
+            $this->run([$repository], self::software(binary: true));
+            Assert::fail('DownloadFailed is expected when the release has only unsupported archives for the host.');
+        } catch (DownloadFailed $e) {
+            Assert::string($e->report)
+                ->contains('v3.4.0: 3 asset(s), only OS packages and archives of an unsupported format match OS `linux`, architecture `amd64`')
+                ->contains('OS packages are skipped because a binary is expected: roadrunner-3.4.0-linux-amd64.deb')
+                ->contains('Archives of an unsupported format are skipped because a binary is expected: roadrunner-3.4.0-linux-amd64.tar.xz');
+        }
+    }
+
+    #[Test]
+    public function withoutABinaryTheUnsupportedArchiveIsStillChosen(): void
+    {
+        $repository = self::repoWithReleases([
+            'v3.4.0' => ['roadrunner-3.4.0-linux-amd64.tar.xz'],
+            'v3.2.0' => ['roadrunner-3.2.0-linux-amd64.tar.gz'],
+        ]);
+
+        $result = $this->run([$repository], self::software());
+
+        Assert::same($result->version->string, 'v3.4.0');
+        Assert::same($result->file->getFilename(), 'roadrunner-3.4.0-linux-amd64.tar.xz');
+    }
+
+    #[Test]
     public function withoutABinaryThePackageIsStillChosen(): void
     {
         $repository = self::repoWithReleases([

@@ -18,6 +18,7 @@ use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\LibcRule;
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\NamePatternRule;
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\OperatingSystemRule;
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\PackageRule;
+use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\UnsupportedArchiveRule;
 use Internal\DLoad\Module\Repository\AssetInterface;
 use Psr\Container\ContainerInterface;
 
@@ -55,9 +56,10 @@ final class AssetSelector
             new CompanionRule(),
             new OperatingSystemRule($operatingSystem),
             new ArchitectureRule($architecture, $operatingSystem),
-            // After the platform rules, so the report names only packages built for the host. A package whose
+            // After the platform rules, so the report names only packages and archives built for the host. One whose
             // name carries no OS token, like `tool.dmg`, is already gone then and stays out of the report.
             new PackageRule(),
+            new UnsupportedArchiveRule($archiveFactory),
             new LibcRule($container),
             new ExtrasRule(),
             new ArchiveRule($archiveFactory),

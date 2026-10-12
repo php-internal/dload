@@ -20,6 +20,9 @@ use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\LibcRule;
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\NamePatternRule;
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\OperatingSystemRule;
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\PackageRule;
+use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\UnsupportedArchiveRule;
+use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Candidate;
+use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Selection;
 use Internal\DLoad\Module\Repository\AssetInterface;
 use Internal\DLoad\Tests\Unit\Module\Downloader\Internal\AssetSelection\Stub\NamedAssets;
 use Internal\DLoad\Tests\Unit\Module\Downloader\Internal\AssetSelection\Stub\LibcContainer;
@@ -31,6 +34,7 @@ use Testo\Test;
 #[Covers(NamePatternRule::class)]
 #[Covers(FormatRule::class)]
 #[Covers(PackageRule::class)]
+#[Covers(UnsupportedArchiveRule::class)]
 #[Covers(CompanionRule::class)]
 #[Covers(OperatingSystemRule::class)]
 #[Covers(ArchitectureRule::class)]
@@ -219,6 +223,50 @@ final class AssetSelectorTest
         $names = self::select(['tool-linux-amd64', 'tool-linux-amd64.deb', 'tool-linux-amd64.tar.gz']);
 
         Assert::same($names, ['tool-linux-amd64.tar.gz', 'tool-linux-amd64']);
+    }
+
+    #[Test]
+    public function anArchiveDloadCannotUnpackGivesWayToAPlainBinary(): void
+    {
+        $names = self::select(['tool-linux-amd64.tar.xz', 'tool-linux-amd64.AppImage', 'tool-linux-amd64']);
+
+        Assert::same($names, ['tool-linux-amd64.AppImage', 'tool-linux-amd64']);
+    }
+
+    #[Test]
+    public function onlyAssetsForTheHostAreReportedAsSkipped(): void
+    {
+        $selection = (new AssetSelector(OperatingSystem::Linux, Architecture::X86_64, new LibcContainer(Libc::Gnu), new ArchiveFactory()))
+            ->select(NamedAssets::create('tool-darwin-amd64.tar.xz', 'tool-linux-amd64.tar.xz', 'tool-linux-amd64.deb'), '/.*/', null, true);
+
+        Assert::true($selection->isEmpty());
+        Assert::same(self::removed($selection, UnsupportedArchiveRule::KEY), ['tool-linux-amd64.tar.xz']);
+        Assert::same(self::removed($selection, PackageRule::KEY), ['tool-linux-amd64.deb']);
+    }
+
+    #[Test]
+    public function withoutABinaryAnUnsupportedArchiveIsOnlyRankedLower(): void
+    {
+        $names = self::select(['tool-linux-amd64.tar.xz', 'tool-linux-amd64.zip'], strict: false);
+
+        Assert::same($names, ['tool-linux-amd64.zip', 'tool-linux-amd64.tar.xz']);
+    }
+
+    #[Test]
+    public function aPharActionIsNotAffectedByUnsupportedArchives(): void
+    {
+        $names = self::select(['tool.tar.xz', 'tool.phar'], type: Type::Phar, strict: false);
+
+        Assert::same($names, ['tool.phar']);
+    }
+
+    /**
+     * @param non-empty-string $reason
+     * @return list<string>
+     */
+    private static function removed(Selection $selection, string $reason): array
+    {
+        return \array_map(static fn(Candidate $candidate): string => $candidate->asset->getName(), $selection->removed[$reason] ?? []);
     }
 
     /**

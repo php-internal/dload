@@ -296,7 +296,7 @@ Cuando no se especifica `type`, DLoad automáticamente usa todos los manejadores
 > Usar `type="archive"` extraerá incluso archivos `.phar`.
 
 > [!NOTE]
-> Cuando hay un `<binary>` configurado, con `type="binary"` o sin `type`, los paquetes del sistema operativo (`.deb`, `.rpm`, `.apk`, `.snap`, `.flatpak`, `.msi`, `.msix`, `.msixbundle`, `.appx`, `.appxbundle`, `.nupkg`, `.dmg`, `.pkg`) nunca se seleccionan: DLoad no puede desempaquetarlos. Un release que solo ofrece un paquete para el host se omite en favor de uno más antiguo, entre los 10 releases más recientes que cumplen la restricción de versión; fija `version` para ir más atrás.
+> Cuando hay un `<binary>` configurado, con `type="binary"` o sin `type`, los paquetes del sistema operativo (`.deb`, `.rpm`, `.apk`, `.snap`, `.flatpak`, `.msi`, `.msix`, `.msixbundle`, `.appx`, `.appxbundle`, `.nupkg`, `.dmg`, `.pkg`) nunca se seleccionan: DLoad no puede desempaquetarlos. Tampoco los archivos comprimidos en un formato que DLoad no puede desempaquetar: cualquiera salvo `.zip`, `.tar.gz`, `.gz` y `.phar`, como `.tar.xz`, `.tar.bz2`, `.tgz`, `.zst`, `.7z` o `.rar`; un archivo sin extensión de archivo comprimido, como un binario simple o un `.AppImage`, sí se selecciona. Un release que solo ofrece estos assets para el host se omite en favor de uno más antiguo, entre los 10 releases más recientes que cumplen la restricción de versión; fija `version` para ir más atrás.
 
 #### Extracción de Archivos (Preservando la Estructura)
 
