@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Unit\Module\Binary\Internal;
 
+use Internal\DLoad\Module\Binary\Exception\BinaryExecutionException;
 use Internal\DLoad\Module\Binary\Internal\BinaryExecutor;
 use Internal\DLoad\Module\Common\FileSystem\FS;
 use Internal\DLoad\Service\Logger;
@@ -54,6 +55,32 @@ final class BinaryExecutorTest
 
         Assert::same(\json_decode(\implode("\n", $output), true), $arguments);
         Assert::false(\file_exists($marker));
+    }
+
+    #[DataSet(['missing'], 'a missing binary')]
+    #[DataSet(['text'], 'a text file')]
+    public function aBinaryThatCannotStartFailsWithoutAPhpWarning(string $kind): void
+    {
+        $binary = $this->dir->join('tool' . (\PHP_OS_FAMILY === 'Windows' ? '.exe' : ''));
+        $kind === 'text' and \file_put_contents((string) $binary, 'not a binary');
+        $warnings = [];
+        // A handler is called for a silenced error too; error_reporting() tells whether it would print
+        \set_error_handler(static function (int $level, string $message) use (&$warnings): bool {
+            (\error_reporting() & $level) === 0 or $warnings[] = $message;
+            return true;
+        });
+
+        $failed = false;
+        try {
+            (new BinaryExecutor(new Logger()))->execute($binary, '--version');
+        } catch (BinaryExecutionException) {
+            $failed = true;
+        } finally {
+            \restore_error_handler();
+        }
+
+        Assert::true($failed);
+        Assert::same($warnings, []);
     }
 
     #[BeforeTest]

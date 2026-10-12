@@ -106,6 +106,17 @@ final class SoftwareCollectionTest
     }
 
     #[Test]
+    public function anExactIdWithAHashWinsOverAPackageAddress(): void
+    {
+        $collection = SoftwareCollection::empty()
+            ->with(Origin::config(), Software::fromArray(['name' => 'Tool', 'alias' => 'acme/fw#gh', 'description' => 'local']))
+            ->with(Origin::package('acme/fw'), self::software('gh', 'package'));
+
+        Assert::same($collection->findSoftware('acme/fw#gh')?->description, 'local');
+        Assert::same($collection->findSoftware('ACME/FW#gh')?->description, 'package');
+    }
+
+    #[Test]
     public function aFirstAddedPackageWinsOverLaterPackages(): void
     {
         $collection = SoftwareCollection::empty()

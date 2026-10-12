@@ -35,7 +35,7 @@ DLoad reads `composer.json` next to the loaded `dload.xml` (the working director
 | Situation | What DLoad does on download |
 |---|---|
 | `dload.xml` declares the same id | Uses it, silently. |
-| The official registry declares the same id | Uses the official one and warns, naming `<package>#<id>` to get the package's one. |
+| The official registry declares the same id | Uses the official one; when the repositories differ, warns and names `<package>#<id>` to get the package's one. |
 | Several packages declare the id with the same repositories | Uses the first, silently. |
 | Several packages declare the id with different repositories | Uses the first and lists every `<package>#<id>` to choose from. |
 

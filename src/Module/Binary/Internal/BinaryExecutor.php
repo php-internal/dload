@@ -30,19 +30,24 @@ final class BinaryExecutor
      */
     public function execute(Path $binaryPath, string ...$arguments): array
     {
-        $command = \implode(' ', $arguments);
-        $this->logger->debug('Executing command: %s %s', (string) $binaryPath, $command);
+        // JSON keeps the boundaries of arguments with spaces visible
+        $command = (string) \json_encode($arguments, \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE);
+        $this->logger->debug('Executing %s with arguments %s', (string) $binaryPath, $command);
 
         // An array command starts the binary without a shell: escapeshellarg() on Windows would replace
         // `"`, `%` and `!` in arguments with spaces. The closed stdin keeps an interactive binary from waiting.
-        $process = \proc_open(
+        // On Windows a binary that cannot start (a truncated file, an ELF) makes proc_open() warn and return false.
+        $process = @\proc_open(
             [(string) $binaryPath, ...$arguments],
             [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['redirect', 1]],
             $pipes,
         );
-        $process === false and throw new BinaryExecutionException(
-            \sprintf('Failed to execute binary "%s" with command "%s".', $binaryPath, $command),
-        );
+        $process === false and throw new BinaryExecutionException(\sprintf(
+            'Failed to execute binary "%s" with arguments %s: %s',
+            $binaryPath,
+            $command,
+            \error_get_last()['message'] ?? 'the process did not start.',
+        ));
 
         \fclose($pipes[0]);
         $stdout = (string) \stream_get_contents($pipes[1]);
@@ -57,7 +62,7 @@ final class BinaryExecutor
         if ($returnCode !== 0) {
             throw new BinaryExecutionException(
                 \sprintf(
-                    'Failed to execute binary "%s" with command "%s". Exit code: %d. Output: %s',
+                    'Failed to execute binary "%s" with arguments %s. Exit code: %d. Output: %s',
                     $binaryPath,
                     $command,
                     $returnCode,

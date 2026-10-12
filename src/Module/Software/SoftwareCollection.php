@@ -60,19 +60,24 @@ final class SoftwareCollection implements \IteratorAggregate, \Countable
      */
     public function find(string $id): ?Entry
     {
-        if (\str_contains($id, '#')) {
-            $package = \strtolower((string) \strstr($id, '#', true));
-            $id = \substr($id, \strlen($package) + 1);
-            foreach ($this->entries[$id] ?? [] as $entry) {
-                if ($entry->origin->package === $package) {
-                    return $entry;
-                }
-            }
+        // An exact id first: a `dload.xml` alias may contain `#` too
+        if (isset($this->entries[$id])) {
+            return self::strongest($this->entries[$id]);
+        }
 
+        if (!\str_contains($id, '#')) {
             return null;
         }
 
-        return isset($this->entries[$id]) ? self::strongest($this->entries[$id]) : null;
+        $package = \strtolower((string) \strstr($id, '#', true));
+        $id = \substr($id, \strlen($package) + 1);
+        foreach ($this->entries[$id] ?? [] as $entry) {
+            if ($entry->origin->package === $package) {
+                return $entry;
+            }
+        }
+
+        return null;
     }
 
     /**

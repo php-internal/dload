@@ -705,8 +705,8 @@ It works the same for the Composer package, the PHAR and the binary.
 - **Where the file can be**: only inside the package. A path that leads out of it, through `..`,
   an absolute path or a symlink, is rejected. Remote files are not supported.
 - **Priority**: `dload.xml` > the official registry > packages. A package never replaces an entry of the other two;
-  when the official registry shadows a package entry that is being downloaded, DLoad warns about it.
-- **Explicit choice**: `<package>#<id>` picks the entry of a package, whatever shadows it:
+  when the official registry shadows a package entry that is being downloaded and points to other repositories, DLoad warns about it.
+- **Explicit choice**: `<package>#<id>` picks the entry of a package, whatever shadows it (`__root__#<id>` for a root package without a `name`):
   `dload get acme/framework#gh:^2.0` or `<download software="acme/framework#gh" />`.
 - **Several packages, one id**: packages pointing to the same repositories agree, nothing to report.
   Otherwise the root package wins, then the packages in the order of `require` and `require-dev`,

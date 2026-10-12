@@ -700,8 +700,8 @@ Funciona igual con el paquete de Composer, el PHAR y el binario.
 - **Dónde puede estar el archivo**: solo dentro del paquete. Una ruta que sale de él, mediante `..`,
   una ruta absoluta o un enlace simbólico, se rechaza. Los archivos remotos no están soportados.
 - **Prioridad**: `dload.xml` > el registro oficial > los paquetes. Un paquete nunca reemplaza una entrada de los otros dos;
-  cuando el registro oficial oculta una entrada de un paquete que se está descargando, DLoad avisa de ello.
-- **Elección explícita**: `<package>#<id>` selecciona la entrada de un paquete, aunque otra la oculte:
+  cuando el registro oficial oculta una entrada de un paquete que se está descargando y apunta a otros repositorios, DLoad avisa de ello.
+- **Elección explícita**: `<package>#<id>` selecciona la entrada de un paquete, aunque otra la oculte (`__root__#<id>` para un paquete raíz sin `name`):
   `dload get acme/framework#gh:^2.0` o `<download software="acme/framework#gh" />`.
 - **Varios paquetes, un mismo id**: si los paquetes apuntan a los mismos repositorios, coinciden y no hay nada que avisar.
   Si no, gana el paquete raíz, luego los paquetes en el orden de `require` y `require-dev`,
