@@ -156,6 +156,20 @@ final class ReleasesCollectionTest
     }
 
     #[Test]
+    public function exactPreReleaseConstraintPicksTheTagWithoutATail(): void
+    {
+        $names = ['3.5.0-RC1-linux', '3.5.0-RC1.2', '3.5.0-RC1', '3.5.0-RC2', '3.5.0-RC1-priority.0'];
+        $collection = new ReleasesCollection(\array_map(
+            fn(string $name): ReleaseStub => new ReleaseStub($this->repository, $name, Version::fromVersionString($name)),
+            $names,
+        ));
+
+        $result = $collection->satisfies(Constraint::fromConstraintString('3.5.0-RC1'))->sortByVersion();
+
+        Assert::same(\array_values($this->getVersionsFromCollection($result)), ['3.5.0-RC1']);
+    }
+
+    #[Test]
     public function chainedFiltersWorkCorrectly(): void
     {
         // Act - Get stable releases that satisfy version constraint and sort them

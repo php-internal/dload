@@ -12,7 +12,7 @@ How to describe a tool dload does not ship, as a `<software>` block inside `<reg
      | grep -oE '"name": "[^"]+"'
    ```
 4. **Sibling tools in the same release to exclude** — e.g. `bufbuild/buf` ships `buf-*` alongside `protoc-gen-buf-breaking-*` / `protoc-gen-buf-lint-*`; only `buf-*` is wanted.
-5. **The version command** — usually `--version`; some tools use `version` or have none.
+5. **The version command** — usually `--version`; some tools use `version` or have none. dload reads the first `X.Y.Z` in its output with every further dotted part (`1.2.3.4`) and a pre-release or build suffix, and compares it with `version` to decide whether the installed binary is up to date; trailing zero parts don't count, so `1.2.3.0` satisfies `1.2.3`.
 6. **Artefact type** — native binary (per OS/arch) or PHAR (one platform-independent `.phar`).
 
 ## `asset-pattern`

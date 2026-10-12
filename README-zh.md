@@ -329,6 +329,10 @@ DLoad 支持三种下载类型，它们决定了资源的处理方式：
     <!-- 范围约束 -->
     <download software="temporal" version="^1.20.0" />
     <download software="dolt" version="~0.50.0" />
+    <!-- 空格或逗号表示“与”，|| 表示“或”，连字符范围、通配符、排除 -->
+    <download software="buf" version="^1.28 || ^2.0" />
+    <download software="protoc" version="25.0 - 26.1" />
+    <download software="mago" version="1.0.*, !=1.0.1" />
     
     <!-- 稳定性约束 -->
     <download software="tool" version="^1.0.0@beta" />
@@ -342,6 +346,8 @@ DLoad 支持三种下载类型，它们决定了资源的处理方式：
     <download software="experimental" version="^1.0.0-experimental" />
 </actions>
 ```
+
+约束中的预发布版本会为任何运算符设定最低稳定性，即使是 `<3.5.0-beta.2`；可用 `@alpha` 或 `@dev` 降低。不带编号的关键字也是边界，与 Composer 一致：`>2.0-beta` 会选中 `2.0.0-RC1` 和 `2.0.0`。带预发布或其他后缀的精确版本只匹配该标签：`2.0-beta` 不会选中 `2.0.0-beta.3` 或 `2.0.0`，`2.12.0-hotfix` 也不会选中 `2.12.0-hotfix.2`。大小写无关：`1.0.0-arm64` 匹配标签 `1.0.0-ARM64`，`^1.0-Linux` 会选中 `1.0.0-linux`。预发布版本可以像标签那样紧跟在版本号后面：`^2.0.0rc1`。
 
 ### 高级配置选项
 

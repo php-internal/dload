@@ -17,18 +17,24 @@ final class VersionTest
 {
     public static function providePreReleases(): \Generator
     {
-        yield 'dotted beta' => ['v3.5.0-beta.1', Stability::Beta, 1];
-        yield 'release candidate' => ['v3.5.0-RC1', Stability::RC, 1];
-        yield 'dotted release candidate' => ['2025.1.0-rc.2', Stability::RC, 2];
-        yield 'nightly date' => ['1.0.0-nightly20250503', Stability::Nightly, 20250503];
-        yield 'beta abbreviation' => ['1.0.0b2', Stability::Beta, 2];
-        yield 'no separator' => ['2.0.0rc1', Stability::RC, 1];
-        yield 'underscore separator' => ['1.0.0-rc_1', Stability::RC, 1];
-        yield 'bare stability' => ['1.2.3-beta', Stability::Beta, 0];
-        yield 'stability before a feature' => ['1.2.3-beta.3-feature', Stability::Beta, 3];
-        yield 'dev branch' => ['v2.0.x-dev', Stability::Dev, 0];
-        yield 'stable release' => ['v3.5.0', Stability::Stable, 0];
-        yield 'feature only' => ['1.2.3-custom', Stability::Preview, 0];
+        yield 'dotted beta' => ['v3.5.0-beta.1', '3.5.0', Stability::Beta, 1];
+        yield 'release candidate' => ['v3.5.0-RC1', '3.5.0', Stability::RC, 1];
+        yield 'dotted release candidate' => ['2025.1.0-rc.2', '2025.1.0', Stability::RC, 2];
+        yield 'nightly date' => ['1.0.0-nightly20250503', '1.0.0', Stability::Nightly, 20250503];
+        yield 'beta abbreviation' => ['1.0.0b2', '1.0.0', Stability::Beta, 2];
+        yield 'no separator' => ['2.0.0rc1', '2.0.0', Stability::RC, 1];
+        yield 'no separator after a prefixed number' => ['v1.0.0rc1', '1.0.0', Stability::RC, 1];
+        yield 'no separator after four number parts' => ['1.2.3.4rc1', '1.2.3.4', Stability::RC, 1];
+        yield 'alpha abbreviation' => ['1.2.3a1', '1.2.3', Stability::Alpha, 1];
+        yield 'underscore before the stability' => ['1.2.3_beta2', '1.2.3', Stability::Beta, 2];
+        yield 'underscore separator' => ['1.0.0-rc_1', '1.0.0', Stability::RC, 1];
+        yield 'bare stability' => ['1.2.3-beta', '1.2.3', Stability::Beta, 0];
+        yield 'stability before a feature' => ['1.2.3-beta.3-feature', '1.2.3', Stability::Beta, 3];
+        yield 'dev branch' => ['v2.0.x-dev', '2.0', Stability::Dev, 0];
+        yield 'stable release' => ['v3.5.0', '3.5.0', Stability::Stable, 0];
+        yield 'feature only' => ['1.2.3-custom', '1.2.3', Stability::Preview, 0];
+        yield 'four number parts' => ['1.2.3.4-beta.1', '1.2.3.4', Stability::Beta, 1];
+        yield 'five number parts' => ['v1.2.3.4.5-rc.2', '1.2.3.4.5', Stability::RC, 2];
     }
 
     public static function provideOrderedVersions(): \Generator
@@ -48,6 +54,56 @@ final class VersionTest
         yield 'feature build number' => ['1.3.1-RC1-priority.0', '1.3.1-RC1-priority.1'];
         yield 'number after the pre-release' => ['2.0.0-beta.1.2', '2.0.0-beta.1.3'];
         yield 'number after the pre-release before the final' => ['2.0.0-beta.1.2', '2.0.0'];
+        yield 'number after a bare stability before the final' => ['1.0.0-preview.0.4', '1.0.0'];
+        yield 'number before the stability before the final' => ['1.0.0-5-preview', '1.0.0'];
+        yield 'four parts pre-release after the previous fourth part' => ['1.2.3.3', '1.2.3.4-beta.1'];
+        yield 'four parts pre-release after three parts' => ['1.2.3', '1.2.3.4-beta.1'];
+        yield 'five parts after four' => ['1.2.3.4', '1.2.3.4.5'];
+        yield 'five parts before the next fourth part' => ['1.2.3.4.5', '1.2.3.5'];
+        yield 'numeric suffix after the number' => ['1.0.0', '1.0.0-1'];
+        yield 'numeric suffixes' => ['1.0.0-1', '1.0.0-2'];
+        yield 'numeric suffix over ten' => ['1.0.0-2', '1.0.0-10'];
+        yield 'date suffix before the next patch' => ['1.0.0-20250101', '1.0.1'];
+        yield 'release candidate without a separator after an alpha' => ['2.0.0-alpha', '2.0.0rc1'];
+        yield 'beta abbreviation without a separator after an earlier beta' => ['1.0.0-beta.3', '1.0.0b4'];
+        yield 'tail after the pre-release' => ['3.5.0-RC1', '3.5.0-RC1-linux'];
+        yield 'number after the pre-release after the pre-release itself' => ['3.5.0-RC1', '3.5.0-RC1.2'];
+        yield 'zero parts before a meaningful one' => ['1.0', '1.0.0.1'];
+        yield 'platform build before the final' => ['1.0.0-x86_64', '1.0.0'];
+        yield 'number with a letter before the final' => ['1.0.0-1x', '1.0.0'];
+        yield 'number with an alpha abbreviation before the final' => ['1.0.0-1a', '1.0.0'];
+        yield 'words of the suffix' => ['1.0.0-amd64', '1.0.0-arm64'];
+        yield 'words after the pre-release' => ['1.0.0-RC1-darwin', '1.0.0-RC1-linux'];
+        yield 'patch abbreviation and the whole word' => ['1.0.0-p1', '1.0.0-patch1'];
+        yield 'word before a number' => ['2.0.0-beta.1-linux', '2.0.0-beta.1.2'];
+        yield 'word before a number at the start of the tail' => ['1.0.0-x.1', '1.0.0-1.x'];
+        yield 'platform word is no alpha' => ['1.0.0-arm64', '1.0.0-linux'];
+        yield 'patch abbreviation is no patch level' => ['1.0.0-p1', '1.0.0-x1'];
+        yield 'number after a word' => ['1.0.0-build.9', '1.0.0-build.10'];
+        yield 'number glued to a word' => ['1.0.0-build9', '1.0.0-build10'];
+        yield 'long numbers' => ['1.0.0-build.99999999999999999998', '1.0.0-build.99999999999999999999'];
+        yield 'words alphabetically in any case' => ['1.0.0-Darwin', '1.0.0-linux'];
+    }
+
+    public static function provideEqualVersions(): \Generator
+    {
+        yield 'spellings of one pre-release' => ['v3.5.0-rc.1', '3.5.0-RC1'];
+        yield 'trailing zero part' => ['1.2.3', '1.2.3.0'];
+        yield 'trailing zero parts' => ['1.2.3', 'v1.2.3.0.0'];
+        yield 'trailing zero after four parts' => ['1.2.3.4', '1.2.3.4.0'];
+        yield 'trailing zero before a pre-release' => ['1.2.3-RC1', '1.2.3.0-RC1'];
+        yield 'two parts' => ['1.0', '1.0.0'];
+        yield 'build metadata' => ['1.2.3', '1.2.3+5'];
+        yield 'build metadata after two parts' => ['1.2', '1.2+5'];
+        yield 'build metadata after one part' => ['1', '1+2'];
+        yield 'case, separators and leading zeros of the suffix' => ['1.0.0-Linux_x64.01', '1.0.0-linux-x64.1'];
+        yield 'case of a platform word' => ['1.0.0-arm64', '1.0.0-ARM64'];
+        yield 'case of a patch word' => ['2.12.0-patch1', '2.12.0-Patch1'];
+        yield 'case of a platform word after a pre-release' => ['1.0.0-beta-amd64', '1.0.0-beta-AMD64'];
+        yield 'case of a patch abbreviation' => ['1.0.0-p1', '1.0.0-P1'];
+        yield 'case of a release candidate' => ['1.0.0-RC', '1.0.0-rc'];
+        yield 'case and separator of a word' => ['1.0.0-final', '1.0.0.Final'];
+        yield 'pre-release before or after a platform' => ['1.0.0-rc1-arm64', '1.0.0-arm64-rc1'];
     }
 
     /**
@@ -80,6 +136,24 @@ final class VersionTest
         // Partial semantic versions (fallback pattern)
         yield 'two-part version' => ['1.2', '1.2', '1.2', null, Stability::Stable];
         yield 'single digit version' => ['5', '5', '5', null, Stability::Stable];
+
+        // Longer numbers
+        yield 'four-part version' => ['1.2.3.4', '1.2.3.4', '1.2.3.4', null, Stability::Stable];
+        yield 'prefixed four-part version' => ['v1.2.3.4', 'v1.2.3.4', '1.2.3.4', null, Stability::Stable];
+        yield 'five-part version' => ['v1.2.3.4.5', 'v1.2.3.4.5', '1.2.3.4.5', null, Stability::Stable];
+        yield 'four-part version with feature' => ['1.2.3.4-custom', '1.2.3.4-custom', '1.2.3.4', 'custom', Stability::Preview];
+        // A suffix glued to the number
+        yield 'release candidate without a separator' => ['2.0.0rc1', '2.0.0rc1', '2.0.0', null, Stability::RC];
+        yield 'feature after a release candidate without a separator' => ['2.0.0rc1-linux', '2.0.0rc1-linux', '2.0.0', 'linux', Stability::RC];
+        yield 'feature without a separator' => ['1.2.3_linux', '1.2.3_linux', '1.2.3', 'linux', Stability::Preview];
+        yield 'letter without a separator' => ['1.0.0x', '1.0.0x', '1.0.0', 'x', Stability::Preview];
+        yield 'dev branch after a letter without a separator' => ['1.0.0x-dev', '1.0.0x-dev', '1.0.0', 'x', Stability::Dev];
+
+        // Dev branches
+        yield 'dev branch of a minor' => ['1.0.x-dev', '1.0.x-dev', '1.0', 'x', Stability::Dev];
+        yield 'dev branch of a major' => ['2.x-dev', '2.x-dev', '2', 'x', Stability::Dev];
+        yield 'dev branch after a full number' => ['1.0.0-x-dev', '1.0.0-x-dev', '1.0.0', 'x', Stability::Dev];
+
         yield 'version with suffix but no recognized stability' => ['1.2.3-custom', '1.2.3-custom', '1.2.3', 'custom', Stability::Preview];
 
         // Case insensitive stability
@@ -165,12 +239,48 @@ final class VersionTest
         yield 'real case 3' => ['v1.3.0', Stability::Stable, 'Stable version'];
     }
 
+    /**
+     * A stability keyword is a whole word: letters glued to it make another word.
+     */
+    public static function provideWordsStartingWithAStabilityLetter(): \Generator
+    {
+        yield 'arm64 is not alpha' => ['1.0.0-arm64', 'arm64'];
+        yield 'amd64 is not alpha' => ['1.0.0-amd64', 'amd64'];
+        yield 'abc is not alpha' => ['1.0.0-abc', 'abc'];
+        yield 'word glued to four number parts' => ['1.2.3.4abc', 'abc'];
+        yield 'bugfix is not beta' => ['1.0.0-bugfix', 'bugfix'];
+        yield 'build is not beta' => ['1.0.0-build.5', 'build.5'];
+        yield 'ga is not alpha' => ['1.0.0-ga', 'ga'];
+        yield 'word ending with a stability letter' => ['1.0.0-gamma', 'gamma'];
+        yield 'platform after the os' => ['1.0.0-linux-amd64', 'linux-amd64'];
+        yield 'letters after the pre-release number' => ['1.0.0-beta2x', 'beta2x'];
+        yield 'lone patch letter a' => ['1.1.1a', 'a'];
+        yield 'lone patch letter b' => ['1.1.1b', 'b'];
+        yield 'lone patch letter w' => ['1.1.1w', 'w'];
+    }
+
+    public static function provideStabilityWords(): \Generator
+    {
+        yield 'alpha abbreviation with a number' => ['1.0.0-a1', Stability::Alpha, 1, null];
+        yield 'beta with a number' => ['1.0.0-beta2', Stability::Beta, 2, null];
+        yield 'release candidate glued to the number' => ['2.0.0rc1', Stability::RC, 1, null];
+        yield 'beta after an underscore' => ['1.2.3_beta2', Stability::Beta, 2, null];
+        yield 'beta abbreviation glued to the number' => ['1.0.0b2', Stability::Beta, 2, null];
+        yield 'platform after the pre-release' => ['1.0.0-rc.1-arm64', Stability::RC, 1, 'arm64'];
+        yield 'platform after an underscore' => ['2.0.0rc1_linux', Stability::RC, 1, 'linux'];
+    }
+
     #[DataProvider('providePreReleases')]
     #[Test]
-    public function preReleaseKeepsTheStabilityWithItsNumber(string $input, Stability $stability, int $number): void
-    {
+    public function preReleaseKeepsTheStabilityWithItsNumber(
+        string $input,
+        string $versionNumber,
+        Stability $stability,
+        int $number,
+    ): void {
         $version = Version::fromVersionString($input);
 
+        Assert::same($version->number, $versionNumber);
         Assert::same($version->preRelease?->stability, $stability);
         Assert::same($version->preRelease?->number, $number);
         Assert::same($version->stability, $stability);
@@ -187,10 +297,12 @@ final class VersionTest
         Assert::same($b->compare($a), 1);
     }
 
+    #[DataProvider('provideEqualVersions')]
     #[Test]
-    public function compareTreatsSpellingsOfOnePreReleaseAsEqual(): void
+    public function compareTreatsVersionsAsEqual(string $a, string $b): void
     {
-        Assert::same(Version::fromVersionString('v3.5.0-rc.1')->compare(Version::fromVersionString('3.5.0-RC1')), 0);
+        Assert::same(Version::fromVersionString($a)->compare(Version::fromVersionString($b)), 0);
+        Assert::same(Version::fromVersionString($b)->compare(Version::fromVersionString($a)), 0);
     }
 
     #[Test]
@@ -323,5 +435,37 @@ final class VersionTest
         Expect::exception(\InvalidArgumentException::class);
 
         $version = Version::fromVersionString($version);
+    }
+
+    #[DataProvider('provideWordsStartingWithAStabilityLetter')]
+    #[Test]
+    public function wordStartingWithAStabilityLetterIsAFeature(string $input, string $suffix): void
+    {
+        $version = Version::fromVersionString($input);
+
+        Assert::same($version->stability, Stability::Preview);
+        Assert::same($version->suffix, $suffix);
+    }
+
+    #[DataProvider('provideStabilityWords')]
+    #[Test]
+    public function wholeStabilityWordIsAPreRelease(string $input, Stability $stability, int $number, ?string $suffix): void
+    {
+        $version = Version::fromVersionString($input);
+
+        Assert::same($version->preRelease?->stability, $stability);
+        Assert::same($version->preRelease?->number, $number);
+        Assert::same($version->suffix, $suffix);
+    }
+
+    #[Test]
+    public function compareNumberIgnoresThePreRelease(): void
+    {
+        $final = Version::fromVersionString('1.0.0');
+
+        Assert::same(Version::fromVersionString('1.0.0-beta.1-linux')->compareNumber($final), 0);
+        Assert::same(Version::fromVersionString('1.0.0.0-rc1')->compareNumber($final), 0);
+        Assert::same(Version::fromVersionString('1.0.0-1')->compareNumber($final), 1);
+        Assert::same(Version::fromVersionString('0.9.9-1')->compareNumber($final), -1);
     }
 }
