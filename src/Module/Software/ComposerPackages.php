@@ -189,7 +189,10 @@ final class ComposerPackages
             ? ((array) ($root['config'] ?? []))['vendor-dir'] ?? 'vendor'
             : $this->vendorDir;
         if (!\is_string($vendorDir) || $vendorDir === '' || \str_contains($vendorDir, "\0")) {
-            $this->logger->warning('Skipping registries of Composer packages: `config.vendor-dir` is not a path.');
+            $this->logger->warning(
+                'Skipping registries of Composer packages: %s is not a path.',
+                $this->vendorDir === null || $this->vendorDir === '' ? '`config.vendor-dir`' : 'COMPOSER_VENDOR_DIR',
+            );
             return [];
         }
 
@@ -294,7 +297,7 @@ final class ComposerPackages
         $packageDir = \realpath((string) $installPath);
         $file = Path::create($registry)->isAbsolute() ? null : \realpath((string) $installPath->join($registry));
 
-        if ($packageDir === false || $file === false) {
+        if ($packageDir === false || $file === false || ($file !== null && !\is_file($file))) {
             $this->logger->warning(
                 'Package `%s`: registry file `%s` not found. Make sure it is not excluded from the package dist.',
                 $name,

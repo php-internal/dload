@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Internal\DLoad\Tests\Integration\Command;
 
 use Internal\DLoad\Command\Get;
+use Internal\DLoad\Command\Init;
 use Internal\DLoad\Command\ListSoftware;
 use Internal\DLoad\Command\Show;
 use Internal\DLoad\Module\Common\FileSystem\FS;
 use Internal\Path;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Formatter\OutputFormatter;
 use Symfony\Component\Console\Tester\ApplicationTester;
 use Testo\Assert;
 use Testo\Codecov\Covers;
@@ -237,6 +239,58 @@ final class PackageRegistryCommandsTest
             ->notContains("\e[2J");
     }
 
+    #[Test]
+    #[Covers(Show::class)]
+    public function aNumericIdIsListedAsConfigured(): void
+    {
+        $bin = $this->directory . \DIRECTORY_SEPARATOR . 'bin';
+        \mkdir($bin);
+        \touch($bin . \DIRECTORY_SEPARATOR . self::executable('seven-tool'));
+        $this->config(\sprintf(
+            '<registry><software name="Seven" alias="7"><binary name="seven-tool"/></software></registry>'
+            . '<actions><download software="7" extract-path="%s"/></actions>',
+            $bin,
+        ));
+
+        $tester = $this->run(['command' => 'show', '--all' => true]);
+
+        Assert::same($tester->getStatusCode(), Command::SUCCESS);
+        Assert::string(self::display($tester))->contains("Configured software:\n  7 (unknown) ");
+    }
+
+    #[Test]
+    #[Covers(Init::class)]
+    public function initPrintsTheTextOfAFoundEntryLiterally(): void
+    {
+        $this->config('');
+
+        $tester = $this->run(['command' => 'init', '--overwrite' => true], decorated: true, answers: ['evil', '']);
+
+        Assert::same($tester->getStatusCode(), Command::SUCCESS);
+        $display = self::display($tester);
+        foreach (self::EVIL_TEXT as $text) {
+            Assert::string($display)->contains($text);
+        }
+        Assert::string($display)->notContains("\e]8;;");
+    }
+
+    #[Test]
+    #[Covers(Init::class)]
+    #[DataSet([''], 'without a numeric id')]
+    #[DataSet(['<software name="Seven" alias="7" description="lucky"/>'], 'with a numeric id')]
+    public function initMenuPrintsTheTextOfEntriesLiterally(string $registry): void
+    {
+        $this->config("<registry>$registry</registry>");
+
+        $tester = $this->run(['command' => 'init', '--overwrite' => true], decorated: true, answers: ['', 'y', 'evil - ' . OutputFormatter::escape(self::EVIL_TEXT['description'])]);
+
+        Assert::same($tester->getStatusCode(), Command::SUCCESS);
+        Assert::string(self::display($tester))
+            ->contains('evil - ' . self::EVIL_TEXT['description'])
+            ->notContains("\e]8;;");
+        Assert::string((string) \file_get_contents($this->directory . '/dload.xml'))->contains('software="evil"');
+    }
+
     #[BeforeTest]
     protected function prepare(): void
     {
@@ -340,13 +394,14 @@ final class PackageRegistryCommandsTest
 
     /**
      * @param array<string, mixed> $input
+     * @param list<string>|null $answers Answers to the questions; null runs the command non-interactively.
      */
-    private function run(array $input, bool $decorated = false): ApplicationTester
+    private function run(array $input, bool $decorated = false, ?array $answers = null): ApplicationTester
     {
         $application = new Application();
         $application->setAutoExit(false);
         $application->setCatchExceptions(false);
-        foreach ([new Get(), new ListSoftware(), new Show()] as $command) {
+        foreach ([new Get(), new Init(), new ListSoftware(), new Show()] as $command) {
             // Symfony Console 8 renamed `add()` to `addCommand()`
             \method_exists($application, 'addCommand')
                 ? $application->addCommand($command)
@@ -354,9 +409,10 @@ final class PackageRegistryCommandsTest
         }
 
         $tester = new ApplicationTester($application);
+        $answers === null or $tester->setInputs($answers);
         $tester->run(
             $input + ['--config' => $this->directory . '/dload.xml'],
-            ['interactive' => false, 'decorated' => $decorated],
+            ['interactive' => $answers !== null, 'decorated' => $decorated],
         );
 
         return $tester;

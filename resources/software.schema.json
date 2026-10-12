@@ -100,7 +100,7 @@
                 },
                 "rename": {
                   "type": "string",
-                  "description": "Rename found file to this value with the same extension"
+                  "description": "Rename found file to this value, a file name, not a path; the extension of the found file is appended unless the value already ends with it"
                 },
                 "extract-path": {
                   "type": "string",

@@ -37,6 +37,7 @@ final class BinaryExecutor
         // An array command starts the binary without a shell: escapeshellarg() on Windows would replace
         // `"`, `%` and `!` in arguments with spaces. The closed stdin keeps an interactive binary from waiting.
         // On Windows a binary that cannot start (a truncated file, an ELF) makes proc_open() warn and return false.
+        \error_clear_last();
         $process = @\proc_open(
             [(string) $binaryPath, ...$arguments],
             [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['redirect', 1]],

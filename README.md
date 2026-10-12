@@ -613,6 +613,7 @@ This ensures consistent Velox versions across different environments and team me
 #### File Elements
 
 - **pattern**: Regex pattern to match files
+- **rename**: Optional new name of the matched file, a file name, not a path. The extension of the matched file is appended unless the new name already ends with it
 - **extract-path**: Optional extraction directory
 - Works on any system (no OS/architecture filtering)
 
@@ -713,11 +714,11 @@ It works the same for the Composer package, the PHAR and the binary.
   and a download of that id prints every `<package>#<id>` to choose from.
 - **Broken declarations** are reported as warnings and skipped; they never stop DLoad. That covers a missing file,
   an invalid XML, a required attribute left empty, a path where a file name is expected, an invalid regex,
-  and a `version-command` other than one option such as `--version`, or `version`.
+  a `version-command` other than one option such as `--version`, or `version`, and an id with `#`, `:` or spaces around it.
 - **Switching off**: `<registry from-packages="false">` drops the software of packages and keeps the official registry;
   `<registry overwrite="true">` drops both.
 
-`dload software` shows where each entry comes from: `official`, `dload.xml` or the package name. An entry that hides others lists them under `Shadows:`, package ones as `<package>#<id>`.
+`dload software` shows where each entry comes from: `official`, `dload.xml` or the package name. An entry that hides others lists them under `Shadows:`, package ones as `<package>#<id>`; `dload show <id>` prints the origin as `Source:`.
 
 ## Use Cases
 

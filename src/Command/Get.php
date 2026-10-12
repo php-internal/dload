@@ -17,7 +17,6 @@ use Internal\DLoad\Service\Logger;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Exception\InvalidArgumentException;
-use Symfony\Component\Console\Formatter\OutputFormatter;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -282,8 +281,8 @@ final class Get extends Base
     {
         foreach ($failures as [$software, $error]) {
             $output->writeln('');
-            $output->writeln(\sprintf('<error> Failed to download `%s` </error>', OutputFormatter::escape(Logger::printable($software))));
-            $output->writeln(OutputFormatter::escape(Logger::printable(self::describeFailure($error))));
+            $output->writeln(\sprintf('<error> Failed to download `%s` </error>', Logger::text($software)));
+            $output->writeln(Logger::text(self::describeFailure($error)));
 
             $output->isVeryVerbose() and $this->logger->exception($error, important: true);
         }

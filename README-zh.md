@@ -601,6 +601,7 @@ DLoad 会自动处理构建过程：
 #### 文件要素
 
 - **pattern**：匹配文件的正则表达式模式
+- **rename**：可选，匹配文件的新名称；必须是文件名，而不是路径。除非新名称已以该扩展名结尾，否则会追加匹配文件的扩展名
 - **extract-path**：可选的解压目录
 - 在任何系统上都能工作（无操作系统/架构过滤）
 
@@ -694,11 +695,11 @@ DLoad 在已加载的 `dload.xml` 旁边查找 `composer.json`（没有 `dload.x
   否则根包优先，然后按 `require` 和 `require-dev` 中的顺序选择包，
   并且下载该 id 时会列出所有可供选择的 `<package>#<id>`。
 - **有问题的声明**会以警告形式报告并被跳过；它们永远不会使 DLoad 停止运行。包括：文件不存在、XML 无效、
-  必填属性为空、需要文件名的地方写了路径、无效的正则表达式，以及既不是单个选项（如 `--version`）也不是 `version` 的 `version-command`。
+  必填属性为空、需要文件名的地方写了路径、无效的正则表达式、既不是单个选项（如 `--version`）也不是 `version` 的 `version-command`，以及包含 `#`、`:` 或首尾有空格的 id。
 - **关闭**：`<registry from-packages="false">` 丢弃来自包的软件并保留官方注册表；
   `<registry overwrite="true">` 两者都丢弃。
 
-`dload software` 会显示每个条目的来源：`official`、`dload.xml` 或包名。遮盖了其他条目的条目会在 `Shadows:` 中列出它们，包中的条目以 `<package>#<id>` 形式显示。
+`dload software` 会显示每个条目的来源：`official`、`dload.xml` 或包名。遮盖了其他条目的条目会在 `Shadows:` 中列出它们，包中的条目以 `<package>#<id>` 形式显示；`dload show <id>` 会在 `Source:` 中显示来源。
 
 ## 使用场景
 

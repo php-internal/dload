@@ -608,6 +608,7 @@ El binario de RoadRunner construido incluirá solo los plugins especificados en 
 #### Elementos File
 
 - **pattern**: Patrón regex para hacer match con archivos
+- **rename**: Nuevo nombre opcional del archivo encontrado; un nombre de archivo, no una ruta. Se añade la extensión del archivo encontrado salvo que el nuevo nombre ya termine con ella
 - **extract-path**: Directorio de extracción opcional
 - Funciona en cualquier sistema (sin filtrado por SO/arquitectura)
 
@@ -707,12 +708,12 @@ Funciona igual con el paquete de Composer, el PHAR y el binario.
   Si no, gana el paquete raíz, luego los paquetes en el orden de `require` y `require-dev`,
   y al descargar ese id se muestran todos los `<package>#<id>` entre los que elegir.
 - **Las declaraciones erróneas** se notifican como advertencias y se omiten; nunca detienen DLoad. Esto incluye un archivo inexistente,
-  un XML inválido, un atributo obligatorio vacío, una ruta donde se espera un nombre de archivo, una regex inválida
-  y un `version-command` que no sea una sola opción como `--version`, o `version`.
+  un XML inválido, un atributo obligatorio vacío, una ruta donde se espera un nombre de archivo, una regex inválida,
+  un `version-command` que no sea una sola opción como `--version`, o `version`, y un id con `#`, `:` o espacios alrededor.
 - **Desactivación**: `<registry from-packages="false">` descarta el software de los paquetes y mantiene el registro oficial;
   `<registry overwrite="true">` descarta ambos.
 
-`dload software` muestra de dónde viene cada entrada: `official`, `dload.xml` o el nombre del paquete. Una entrada que oculta otras las lista en `Shadows:`, las de paquetes como `<package>#<id>`.
+`dload software` muestra de dónde viene cada entrada: `official`, `dload.xml` o el nombre del paquete. Una entrada que oculta otras las lista en `Shadows:`, las de paquetes como `<package>#<id>`; `dload show <id>` muestra el origen como `Source:`.
 
 ## Casos de Uso
 

@@ -10,7 +10,6 @@ use Internal\DLoad\Module\Software\SoftwareCollection;
 use Internal\DLoad\Service\Logger;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Formatter\OutputFormatter;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -59,17 +58,13 @@ final class ListSoftware extends Base
         $output->writeln('There are <options=bold>' . $registry->count() . '</> software available:');
         $output->writeln('');
 
-        // Definitions may come from Composer packages: their text must turn neither into console tags
-        // nor into terminal control sequences
-        $e = static fn(string $text): string => OutputFormatter::escape(Logger::printable($text));
-
         foreach ($registry->entries() as $entry) {
             $software = $entry->software;
             $output->writeln(\sprintf(
                 '<fg=green;options=bold>%s</>  %s  <fg=gray>[%s]</>',
-                $e($software->getId()),
-                $e($software->name),
-                $e((string) $entry->origin),
+                Logger::text($software->getId()),
+                Logger::text($software->name),
+                Logger::text((string) $entry->origin),
             ));
 
             $shadowed = \array_map(
@@ -81,14 +76,14 @@ final class ListSoftware extends Base
                     static fn(Entry $other): bool => $other !== $entry,
                 ),
             );
-            $shadowed === [] or $output->writeln('<fg=yellow>Shadows: ' . $e(\implode(', ', $shadowed)) . '</>');
-            $software->homepage and $output->writeln('<fg=blue>Homepage: ' . $e($software->homepage) . '</>');
+            $shadowed === [] or $output->writeln('<fg=yellow>Shadows: ' . Logger::text(\implode(', ', $shadowed)) . '</>');
+            $software->homepage and $output->writeln('<fg=blue>Homepage: ' . Logger::text($software->homepage) . '</>');
 
             foreach ($software->repositories as $repo) {
-                $output->writeln('<fg=blue>' . $e("{$repo->type}: {$repo->uri}") . '</>');
+                $output->writeln('<fg=blue>' . Logger::text("{$repo->type}: {$repo->uri}") . '</>');
             }
 
-            $software->description and $output->writeln('<fg=gray>' . $e(\wordwrap($software->description, 78)) . '</>');
+            $software->description and $output->writeln('<fg=gray>' . Logger::text(\wordwrap($software->description, 78)) . '</>');
             $output->writeln('');
         }
 

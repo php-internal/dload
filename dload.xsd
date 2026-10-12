@@ -210,7 +210,7 @@
                                                 </xs:attribute>
                                                 <xs:attribute name="rename" type="xs:string">
                                                     <xs:annotation>
-                                                        <xs:documentation>Rename found file to this value with the same extension</xs:documentation>
+                                                        <xs:documentation>Rename found file to this value, a file name, not a path; the extension of the found file is appended unless the value already ends with it</xs:documentation>
                                                     </xs:annotation>
                                                 </xs:attribute>
                                                 <xs:attribute name="extract-path" type="xs:string">

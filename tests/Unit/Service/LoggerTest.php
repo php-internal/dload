@@ -57,6 +57,71 @@ final class LoggerTest
             ->notContains("\u{9B}");
     }
 
+    #[DataSet(['<fg=black;bg=black>HIDDEN</>'], 'a hiding style')]
+    #[DataSet(['<href=https://evil.example>click</>'], 'a hyperlink')]
+    #[DataSet(['<error>alarm</error>'], 'a named style')]
+    public function tagsInValuesArePrintedLiterally(string $value): void
+    {
+        $output = new BufferedOutput(BufferedOutput::VERBOSITY_VERY_VERBOSE, decorated: true);
+        $logger = new Logger($output);
+
+        $logger->warning('%s', $value);
+        $logger->info('%s', $value);
+        $logger->error('%s', $value);
+        $logger->debug('%s', $value);
+        $logger->status('sender', '%s', $value);
+
+        $printed = $output->fetch();
+        Assert::same(\substr_count($printed, $value), 5);
+        Assert::string($printed)
+            ->notContains("\e[30;40m")
+            ->notContains("\e]8;;")
+            ->notContains("\e[37;41malarm");
+    }
+
+    public function tagsInAnExceptionMessageArePrintedLiterally(): void
+    {
+        $output = new BufferedOutput(decorated: true);
+        $message = 'failed: <fg=black;bg=black>HIDDEN</> <href=https://evil.example>click</>';
+
+        (new Logger($output))->exception(new \RuntimeException($message), important: true);
+
+        Assert::string($output->fetch())
+            ->contains($message . "\n")
+            ->notContains("\e[30;40m")
+            ->notContains("\e]8;;");
+    }
+
+    /**
+     * PHP keeps the first 15 characters of each string argument in the stack trace, which the
+     * exception log prints: an argument is as foreign as the message.
+     */
+    #[DataSet(['<fg=red>red</>', "\e[31mred"], 'a style')]
+    #[DataSet(['<fg=nope>x</>', 'Invalid "nope" color'], 'an invalid style')]
+    public function tagsInStackTraceArgumentsArePrintedLiterally(string $argument, string $rendered): void
+    {
+        $output = new BufferedOutput(decorated: true);
+        $exception = (static fn(string $id): \RuntimeException => new \RuntimeException('failed'))($argument);
+
+        (new Logger($output))->exception($exception, important: true);
+
+        Assert::string($output->fetch())
+            ->contains("'$argument'")
+            ->notContains($rendered);
+    }
+
+    #[DataSet(['C:\\dir\\'], 'a trailing backslash')]
+    #[DataSet(['a\\b'], 'an inner backslash')]
+    #[DataSet(['1 < 2 > 0'], 'comparison signs')]
+    public function valuesWithoutTagsArePrintedAsIs(string $value): void
+    {
+        $output = new BufferedOutput(decorated: true);
+
+        (new Logger($output))->warning('[%s]', $value);
+
+        Assert::same($output->fetch(), "\e[33m[$value]\e[0m\n");
+    }
+
     public function everyMessageKindCleansItsValues(): void
     {
         $output = new BufferedOutput(BufferedOutput::VERBOSITY_VERY_VERBOSE);

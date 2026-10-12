@@ -9,13 +9,13 @@ use Internal\DLoad\Module\Binary\BinaryProvider;
 use Internal\DLoad\Module\Common\Input\Destination;
 use Internal\DLoad\Module\Config\Schema\Action\Download;
 use Internal\DLoad\Module\Config\Schema\Actions;
+use Internal\DLoad\Module\Config\Schema\Embed\Software;
 use Internal\DLoad\Module\Software\OriginKind;
 use Internal\DLoad\Module\Software\SoftwareCollection;
 use Internal\DLoad\Service\Logger;
 use Internal\Path;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Formatter\OutputFormatter;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -71,15 +71,6 @@ final class Show extends Base
         return $this->listAllSoftware($collection, $binaryProvider, $destination, $actions, $input, $output);
     }
 
-    /**
-     * Makes registry text safe to print: definitions may come from Composer packages, and their text
-     * must turn neither into console tags nor into terminal control sequences.
-     */
-    private static function text(string $text): string
-    {
-        return OutputFormatter::escape(Logger::printable($text));
-    }
-
     private function listAllSoftware(
         SoftwareCollection $collection,
         BinaryProvider $binaryProvider,
@@ -91,34 +82,28 @@ final class Show extends Base
         $showAll = (bool) $input->getOption('all');
         $fallbackPath = $this->resolveDestinationPath($destination, null);
 
-        /** @var array<non-empty-string, Download> $configDownloads */
-        $configDownloads = [];
-        if ($actions !== null) {
-            foreach ($actions->downloads as $download) {
-                $configDownloads[$download->software] = $download;
-            }
+        // Downloads of the project config with the definitions they resolve to: `acme/fw#gh` may be a shadowed one
+        /** @var list<array{Download, Software}> $configured */
+        $configured = [];
+        foreach ($actions?->downloads ?? [] as $download) {
+            $software = $collection->findSoftware($download->software);
+            $software === null or $configured[] = [$download, $software];
         }
-        // Definitions the downloads resolve to: `acme/fw#gh` may be a shadowed one
-        $configSoftware = [];
-        foreach (\array_keys($configDownloads) as $id) {
-            $software = $collection->findSoftware($id);
-            $software === null or $configSoftware[] = $software;
-        }
+        $configSoftware = \array_column($configured, 1);
 
         // Track downloaded software to avoid showing them twice
         $downloadedSoftware = [];
 
         // BLOCK 1: Software configured in project
         $output->writeln('<info>Configured software:</info>');
-        $configDownloads === [] and $output
+        $configured === [] and $output
             ->writeln('  <comment>No configured software found</comment>');
 
-        if ($configDownloads !== []) {
+        if ($configured !== []) {
             $foundConfigured = false;
 
-            foreach ($configDownloads as $id => $download) {
-                $software = $collection->findSoftware($id);
-                if ($software === null || $software->binary === null) {
+            foreach ($configured as [$download, $software]) {
+                if ($software->binary === null) {
                     continue;
                 }
 
@@ -133,8 +118,8 @@ final class Show extends Base
 
                 $output->writeln(\sprintf(
                     '  <info>%s</info> (%s) %s',
-                    self::text($id),
-                    self::text($binary->getVersionString() ?? 'unknown'),
+                    Logger::text($download->software),
+                    Logger::text($binary->getVersionString() ?? 'unknown'),
                     $binary->getPath(),
                 ));
             }
@@ -182,8 +167,8 @@ final class Show extends Base
 
             $output->writeln(\sprintf(
                 '  <info>%s</info> (%s) %s',
-                self::text($software->getId()),
-                self::text($binary->getVersionString() ?? 'unknown'),
+                Logger::text($software->getId()),
+                Logger::text($binary->getVersionString() ?? 'unknown'),
                 $binary->getPath(),
             ));
         }
@@ -212,8 +197,8 @@ final class Show extends Base
 
                 $output->writeln(\sprintf(
                     '  <info>%s</info> %s',
-                    self::text($software->getId()),
-                    self::text($software->description ? '- ' . $software->description : ''),
+                    Logger::text($software->getId()),
+                    Logger::text($software->description ? '- ' . $software->description : ''),
                 ));
             }
 
@@ -273,15 +258,15 @@ final class Show extends Base
         $destinationPath = $this->resolveDestinationPath($destination, $matchedDownload);
 
         // Display detailed information
-        $output->writeln(\sprintf('<info>Software:</info> %s', self::text($software->name)));
+        $output->writeln(\sprintf('<info>Software:</info> %s', Logger::text($software->name)));
 
         $software->alias === null or $software->alias === $software->name or $output
-            ->writeln(\sprintf('<info>Alias:</info> %s', self::text($software->alias)));
+            ->writeln(\sprintf('<info>Alias:</info> %s', Logger::text($software->alias)));
         $software->description and $output
-            ->writeln(\sprintf('<info>Description:</info> %s', self::text($software->description)));
+            ->writeln(\sprintf('<info>Description:</info> %s', Logger::text($software->description)));
         $software->homepage === null or $output
-            ->writeln(\sprintf('<info>Homepage:</info> %s', self::text($software->homepage)));
-        $output->writeln(\sprintf('<info>Source:</info> %s', self::text((string) $entry->origin)));
+            ->writeln(\sprintf('<info>Homepage:</info> %s', Logger::text($software->homepage)));
+        $output->writeln(\sprintf('<info>Source:</info> %s', Logger::text((string) $entry->origin)));
 
         // Show project config information
         $output->writeln('');
@@ -327,7 +312,7 @@ final class Show extends Base
 
         $output->writeln('<info>Binary information:</info>');
         $output->writeln(\sprintf('  <info>Full path:</info> %s', $binaryPath->absolute()));
-        $output->writeln(\sprintf('  <info>Version:</info> %s', self::text($binary->getVersionString() ?? 'unknown')));
+        $output->writeln(\sprintf('  <info>Version:</info> %s', Logger::text($binary->getVersionString() ?? 'unknown')));
         $output->writeln(\sprintf('  <info>Size:</info> %s', $this->formatSize($binary->getSize())));
 
         $mtime = $binary->getMTime();

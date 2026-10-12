@@ -11,7 +11,9 @@ use Internal\DLoad\Service\Logger;
 use Internal\Path;
 use Testo\Assert;
 use Testo\Codecov\Covers;
+use Testo\Core\Exception\SkipTest;
 use Testo\Data\DataSet;
+use Testo\Expect;
 use Testo\Lifecycle\AfterTest;
 use Testo\Lifecycle\BeforeTest;
 use Testo\Test;
@@ -81,6 +83,20 @@ final class BinaryExecutorTest
 
         Assert::true($failed);
         Assert::same($warnings, []);
+    }
+
+    /**
+     * Only Windows reports a binary that cannot start through proc_open() itself; elsewhere the
+     * child process fails with an exit code instead.
+     */
+    public function aBinaryThatCannotStartIsReportedWithItsOwnErrorNotAnEarlierOne(): never
+    {
+        \PHP_OS_FAMILY === 'Windows' or throw new SkipTest('proc_open() fails to start a binary only on Windows.');
+        @\file_get_contents((string) $this->dir->join('missing.txt'));
+
+        Expect::exception(BinaryExecutionException::class)->withMessageContaining('CreateProcess');
+
+        (new BinaryExecutor(new Logger()))->execute($this->dir->join('missing.exe'), '--version');
     }
 
     #[BeforeTest]

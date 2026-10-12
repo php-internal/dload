@@ -183,6 +183,9 @@ final class ComposerPackagesTest
     #[DataSet(["dload.xml\0", '`extra.dload.registry` must be a path to a file'], 'a null byte')]
     #[DataSet(['no-registry.xml', 'has no `<dload><registry>` section'], 'an XML without a registry section')]
     #[DataSet(['foreign.xml', 'has no `<dload><registry>` section'], 'an XML of another format')]
+    #[DataSet(['.', 'registry file `.` not found'], 'the package directory')]
+    #[DataSet(['sub', 'registry file `sub` not found'], 'a subdirectory')]
+    #[DataSet(['sub/', 'registry file `sub/` not found'], 'a subdirectory with a slash')]
     public function rejectsABrokenDeclarationAndKeepsTheOtherPackages(mixed $registry, string $warning): void
     {
         $this->file('vendor/outside.xml', self::registry('<software name="evil"/>'));
@@ -195,6 +198,7 @@ final class ComposerPackagesTest
         $this->file('vendor/acme/broken/broken.xml', '<dload><registry>');
         $this->file('vendor/acme/broken/no-registry.xml', '<dload><actions><download software="tool"/></actions></dload>');
         $this->file('vendor/acme/broken/foreign.xml', '<config><registry><software name="evil"/></registry></config>');
+        $this->file('vendor/acme/broken/sub/dload.xml', self::registry('<software name="evil"/>'));
 
         $entries = $this->entries();
 
@@ -434,6 +438,21 @@ final class ComposerPackagesTest
         $entries = $this->entries(vendorDir: $override);
 
         Assert::same(self::describe($entries), ["acme/lib#from-$used"]);
+    }
+
+    #[DataSet(["libs\0"], 'a null byte')]
+    #[DataSet([" \0"], 'a null byte after a space')]
+    public function anInvalidOverrideIsNamedInTheWarning(string $override): void
+    {
+        $this->root(['require' => ['acme/lib' => '*'], 'config' => ['vendor-dir' => 'vendor']]);
+        $this->installed($this->package('acme/lib', self::registry('<software name="tool"/>')));
+
+        $entries = $this->entries(vendorDir: $override);
+
+        Assert::same($entries, []);
+        Assert::string($this->output->fetch())
+            ->contains('Skipping registries of Composer packages: COMPOSER_VENDOR_DIR is not a path.')
+            ->notContains('config.vendor-dir');
     }
 
     public function theOverrideIsUsedWhenTheConfigVendorDirIsBroken(): void
