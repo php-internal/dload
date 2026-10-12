@@ -62,7 +62,25 @@ final class BinaryVersionTest
         yield 'semver with build metadata' => [
             'App version 2.3.4+20230415',
             '2.3.4+20230415',
-            '2.3.4+20230415',
+            '2.3.4',
+        ];
+
+        yield 'build metadata with words' => [
+            'tool 1.2.3+build.5',
+            '1.2.3+build.5',
+            '1.2.3',
+        ];
+
+        yield 'build metadata before other text' => [
+            'tool v1.2.3-rc.1+exp.sha.5114f85, built today',
+            '1.2.3-rc.1+exp.sha.5114f85',
+            '1.2.3',
+        ];
+
+        yield 'plus apart from the version' => [
+            'tool 1.2.3 +build.5',
+            '1.2.3',
+            null,
         ];
 
         yield 'pre-release without a separator' => [
@@ -176,7 +194,7 @@ final class BinaryVersionTest
 
         yield 'build metadata after a pre-release' => [
             'v1.2.3-rc.1+build.5',
-            '1.2.3-rc.1',
+            '1.2.3-rc.1+build.5',
             '1.2.3',
         ];
 
@@ -259,6 +277,14 @@ final class BinaryVersionTest
     #[DataSet(['tool 2.0.0rc1', Stability::RC], 'release candidate')]
     #[Test]
     public function preReleaseGluedToTheNumberKeepsItsStability(string $output, Stability $stability): void
+    {
+        Assert::same(BinaryVersion::fromBinaryOutput($output)->stability, $stability);
+    }
+
+    #[DataSet(['tool 1.2.3+beta.2', Stability::Stable], 'build metadata like a beta')]
+    #[DataSet(['tool 1.2.3-rc.1+build.5', Stability::RC], 'release candidate before build metadata')]
+    #[Test]
+    public function buildMetadataDoesNotChangeTheStability(string $output, Stability $stability): void
     {
         Assert::same(BinaryVersion::fromBinaryOutput($output)->stability, $stability);
     }

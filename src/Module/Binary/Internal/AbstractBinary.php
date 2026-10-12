@@ -89,7 +89,9 @@ abstract class AbstractBinary implements Binary
 
     public function getVersionString(): ?string
     {
-        return $this->getVersion()?->number;
+        // The whole version as printed, with its pre-release and build metadata
+        $version = $this->getVersion()?->string;
+        return $version === '' ? null : $version;
     }
 
     abstract public function getPath(): Path;

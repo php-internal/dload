@@ -300,6 +300,20 @@ final class RangeTest
         yield ['^1.2.3+5', '1.9', true];
         yield ['~1.2.3+5', '1.3', false];
         yield ['1.0 - 2+5', '2.5', true];
+        yield ['>=1.2.3+build.5', '1.2.3', true];
+        yield ['>1.2.3+build.5', '1.2.3+build.6', false];
+        yield ['1.2.3', '1.2.3+exp.sha.5114f85', true];
+        yield ['1.2.3-beta.1+build.5', '1.2.3-beta.1', true];
+        yield ['1.2.3-beta.1+build.5', '1.2.3-beta.2', false];
+        yield ['^1.2.3-beta.1+5', '1.2.3-beta.2', true];
+        yield ['1.0+build.1 - 2.0+build-2', '2.0.0', true];
+        yield ['1.0-beta+5 - 2.0', '1.0.0-alpha', false];
+
+        // Long number parts compare by value
+        yield ['>1.99999999999999999998', '1.99999999999999999999', true];
+        yield ['<=1.99999999999999999998', '1.99999999999999999999', false];
+        yield ['1.99999999999999999999', '1.0099999999999999999999', true];
+        yield ['>=1.99999999999999999999.0.0', '1.99999999999999999999', true];
     }
 
     public static function provideInvalidConstraints(): \Generator
@@ -309,6 +323,9 @@ final class RangeTest
         yield 'word' => ['abc', 'Invalid base version format: abc.'];
         yield 'branch' => ['dev-master', 'Invalid base version format: dev-master.'];
         yield 'feature suffix' => ['1.2.3-feature', 'Invalid base version format: 1.2.3-feature.'];
+        yield 'plus as an operator' => ['+1.2.3', 'Invalid base version format: +1.2.3.'];
+        yield 'plus without build metadata' => ['1.2.3+', 'Invalid base version format: 1.2.3+.'];
+        yield 'underscore in build metadata' => ['1.2.3+5_beta', 'Invalid base version format: 1.2.3+5_beta.'];
         yield 'letter in the number' => ['1.2x.3', 'Invalid base version format: 1.2x.3.'];
         yield 'lone patch letter' => ['^1.1.1b', 'Invalid base version format: ^1.1.1b.'];
         yield 'word glued to a pre-release' => ['^2.0.0rc1x', 'Invalid base version format: ^2.0.0rc1x.'];

@@ -13,10 +13,10 @@ use Internal\DLoad\Module\Common\Stability;
  */
 class Version implements \Stringable
 {
-    protected const VERSION_SEMVER_NUMBER_PATTERN = 'v?(\d+\.\d+\.\d+(?:\.\d+)*(?:\+\d+)?)';
+    protected const VERSION_SEMVER_NUMBER_PATTERN = 'v?(\d+\.\d+\.\d+(?:\.\d+)*)';
 
     /** A suffix starting with a letter may follow the number right away: `2.0.0rc1`, `1.2.3_beta2`. */
-    protected const VERSION_FALLBACK_PATTERN = 'v?(\d+(?:\.\d+)*(?:\+\d+)?)((?:[-+.]|(?=[a-z_]))[\w.-]+)?';
+    protected const VERSION_FALLBACK_PATTERN = 'v?(\d+(?:\.\d+)*)((?:[-+.]|(?=[a-z_]))[\w.-]+)?';
 
     protected const VERSION_HASH_SUFFIX_PATTERN = '(?:#([a-f0-9]{6,40}))?';
 
@@ -39,16 +39,38 @@ class Version implements \Stringable
     ) {}
 
     /**
+     * Regular expression of SemVer build metadata: a plus and dot-separated identifiers of letters, digits
+     * and hyphens, like `+build.5` or `+5-beta.1`.
+     *
+     * @return non-empty-string
+     */
+    public static function buildPattern(): string
+    {
+        return '\+[0-9a-z-]+(?:\.[0-9a-z-]+)*';
+    }
+
+    /**
      * Parses a version string into its components.
+     *
+     * Build metadata at the end, see {@see buildPattern()}, is dropped as in SemVer: it means nothing for
+     * the order, the stability or the suffix, so `1.2.3-linux+build.5` is `1.2.3-linux`. It stays only
+     * in {@see $string}. A plus that starts no metadata, as in `1.2.3+linux_x64`, starts a suffix.
      *
      * @param non-empty-string $string Version string to parse
      */
     public static function fromVersionString(string $string): static
     {
+        $version = (string) \preg_replace(
+            '/' . self::buildPattern() . '(?=' . self::VERSION_HASH_SUFFIX_PATTERN . '$)/i',
+            '',
+            $string,
+            1,
+        );
+
         // Parse the version number
         \preg_match(
             '/^' . self::VERSION_FALLBACK_PATTERN . self::VERSION_HASH_SUFFIX_PATTERN . '$/i',
-            $string,
+            $version,
             $parts,
         ) or throw new \InvalidArgumentException(
             "Failed version string: {$string}.",
@@ -111,7 +133,20 @@ class Version implements \Stringable
      */
     public function compareNumber(self $other): int
     {
-        return \version_compare($this->comparableNumber(), $other->comparableNumber());
+        $parts = $this->comparableParts();
+        $otherParts = $other->comparableParts();
+        foreach ($parts as $i => $part) {
+            if (!isset($otherParts[$i])) {
+                return 1;
+            }
+
+            $byPart = self::compareDigits($part, $otherParts[$i]);
+            if ($byPart !== 0) {
+                return $byPart;
+            }
+        }
+
+        return \count($parts) <=> \count($otherParts);
     }
 
     public function __toString(): string
@@ -173,8 +208,7 @@ class Version implements \Stringable
             $isNumber = \ctype_digit($token);
             $byToken = match (true) {
                 $isNumber !== \ctype_digit($otherToken) => $isNumber ? 1 : -1,
-                # Digit strings of any length: as integers, long ones would overflow
-                $isNumber => (\strlen($token) <=> \strlen($otherToken)) ?: \strcmp($token, $otherToken) <=> 0,
+                $isNumber => self::compareDigits($token, $otherToken),
                 default => \strcmp($token, $otherToken) <=> 0,
             };
             if ($byToken !== 0) {
@@ -183,6 +217,16 @@ class Version implements \Stringable
         }
 
         return \count($tokens) <=> \count($otherTokens);
+    }
+
+    /**
+     * Compares digit strings of any length without leading zeros: as integers, long ones would overflow.
+     *
+     * @return int<-1, 1>
+     */
+    private static function compareDigits(string $digits, string $other): int
+    {
+        return (\strlen($digits) <=> \strlen($other)) ?: \strcmp($digits, $other) <=> 0;
     }
 
     /**
@@ -203,16 +247,26 @@ class Version implements \Stringable
     /**
      * A numeric suffix without a stability keyword orders as a part of the number: `1.0.0-1 > 1.0.0`.
      * With a keyword it does not: the `.2` of `2.0.0-beta.1.2` belongs to the pre-release.
-     * Trailing zero parts do not count: `1.2.3`, `1.2.3.0` and `1.2.3.0.0` are one number,
-     * nor does build metadata, as in SemVer: `1.2.3+5` is `1.2.3`.
+     * Leading zeros and trailing zero parts do not count: `1.2.3`, `01.2.3.0` and `1.2.3.0.0` are one number.
+     *
+     * @return list<string> Parts without leading zeros, empty for a version without a number
      */
-    private function comparableNumber(): string
+    private function comparableParts(): array
     {
-        $number = \explode('+', (string) $this->number, 2)[0];
+        if ($this->number === null) {
+            return [];
+        }
+
+        $number = $this->number;
         if ($this->withoutKeyword && $this->suffix !== null && \preg_match('/^\d+(?:\.\d+)*$/', $this->suffix) === 1) {
             $number .= '.' . $this->suffix;
         }
 
-        return (string) \preg_replace('/(?:\.0+)+$/', '', $number);
+        $parts = \array_map(static fn(string $part): string => \ltrim($part, '0') ?: '0', \explode('.', $number));
+        while (\count($parts) > 1 && \end($parts) === '0') {
+            \array_pop($parts);
+        }
+
+        return $parts;
     }
 }
