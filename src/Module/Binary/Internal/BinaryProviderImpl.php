@@ -6,6 +6,7 @@ namespace Internal\DLoad\Module\Binary\Internal;
 
 use Internal\DLoad\Module\Binary\Binary;
 use Internal\DLoad\Module\Binary\BinaryProvider;
+use Internal\DLoad\Module\Common\FileSystem\FS;
 use Internal\DLoad\Module\Common\OperatingSystem;
 use Internal\DLoad\Module\Config\Schema\Embed\Binary as BinaryConfig;
 use Internal\Path;
@@ -24,6 +25,10 @@ final class BinaryProviderImpl implements BinaryProvider
 
     public function getLocalBinary(Path|string $destinationPath, BinaryConfig $config, ?string $name = null): ?Binary
     {
+        if (!FS::isFileName($config->name)) {
+            return null;
+        }
+
         // Get binary path
         $binaryPath = $this->buildBinaryPath($destinationPath, $config);
 
@@ -41,8 +46,13 @@ final class BinaryProviderImpl implements BinaryProvider
 
     public function getGlobalBinary(BinaryConfig $config, ?string $name = null): ?Binary
     {
+        $name ??= $config->name;
+        if (!FS::isFileName($name)) {
+            return null;
+        }
+
         $binary = new GlobalBinary(
-            name: $name ?? $config->name,
+            name: $name,
             config: $config,
             executor: $this->executor,
         );

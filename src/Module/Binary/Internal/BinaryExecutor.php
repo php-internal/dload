@@ -23,24 +23,35 @@ final class BinaryExecutor
      * Executes a binary with the specified command and returns the output.
      *
      * @param Path $binaryPath Full path to binary executable
-     * @param string $command Command argument(s) to execute
+     * @param string ...$arguments Each one reaches the binary as is: quotes, pipes and other shell
+     *        syntax are not interpreted.
      * @return list<string> Command output
      * @throws BinaryExecutionException If execution fails
      */
-    public function execute(Path $binaryPath, string $command): array
+    public function execute(Path $binaryPath, string ...$arguments): array
     {
-        // Escape command for shell execution
-        $escapedPath = \escapeshellarg((string) $binaryPath);
+        $command = \implode(' ', $arguments);
+        $this->logger->debug('Executing command: %s %s', (string) $binaryPath, $command);
 
-        /** @var list<string> $output */
-        $output = [];
-        $returnCode = 0;
+        // An array command starts the binary without a shell: escapeshellarg() on Windows would replace
+        // `"`, `%` and `!` in arguments with spaces. The closed stdin keeps an interactive binary from waiting.
+        $process = \proc_open(
+            [(string) $binaryPath, ...$arguments],
+            [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['redirect', 1]],
+            $pipes,
+        );
+        $process === false and throw new BinaryExecutionException(
+            \sprintf('Failed to execute binary "%s" with command "%s".', $binaryPath, $command),
+        );
 
-        $cmd = "$escapedPath $command 2>&1";
-        $this->logger->debug('Executing command: %s', $cmd);
+        \fclose($pipes[0]);
+        $stdout = (string) \stream_get_contents($pipes[1]);
+        \fclose($pipes[1]);
+        $returnCode = \proc_close($process);
 
-        // Execute with both stdout and stderr redirected to output
-        \exec($cmd, $output, $returnCode);
+        // Lines without trailing whitespace, as exec() returns them
+        $stdout = \rtrim($stdout);
+        $output = $stdout === '' ? [] : \array_map(\rtrim(...), \preg_split('/\r?\n/', $stdout) ?: []);
 
         // If command failed, throw exception
         if ($returnCode !== 0) {

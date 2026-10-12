@@ -21,7 +21,7 @@
                                 <xs:complexType>
                                     <xs:attribute name="software" type="xs:string" use="required">
                                         <xs:annotation>
-                                            <xs:documentation>Software identifier to download</xs:documentation>
+                                            <xs:documentation>Software identifier to download. `package#id`, e.g. `acme/framework#gh`, picks the entry declared by that Composer package</xs:documentation>
                                         </xs:annotation>
                                     </xs:attribute>
                                     <xs:attribute name="version" type="xs:string">
@@ -183,7 +183,7 @@
                                             <xs:complexType>
                                                 <xs:attribute name="name" type="xs:string" use="required">
                                                     <xs:annotation>
-                                                        <xs:documentation>Binary executable name</xs:documentation>
+                                                        <xs:documentation>Binary executable name: a file name, not a path</xs:documentation>
                                                     </xs:annotation>
                                                 </xs:attribute>
                                                 <xs:attribute name="pattern" type="xs:string">
@@ -193,7 +193,7 @@
                                                 </xs:attribute>
                                                 <xs:attribute name="version-command" type="xs:string">
                                                     <xs:annotation>
-                                                        <xs:documentation>Command argument to check binary version (e.g. "--version")</xs:documentation>
+                                                        <xs:documentation>Arguments to check the binary version (e.g. "--version"), separated by spaces and passed without a shell</xs:documentation>
                                                     </xs:annotation>
                                                 </xs:attribute>
                                             </xs:complexType>
@@ -246,7 +246,12 @@
                         </xs:sequence>
                         <xs:attribute name="overwrite" type="xs:boolean" default="false">
                             <xs:annotation>
-                                <xs:documentation>Replace the built-in software collection with custom ones</xs:documentation>
+                                <xs:documentation>Replace the built-in software collection with custom ones; the software declared by Composer packages is dropped too</xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="from-packages" type="xs:boolean" default="true">
+                            <xs:annotation>
+                                <xs:documentation>Add the software declared by the root package and the direct Composer dependencies in `extra.dload.registry` of their composer.json</xs:documentation>
                             </xs:annotation>
                         </xs:attribute>
                     </xs:complexType>

@@ -14,6 +14,7 @@ use Internal\DLoad\Module\Common\Libc;
 use Internal\DLoad\Module\Common\OperatingSystem;
 use Internal\DLoad\Module\Common\Stability;
 use Internal\DLoad\Module\Config\Schema\Cache as CacheConfig;
+use Internal\DLoad\Module\Config\Schema\CustomSoftwareRegistry;
 use Internal\DLoad\Module\HttpClient\Factory;
 use Internal\DLoad\Module\HttpClient\Internal\NyholmFactoryImpl;
 use Internal\DLoad\Module\Registry\Internal\CacheDirectory;
@@ -26,6 +27,7 @@ use Internal\DLoad\Module\Repository\Internal\GitHub\Factory as GithubRepository
 use Internal\DLoad\Module\Repository\Internal\GitLab\Factory as GitLabRepositoryFactory;
 use Internal\DLoad\Module\Repository\Internal\ServerTokens;
 use Internal\DLoad\Module\Repository\RepositoryProvider;
+use Internal\DLoad\Module\Software\ComposerPackages;
 use Internal\DLoad\Module\Software\SoftwareCollection;
 use Internal\DLoad\Module\Software\SoftwareCollector;
 use Internal\DLoad\Module\Velox\ApiClient;
@@ -111,6 +113,7 @@ final class Bootstrap
 
         // XML config file
         $xml === null or $args['xml'] = $this->readXml($xml);
+        $configFile = $xml === null || \str_starts_with($xml, '<?xml') ? null : Path::create($xml)->absolute();
 
         // Register config hydration as an inflector: every object produced by the container passes
         // through it, and it hydrates the ones marked with #[InflectableConfig].
@@ -153,6 +156,18 @@ final class Bootstrap
                         $config->refresh,
                     );
             },
+        );
+        $this->container->bind(
+            SoftwareCollector::class,
+            static fn(Container $container): SoftwareCollector => new SoftwareCollector(
+                $container->get(CustomSoftwareRegistry::class),
+                new ComposerPackages(
+                    $configFile?->parent() ?? Path::create((string) \getcwd()),
+                    $configFile,
+                    $container->get(Logger::class),
+                    $environment['COMPOSER_VENDOR_DIR'] ?? null,
+                ),
+            ),
         );
         $this->container->bind(
             SoftwareCollection::class,

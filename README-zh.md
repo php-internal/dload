@@ -61,6 +61,7 @@ DLoad 解决了 PHP 项目中的一个实际问题：如何在分发 PHP 代码�
     - [定义软件](#定义软件)
     - [软件要素](#软件要素)
     - [自托管服务器](#自托管服务器)
+    - [来自 Composer 包的软件](#来自-composer-包的软件)
 - [使用场景](#使用场景)
     - [开发环境配置](#开发环境配置)
     - [新项目创建](#新项目创建)
@@ -590,8 +591,11 @@ DLoad 会自动处理构建过程：
 
 #### 二进制要素
 
-- **name**：用于引用的二进制文件名
+- **name**：用于引用的二进制文件名；必须是文件名，而不是路径
 - **pattern**：匹配资源中二进制文件的正则表达式模式
+- **version-command**：让二进制文件输出版本的参数，例如 `--version`；未设置时不检查版本。
+  参数会原样传给二进制文件，不经过 shell：引号和管道不会被解释。
+  在 Composer 包的条目中只能是单个选项（如 `--version`）或 `version`
 - 自动处理操作系统/架构过滤
 
 #### 文件要素
@@ -645,6 +649,56 @@ DLOAD_TOKEN_GHE_EXAMPLE_COM=your_token_here ./vendor/bin/dload get
 
 允许使用普通的 `http`，例如用于测试中的本地模拟 API（`uri="http://127.0.0.1:8080/owner/repo"`），但令牌
 只会通过它发送到 `localhost`、`127.0.0.0/8` 和 `[::1]`。
+
+### 来自 Composer 包的软件
+
+框架或 CMS 可以随包附带它所需二进制文件的定义，这样使用它的项目就不必把这些定义复制到自己的 `dload.xml` 中。
+包在其 `composer.json` 中指向包内的一个 XML 文件：
+
+```json
+{
+    "extra": {
+        "dload": {
+            "registry": "resources/dload.xml"
+        }
+    }
+}
+```
+
+该文件采用 `dload.xml` 格式，因此 IDE 可以为其提供补全和校验；只会读取其中的 `<registry>` 部分。
+它可以是专用文件，也可以是包自身的 `dload.xml`。请将其保留在包的 dist 中：不要对它使用 `export-ignore`。
+
+```xml
+<dload xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/php-internal/dload/refs/heads/1.x/dload.xsd">
+    <registry>
+        <software name="GitHub CLI" alias="gh">
+            <repository type="github" uri="cli/cli" asset-pattern="/^gh_.*/" />
+            <binary name="gh" pattern="/^gh(\.exe)?$/" />
+        </software>
+    </registry>
+</dload>
+```
+
+DLoad 在已加载的 `dload.xml` 旁边查找 `composer.json`（没有 `dload.xml` 时在工作目录中查找），并从
+`vendor/composer/installed.json` 读取已安装的包（会遵循 `COMPOSER_VENDOR_DIR` 和 `config.vendor-dir`，仅支持 Composer 2）。
+无论是 Composer 包、PHAR 还是二进制文件，其行为都相同。
+
+- **谁可以声明**：根包及其直接依赖（`require`、`require-dev`）。传递依赖不能添加软件。
+- **文件可以放在哪里**：只能在包内部。通过 `..`、绝对路径或符号链接指向包外的路径会被拒绝。不支持远程文件。
+- **优先级**：`dload.xml` > 官方注册表 > 包。包永远不会替换另外两者中的条目；
+  当官方注册表遮蔽了正在下载的某个包条目时，DLoad 会发出警告。
+- **显式选择**：`<package>#<id>` 选择某个包的条目，无论它被什么遮蔽：
+  `dload get acme/framework#gh:^2.0` 或 `<download software="acme/framework#gh" />`。
+- **多个包使用同一个 id**：指向相同仓库的包彼此一致，无需报告。
+  否则根包优先，然后按 `require` 和 `require-dev` 中的顺序选择包，
+  并且下载该 id 时会列出所有可供选择的 `<package>#<id>`。
+- **有问题的声明**会以警告形式报告并被跳过；它们永远不会使 DLoad 停止运行。包括：文件不存在、XML 无效、
+  必填属性为空、需要文件名的地方写了路径、无效的正则表达式，以及既不是单个选项（如 `--version`）也不是 `version` 的 `version-command`。
+- **关闭**：`<registry from-packages="false">` 丢弃来自包的软件并保留官方注册表；
+  `<registry overwrite="true">` 两者都丢弃。
+
+`dload software` 会显示每个条目的来源：`official`、`dload.xml` 或包名。遮盖了其他条目的条目会在 `Shadows:` 中列出它们，包中的条目以 `<package>#<id>` 形式显示。
 
 ## 使用场景
 

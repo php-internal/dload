@@ -54,15 +54,52 @@ final class SoftwareCollection implements \IteratorAggregate, \Countable
     /**
      * Finds the entry that wins for the given id.
      *
-     * @param non-empty-string $id Software id: alias or lowercased name.
+     * `<package>#<id>` addresses the entry of a Composer package, whatever shadows it.
+     *
+     * @param non-empty-string $id Software id: alias or lowercased name, or `<package>#<id>`.
      */
     public function find(string $id): ?Entry
     {
+        if (\str_contains($id, '#')) {
+            $package = \strtolower((string) \strstr($id, '#', true));
+            $id = \substr($id, \strlen($package) + 1);
+            foreach ($this->entries[$id] ?? [] as $entry) {
+                if ($entry->origin->package === $package) {
+                    return $entry;
+                }
+            }
+
+            return null;
+        }
+
         return isset($this->entries[$id]) ? self::strongest($this->entries[$id]) : null;
     }
 
     /**
-     * @param non-empty-string $name Software id: alias or lowercased name.
+     * Every entry declared for the id, the shadowed ones included.
+     *
+     * @param non-empty-string $id Software id: alias or lowercased name.
+     * @return list<Entry> In the order they were added.
+     */
+    public function candidates(string $id): array
+    {
+        return $this->entries[$id] ?? [];
+    }
+
+    /**
+     * Yields the winning entry of every id.
+     *
+     * @return \Generator<non-empty-string, Entry>
+     */
+    public function entries(): \Generator
+    {
+        foreach ($this->entries as $id => $entries) {
+            yield $id => self::strongest($entries);
+        }
+    }
+
+    /**
+     * @param non-empty-string $name Software id: alias or lowercased name, or `<package>#<id>`.
      */
     public function findSoftware(string $name): ?Software
     {
@@ -76,8 +113,8 @@ final class SoftwareCollection implements \IteratorAggregate, \Countable
      */
     public function getIterator(): \Traversable
     {
-        foreach ($this->entries as $id => $entries) {
-            yield $id => self::strongest($entries)->software;
+        foreach ($this->entries() as $id => $entry) {
+            yield $id => $entry->software;
         }
     }
 

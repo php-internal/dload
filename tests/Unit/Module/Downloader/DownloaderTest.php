@@ -46,6 +46,7 @@ use Symfony\Component\Console\Output\BufferedOutput;
 use Testo\Assert;
 use Testo\Codecov\Covers;
 use Testo\Data\DataProvider;
+use Testo\Data\DataSet;
 use Testo\Expect;
 use Testo\Lifecycle\AfterTest;
 use Testo\Lifecycle\BeforeTest;
@@ -280,6 +281,27 @@ final class DownloaderTest
 
         Assert::same($result->version->string, 'v3.2.0');
         Assert::false(\file_exists($this->tempDir . '/roadrunner-3.4.0-linux-amd64.tar.gz'));
+    }
+
+    #[Test]
+    #[DataSet(['../rr-3.4.0-linux-amd64.tar.gz', '.._rr-3.4.0-linux-amd64.tar.gz'], 'a parent traversal')]
+    #[DataSet(['sub/rr-3.4.0-linux-amd64.tar.gz', 'sub_rr-3.4.0-linux-amd64.tar.gz'], 'a subdirectory')]
+    #[DataSet(['sub\\rr-3.4.0-linux-amd64.tar.gz', 'sub_rr-3.4.0-linux-amd64.tar.gz'], 'a Windows subdirectory')]
+    #[DataSet(['C:rr-3.4.0-linux-amd64.tar.gz', 'C_rr-3.4.0-linux-amd64.tar.gz'], 'a drive')]
+    #[DataSet(["rr\x1B-3.4.0-linux-amd64.tar.gz", 'rr_-3.4.0-linux-amd64.tar.gz'], 'a control character')]
+    #[DataSet(['rr-3.4.0-linux-amd64.tar.gz. ', 'rr-3.4.0-linux-amd64.tar.gz'], 'a trailing dot and space')]
+    #[DataSet(['aux.linux-amd64.tar.gz', '_aux.linux-amd64.tar.gz'], 'a reserved device name')]
+    public function anAssetIsDownloadedUnderAFileNameInsideTheTempDirectory(string $name, string $file): void
+    {
+        $repository = self::repoWithReleases(['v3.4.0' => [$name]]);
+
+        $result = $this->run([$repository], self::software());
+
+        Assert::same($result->version->string, 'v3.4.0');
+        Assert::same((string) Path::create($result->file->getPath()), (string) Path::create($this->tempDir));
+        Assert::same($result->file->getFilename(), $file);
+        Assert::same(\array_values(\array_diff((array) \scandir($this->tempDir), ['.', '..'])), [$file]);
+        Assert::false(\file_exists(\dirname($this->tempDir) . '/rr-3.4.0-linux-amd64.tar.gz'));
     }
 
     #[DataProvider('provideGradualStrategies')]

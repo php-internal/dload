@@ -7,6 +7,7 @@ namespace Internal\DLoad\Module\Installer\Internal;
 use Internal\DLoad\Module\Archive\ArchiveFactory;
 use Internal\DLoad\Module\Binary\BinaryProvider;
 use Internal\DLoad\Module\Common\DloadResult;
+use Internal\DLoad\Module\Common\FileSystem\FS;
 use Internal\DLoad\Module\Config\Schema\Embed\File;
 use Internal\DLoad\Module\Downloader\Exception\NothingExtracted;
 use Internal\DLoad\Module\Installer\Installation;
@@ -129,9 +130,13 @@ final class RuleExtraction
 
                 $newName = match (true) {
                     $conf->rename === null => $source->getFilename(),
-                    !$hasRealExtension => $conf->rename,
+                    !$hasRealExtension,
+                    \str_ends_with(\strtolower($conf->rename), '.' . \strtolower($extension)) => $conf->rename,
                     default => $conf->rename . '.' . $extension,
                 };
+                $conf->rename === null or FS::isFileName($newName) or throw new \RuntimeException(
+                    "Cannot install `{$source->getFilename()}` as `{$newName}`: the name must be a file name, not a path.",
+                );
 
                 return [new \SplFileInfo((string) $path->join($newName)), $conf];
             }

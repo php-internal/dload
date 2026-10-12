@@ -44,7 +44,7 @@
             "properties": {
               "name": {
                 "type": "string",
-                "description": "Binary executable name"
+                "description": "Binary executable name: a file name, not a path"
               },
               "pattern": {
                 "type": "string",
@@ -52,7 +52,7 @@
               },
               "version-command": {
                 "type": "string",
-                "description": "Command argument to check binary version (e.g. '--version')"
+                "description": "Arguments to check the binary version (e.g. '--version'), separated by spaces and passed without a shell"
               }
             }
           },

@@ -38,6 +38,20 @@ final class Logger
     }
 
     /**
+     * Removes the control characters a terminal acts on from text that comes from outside, such as
+     * a Composer package or a release API: C0 controls but `\t` and `\n`, DEL, and C1 controls
+     * encoded in UTF-8 (`\xC2\x9B` is a CSI).
+     *
+     * ```php
+     * Logger::printable("\e[2Jtitle"); // "[2Jtitle"
+     * ```
+     */
+    public static function printable(string $text): string
+    {
+        return (string) \preg_replace('/[\x00-\x08\x0B-\x1F\x7F]|\xC2[\x80-\x9F]/', '', $text);
+    }
+
+    /**
      * Outputs a message with a newline.
      *
      * @param string $message Text to output
@@ -118,7 +132,7 @@ final class Logger
             $r .= "\033[1;33m" . $header . "\033[0m\n";
         }
         // Print exception message
-        $r .= $e->getMessage() . "\n";
+        $r .= self::printable($e->getMessage()) . "\n";
         // Print file and line using green color and italic font
         $r .= "In \033[3;32m" . $e->getFile() . ':' . $e->getLine() . "\033[0m\n";
         // Print stack trace using gray
@@ -142,7 +156,7 @@ final class Logger
         foreach ($values as $k => $value) {
             $result[$k] = match (true) {
                 \is_bool($value) => $value ? 'TRUE' : 'FALSE',
-                default => (string) $value,
+                default => self::printable((string) $value),
             };
         }
 
