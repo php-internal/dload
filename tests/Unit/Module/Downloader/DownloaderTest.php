@@ -74,6 +74,15 @@ final class DownloaderTest
             'v3.2.0',
             '`rr` v3.5.0 has only OS packages for `linux`/`arm64`, downloaded v3.2.0 instead.',
         ];
+        yield 'the newest skipped release is named, whatever it was skipped for' => [
+            [self::repoWithReleases([
+                'v3.5.0' => ['roadrunner-3.5.0-linux-arm64.deb'],
+                'v3.4.0' => ['roadrunner-3.4.0-linux-arm64.tar.xz'],
+                'v3.2.0' => ['roadrunner-3.2.0-linux-arm64.tar.gz'],
+            ])],
+            'v3.2.0',
+            '`rr` v3.5.0 has only OS packages for `linux`/`arm64`, downloaded v3.2.0 instead.',
+        ];
         yield 'a failed binary is not a packages-only release' => [
             [self::repoWithReleases(
                 [
@@ -96,6 +105,14 @@ final class DownloaderTest
         yield 'a packages-only release of another repository is forgotten' => [
             [
                 self::repoWithReleases(['v3.4.0' => ['roadrunner-3.4.0-linux-arm64.deb']]),
+                self::repoWithReleases(['v3.4.0' => ['roadrunner-3.4.0-linux-arm64.tar.gz']]),
+            ],
+            'v3.4.0',
+            null,
+        ];
+        yield 'an unsupported-archive-only release of another repository is forgotten' => [
+            [
+                self::repoWithReleases(['v3.4.0' => ['roadrunner-3.4.0-linux-arm64.tar.xz']]),
                 self::repoWithReleases(['v3.4.0' => ['roadrunner-3.4.0-linux-arm64.tar.gz']]),
             ],
             'v3.4.0',
@@ -335,7 +352,7 @@ final class DownloaderTest
 
         Assert::same($result->version->string, $version);
         $warning === null
-            ? Assert::string($output->fetch())->notContains('has only OS packages')
+            ? Assert::string($output->fetch())->notContains(' has only ')
             : Assert::string($output->fetch())->contains($warning);
     }
 

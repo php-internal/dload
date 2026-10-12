@@ -122,10 +122,21 @@ final class ArchiveFactory
             static fn(\SplFileInfo $info): Archive => new GzArchive($info),
         ), ['gz']);
 
+        // Registered after `gz`: the matchers added last are tried first.
         $this->extend($this->matcher(
             'tar.gz',
             static fn(\SplFileInfo $info): Archive => new TarPharArchive($info),
         ), ['tar.gz']);
+
+        $this->extend($this->matcher(
+            'tgz',
+            static fn(\SplFileInfo $info): Archive => new TarPharArchive($info),
+        ), ['tgz']);
+
+        $this->extend($this->matcher(
+            'tar',
+            static fn(\SplFileInfo $info): Archive => new TarPharArchive($info),
+        ), ['tar']);
 
         $this->extend($this->matcher(
             'phar',

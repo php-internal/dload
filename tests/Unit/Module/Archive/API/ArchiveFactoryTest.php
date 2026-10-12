@@ -6,6 +6,7 @@ namespace Internal\DLoad\Tests\Unit\Module\Archive\API;
 
 use Internal\DLoad\Module\Archive\Archive;
 use Internal\DLoad\Module\Archive\ArchiveFactory;
+use Internal\DLoad\Module\Archive\Internal\GzArchive;
 use Internal\DLoad\Module\Archive\Internal\NullArchive;
 use Internal\DLoad\Module\Archive\Internal\PharArchive;
 use Internal\DLoad\Module\Archive\Internal\TarPharArchive;
@@ -33,6 +34,8 @@ final class ArchiveFactoryTest
     {
         yield 'zip extension' => ['zip'];
         yield 'tar.gz extension' => ['tar.gz'];
+        yield 'tgz extension' => ['tgz'];
+        yield 'tar extension' => ['tar'];
         yield 'phar extension' => ['phar'];
     }
 
@@ -41,6 +44,17 @@ final class ArchiveFactoryTest
         yield 'zip file' => ['archive.zip', ZipPharArchive::class];
         yield 'tar.gz file' => ['archive.tar.gz', TarPharArchive::class];
         yield 'phar file' => ['archive.phar', PharArchive::class];
+    }
+
+    public static function provideNamesWithOverlappingExtensions(): \Generator
+    {
+        yield 'tar.gz' => ['tool.tar.gz', TarPharArchive::class];
+        yield 'tgz' => ['tool.tgz', TarPharArchive::class];
+        yield 'uppercase tgz' => ['tool.TGZ', TarPharArchive::class];
+        yield 'tar' => ['tool.tar', TarPharArchive::class];
+        yield 'gz' => ['tool.gz', GzArchive::class];
+        yield 'tar earlier in the name' => ['tool.tar.bin.gz', GzArchive::class];
+        yield 'tar under another compression' => ['tool.tar.xz', NullArchive::class];
     }
 
     #[BeforeClass]
@@ -94,6 +108,15 @@ final class ArchiveFactoryTest
         $file = new \SplFileInfo($filePath);
 
         $archive = $this->factory->create($file);
+
+        Assert::instanceOf($archive, $expectedClass);
+    }
+
+    #[DataProvider('provideNamesWithOverlappingExtensions')]
+    #[Test]
+    public function createPicksTheHandlerByTheWholeExtension(string $filename, string $expectedClass): void
+    {
+        $archive = $this->factory->create($this->createFileInfoMock($filename));
 
         Assert::instanceOf($archive, $expectedClass);
     }

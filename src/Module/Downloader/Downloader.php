@@ -197,6 +197,7 @@ final class Downloader
     {
         return function () use ($repository, $context, $mayRetry): ReleaseInterface {
             $context->skippedRelease = null;
+            $context->skippedReleaseAssets = '';
             // Set when a release turned out to be deleted: the release list is outdated then
             $forgotten = false;
 

@@ -57,7 +57,7 @@ final class AssetSelector
             new OperatingSystemRule($operatingSystem),
             new ArchitectureRule($architecture, $operatingSystem),
             // After the platform rules, so the report names only packages and archives built for the host. One whose
-            // name carries no OS token, like `tool.dmg`, is already gone then and stays out of the report.
+            // name carries no OS token, like `tool.dmg` or `tool.7z`, is gone by then and stays out of the report.
             new PackageRule(),
             new UnsupportedArchiveRule($archiveFactory),
             new LibcRule($container),

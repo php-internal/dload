@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Internal\DLoad\Module\Archive\Internal;
 
 /**
- * Archive handler for TAR.GZ archives
+ * Archive handler for TAR archives, plain or gzipped (`.tar`, `.tar.gz`, `.tgz`)
  *
  * ```php
  * // Extracting from TAR.GZ archive
@@ -21,7 +21,7 @@ namespace Internal\DLoad\Module\Archive\Internal;
 final class TarPharArchive extends PharAwareArchive
 {
     /**
-     * Opens TAR.GZ archive for reading
+     * Opens TAR archive for reading
      *
      * @param \SplFileInfo $file Archive file
      */
