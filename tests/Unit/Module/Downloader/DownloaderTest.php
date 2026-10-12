@@ -265,6 +265,23 @@ final class DownloaderTest
         }
     }
 
+    #[Test]
+    public function failedDownloadLeavesNoFileInTheTempDirectory(): void
+    {
+        $repository = self::repoWithReleases(
+            [
+                'v3.4.0' => ['roadrunner-3.4.0-linux-amd64.tar.gz'],
+                'v3.2.0' => ['roadrunner-3.2.0-linux-amd64.tar.gz'],
+            ],
+            ['roadrunner-3.4.0-linux-amd64.tar.gz' => new \RuntimeException('Connection reset by peer')],
+        );
+
+        $result = $this->run([$repository], self::software());
+
+        Assert::same($result->version->string, 'v3.2.0');
+        Assert::false(\file_exists($this->tempDir . '/roadrunner-3.4.0-linux-amd64.tar.gz'));
+    }
+
     #[DataProvider('provideGradualStrategies')]
     #[Test]
     public function gradualFilteringSelectsAssetByEachStrategy(?OperatingSystem $os, ?Architecture $arch): void
