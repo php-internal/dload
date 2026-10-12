@@ -77,10 +77,15 @@ jobs:
           - '8.3'
           - '8.4'
           - '8.5'
+          - '8.6'
         dependencies:
           - lowest
           - locked
           - highest
+        exclude:
+          # The lock file holds packages capped at PHP 8.5
+          - php-version: '8.6'
+            dependencies: locked
     steps:
       - name: 📦 Check out the codebase
         uses: actions/checkout@v7
