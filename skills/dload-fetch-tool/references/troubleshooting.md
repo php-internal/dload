@@ -42,7 +42,7 @@ After filtering, dload picks the host's variant with:
 
 A candidate that matches neither is discarded. Common offenders:
 
-- Non-standard tokens: `linux64`, `osx`, `darwin_universal`.
+- Non-standard tokens: `linux64`, `osx`. A universal macOS build (`darwin-universal`, `macOS_all`) has no arch token but is kept on macOS: `universal`, `universal2` or `all` next to `darwin`/`macos` counts as the host arch.
 - No arch separator: `tool-linux64.tar.gz` — the OS matches, no arch token is extractable.
 
 Compare with the host: `php -r "echo PHP_OS_FAMILY, ' / ', php_uname('m'), PHP_EOL;"`.

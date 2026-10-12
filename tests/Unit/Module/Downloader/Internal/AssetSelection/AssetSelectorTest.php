@@ -112,6 +112,38 @@ final class AssetSelectorTest
     }
 
     #[Test]
+    public function appleSiliconPrefersAUniversalBuildToAnX86One(): void
+    {
+        $names = self::select(
+            ['hugo_0.139.0_darwin-amd64.tar.gz', 'hugo_0.139.0_darwin-universal.tar.gz', 'hugo_0.139.0_linux-arm64.tar.gz'],
+            os: OperatingSystem::Darwin,
+            arch: Architecture::ARM_64,
+        );
+
+        Assert::same($names, ['hugo_0.139.0_darwin-universal.tar.gz', 'hugo_0.139.0_darwin-amd64.tar.gz']);
+    }
+
+    #[Test]
+    public function aUniversalOnlyMacOsReleaseIsSelectedOnAMac(): void
+    {
+        $names = self::select(
+            ['tool_1.0.0_macOS_all.tar.gz', 'tool_1.0.0_linux_amd64.tar.gz'],
+            os: OperatingSystem::Darwin,
+            arch: Architecture::X86_64,
+        );
+
+        Assert::same($names, ['tool_1.0.0_macOS_all.tar.gz']);
+    }
+
+    #[Test]
+    public function aUniversalMacOsBuildIsNotSelectedOnLinux(): void
+    {
+        $names = self::select(['tool-darwin-universal.zip', 'tool-linux-amd64.zip']);
+
+        Assert::same($names, ['tool-linux-amd64.zip']);
+    }
+
+    #[Test]
     public function aGradualSelectionPutsOtherPlatformsAfterTheHostOne(): void
     {
         $names = self::select([

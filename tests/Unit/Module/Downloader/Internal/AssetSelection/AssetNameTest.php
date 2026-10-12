@@ -25,6 +25,21 @@ final class AssetNameTest
         yield 'checksum' => ['tool-linux-amd64.tar.gz.sha256sum', ['tool']];
         yield 'unknown extension' => ['deno-x86_64-unknown-linux-gnu.from-2.9.6.bsdiff', ['deno', 'from', 'bsdiff']];
         yield 'no platform' => ['tool.phar', ['tool']];
+        yield 'universal macOS build' => ['hugo_0.139.0_darwin-universal.tar.gz', ['hugo']];
+        yield 'all macOS architectures' => ['tool_1.0.0_macOS_all.tar.gz', ['tool']];
+        yield 'universal not next to macOS' => ['universal-ctags-linux-x64.tar.gz', ['universal', 'ctags']];
+    }
+
+    public static function provideUniversal(): iterable
+    {
+        yield 'darwin-universal' => ['hugo_0.139.0_darwin-universal.tar.gz', true];
+        yield 'universal before macOS' => ['tigerbeetle-universal-macos.zip', true];
+        yield 'macOS_all' => ['tool_1.0.0_macOS_all.tar.gz', true];
+        yield 'universal2' => ['tool-macos-universal2.zip', true];
+        yield 'single architecture' => ['tool-darwin-arm64.tar.gz', false];
+        yield 'all without macOS' => ['tool-all-linux-amd64.tar.gz', false];
+        yield 'universal without macOS' => ['universal-ctags-linux-x64.tar.gz', false];
+        yield 'all inside a word' => ['install-darwin-allinone.zip', false];
     }
 
     /**
@@ -42,5 +57,12 @@ final class AssetNameTest
     {
         Assert::same(AssetName::fromString('bun-linux-x64-musl.zip')->libc, Libc::Musl);
         Assert::null(AssetName::fromString('bun-linux-x64.zip')->libc);
+    }
+
+    #[DataProvider('provideUniversal')]
+    #[Test]
+    public function universalMacOsBuildsAreReadFromTheName(string $name, bool $expected): void
+    {
+        Assert::same(AssetName::fromString($name)->universal, $expected);
     }
 }

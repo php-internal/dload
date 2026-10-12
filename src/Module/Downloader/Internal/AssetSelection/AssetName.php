@@ -25,19 +25,31 @@ final class AssetName
     private const PLATFORM = '/(?<![a-z0-9])(?:x86[_-]64|amd64|arm64|aarch64|x64|win64|win32|windows|linux|darwin|macos|apple|alpine|android|bsd|freebsd|unknown|pc|musl(?:eabi(?:hf)?)?|gnu(?:eabi(?:hf)?)?|glibc)(?![a-z0-9])/';
 
     /**
+     * macOS build for every Mac architecture, like `darwin-universal` or `macOS_all`.
+     *
+     * `universal` and `all` count only next to the macOS token: elsewhere they are ordinary words.
+     */
+    private const UNIVERSAL = '/(?<![a-z0-9])(?:(?:darwin|macos)[-_.](?:universal2?|all)|(?:universal2?|all)[-_.](?:darwin|macos))(?![a-z0-9])/';
+
+    /**
+     * @param bool $universal Whether the asset is a macOS build for every Mac architecture.
      * @param list<non-empty-string> $extras Name tokens that are not a platform, a version or an extension,
      *        like `profile` or `debug`. The tool name is one of them too.
      */
     private function __construct(
         public readonly ?Libc $libc,
+        public readonly bool $universal,
         public readonly array $extras,
     ) {}
 
     public static function fromString(string $name): self
     {
+        $lower = \strtolower($name);
+
         return new self(
             libc: Libc::tryFromBuildName($name),
-            extras: self::extras($name),
+            universal: \preg_match(self::UNIVERSAL, $lower) === 1,
+            extras: self::extras($lower),
         );
     }
 
@@ -46,13 +58,16 @@ final class AssetName
      */
     private static function extras(string $name): array
     {
-        $name = \strtolower($name);
         do {
             $name = (string) \preg_replace(self::EXTENSION, '', $name, count: $count);
         } while ($count > 0);
 
         /** @var list<non-empty-string>|false $tokens */
-        $tokens = \preg_split('/[-_.\s]+/', (string) \preg_replace(self::PLATFORM, '', $name), flags: \PREG_SPLIT_NO_EMPTY);
+        $tokens = \preg_split(
+            '/[-_.\s]+/',
+            (string) \preg_replace([self::UNIVERSAL, self::PLATFORM], '', $name),
+            flags: \PREG_SPLIT_NO_EMPTY,
+        );
 
         return \array_values(\array_filter(
             $tokens === false ? [] : $tokens,

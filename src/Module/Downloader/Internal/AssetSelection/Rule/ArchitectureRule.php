@@ -13,7 +13,8 @@ use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Selection;
 /**
  * Prefers assets built for the host architecture, then the ones the host emulates.
  *
- * A strict selection removes the assets the host cannot run; otherwise they are ranked last.
+ * A universal macOS build counts as built for the host architecture on macOS. A strict selection
+ * removes the assets the host cannot run; otherwise they are ranked last.
  *
  * @internal
  * @psalm-internal Internal\DLoad\Module\Downloader
@@ -34,22 +35,24 @@ final class ArchitectureRule implements AssetRule
     public function select(Selection $selection, callable $next): Selection
     {
         $selection->strict and $selection = $selection->remove(
-            fn(Candidate $candidate): bool => $this->rank($candidate->asset->getArchitecture()) === null,
+            fn(Candidate $candidate): bool => $this->rank($candidate) === null,
         );
 
         return $next($selection->rank(
             self::KEY,
-            fn(Candidate $candidate): int => $this->rank($candidate->asset->getArchitecture()) ?? 2,
+            fn(Candidate $candidate): int => $this->rank($candidate) ?? 2,
         ));
     }
 
     /**
      * @return int<0, 1>|null Null when the host cannot run the asset.
      */
-    private function rank(?Architecture $arch): ?int
+    private function rank(Candidate $candidate): ?int
     {
+        $arch = $candidate->asset->getArchitecture();
         return match (true) {
             $arch === $this->architecture => 0,
+            $candidate->name->universal && $this->operatingSystem === OperatingSystem::Darwin => 0,
             // Rosetta 2 on macOS and the built-in emulation of Windows run x86-64 builds on ARM
             $arch === Architecture::X86_64
                 && $this->architecture === Architecture::ARM_64
