@@ -469,6 +469,86 @@ final class DownloaderTest
     }
 
     #[Test]
+    public function repositoryErrorWithPercentSignFallsBackToTheNextOne(): void
+    {
+        // URL-encoded paths put `%` into error messages; the logger must not read them as a format
+        $failing = new ThrowingRepositoryStub(
+            'group/proj',
+            new RateLimitException('Rate limit on /api/v4/projects/group%2Fproj/releases', 'group/proj'),
+        );
+        $working = $this->repoWithAsset(
+            'rr-linux-amd64.tar.gz',
+            OperatingSystem::Linux,
+            Architecture::X86_64,
+            tag: 'v3.0.0',
+        );
+
+        $result = $this->run(
+            new SequenceRepositoryFactoryStub([$failing, $working]),
+            self::software(repositories: 2),
+        );
+
+        Assert::same($result->version->string, 'v3.0.0');
+    }
+
+    #[Test]
+    public function invalidRepositoryFallsBackToTheNextOne(): void
+    {
+        $working = $this->repoWithAsset(
+            'rr-linux-amd64.tar.gz',
+            OperatingSystem::Linux,
+            Architecture::X86_64,
+            tag: 'v3.0.0',
+        );
+
+        $result = $this->run(
+            new SequenceRepositoryFactoryStub([self::invalidRepositoryError(), $working]),
+            self::softwareWithInvalidRepository(),
+        );
+
+        Assert::same($result->version->string, 'v3.0.0');
+    }
+
+    #[Test]
+    public function invalidRepositoryIsReportedBeforeTheNextOne(): void
+    {
+        $empty = new RepositoryStub('owner/repo', ReleasesCollection::create([]));
+
+        try {
+            $this->run(
+                new SequenceRepositoryFactoryStub([self::invalidRepositoryError(), $empty]),
+                self::softwareWithInvalidRepository(),
+            );
+            Assert::fail('DownloadFailed is expected when no repository has a release.');
+        } catch (DownloadFailed $e) {
+            Assert::string($e->report)->contains(
+                "Tried 2 repository(ies):\n"
+                . "  1) github `ghe.example.com/org/repo`\n"
+                . '    ' . self::invalidRepositoryError()->getMessage() . "\n"
+                . '  2) github `owner/repo`',
+            );
+        }
+    }
+
+    #[Test]
+    public function onlyInvalidRepositoryIsNamedInTheReport(): void
+    {
+        try {
+            $this->run(
+                new SequenceRepositoryFactoryStub([self::invalidRepositoryError()]),
+                Software::fromArray([
+                    'name' => 'rr',
+                    'repositories' => [['type' => 'github', 'uri' => 'ghe.example.com/org/repo']],
+                ]),
+            );
+            Assert::fail('DownloadFailed is expected when the only repository is invalid.');
+        } catch (DownloadFailed $e) {
+            Assert::string($e->report)->contains("1) github `ghe.example.com/org/repo`\n");
+            Assert::string($e->report)->contains(self::invalidRepositoryError()->getMessage());
+        }
+    }
+
+    #[Test]
     public function unexpectedErrorFromRepositoryIsRethrown(): void
     {
         $repository = new ThrowingRepositoryStub('owner/repo', new \RuntimeException('unexpected failure'));
@@ -537,6 +617,30 @@ final class DownloaderTest
         $binary and $data['binary'] = ['name' => 'rr'];
 
         return Software::fromArray($data);
+    }
+
+    /**
+     * A software whose first repository URI is rejected by the GitHub factory, followed by a valid one.
+     */
+    private static function softwareWithInvalidRepository(): Software
+    {
+        return Software::fromArray([
+            'name' => 'rr',
+            'repositories' => [
+                ['type' => 'github', 'uri' => 'ghe.example.com/org/repo'],
+                ['type' => 'github', 'uri' => 'owner/repo'],
+            ],
+        ]);
+    }
+
+    /**
+     * The error a repository factory throws for a URI it cannot parse.
+     */
+    private static function invalidRepositoryError(): \InvalidArgumentException
+    {
+        return new \InvalidArgumentException(
+            'Repository `ghe.example.com/org/repo`: expected `owner/repo` or a URL like `https://ghe.example.com/owner/repo`.',
+        );
     }
 
     /**

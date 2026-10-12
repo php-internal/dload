@@ -18,7 +18,8 @@ final class SequenceRepositoryFactoryStub implements RepositoryFactory
     public int $created = 0;
 
     /**
-     * @param list<Repository> $repositories Repositories to return, in order; the last one repeats.
+     * @param list<Repository|\Throwable> $repositories Repositories to return, in order; the last one repeats.
+     *        A throwable is thrown instead, like a factory rejecting the config.
      */
     public function __construct(
         private readonly array $repositories,
@@ -33,6 +34,8 @@ final class SequenceRepositoryFactoryStub implements RepositoryFactory
     {
         $repository = $this->repositories[\min($this->created, \count($this->repositories) - 1)];
         ++$this->created;
+
+        $repository instanceof \Throwable and throw $repository;
 
         return $repository;
     }
