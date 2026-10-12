@@ -114,7 +114,27 @@ final class DownloadDiagnosticsTest
         $repository->matchedReleases = 1;
         $repository->addRelease('v1.2.0')->registerAssets(['app-1.2.0-darwin-arm64.tar.gz']);
 
-        Assert::string($diagnostics->render())->notContains('OS packages are skipped');
+        Assert::string($diagnostics->render())
+            ->notContains('OS packages are skipped')
+            ->notContains('Archives of an unsupported format are skipped');
+    }
+
+    #[Test]
+    public function reportNamesTheSkippedArchivesAfterThePackages(): void
+    {
+        $diagnostics = self::diagnostics();
+        $repository = $diagnostics->addRepository('github', 'owner/repo', '/^app-.*/');
+        $repository->matchedReleases = 1;
+
+        $release = $repository->addRelease('v1.2.0');
+        $release->registerAssets(['app-1.2.0-linux-amd64.deb', 'app-1.2.0-linux-amd64.tar.xz', 'app-1.2.0-linux-amd64.7z']);
+        $release->registerSkippedPackages(['app-1.2.0-linux-amd64.deb']);
+        $release->registerSkippedArchives(['app-1.2.0-linux-amd64.tar.xz', 'app-1.2.0-linux-amd64.7z']);
+
+        Assert::same(\array_slice($release->describe(), 2), [
+            '  OS packages are skipped because a binary is expected: app-1.2.0-linux-amd64.deb',
+            '  Archives of an unsupported format are skipped because a binary is expected: app-1.2.0-linux-amd64.tar.xz, app-1.2.0-linux-amd64.7z',
+        ]);
     }
 
     #[Test]

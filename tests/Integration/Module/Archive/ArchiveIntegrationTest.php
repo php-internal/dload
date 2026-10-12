@@ -44,6 +44,8 @@ final class ArchiveIntegrationTest
     {
         yield 'zip' => ['zip', ZipPharArchive::class];
         yield 'tar.gz' => ['tar.gz', TarPharArchive::class];
+        yield 'tgz' => ['tgz', TarPharArchive::class];
+        yield 'tar' => ['tar', TarPharArchive::class];
         yield 'phar' => ['phar', PharArchive::class];
         yield 'exe' => ['exe', NullArchive::class];
     }
@@ -52,6 +54,8 @@ final class ArchiveIntegrationTest
     {
         yield 'zip' => ['zip'];
         yield 'tar.gz' => ['tar.gz'];
+        yield 'tgz' => ['tgz'];
+        yield 'tar' => ['tar'];
     }
 
     #[DataProvider('provideArchiveTypes')]
@@ -180,7 +184,7 @@ final class ArchiveIntegrationTest
      * and reopened within the same process reads its entries back as empty on Linux, so building
      * the fixture on the fly is unreliable across platforms.
      *
-     * @param non-empty-string $type Either `zip` or `tar.gz`
+     * @param non-empty-string $type One of `zip`, `tar.gz`, `tgz` or `tar`
      * @return non-empty-string Path to the fixture archive
      */
     private function nestedArchiveFixture(string $type): string

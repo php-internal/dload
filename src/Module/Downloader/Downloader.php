@@ -22,6 +22,7 @@ use Internal\DLoad\Module\Downloader\Internal\AssetSelection\AssetSelector;
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Candidate;
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\ArchitectureRule;
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\PackageRule;
+use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\UnsupportedArchiveRule;
 use Internal\DLoad\Module\Downloader\Internal\DownloadContext;
 use Internal\DLoad\Module\Downloader\Task\DownloadResult;
 use Internal\DLoad\Module\Downloader\Task\DownloadTask;
@@ -180,6 +181,15 @@ final class Downloader
     }
 
     /**
+     * @param list<Candidate> $candidates
+     * @return list<non-empty-string>
+     */
+    private static function assetNames(array $candidates): array
+    {
+        return \array_map(static fn(Candidate $candidate): string => $candidate->asset->getName(), $candidates);
+    }
+
+    /**
      * Creates the repository of the current config.
      *
      * @return Repository|null `null` when the config can't address a repository; the reason is in the diagnostics.
@@ -214,7 +224,8 @@ final class Downloader
     private function processRepository(Repository $repository, DownloadContext $context, bool $mayRetry = true): \Closure
     {
         return function () use ($repository, $context, $mayRetry): ReleaseInterface {
-            $context->packagesOnlyRelease = null;
+            $context->skippedRelease = null;
+            $context->skippedReleaseAssets = '';
             // Set when a release turned out to be deleted: the release list is outdated then
             $forgotten = false;
 
@@ -273,11 +284,12 @@ final class Downloader
                 await(coroutine($this->processRelease($context)));
 
                 /** @var ReleaseInterface|null $skipped */
-                $skipped = $context->packagesOnlyRelease;
+                $skipped = $context->skippedRelease;
                 $skipped === null or $this->logger->warning(
-                    '`%s` %s has only OS packages for `%s`/`%s`, downloaded %s instead.',
+                    '`%s` %s has only %s for `%s`/`%s`, downloaded %s instead.',
                     $context->software->getId(),
                     $skipped->getVersion()->string,
+                    $context->skippedReleaseAssets,
                     $this->operatingSystem->value,
                     $this->architecture->value,
                     $context->release->getVersion()->string,
@@ -349,18 +361,25 @@ final class Downloader
             );
             $this->logger->debug('%d matching assets found.', \count($selection->candidates));
 
-            $skippedPackages = \array_map(
-                static fn(Candidate $candidate): string => $candidate->asset->getName(),
-                $selection->removed[PackageRule::KEY] ?? [],
-            );
+            $skippedPackages = self::assetNames($selection->removed[PackageRule::KEY] ?? []);
+            $skippedArchives = self::assetNames($selection->removed[UnsupportedArchiveRule::KEY] ?? []);
             $context->releaseAttempt->registerSkippedPackages($skippedPackages);
+            $context->releaseAttempt->registerSkippedArchives($skippedArchives);
 
-            $selection->isEmpty() && $skippedPackages !== [] and $context->packagesOnlyRelease ??= $context->release;
+            $skipped = \implode(' and ', [
+                ...($skippedPackages === [] ? [] : ['OS packages']),
+                ...($skippedArchives === [] ? [] : ['archives of an unsupported format']),
+            ]);
+            if ($selection->isEmpty() && $skipped !== '' && $context->skippedRelease === null) {
+                $context->skippedRelease = $context->release;
+                $context->skippedReleaseAssets = $skipped;
+            }
+
             $selection->isEmpty() and throw new NotFound(
                 $strict
                     ? \sprintf(
                         '%s OS `%s`, architecture `%s`, name pattern `%s`%s',
-                        $skippedPackages === [] ? 'no asset matches' : 'only OS packages match',
+                        $skipped === '' ? 'no asset matches' : "only {$skipped} match",
                         $this->operatingSystem->value,
                         $this->architecture->value,
                         $context->repoConfig->assetPattern,

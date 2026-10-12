@@ -26,6 +26,7 @@ use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 use Testo\Assert;
 use Testo\Codecov\Covers;
+use Testo\Data\DataProvider;
 use Testo\Expect;
 use Testo\Lifecycle\AfterTest;
 use Testo\Lifecycle\BeforeTest;
@@ -44,6 +45,14 @@ final class InstallerTest
     private Path $dir;
     private Path $destination;
     private BufferedOutput $log;
+
+    public static function provideNestedArchives(): \Generator
+    {
+        yield 'zip' => [self::NESTED_ZIP];
+        yield 'tar.gz' => [__DIR__ . '/../../../Integration/Module/Archive/Fixture/nested.tar.gz'];
+        yield 'tgz' => [__DIR__ . '/../../../Integration/Module/Archive/Fixture/nested.tgz'];
+        yield 'tar' => [__DIR__ . '/../../../Integration/Module/Archive/Fixture/nested.tar'];
+    }
 
     #[Test]
     public function pharIsMovedIntoTheDestinationAsIs(): void
@@ -190,10 +199,11 @@ final class InstallerTest
         Assert::string($this->log->fetch())->contains('as a PHAR archive');
     }
 
+    #[DataProvider('provideNestedArchives')]
     #[Test]
-    public function binaryIsExtractedUnderItsNameAndLocated(): void
+    public function binaryIsExtractedUnderItsNameAndLocated(string $fixture): void
     {
-        $download = $this->downloadOf(self::NESTED_ZIP);
+        $download = $this->downloadOf($fixture);
         $software = Software::fromArray(['name' => 'App', 'binary' => ['name' => 'app']]);
         $binary = \Mockery::mock(Binary::class);
 
@@ -208,6 +218,7 @@ final class InstallerTest
         $result = $this->installer($binaryProvider)->install($download, $software, null, $this->destination, removeDownload: true);
 
         Assert::same(self::paths($result->files), [(string) $this->destination->join('app')]);
+        Assert::same(\file_get_contents((string) $this->destination->join('app')), "binary\n");
         Assert::same($result->binary, $binary);
     }
 

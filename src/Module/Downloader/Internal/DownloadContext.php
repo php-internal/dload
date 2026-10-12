@@ -49,10 +49,13 @@ final class DownloadContext
 
     /**
      * @var ReleaseInterface|null Newest release of the current repository pass skipped because it has only
-     *      OS packages for the host. Another repository or a refetched release list starts over, so a version
-     *      found elsewhere is not reported against it.
+     *      OS packages or archives of an unsupported format for the host. Another repository or a refetched
+     *      release list starts over, so a version found elsewhere is not reported against it.
      */
-    public ?ReleaseInterface $packagesOnlyRelease = null;
+    public ?ReleaseInterface $skippedRelease = null;
+
+    /** @var string What {@see self::$skippedRelease} has for the host instead, like `OS packages` */
+    public string $skippedReleaseAssets = '';
 
     /**
      * Creates a new download context.

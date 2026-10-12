@@ -26,6 +26,9 @@ final class ReleaseAttempt
     /** @var list<non-empty-string> Names of the OS packages for the host, skipped because a binary is expected */
     private array $skippedPackages = [];
 
+    /** @var list<non-empty-string> Names of the archives for the host dload cannot unpack, skipped because a binary is expected */
+    private array $skippedArchives = [];
+
     /** @var list<non-empty-string> Errors occurred while downloading matched assets */
     private array $failures = [];
 
@@ -51,6 +54,15 @@ final class ReleaseAttempt
     public function registerSkippedPackages(array $names): void
     {
         $this->skippedPackages = $names;
+    }
+
+    /**
+     * @param list<non-empty-string> $names Names of the archives for the host dload cannot unpack,
+     *        skipped because a binary is expected
+     */
+    public function registerSkippedArchives(array $names): void
+    {
+        $this->skippedArchives = $names;
     }
 
     /**
@@ -93,6 +105,11 @@ final class ReleaseAttempt
         $this->skippedPackages === [] or $lines[] = \sprintf(
             '  OS packages are skipped because a binary is expected: %s',
             \implode(', ', $this->skippedPackages),
+        );
+
+        $this->skippedArchives === [] or $lines[] = \sprintf(
+            '  Archives of an unsupported format are skipped because a binary is expected: %s',
+            \implode(', ', $this->skippedArchives),
         );
 
         foreach ($this->failures as $failure) {

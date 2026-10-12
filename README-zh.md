@@ -297,7 +297,7 @@ DLoad 支持三种下载类型，它们决定了资源的处理方式：
 > 使用 `type="archive"` 会解包甚至 `.phar` 压缩包。
 
 > [!NOTE]
-> 配置了 `<binary>` 时（无论是 `type="binary"` 还是未指定 `type`），永远不会选择操作系统安装包（`.deb`、`.rpm`、`.apk`、`.snap`、`.flatpak`、`.msi`、`.msix`、`.msixbundle`、`.appx`、`.appxbundle`、`.nupkg`、`.dmg`、`.pkg`）：DLoad 无法解包它们。如果某个发布版本只为当前主机提供安装包，则会跳过它，改用更早的版本，范围限于满足版本约束的最新 10 个发布版本；要回溯更早的版本，请固定 `version`。
+> 配置了 `<binary>` 时（无论是 `type="binary"` 还是未指定 `type`），永远不会选择操作系统安装包（`.deb`、`.rpm`、`.apk`、`.snap`、`.flatpak`、`.msi`、`.msix`、`.msixbundle`、`.appx`、`.appxbundle`、`.nupkg`、`.dmg`、`.pkg`）：DLoad 无法解包它们。DLoad 无法解包的格式的压缩包同样不会被选择——即 `.zip`、`.tar.gz`、`.tgz`、`.tar`、`.gz` 和 `.phar` 以外的已知压缩格式，例如 `.tar.xz`、`.tar.bz2`、`.zst`、`.7z` 或 `.rar`；没有已知压缩包扩展名的文件（例如普通二进制文件或 `.AppImage`）仍会被选择。如果某个发布版本只为当前主机提供这类资源，则会跳过它，改用更早的版本，范围限于满足版本约束的最新 10 个发布版本；要回溯更早的版本，请固定 `version`。
 
 #### 解包压缩包（保留结构）
 
