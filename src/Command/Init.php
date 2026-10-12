@@ -8,6 +8,7 @@ use Internal\DLoad\Module\Config\Schema\Action\Download as DownloadConfig;
 use Internal\DLoad\Module\Config\Schema\Embed\Software;
 use Internal\DLoad\Module\Config\ConfigBuilder;
 use Internal\DLoad\Module\Software\SoftwareCollection;
+use Internal\DLoad\Service\Logger;
 use Internal\Path;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -248,18 +249,18 @@ final class Init extends Base
         }
 
         // Show software information
-        $style->text("<fg=green>✓</> Found: <fg=cyan>{$software->name}</>");
+        $style->text('<fg=green>✓</> Found: <fg=cyan>' . Logger::text($software->name) . '</>');
 
         if ($software->description !== '') {
-            $style->text("  Description: {$software->description}");
+            $style->text('  Description: ' . Logger::text($software->description));
         }
 
         if ($software->homepage !== null) {
-            $style->text("  Homepage: <fg=blue>{$software->homepage}</>");
+            $style->text('  Homepage: <fg=blue>' . Logger::text($software->homepage) . '</>');
         }
 
         foreach ($software->repositories as $repo) {
-            $style->text("  Repository: <fg=blue>{$repo->type}:{$repo->uri}</>");
+            $style->text('  Repository: <fg=blue>' . Logger::text("{$repo->type}:{$repo->uri}") . '</>');
         }
 
         return DownloadConfig::fromSoftwareId($softwareName);
@@ -306,8 +307,8 @@ final class Init extends Base
 
         $softwareOptions = [];
         foreach ($availableSoftware as $id => $software) {
-            $description = $software->description !== '' ? " - {$software->description}" : '';
-            $softwareOptions[] = "{$id}{$description}";
+            $description = $software->description !== '' ? ' - ' . Logger::text($software->description) : '';
+            $softwareOptions[] = Logger::text((string) $id) . $description;
         }
 
         $question = new ChoiceQuestion(

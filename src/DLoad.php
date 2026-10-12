@@ -14,6 +14,7 @@ use Internal\DLoad\Module\Downloader\Downloader;
 use Internal\DLoad\Module\Downloader\Task\DownloadResult;
 use Internal\DLoad\Module\Downloader\Task\DownloadTask;
 use Internal\DLoad\Module\Installer\Installer;
+use Internal\DLoad\Module\Software\ShadowReport;
 use Internal\DLoad\Module\Software\SoftwareCollection;
 use Internal\DLoad\Module\Task\Manager;
 use Internal\DLoad\Module\Version\Constraint;
@@ -55,6 +56,7 @@ final class DLoad
         private readonly Installer $installer,
         private readonly Destination $configDestination,
         private readonly BinaryProvider $binaryProvider,
+        private readonly ShadowReport $shadowReport,
     ) {}
 
     /**
@@ -128,6 +130,7 @@ final class DLoad
         }
 
         add_task:
+        $this->shadowReport->report($this->softwareCollection, $action->software);
 
         return $this->taskManager->addTask(function () use ($software, $action): DloadResult {
             // Create a Download task

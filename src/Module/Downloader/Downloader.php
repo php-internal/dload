@@ -501,8 +501,8 @@ final class Downloader
     private function processAsset(DownloadContext $context): \Closure
     {
         return function () use ($context): \SplFileObject {
-            // Create a file
-            $temp = $context->tempDir->join($context->asset->getName());
+            // The asset name is free text of the release API of a host the config names
+            $temp = $context->tempDir->join(FS::toFileName($context->asset->getName()));
             $file = new \SplFileObject((string) $temp, 'wb+');
 
             $this->logger->info('Downloading into %s', (string) $temp);

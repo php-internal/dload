@@ -124,4 +124,38 @@ final class FS
 
         return \rename($from->__toString(), $to->__toString());
     }
+
+    /**
+     * Checks that a name from a config is a bare file name, so a join with a directory stays in it.
+     *
+     * ```php
+     * FS::isFileName('rr');            // true
+     * FS::isFileName('../.git/hooks'); // false
+     * ```
+     */
+    public static function isFileName(string $name): bool
+    {
+        return \trim($name) !== ''
+            && !\in_array($name, ['.', '..'], true)
+            && \strpbrk($name, "/\\\0:") === false
+            // Windows drops trailing dots and spaces, and maps reserved names to devices
+            && \rtrim($name, '. ') === $name
+            && \preg_match('/^(CON|PRN|AUX|NUL|CONIN\$|CONOUT\$|COM[1-9¹²³]|LPT[1-9¹²³])(\..*)?$/iu', $name) !== 1;
+    }
+
+    /**
+     * Turns free text, such as a release asset name, into a file name {@see self::isFileName()} accepts,
+     * keeping its extension.
+     *
+     * ```php
+     * FS::toFileName('Binary: tool.tar.gz'); // "Binary_ tool.tar.gz"
+     * FS::toFileName('../aux.zip');          // ".._aux.zip"
+     * ```
+     */
+    public static function toFileName(string $name): string
+    {
+        $name = \rtrim((string) \preg_replace('/[\/\\\\:\x00-\x1F\x7F]/', '_', $name), '. ');
+
+        return self::isFileName($name) ? $name : '_' . $name;
+    }
 }

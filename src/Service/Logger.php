@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Service;
 
+use Symfony\Component\Console\Formatter\OutputFormatter;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -35,6 +36,29 @@ final class Logger
     ) {
         $this->debug = $output?->isVeryVerbose() ?? false;
         $this->verbose = $output?->isVerbose() ?? false;
+    }
+
+    /**
+     * Removes the control characters a terminal acts on from text that comes from outside, such as
+     * a Composer package or a release API: C0 controls but `\t` and `\n`, DEL, and C1 controls
+     * encoded in UTF-8 (`\xC2\x9B` is a CSI).
+     *
+     * ```php
+     * Logger::printable("\e[2Jtitle"); // "[2Jtitle"
+     * ```
+     */
+    public static function printable(string $text): string
+    {
+        return (string) \preg_replace('/[\x00-\x08\x0B-\x1F\x7F]|\xC2[\x80-\x9F]/', '', $text);
+    }
+
+    /**
+     * Makes text from outside safe to print through a console output: neither console tags nor
+     * terminal control sequences take effect.
+     */
+    public static function text(string $text): string
+    {
+        return OutputFormatter::escape(self::printable($text));
     }
 
     /**
@@ -115,17 +139,17 @@ final class Logger
         $r = "----------------------\n";
         // Print bold yellow header if exists
         if ($header !== null) {
-            $r .= "\033[1;33m" . $header . "\033[0m\n";
+            $r .= "\033[1;33m" . self::text($header) . "\033[0m\n";
         }
         // Print exception message
-        $r .= $e->getMessage() . "\n";
+        $r .= self::text($e->getMessage()) . "\n";
         // Print file and line using green color and italic font
-        $r .= "In \033[3;32m" . $e->getFile() . ':' . $e->getLine() . "\033[0m\n";
+        $r .= "In \033[3;32m" . self::text($e->getFile()) . ':' . $e->getLine() . "\033[0m\n";
         // Print stack trace using gray
         $r .= "Stack trace:\n";
-        // Limit stacktrace to 5 lines
+        // Limit stacktrace to 5 lines; their call arguments may carry text from outside
         $stack = \explode("\n", $e->getTraceAsString());
-        $r .= "\033[90m" . \implode("\n", \array_slice($stack, 0, \min(5, \count($stack)))) . "\033[0m\n";
+        $r .= "\033[90m" . self::text(\implode("\n", \array_slice($stack, 0, \min(5, \count($stack))))) . "\033[0m\n";
         $r .= "\n";
         $this->echo($r, !$important);
     }
@@ -142,7 +166,7 @@ final class Logger
         foreach ($values as $k => $value) {
             $result[$k] = match (true) {
                 \is_bool($value) => $value ? 'TRUE' : 'FALSE',
-                default => (string) $value,
+                default => self::text((string) $value),
             };
         }
 

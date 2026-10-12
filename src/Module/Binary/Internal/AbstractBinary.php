@@ -31,9 +31,7 @@ abstract class AbstractBinary implements Binary
 
     public function execute(string ...$args): array
     {
-        $args = \array_map(static fn(string $arg): string => \escapeshellarg($arg), $args);
-
-        return $this->executor->execute($this->getPath(), \implode(' ', $args));
+        return $this->executor->execute($this->getPath(), ...$args);
     }
 
     public function exists(): bool
@@ -80,7 +78,8 @@ abstract class AbstractBinary implements Binary
         }
 
         try {
-            $output = $this->executor->execute($this->getPath(), $this->config->versionCommand);
+            $arguments = \preg_split('/\s+/', \trim($this->config->versionCommand), -1, \PREG_SPLIT_NO_EMPTY);
+            $output = $this->executor->execute($this->getPath(), ...($arguments === false ? [] : $arguments));
             return $this->versionOutput = BinaryVersion::fromBinaryOutput(\implode("\n", $output));
         } catch (\Throwable) {
             return $this->versionOutput = BinaryVersion::empty();

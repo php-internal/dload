@@ -9,6 +9,7 @@ use Internal\DLoad\Module\Config\Schema\CustomSoftwareRegistry;
 use Internal\DLoad\Module\Software\Internal\SoftwareSource;
 use Internal\DLoad\Module\Software\Internal\Source\ConfigSource;
 use Internal\DLoad\Module\Software\Internal\Source\OfficialSource;
+use Internal\DLoad\Module\Software\Internal\Source\PackageSource;
 
 /**
  * Builds the {@see SoftwareCollection} by passing it through every software source.
@@ -22,18 +23,21 @@ final class SoftwareCollector
     /** @var callable(SoftwareCollection): SoftwareCollection */
     private $pipeline;
 
-    public function __construct(CustomSoftwareRegistry $registry)
+    /**
+     * @param ComposerPackages|null $packages Null leaves out the software of Composer packages.
+     */
+    public function __construct(CustomSoftwareRegistry $registry, ?ComposerPackages $packages = null)
     {
+        $sources = [new ConfigSource($registry), new OfficialSource()];
+        $packages === null or $sources[] = new PackageSource($registry, $packages);
+
         /**
          * The config source goes first: it is the one that can cut the sources after it.
          *
          * @see SoftwareSource::collect()
          * @var callable(SoftwareCollection): SoftwareCollection $pipeline
          */
-        $pipeline = Pipeline::prepare(
-            new ConfigSource($registry),
-            new OfficialSource(),
-        )->with(static fn(SoftwareCollection $collection): SoftwareCollection => $collection, 'collect');
+        $pipeline = Pipeline::prepare(...$sources)->with(static fn(SoftwareCollection $collection): SoftwareCollection => $collection, 'collect');
         $this->pipeline = $pipeline;
     }
 

@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Command;
 
-use Internal\DLoad\Module\Config\Schema\Embed\Software;
+use Internal\DLoad\Module\Software\Entry;
+use Internal\DLoad\Module\Software\OriginKind;
 use Internal\DLoad\Module\Software\SoftwareCollection;
+use Internal\DLoad\Service\Logger;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -56,16 +58,32 @@ final class ListSoftware extends Base
         $output->writeln('There are <options=bold>' . $registry->count() . '</> software available:');
         $output->writeln('');
 
-        /** @var Software $software */
-        foreach ($registry->getIterator() as $software) {
-            $output->writeln("<fg=green;options=bold>{$software->getId()}</>  $software->name");
-            $software->homepage and $output->writeln("<fg=blue>Homepage: $software->homepage</>");
+        foreach ($registry->entries() as $entry) {
+            $software = $entry->software;
+            $output->writeln(\sprintf(
+                '<fg=green;options=bold>%s</>  %s  <fg=gray>[%s]</>',
+                Logger::text($software->getId()),
+                Logger::text($software->name),
+                Logger::text((string) $entry->origin),
+            ));
+
+            $shadowed = \array_map(
+                static fn(Entry $other): string => $other->origin->kind === OriginKind::Package
+                    ? "{$other->origin}#{$other->getId()}"
+                    : (string) $other->origin,
+                \array_filter(
+                    $registry->candidates($software->getId()),
+                    static fn(Entry $other): bool => $other !== $entry,
+                ),
+            );
+            $shadowed === [] or $output->writeln('<fg=yellow>Shadows: ' . Logger::text(\implode(', ', $shadowed)) . '</>');
+            $software->homepage and $output->writeln('<fg=blue>Homepage: ' . Logger::text($software->homepage) . '</>');
 
             foreach ($software->repositories as $repo) {
-                $output->writeln("<fg=blue>{$repo->type}: {$repo->uri}</>");
+                $output->writeln('<fg=blue>' . Logger::text("{$repo->type}: {$repo->uri}") . '</>');
             }
 
-            $software->description and $output->writeln("<fg=gray>" . \wordwrap($software->description, 78) . "</>");
+            $software->description and $output->writeln('<fg=gray>' . Logger::text(\wordwrap($software->description, 78)) . '</>');
             $output->writeln('');
         }
 

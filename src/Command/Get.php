@@ -13,10 +13,10 @@ use Internal\DLoad\Module\Common\Stability;
 use Internal\DLoad\Module\Config\Schema\Action\Download as DownloadConfig;
 use Internal\DLoad\Module\Config\Schema\Actions;
 use Internal\DLoad\Module\Downloader\Exception\DownloadFailed;
+use Internal\DLoad\Service\Logger;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Exception\InvalidArgumentException;
-use Symfony\Component\Console\Formatter\OutputFormatter;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -72,7 +72,7 @@ final class Get extends Base
         $this->addArgument(
             self::ARG_SOFTWARE,
             InputArgument::OPTIONAL | InputArgument::IS_ARRAY,
-            'Software name, e.g. "rr", "dolt", "temporal" etc.',
+            'Software name, e.g. "rr", "dolt", "temporal" etc., or "<package>#<id>" for the one a Composer package declares',
         );
         $this->addOption('path', null, InputOption::VALUE_OPTIONAL, 'Path to store the binary, e.g. "./bin"', ".");
         $this->addOption('arch', null, InputOption::VALUE_OPTIONAL, 'Architecture, e.g. "amd64", "arm64" etc.');
@@ -281,8 +281,8 @@ final class Get extends Base
     {
         foreach ($failures as [$software, $error]) {
             $output->writeln('');
-            $output->writeln(\sprintf('<error> Failed to download `%s` </error>', OutputFormatter::escape($software)));
-            $output->writeln(OutputFormatter::escape(self::describeFailure($error)));
+            $output->writeln(\sprintf('<error> Failed to download `%s` </error>', Logger::text($software)));
+            $output->writeln(Logger::text(self::describeFailure($error)));
 
             $output->isVeryVerbose() and $this->logger->exception($error, important: true);
         }

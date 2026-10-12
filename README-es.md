@@ -61,6 +61,7 @@ Con DLoad puedes:
     - [Definir Software](#definir-software)
     - [Elementos de Software](#elementos-de-software)
     - [Servidores Autoalojados](#servidores-autoalojados)
+    - [Software desde Paquetes Composer](#software-desde-paquetes-composer)
 - [Casos de Uso](#casos-de-uso)
     - [Configurar Entorno de Desarrollo](#configurar-entorno-de-desarrollo)
     - [Configurar Nuevo Proyecto](#configurar-nuevo-proyecto)
@@ -597,13 +598,17 @@ El binario de RoadRunner construido incluirá solo los plugins especificados en 
 
 #### Elementos Binary
 
-- **name**: Nombre del binario para referencia
+- **name**: Nombre del binario para referencia; un nombre de archivo, no una ruta
 - **pattern**: Patrón regex para hacer match con el binario en los assets
+- **version-command**: Argumentos con los que el binario imprime su versión, como `--version`; sin él la versión no se comprueba.
+  Se pasan al binario tal cual, sin shell: las comillas y las tuberías no se interpretan.
+  En las entradas de paquetes Composer es una sola opción como `--version`, o `version`
 - Maneja automáticamente el filtrado por SO/arquitectura
 
 #### Elementos File
 
 - **pattern**: Patrón regex para hacer match con archivos
+- **rename**: Nuevo nombre opcional del archivo encontrado; un nombre de archivo, no una ruta. Se añade la extensión del archivo encontrado salvo que el nuevo nombre ya termine con ella
 - **extract-path**: Directorio de extracción opcional
 - Funciona en cualquier sistema (sin filtrado por SO/arquitectura)
 
@@ -656,6 +661,59 @@ el token de un servidor solo va a ese esquema, host y puerto exactos, y se desca
 
 Se permite `http` sin cifrar, p. ej. para una API falsa local en tests (`uri="http://127.0.0.1:8080/owner/repo"`), pero el token
 solo se envía por él a `localhost`, `127.0.0.0/8` y `[::1]`.
+
+### Software desde Paquetes Composer
+
+Un framework o un CMS puede incluir las definiciones de los binarios que necesita, para que los proyectos que lo usan
+no tengan que copiarlas en su `dload.xml`. El paquete apunta a un archivo XML propio desde su `composer.json`:
+
+```json
+{
+    "extra": {
+        "dload": {
+            "registry": "resources/dload.xml"
+        }
+    }
+}
+```
+
+El archivo tiene el formato de `dload.xml`, así que el IDE lo autocompleta y lo valida; solo se lee su sección `<registry>`.
+Puede ser un archivo dedicado o el propio `dload.xml` del paquete. Mantenlo en el dist del paquete: no le apliques `export-ignore`.
+
+```xml
+<dload xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/php-internal/dload/refs/heads/1.x/dload.xsd">
+    <registry>
+        <software name="GitHub CLI" alias="gh">
+            <repository type="github" uri="cli/cli" asset-pattern="/^gh_.*/" />
+            <binary name="gh" pattern="/^gh(\.exe)?$/" />
+        </software>
+    </registry>
+</dload>
+```
+
+DLoad busca `composer.json` junto al `dload.xml` cargado (en el directorio de trabajo si no hay uno) y lee
+los paquetes instalados de `vendor/composer/installed.json` (se respetan `COMPOSER_VENDOR_DIR` y `config.vendor-dir`, solo Composer 2).
+Funciona igual con el paquete de Composer, el PHAR y el binario.
+
+- **Quién puede declarar**: el paquete raíz y sus dependencias directas (`require`, `require-dev`).
+  Una dependencia transitiva no puede añadir software.
+- **Dónde puede estar el archivo**: solo dentro del paquete. Una ruta que sale de él, mediante `..`,
+  una ruta absoluta o un enlace simbólico, se rechaza. Los archivos remotos no están soportados.
+- **Prioridad**: `dload.xml` > el registro oficial > los paquetes. Un paquete nunca reemplaza una entrada de los otros dos;
+  cuando el registro oficial oculta una entrada de un paquete que se está descargando y apunta a otros repositorios, DLoad avisa de ello.
+- **Elección explícita**: `<package>#<id>` selecciona la entrada de un paquete, aunque otra la oculte (`__root__#<id>` para un paquete raíz sin `name`):
+  `dload get acme/framework#gh:^2.0` o `<download software="acme/framework#gh" />`.
+- **Varios paquetes, un mismo id**: si los paquetes apuntan a los mismos repositorios, coinciden y no hay nada que avisar.
+  Si no, gana el paquete raíz, luego los paquetes en el orden de `require` y `require-dev`,
+  y al descargar ese id se muestran todos los `<package>#<id>` entre los que elegir.
+- **Las declaraciones erróneas** se notifican como advertencias y se omiten; nunca detienen DLoad. Esto incluye un archivo inexistente,
+  un XML inválido, un atributo obligatorio vacío, una ruta donde se espera un nombre de archivo, una regex inválida,
+  un `version-command` que no sea una sola opción como `--version`, o `version`, y un id con `#`, `:` o espacios alrededor.
+- **Desactivación**: `<registry from-packages="false">` descarta el software de los paquetes y mantiene el registro oficial;
+  `<registry overwrite="true">` descarta ambos.
+
+`dload software` muestra de dónde viene cada entrada: `official`, `dload.xml` o el nombre del paquete. Una entrada que oculta otras las lista en `Shadows:`, las de paquetes como `<package>#<id>`; `dload show <id>` muestra el origen como `Source:`.
 
 ## Casos de Uso
 

@@ -120,8 +120,8 @@ final readonly class ArchiveStep implements InstallStep
             \sprintf(
                 '<comment>%d</comment> file(s) from <comment>%s</comment> have been installed into <info>%s</info>',
                 \count($resultFiles),
-                $installation->download->version,
-                (string) $destination,
+                Logger::text((string) $installation->download->version),
+                Logger::text((string) $destination),
             ),
         );
 

@@ -26,7 +26,9 @@ use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 use Testo\Assert;
 use Testo\Codecov\Covers;
+use Testo\Core\Exception\SkipTest;
 use Testo\Data\DataProvider;
+use Testo\Data\DataSet;
 use Testo\Expect;
 use Testo\Lifecycle\AfterTest;
 use Testo\Lifecycle\BeforeTest;
@@ -234,6 +236,86 @@ final class InstallerTest
         Assert::true($this->destination->join('app')->isFile());
     }
 
+    #[Test]
+    #[DataSet(['a.b', ['pkg/axb' => 'wrong', 'pkg/a.b' => 'right']], 'a dot')]
+    #[DataSet(['c++', ['pkg/ccc' => 'wrong', 'pkg/c++' => 'right']], 'a quantifier')]
+    #[DataSet(['t(1)', ['pkg/t1' => 'wrong', 'pkg/t(1)' => 'right']], 'a group')]
+    public function theBinaryNameMatchesOnlyItself(string $name, array $entries): void
+    {
+        $download = $this->download('tool.stub', '');
+        $software = Software::fromArray(['name' => 'Tool', 'binary' => ['name' => $name]]);
+
+        $result = $this->installer(archiveFactory: self::listed($entries))
+            ->install($download, $software, null, $this->destination, removeDownload: true);
+
+        Assert::same(
+            \array_map(static fn(Path $file): string => (string) \file_get_contents((string) $file), [...$result->files]),
+            ['right'],
+        );
+    }
+
+    #[Test]
+    #[DataSet(['a.b', 'pkg/a.b', 'a.b'], 'a dotted name')]
+    #[DataSet(['A.B', 'pkg/a.b', 'A.B'], 'a dotted name in another case')]
+    #[DataSet(['a.b', 'pkg/a.b.exe', 'a.b.exe'], 'a dotted name with an executable extension')]
+    #[DataSet(['rr', 'pkg/roadrunner.exe', 'rr.exe'], 'a renamed executable')]
+    public function theBinaryKeepsItsNameAndGainsOnlyAMissingExtension(string $name, string $entry, string $installed): void
+    {
+        $download = $this->download('tool.stub', '');
+        $software = Software::fromArray(['name' => 'Tool', 'binary' => ['name' => $name, 'pattern' => '/./']]);
+
+        $result = $this->installer(archiveFactory: self::listed([$entry => 'binary']))
+            ->install($download, $software, null, $this->destination, removeDownload: true);
+
+        Assert::same(self::paths($result->files), [(string) $this->destination->join($installed)]);
+    }
+
+    #[Test]
+    public function aBinaryNameWithConsoleTagsIsInstalledAndPrintedLiterally(): void
+    {
+        \PHP_OS_FAMILY === 'Windows' and throw new SkipTest('A Windows file name cannot contain `<` and `>`.');
+        $name = 'x<fg=nope>y';
+        $download = $this->download('tool.stub', '');
+        $software = Software::fromArray(['name' => 'Tool', 'binary' => ['name' => $name, 'pattern' => '/./']]);
+        $output = new BufferedOutput(decorated: true);
+
+        $this->installer(archiveFactory: self::listed(['pkg/app' => 'binary']), output: $output)
+            ->install($download, $software, null, $this->destination, removeDownload: true);
+
+        Assert::string($output->fetch())->contains($name);
+        Assert::true(\is_executable((string) $this->destination->join($name)));
+    }
+
+    #[Test]
+    #[DataSet([['files' => [['pattern' => '/^app$/', 'rename' => '../escaped']]]], 'a rename above the destination')]
+    #[DataSet([['files' => [['pattern' => '/^app$/', 'rename' => 'sub/app']]]], 'a rename into a subdirectory')]
+    #[DataSet([['files' => [['pattern' => '/^app$/', 'rename' => 'C:app']]]], 'a drive-relative rename')]
+    #[DataSet([['binary' => ['name' => '../escaped', 'pattern' => '/^app$/']]], 'a binary name above the destination')]
+    #[DataSet([['files' => [['pattern' => '/^app$/', 'rename' => 'nul']]]], 'a rename to a Windows device')]
+    public function aTargetNameThatIsAPathFailsTheInstallation(array $rules): never
+    {
+        $download = $this->download('tool.stub', '');
+        $software = Software::fromArray(['name' => 'Tool'] + $rules);
+
+        Expect::exception(\RuntimeException::class)->withMessageContaining('the name must be a file name, not a path');
+
+        $this->installer(archiveFactory: self::listed(['pkg/app' => 'evil']))
+            ->install($download, $software, null, $this->destination, removeDownload: true);
+    }
+
+    #[Test]
+    public function anEntryKeepsItsOwnNameWithoutARename(): void
+    {
+        \PHP_OS_FAMILY === 'Windows' and throw new SkipTest('A file name cannot contain `:` on Windows.');
+        $download = $this->download('tool.stub', '');
+        $software = Software::fromArray(['name' => 'Tool', 'files' => [['pattern' => '/^foo:bar$/']]]);
+
+        $result = $this->installer(archiveFactory: self::listed(['pkg/foo:bar' => 'content']))
+            ->install($download, $software, null, $this->destination, removeDownload: true);
+
+        Assert::same(self::paths($result->files), [(string) $this->destination->join('foo:bar')]);
+    }
+
     #[BeforeTest]
     protected function prepare(): void
     {
@@ -263,16 +345,32 @@ final class InstallerTest
         return $result;
     }
 
+    /**
+     * @param array<non-empty-string, string> $entries Content by entry path.
+     * @return ArchiveFactory Opens any `.stub` file as an archive of the entries.
+     */
+    private static function listed(array $entries): ArchiveFactory
+    {
+        $archiveFactory = new ArchiveFactory();
+        $archiveFactory->extend(
+            static fn(\SplFileInfo $file): ?ListedArchive => $file->getExtension() === 'stub' ? new ListedArchive($entries) : null,
+            ['stub'],
+        );
+
+        return $archiveFactory;
+    }
+
     private function installer(
         ?BinaryProvider $binaryProvider = null,
         ArchiveFactory $archiveFactory = new ArchiveFactory(),
+        OutputInterface $output = new BufferedOutput(),
     ): Installer {
         if ($binaryProvider === null) {
             $binaryProvider = \Mockery::mock(BinaryProvider::class);
             $binaryProvider->allows('getLocalBinary')->andReturnNull();
         }
 
-        return new Installer(new Logger($this->log), new BufferedOutput(), $archiveFactory, $binaryProvider, OperatingSystem::Linux);
+        return new Installer(new Logger($this->log), $output, $archiveFactory, $binaryProvider, OperatingSystem::Linux);
     }
 
     /**

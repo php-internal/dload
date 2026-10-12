@@ -20,6 +20,10 @@ final class CustomSoftwareRegistry
     #[XPath('/dload/registry/@overwrite')]
     public bool $overwrite = false;
 
+    /** @var bool $fromPackages Add the software declared by Composer packages of the project */
+    #[XPath('/dload/registry/@from-packages')]
+    public bool $fromPackages = true;
+
     /**
      * @var \Internal\DLoad\Module\Config\Schema\Embed\Software[] $software Custom software definitions from the configuration
      */

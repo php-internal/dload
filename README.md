@@ -62,6 +62,7 @@ With DLoad, you can:
     - [Defining Software](#defining-software)
     - [Software Elements](#software-elements)
     - [Self-Hosted Servers](#self-hosted-servers)
+    - [Software from Composer Packages](#software-from-composer-packages)
 - [Use Cases](#use-cases)
     - [Development Environment Setup](#development-environment-setup)
     - [New Project Setup](#new-project-setup)
@@ -602,13 +603,17 @@ This ensures consistent Velox versions across different environments and team me
 
 #### Binary Elements
 
-- **name**: Binary name for reference
+- **name**: Binary name for reference; a file name, not a path
 - **pattern**: Regex pattern to match binary in assets
+- **version-command**: Arguments that make the binary print its version, e.g. `--version`; without it the version is not checked.
+  They are passed to the binary as they are, without a shell: quotes and pipes are not interpreted.
+  In entries of Composer packages it is one option such as `--version`, or `version`
 - Automatically handles OS/architecture filtering
 
 #### File Elements
 
 - **pattern**: Regex pattern to match files
+- **rename**: Optional new name of the matched file, a file name, not a path. The extension of the matched file is appended unless the new name already ends with it
 - **extract-path**: Optional extraction directory
 - Works on any system (no OS/architecture filtering)
 
@@ -661,6 +666,59 @@ a server's token goes only to that exact scheme, host and port, and is dropped w
 
 Plain `http` is allowed, e.g. for a local fake API in tests (`uri="http://127.0.0.1:8080/owner/repo"`), but a token
 is sent over it only to `localhost`, `127.0.0.0/8` and `[::1]`.
+
+### Software from Composer Packages
+
+A framework or a CMS can ship the definitions of the binaries it needs, so the projects that use it
+do not copy them into their `dload.xml`. The package points to an XML file inside it in its `composer.json`:
+
+```json
+{
+    "extra": {
+        "dload": {
+            "registry": "resources/dload.xml"
+        }
+    }
+}
+```
+
+The file has the `dload.xml` format, so the IDE completes and validates it; only its `<registry>` section is read.
+It can be a dedicated file or the package's own `dload.xml`. Keep it in the package dist: do not `export-ignore` it.
+
+```xml
+<dload xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/php-internal/dload/refs/heads/1.x/dload.xsd">
+    <registry>
+        <software name="GitHub CLI" alias="gh">
+            <repository type="github" uri="cli/cli" asset-pattern="/^gh_.*/" />
+            <binary name="gh" pattern="/^gh(\.exe)?$/" />
+        </software>
+    </registry>
+</dload>
+```
+
+DLoad finds `composer.json` next to the loaded `dload.xml` (the working directory without one) and reads
+the installed packages from `vendor/composer/installed.json` (`COMPOSER_VENDOR_DIR` and `config.vendor-dir` are honoured, Composer 2 only).
+It works the same for the Composer package, the PHAR and the binary.
+
+- **Who can declare**: the root package and its direct dependencies (`require`, `require-dev`).
+  A transitive dependency cannot add software.
+- **Where the file can be**: only inside the package. A path that leads out of it, through `..`,
+  an absolute path or a symlink, is rejected. Remote files are not supported.
+- **Priority**: `dload.xml` > the official registry > packages. A package never replaces an entry of the other two;
+  when the official registry shadows a package entry that is being downloaded and points to other repositories, DLoad warns about it.
+- **Explicit choice**: `<package>#<id>` picks the entry of a package, whatever shadows it (`__root__#<id>` for a root package without a `name`):
+  `dload get acme/framework#gh:^2.0` or `<download software="acme/framework#gh" />`.
+- **Several packages, one id**: packages pointing to the same repositories agree, nothing to report.
+  Otherwise the root package wins, then the packages in the order of `require` and `require-dev`,
+  and a download of that id prints every `<package>#<id>` to choose from.
+- **Broken declarations** are reported as warnings and skipped; they never stop DLoad. That covers a missing file,
+  an invalid XML, a required attribute left empty, a path where a file name is expected, an invalid regex,
+  a `version-command` other than one option such as `--version`, or `version`, and an id with `#`, `:` or spaces around it.
+- **Switching off**: `<registry from-packages="false">` drops the software of packages and keeps the official registry;
+  `<registry overwrite="true">` drops both.
+
+`dload software` shows where each entry comes from: `official`, `dload.xml` or the package name. An entry that hides others lists them under `Shadows:`, package ones as `<package>#<id>`; `dload show <id>` prints the origin as `Source:`.
 
 ## Use Cases
 

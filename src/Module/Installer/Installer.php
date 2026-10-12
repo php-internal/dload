@@ -106,7 +106,7 @@ final class Installer
 
         $result = new File();
         $result->pattern = $binary->pattern
-            ?? "/^{$binary->name}{$this->os->getBinaryExtension()}$/";
+            ?? '/^' . \preg_quote($binary->name . $this->os->getBinaryExtension(), '/') . '$/';
         $result->rename = $binary->name;
         $result->chmod = 0o755; // Default permissions for binaries
 

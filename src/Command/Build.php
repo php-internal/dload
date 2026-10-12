@@ -13,6 +13,7 @@ use Internal\DLoad\Module\Velox\Exception\Config as ConfigException;
 use Internal\DLoad\Module\Velox\Exception\Dependency as DependencyException;
 use Internal\DLoad\Module\Velox\Result;
 use Internal\DLoad\Module\Velox\Task;
+use Internal\DLoad\Service\Logger;
 use React\Promise\PromiseInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -122,7 +123,7 @@ final class Build extends Base
             $this->logger->error('Build error: %s', $e->getMessage());
             if ($e->buildOutput !== null) {
                 $this->logger->info('Build Output:');
-                $this->logger->print($e->buildOutput);
+                $this->logger->print(Logger::text($e->buildOutput));
             }
 
             return;

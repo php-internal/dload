@@ -15,13 +15,15 @@ Everything happens in the consuming project's own `dload.xml` (dload itself is i
 ./vendor/bin/dload software
 ```
 
-Prints every built-in tool with its alias. Tool listed → Step 3. Not listed → Step 2.
+Prints every tool dload knows with its alias and, in brackets, its source: `official`, `dload.xml`, or the Composer package that declares it. Tool listed → Step 3. Not listed → Step 2.
 
 ## Step 2 — describe a missing tool inline
 
 Add a `<software>` block to the `<registry overwrite="false">` element of the project's `dload.xml`. Read [`references/registry-entry.md`](references/registry-entry.md) first: it lists the facts to collect from the GitHub release and how to design `asset-pattern` and `binary.pattern` for binaries and PHARs.
 
 Done when the block has a `<repository>` whose `asset-pattern` matches every OS/arch variant of the tool and nothing else in the release.
+
+When the tool is needed by a Composer package (a framework, a CMS) rather than by one project, the package declares the block for every project that installs it: read [`references/package-registry.md`](references/package-registry.md).
 
 ## Step 3 — add the `<download>` action
 
@@ -44,7 +46,7 @@ Done when the block has a `<repository>` whose `asset-pattern` matches every OS/
 
 | Attribute | Purpose |
 |---|---|
-| `software` | Alias or name of the tool (built-in or inline). Required. |
+| `software` | Alias or name of the tool (built-in or inline). `<package>#<id>` (`acme/framework#gh`) picks the entry of that Composer package, whatever shadows it. Required. |
 | `version` | Composer-style constraint: `^2025.1`, `~1.0.0`, `^2.12.0@beta`, `^2.12.0-hotfix@alpha` (feature builds, alpha ones included), one pre-release like `2025.1.0-rc.2`, or a range from one like `^2025.1.0-rc.1`. Omit for latest stable. Pre-releases order by stability (`nightly < snapshot < dev < unstable < alpha < preview < beta < pre < RC < stable`), then by number; `stable` by default. A pre-release in a constraint sets the minimum stability for any operator, even `<3.5.0-beta.2`; lower it with `@alpha`/`@dev`. A keyword without a number is a bound too: `>2.0-beta` takes `2.0.0-RC1` and `2.0.0`. An exact version with a pre-release or another suffix is that one tag: `2.0-beta` skips `2.0.0-beta.3`, `2.12.0-hotfix` skips `2.12.0-hotfix.2`; after `^`, `~` or a comparison a non-stability suffix is a feature the tag must contain. A tagged build like `2025.1.0-rc.2-linux` orders right after its pre-release: an exact `2025.1.0-rc.2` skips it, `>2025.1.0-rc.2` takes it. Numbers may have more than three parts (`1.2.3.4`), in constraints too (`>=1.2.3.4.5`); trailing zero parts and build metadata don't count (`1.2.3` = `1.2.3.0` = `1.2.3+build.5`). Case doesn't matter (`-ARM64` = `-arm64`, `^1.0-Linux` takes `1.0.0-linux`), and a pre-release may be glued to the number as in tags (`^2.0.0rc1`). |
 | `extract-path` | Target folder (default: project root). |
 | `type` | `binary` (default), `phar` (required for PHAR — skips extraction), `archive` (unpack the whole asset keeping its folder layout). |
