@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Unit\Module\Repository\Internal\GitLab\Api;
 
+use Internal\DLoad\Module\HttpClient\Internal\RedirectingClient;
 use Internal\DLoad\Module\Repository\Internal\ApiToken;
 use Internal\DLoad\Module\Repository\Internal\GitLab\Api\Client;
 use Internal\DLoad\Module\Repository\Internal\Server;
+use Internal\DLoad\Tests\Unit\Module\HttpClient\Stub\RedirectServerStub;
 use Internal\DLoad\Tests\Unit\Module\Repository\Stub\RecordingHttpFactory;
 use Testo\Assert;
 use Testo\Codecov\Covers;
@@ -68,5 +70,31 @@ final class ClientTest
 
         Assert::same($http->sent[0]->getHeaderLine('authorization'), 'Bearer local');
         Assert::same($http->sent[1]->getHeaderLine('authorization'), '');
+    }
+
+    #[Test]
+    public function tokenDoesNotFollowAReleaseLinkToAnotherHost(): void
+    {
+        $download = 'https://gitlab.example.com/api/v4/projects/group%2Fproject/releases/v1/downloads/a.zip';
+        $releases = 'https://gitlab.example.com/api/v4/projects/group%2Fproject/releases';
+        $server = new RedirectServerStub([
+            $download => [302, 'https://maintainer.example/a.zip'],
+            $releases => [302, '/api/v4/projects/7/releases'],
+        ]);
+        $client = new Client(
+            new RecordingHttpFactory(),
+            new RedirectingClient($server),
+            new ApiToken('secret', 'DLOAD_TOKEN_GITLAB_EXAMPLE_COM'),
+            Server::fromString('gitlab.example.com'),
+        );
+
+        $client->downloadArtifact($download);
+        $client->request('GET', $releases);
+
+        Assert::same($server->sent[0]->getHeaderLine('private-token'), 'secret');
+        Assert::same((string) $server->sent[1]->getUri(), 'https://maintainer.example/a.zip');
+        Assert::same($server->sent[1]->getHeaderLine('private-token'), '');
+        Assert::same((string) $server->sent[3]->getUri(), 'https://gitlab.example.com/api/v4/projects/7/releases');
+        Assert::same($server->sent[3]->getHeaderLine('authorization'), 'Bearer secret');
     }
 }

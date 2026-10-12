@@ -44,11 +44,12 @@ class NyholmFactoryImpl implements Factory
 
     public function client(): ClientInterface
     {
-        return (new Psr18Client())->withOptions([
+        return new RedirectingClient((new Psr18Client())->withOptions([
             'timeout' => 30,
+            'max_redirects' => 0,
             'headers' => [
                 'User-Agent' => 'DLoad/' . Info::version(),
             ],
-        ]);
+        ]));
     }
 }
