@@ -70,6 +70,7 @@ DLoad решает распространённую проблему в PHP-пр
     - [Управление PHAR-инструментами](#управление-phar-инструментами)
     - [Распространение фронтенд-ресурсов](#распространение-фронтенд-ресурсов)
 - [Ограничения API](#ограничения-api)
+- [Отчёт об ошибках](#отчёт-об-ошибках)
 - [Конфигурация Gitlab CI](#конфигурация-gitlab-ci)
 - [Участие в разработке](#участие-в-разработке)
 
@@ -738,6 +739,29 @@ GITLAB_TOKEN=your_token_here ./vendor/bin/dload get
 `DLOAD_TOKEN_GITHUB_COM` и `DLOAD_TOKEN_GITLAB_COM` имеют приоритет над `GITHUB_TOKEN` и `GITLAB_TOKEN`,
 что пригодится, если эти имена уже заняты другим инструментом. У собственных серверов свои переменные,
 см. [Собственные серверы](#собственные-серверы).
+
+## Отчёт об ошибках
+
+`dload get` завершается с ненулевым кодом, если хотя бы один запрошенный пакет не установлен, и выводит
+причину каждой неудачной загрузки: ошибку API (неверный токен, исчерпанный лимит запросов, отсутствующий
+репозиторий), число подошедших релизов, ассеты каждого проверенного релиза и фильтры, которые их отклонили.
+
+Если у ПО несколько `<repository>`, неудачный репозиторий (ошибка API, нет подходящего релиза или ассета,
+неверный `uri` или неизвестный `type`) попадает в отчёт, и DLoad переходит к следующему.
+
+```
+ Failed to download `rr` 
+Requested: version `any`, OS `linux`, architecture `amd64`, minimum stability `stable`, asset type `any`.
+Tried 1 repository(ies):
+  1) github `roadrunner-server/roadrunner`
+    GitHub API rejected the credentials (HTTP 401: Bad credentials).
+    The API token from the GITHUB_TOKEN environment variable is invalid, expired or revoked. Provide a valid
+    token or unset the variable to use anonymous access.
+
+1 of 1 download(s) failed.
+```
+
+Запустите с `-vvv`, чтобы также получить трассировки стека и полный журнал запросов.
 
 ## Конфигурация Gitlab CI
 

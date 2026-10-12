@@ -7,6 +7,7 @@ namespace Internal\DLoad\Tests\Unit\Module\Repository\Internal\GitHub;
 use Internal\DLoad\Module\Config\Schema\Embed\Repository as RepositoryConfig;
 use Internal\DLoad\Module\Config\Schema\GitHub as GitHubConfig;
 use Internal\DLoad\Module\Registry\Internal\PassThroughRegistry;
+use Internal\DLoad\Module\Repository\Exception\InvalidRepositoryConfigException;
 use Internal\DLoad\Module\Repository\Internal\GitHub\Factory;
 use Internal\DLoad\Module\Repository\Internal\ServerTokens;
 use Internal\DLoad\Module\Repository\Repository;
@@ -136,7 +137,7 @@ final class FactoryTest
     #[Test]
     public function rejectsAnUriThatIsNotARepository(string $uri): never
     {
-        Expect::exception(\InvalidArgumentException::class)->withMessageContaining("Repository `{$uri}`:");
+        Expect::exception(InvalidRepositoryConfigException::class)->withMessageContaining("Repository `{$uri}`:");
 
         $this->factory()->create(self::config($uri));
     }

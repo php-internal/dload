@@ -69,6 +69,7 @@ DLoad 解决了 PHP 项目中的一个实际问题：如何在分发 PHP 代码�
     - [PHAR 工具管理](#phar-工具管理)
     - [前端资源分发](#前端资源分发)
 - [API 速率限制](#api-速率限制)
+- [失败报告](#失败报告)
 - [Gitlab CI 配置](#gitlab-ci-配置)
 - [参与贡献](#参与贡献)
 
@@ -724,6 +725,28 @@ GITLAB_TOKEN=your_token_here ./vendor/bin/dload get
 
 `DLOAD_TOKEN_GITHUB_COM` 和 `DLOAD_TOKEN_GITLAB_COM` 优先于 `GITHUB_TOKEN` 和 `GITLAB_TOKEN`，
 当这些名称已被其他工具占用时很有用。自托管服务器有各自的变量，参见 [自托管服务器](#自托管服务器)。
+
+## 失败报告
+
+只要有一个请求的包未能安装，`dload get` 就以非零代码退出，并打印每次失败下载的原因：API 错误（无效令牌、
+速率限制耗尽、仓库不存在）、匹配的发布数量、每个已检查发布包含的资产，以及拒绝它们的过滤条件。
+
+如果软件配置了多个 `<repository>`，失败的仓库（API 错误、没有合适的发布或资产、无效的 `uri` 或未知的 `type`）
+会记入报告，DLoad 随后尝试下一个仓库。
+
+```
+ Failed to download `rr` 
+Requested: version `any`, OS `linux`, architecture `amd64`, minimum stability `stable`, asset type `any`.
+Tried 1 repository(ies):
+  1) github `roadrunner-server/roadrunner`
+    GitHub API rejected the credentials (HTTP 401: Bad credentials).
+    The API token from the GITHUB_TOKEN environment variable is invalid, expired or revoked. Provide a valid
+    token or unset the variable to use anonymous access.
+
+1 of 1 download(s) failed.
+```
+
+使用 `-vvv` 运行可同时获得堆栈跟踪和完整的请求日志。
 
 ## Gitlab CI 配置
 

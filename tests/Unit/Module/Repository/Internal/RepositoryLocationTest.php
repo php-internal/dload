@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Unit\Module\Repository\Internal;
 
+use Internal\DLoad\Module\Repository\Exception\InvalidRepositoryConfigException;
 use Internal\DLoad\Module\Repository\Internal\RepositoryLocation;
 use Testo\Assert;
 use Testo\Codecov\Covers;
@@ -70,7 +71,7 @@ final class RepositoryLocationTest
     #[Test]
     public function rejectsAnythingButARepositoryPathOrUrl(string $uri, string $reason): never
     {
-        Expect::exception(\InvalidArgumentException::class)->withMessagePattern(
+        Expect::exception(InvalidRepositoryConfigException::class)->withMessagePattern(
             \sprintf('/^Repository `%s`: .*%s/', \preg_quote(\trim($uri), '/'), \preg_quote($reason, '/')),
         );
 

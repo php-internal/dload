@@ -29,6 +29,7 @@ use Internal\DLoad\Module\Registry\VersionRegistry;
 use Internal\DLoad\Module\Repository\AssetInterface;
 use Internal\DLoad\Module\Repository\Collection\ReleasesCollection;
 use Internal\DLoad\Module\Repository\Exception\AssetNotFoundException;
+use Internal\DLoad\Module\Repository\Exception\InvalidRepositoryConfigException;
 use Internal\DLoad\Module\Repository\Exception\RateLimitException;
 use Internal\DLoad\Module\Repository\Exception\RepositoryException;
 use Internal\DLoad\Module\Repository\ReleaseInterface;
@@ -187,7 +188,7 @@ final class Downloader
     {
         try {
             return $this->repositoryProvider->getByConfig($context->repoConfig);
-        } catch (\InvalidArgumentException $e) {
+        } catch (InvalidRepositoryConfigException $e) {
             // No repository object exists, so the config names the attempt
             $context->diagnostics->addRepository(
                 type: $context->repoConfig->type,
