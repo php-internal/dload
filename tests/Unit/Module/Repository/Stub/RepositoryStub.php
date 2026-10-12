@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Unit\Module\Repository\Stub;
 
+use Internal\DLoad\Module\Registry\RepositoryId;
 use Internal\DLoad\Module\Repository\Collection\ReleasesCollection;
 use Internal\DLoad\Module\Repository\Internal\Collection;
 use Internal\DLoad\Module\Repository\ReleaseInterface;
@@ -33,6 +34,11 @@ final class RepositoryStub implements Repository
     public function getName(): string
     {
         return $this->name;
+    }
+
+    public function getId(): RepositoryId
+    {
+        return new RepositoryId('github', $this->name);
     }
 
     public function getReleases(): ReleasesCollection

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Unit\Module\Repository\Internal\GitLab;
 
-use Internal\DLoad\Module\Config\Schema\GitLab as GitLabConfig;
 use Internal\DLoad\Module\HttpClient\Internal\NyholmFactoryImpl;
 use Internal\DLoad\Module\Registry\Internal\PassThroughRegistry;
 use Internal\DLoad\Module\Registry\Internal\StoredVersionRegistry;
@@ -271,7 +270,7 @@ final class GitLabRepositoryTest
         $logger = new Logger();
         $httpFactory = new NyholmFactoryImpl($logger);
         $api = new RepositoryApi(
-            new Client($httpFactory, $client, new GitLabConfig()),
+            new Client($httpFactory, $client),
             $httpFactory,
             'group/project',
         );

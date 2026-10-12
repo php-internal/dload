@@ -21,7 +21,7 @@ final class ResponseValidator extends BaseValidator
         return 'GitLab';
     }
 
-    protected function tokenEnvVariable(): string
+    protected function defaultTokenEnvVariable(): string
     {
         return 'GITLAB_TOKEN';
     }

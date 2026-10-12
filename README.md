@@ -61,6 +61,7 @@ With DLoad, you can:
 - [Custom Software Registry](#custom-software-registry)
     - [Defining Software](#defining-software)
     - [Software Elements](#software-elements)
+    - [Self-Hosted Servers](#self-hosted-servers)
 - [Use Cases](#use-cases)
     - [Development Environment Setup](#development-environment-setup)
     - [New Project Setup](#new-project-setup)
@@ -594,8 +595,8 @@ This ensures consistent Velox versions across different environments and team me
 
 #### Repository Configuration
 
-- **type**: Currently supports "github"
-- **uri**: Repository path (e.g., "username/repo")
+- **type**: "github" or "gitlab"
+- **uri**: Repository path (e.g., "username/repo"), or its URL on a self-hosted server, see [Self-Hosted Servers](#self-hosted-servers)
 - **asset-pattern**: Regex pattern to match release assets
 - **tag-prefix**: Text before the version in release tags, e.g. `bun-` for `bun-v1.4.2`. Releases with other tags are ignored, so only the selected component of a monorepo with per-component tags (release-please) is used
 
@@ -610,6 +611,56 @@ This ensures consistent Velox versions across different environments and team me
 - **pattern**: Regex pattern to match files
 - **extract-path**: Optional extraction directory
 - Works on any system (no OS/architecture filtering)
+
+### Self-Hosted Servers
+
+A repository on GitHub Enterprise Server, a self-hosted GitLab or any other on-premise instance
+is given by its URL in `uri`, instead of a path on `github.com` / `gitlab.com`:
+
+```xml
+<registry>
+    <software name="Tool" alias="tool">
+        <repository type="github" uri="https://ghe.example.com/my-org/tool" />
+    </software>
+    <software name="Other" alias="other">
+        <repository type="gitlab" uri="https://gitlab.example.com:8443/group/subgroup/other" />
+    </software>
+</registry>
+```
+
+- The scheme, host and port of the URL are the server, the path is the repository: `owner/repo` for GitHub,
+  the full project path with subgroups for GitLab. A trailing `/` and a `.git` suffix are ignored,
+  so a clone URL works too. A URL of a page inside the repository (`/releases`, `/-/tags`) is an error.
+- The scheme is required: `ghe.example.com/my-org/tool` is not a URL, and dload never takes a server from it.
+- A URL of the public host (`https://github.com/owner/repo`, `https://gitlab.com/group/project`) means the public
+  host, as does a plain path.
+- The API lives at `{server}/api/v3` for GitHub Enterprise Server and at `{server}/api/v4` for GitLab.
+  A GitLab installed under a relative URL root (`https://example.com/gitlab/...`) is not supported.
+
+A token is declared per server in an environment variable named after it: `DLOAD_TOKEN_` followed by
+the host in upper case, where a dot becomes `_` and a hyphen `__`; a port other than the default follows
+after `___`. An IPv6 address starts with `_` and lists all eight groups. Each server gets a name of its own,
+so `ghe.example.com` and `ghe-example.com` never share a token. The scheme is not a part of the name.
+
+| Server                    | Token variable                                  |
+|---------------------------|-------------------------------------------------|
+| `github.com`              | `DLOAD_TOKEN_GITHUB_COM`, then `GITHUB_TOKEN`   |
+| `gitlab.com`              | `DLOAD_TOKEN_GITLAB_COM`, then `GITLAB_TOKEN`   |
+| `ghe.example.com`         | `DLOAD_TOKEN_GHE_EXAMPLE_COM`                   |
+| `git-lab.example.com`     | `DLOAD_TOKEN_GIT__LAB_EXAMPLE_COM`              |
+| `gitlab.example.com:8443` | `DLOAD_TOKEN_GITLAB_EXAMPLE_COM___8443`         |
+| `http://[::1]:8080`       | `DLOAD_TOKEN__0_0_0_0_0_0_0_1___8080`           |
+
+```bash
+DLOAD_TOKEN_GHE_EXAMPLE_COM=your_token_here ./vendor/bin/dload get
+```
+
+The configuration cannot choose which variable is read, so a `dload.xml` from a third party cannot send
+your tokens anywhere. `GITHUB_TOKEN` and `GITLAB_TOKEN` are never sent to a self-hosted server, and
+a server's token goes only to that exact scheme, host and port, and is dropped when the server redirects elsewhere.
+
+Plain `http` is allowed, e.g. for a local fake API in tests (`uri="http://127.0.0.1:8080/owner/repo"`), but a token
+is sent over it only to `localhost`, `127.0.0.0/8` and `[::1]`.
 
 ## Use Cases
 
@@ -687,6 +738,10 @@ GITLAB_TOKEN=your_token_here ./vendor/bin/dload get
 ```
 
 Add to CI/CD environment variables for automated downloads.
+
+`DLOAD_TOKEN_GITHUB_COM` and `DLOAD_TOKEN_GITLAB_COM` take precedence over `GITHUB_TOKEN` and `GITLAB_TOKEN`,
+which helps when those names are already taken by another tool. Self-hosted servers have their own variables,
+see [Self-Hosted Servers](#self-hosted-servers).
 
 > [!NOTE]
 > In GitHub Actions, `secrets.GITHUB_TOKEN` is scoped to the current repository and shares a limit of

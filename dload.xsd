@@ -161,7 +161,7 @@
                                                 </xs:attribute>
                                                 <xs:attribute name="uri" type="xs:string" use="required">
                                                     <xs:annotation>
-                                                        <xs:documentation>Repository URI identifier</xs:documentation>
+                                                        <xs:documentation>Repository path on github.com / gitlab.com, like "owner/repo" or, for GitLab, "group/subgroup/project". A repository on a self-hosted server (GitHub Enterprise Server, self-hosted GitLab) is given by its URL with a scheme: "https://ghe.example.com/owner/repo", "https://gitlab.example.com:8443/group/project"; the API is called at /api/v3 (GitHub) or /api/v4 (GitLab) of that server. A trailing "/" and ".git" are ignored; a URL of a page inside the repository is an error. Without a scheme no server is taken from the value. The API token of a self-hosted server is read from DLOAD_TOKEN_&lt;HOST&gt;: the host upper-cased with "." as "_" and "-" as "__", a non-default port after "___", e.g. DLOAD_TOKEN_GHE_EXAMPLE_COM, DLOAD_TOKEN_GIT__LAB_EXAMPLE_COM___8443. It is never sent over plain http except to loopback hosts, nor to another host a redirect points at.</xs:documentation>
                                                     </xs:annotation>
                                                 </xs:attribute>
                                                 <xs:attribute name="asset-pattern" type="xs:string" default="/^.*$/">
