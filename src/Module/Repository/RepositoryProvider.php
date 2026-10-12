@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Internal\DLoad\Module\Repository;
 
 use Internal\DLoad\Module\Config\Schema\Embed\Repository as RepositoryConfig;
+use Internal\DLoad\Module\Repository\Exception\InvalidRepositoryConfigException;
 
 /**
  * Factory service for creating repository instances from configuration.
@@ -42,7 +43,7 @@ final class RepositoryProvider
      *
      * @param RepositoryConfig $config Repository configuration
      * @return Repository Created repository instance
-     * @throws \RuntimeException When no factory supports the repository type
+     * @throws InvalidRepositoryConfigException When no factory supports the repository type or the URI is invalid
      */
     public function getByConfig(RepositoryConfig $config): Repository
     {
@@ -52,6 +53,6 @@ final class RepositoryProvider
             }
         }
 
-        throw new \RuntimeException("No factory found for repository type `$config->type`.");
+        throw new InvalidRepositoryConfigException("Repository type `$config->type` is not supported.");
     }
 }

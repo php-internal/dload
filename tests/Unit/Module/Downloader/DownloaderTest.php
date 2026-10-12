@@ -14,13 +14,18 @@ use Internal\DLoad\Module\Config\Schema\Action\Download as DownloadConfig;
 use Internal\DLoad\Module\Config\Schema\Action\Type;
 use Internal\DLoad\Module\Config\Schema\Downloader as DownloaderConfig;
 use Internal\DLoad\Module\Config\Schema\Embed\Software;
+use Internal\DLoad\Module\Config\Schema\GitHub as GitHubConfig;
 use Internal\DLoad\Module\Downloader\Downloader;
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\AssetSelector;
 use Internal\DLoad\Module\Downloader\Exception\DownloadFailed;
 use Internal\DLoad\Module\Downloader\Task\DownloadResult;
+use Internal\DLoad\Module\Registry\Internal\PassThroughRegistry;
 use Internal\DLoad\Module\Repository\Collection\ReleasesCollection;
 use Internal\DLoad\Module\Repository\Exception\AssetNotFoundException;
+use Internal\DLoad\Module\Repository\Exception\InvalidRepositoryConfigException;
 use Internal\DLoad\Module\Repository\Exception\RateLimitException;
+use Internal\DLoad\Module\Repository\Internal\GitHub\Factory as GitHubFactory;
+use Internal\DLoad\Module\Repository\Internal\ServerTokens;
 use Internal\DLoad\Module\Repository\Repository;
 use Internal\DLoad\Module\Repository\RepositoryProvider;
 use Internal\DLoad\Module\Version\Version;
@@ -31,7 +36,9 @@ use Internal\DLoad\Tests\Unit\Module\Downloader\Stub\SequenceRepositoryFactorySt
 use Internal\DLoad\Tests\Unit\Module\Downloader\Stub\ThrowingRepositoryStub;
 use Internal\DLoad\Tests\Unit\Module\Registry\Stub\RecordingRegistry;
 use Internal\DLoad\Tests\Unit\Module\Repository\Stub\AssetStub;
+use Internal\DLoad\Tests\Unit\Module\Repository\Stub\RecordingHttpFactory;
 use Internal\DLoad\Tests\Unit\Module\Repository\Stub\ReleaseStub;
+use Internal\DLoad\Tests\Unit\Module\Repository\Stub\RepositoryFactoryStub;
 use Internal\DLoad\Tests\Unit\Module\Repository\Stub\RepositoryStub;
 use Internal\Path;
 use Internal\DLoad\Tests\Unit\Module\Downloader\Internal\AssetSelection\Stub\LibcContainer;
@@ -549,6 +556,104 @@ final class DownloaderTest
     }
 
     #[Test]
+    public function unknownRepositoryTypeFallsBackToTheNextOne(): void
+    {
+        $working = $this->repoWithAsset(
+            'rr-linux-amd64.tar.gz',
+            OperatingSystem::Linux,
+            Architecture::X86_64,
+            tag: 'v3.0.0',
+        );
+
+        $result = $this->run(
+            (new RepositoryProvider())->addRepositoryFactory(new RepositoryFactoryStub(['github'], $working)),
+            self::softwareWithUnknownRepositoryType(),
+        );
+
+        Assert::same($result->version->string, 'v3.0.0');
+    }
+
+    #[Test]
+    public function unknownRepositoryTypeIsReportedBeforeTheNextOne(): void
+    {
+        $empty = new RepositoryStub('owner/repo', ReleasesCollection::create([]));
+
+        try {
+            $this->run(
+                (new RepositoryProvider())->addRepositoryFactory(new RepositoryFactoryStub(['github'], $empty)),
+                self::softwareWithUnknownRepositoryType(),
+            );
+            Assert::fail('DownloadFailed is expected when no repository has a release.');
+        } catch (DownloadFailed $e) {
+            Assert::string($e->report)->contains(
+                "Tried 2 repository(ies):\n"
+                . "  1) bitbucket `owner/repo`\n"
+                . "    Repository type `bitbucket` is not supported.\n"
+                . '  2) github `owner/repo`',
+            );
+        }
+    }
+
+    #[Test]
+    public function uriRejectedByTheGitHubFactoryIsReportedBeforeTheNextOne(): void
+    {
+        // The real factory parses the URI; its HTTP client answers every request with no releases
+        $factory = new GitHubFactory(
+            new RecordingHttpFactory(),
+            new GitHubConfig(),
+            new Logger(),
+            new PassThroughRegistry(),
+            new ServerTokens([]),
+        );
+
+        try {
+            $this->run((new RepositoryProvider())->addRepositoryFactory($factory), self::softwareWithInvalidRepository());
+            Assert::fail('DownloadFailed is expected when no repository has a release.');
+        } catch (DownloadFailed $e) {
+            Assert::string($e->report)->contains(
+                "Tried 2 repository(ies):\n"
+                . "  1) github `ghe.example.com/org/repo`\n"
+                . '    ' . self::invalidRepositoryError()->getMessage() . "\n"
+                . '  2) github `owner/repo`',
+            );
+        }
+    }
+
+    #[Test]
+    public function assetPatternWithPercentSignIsReported(): void
+    {
+        // The pattern lands in the "nothing matched" messages; the logger must not read them as a format
+        $software = Software::fromArray([
+            'name' => 'rr',
+            'repositories' => [['type' => 'github', 'uri' => 'owner/repo', 'asset-pattern' => '/^rr-%d$/']],
+        ]);
+
+        try {
+            $this->run([$this->repoWithAsset('rr-linux-amd64.tar.gz')], $software);
+            Assert::fail('DownloadFailed is expected when no asset matches the pattern.');
+        } catch (DownloadFailed $e) {
+            Assert::string($e->report)->contains('/^rr-%d$/');
+        }
+    }
+
+    #[Test]
+    public function goneAssetWithEncodedUrlGivesWayToAnOlderRelease(): void
+    {
+        $repository = new RepositoryStub('group/proj');
+        $gone = new ReleaseStub($repository, 'v2.0.0', Version::fromVersionString('v2.0.0'));
+        $gone->setAssets([new GoneAssetStub($gone, 'rr-linux-amd64.tar.gz', new AssetNotFoundException(
+            'GitLab asset is no longer available: HTTP 404 for https://gitlab.com/api/v4/projects/group%2Fproj/packages/generic/rr/2.0.0/rr-linux-amd64.tar.gz',
+            'group/proj',
+        ))]);
+        $alive = self::release($repository, 'v1.9.0', assets: true);
+        $repository = new RepositoryStub('group/proj', ReleasesCollection::create([$gone, $alive]));
+
+        $result = $this->download([$repository]);
+
+        Assert::same($result->version->string, 'v1.9.0');
+    }
+
+    #[Test]
     public function unexpectedErrorFromRepositoryIsRethrown(): void
     {
         $repository = new ThrowingRepositoryStub('owner/repo', new \RuntimeException('unexpected failure'));
@@ -634,11 +739,25 @@ final class DownloaderTest
     }
 
     /**
+     * A software whose first repository has a type no factory serves, followed by a valid one.
+     */
+    private static function softwareWithUnknownRepositoryType(): Software
+    {
+        return Software::fromArray([
+            'name' => 'rr',
+            'repositories' => [
+                ['type' => 'bitbucket', 'uri' => 'owner/repo'],
+                ['type' => 'github', 'uri' => 'owner/repo'],
+            ],
+        ]);
+    }
+
+    /**
      * The error a repository factory throws for a URI it cannot parse.
      */
-    private static function invalidRepositoryError(): \InvalidArgumentException
+    private static function invalidRepositoryError(): InvalidRepositoryConfigException
     {
-        return new \InvalidArgumentException(
+        return new InvalidRepositoryConfigException(
             'Repository `ghe.example.com/org/repo`: expected `owner/repo` or a URL like `https://ghe.example.com/owner/repo`.',
         );
     }
@@ -707,16 +826,16 @@ final class DownloaderTest
     }
 
     /**
-     * @param list<Repository>|SequenceRepositoryFactoryStub $repositories
+     * @param list<Repository>|SequenceRepositoryFactoryStub|RepositoryProvider $repositories
      */
     private function run(
-        array|SequenceRepositoryFactoryStub $repositories,
+        array|SequenceRepositoryFactoryStub|RepositoryProvider $repositories,
         Software $software,
         ?DownloadConfig $config = null,
         Architecture $architecture = Architecture::X86_64,
         Logger $logger = new Logger(),
     ): DownloadResult {
-        $factory = $repositories instanceof SequenceRepositoryFactoryStub
+        $factory = $repositories instanceof SequenceRepositoryFactoryStub || $repositories instanceof RepositoryProvider
             ? $repositories
             : new SequenceRepositoryFactoryStub($repositories);
 
@@ -734,7 +853,7 @@ final class DownloaderTest
     }
 
     private function makeDownloader(
-        SequenceRepositoryFactoryStub $factory,
+        SequenceRepositoryFactoryStub|RepositoryProvider $factory,
         DownloaderConfig $config,
         Architecture $architecture = Architecture::X86_64,
         Logger $logger = new Logger(),
@@ -742,7 +861,9 @@ final class DownloaderTest
         return new Downloader(
             config: $config,
             logger: $logger,
-            repositoryProvider: (new RepositoryProvider())->addRepositoryFactory($factory),
+            repositoryProvider: $factory instanceof RepositoryProvider
+                ? $factory
+                : (new RepositoryProvider())->addRepositoryFactory($factory),
             architecture: $architecture,
             operatingSystem: OperatingSystem::tryFromString('linux') ?? throw new \LogicException(),
             stability: Stability::Stable,

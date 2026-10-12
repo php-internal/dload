@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Internal\DLoad\Tests\Unit\Module\Repository;
 
 use Internal\DLoad\Module\Config\Schema\Embed\Repository as RepositoryConfig;
+use Internal\DLoad\Module\Repository\Exception\InvalidRepositoryConfigException;
 use Internal\DLoad\Module\Repository\Repository;
 use Internal\DLoad\Module\Repository\RepositoryFactory;
 use Internal\DLoad\Module\Repository\RepositoryProvider;
@@ -114,7 +115,7 @@ final class RepositoryProviderTest
         $factory->allows('supports')->with($config)->andReturn(false);
         $this->repositoryProvider->addRepositoryFactory($factory);
 
-        Expect::exception(\RuntimeException::class)->withMessage("No factory found for repository type `unsupported`.");
+        Expect::exception(InvalidRepositoryConfigException::class)->withMessage("Repository type `unsupported` is not supported.");
 
         $this->repositoryProvider->getByConfig($config);
     }
@@ -136,7 +137,7 @@ final class RepositoryProviderTest
 
         // Assert expectation for exception if no factory supports
         if (!$factorySupports) {
-            Expect::exception(\RuntimeException::class)->withMessage("No factory found for repository type `{$config->type}`.");
+            Expect::exception(InvalidRepositoryConfigException::class)->withMessage("Repository type `{$config->type}` is not supported.");
         }
 
         $result = $this->repositoryProvider->getByConfig($config);

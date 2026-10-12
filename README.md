@@ -757,6 +757,9 @@ registry between them spend the rate limit only on new releases: see [Version Re
 the reason for every failed download: the API error (invalid token, exhausted rate limit, missing repository),
 the number of matched releases, the assets each checked release contains, and the filters that rejected them.
 
+When a software entry lists several `<repository>` elements, a failed repository (API error, no suitable
+release or asset, invalid `uri` or unknown `type`) is reported and DLoad moves on to the next one.
+
 ```
  Failed to download `rr` 
 Requested: version `any`, OS `linux`, architecture `amd64`, minimum stability `stable`, asset type `any`.
