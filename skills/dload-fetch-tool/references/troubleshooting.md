@@ -38,7 +38,7 @@ curl -s "https://api.github.com/repos/<owner>/<repo>/releases/tags/<tag>" \
 After filtering, dload picks the host's variant with:
 
 - OS: `/(?:\b|_)(windows|linux|darwin|macos|alpine|bsd|freebsd|win32|win64)(?:\b|_)/i`; an `android` token makes it Android, a bare `musl` makes it Linux
-- Arch: `/(?:\b|_)(amd64|arm64|aarch64|x86_64|x64|win64)(?:\b|_)/i`
+- Arch: `/(?:\b|_)(amd64|arm64|aarch64|x86[_-]64|x64|win64)(?:\b|_)/i`
 
 A candidate that matches neither is discarded. Common offenders:
 
@@ -49,7 +49,7 @@ Compare with the host: `php -r "echo PHP_OS_FAMILY, ' / ', php_uname('m'), PHP_E
 
 With a `binary`, OS packages (`.deb`, `.msi`… — the list is in [`registry-entry.md`](registry-entry.md#asset-pattern)) and archives of a format dload cannot unpack (known archive formats other than `.zip`, `.tar.gz`, `.tgz`, `.tar`, `.gz`, `.phar`, such as `.tar.xz`, `.7z`, `.zst`) are discarded too, and a release offering only such assets is skipped for an older one among the 10 newest releases that satisfy `version`, with a warning naming both versions. When their names carry the host OS and arch, the report says "only OS packages match" or "only archives of an unsupported format match" and lists them under "OS packages are skipped because a binary is expected" or "Archives of an unsupported format are skipped because a binary is expected"; one without an OS token (`tool.dmg`) is discarded by the OS check above instead. When no older release fits, pin a `version` that ships a supported archive or a raw binary for the host — pinning also reaches past the 10 newest.
 
-Several candidates left: dload tries them best first — host libc, then the fewest extra name tokens, then archives, then the release order. Run with `-vvv` to see the rank of every asset (`Asset ... ranked: os=0 arch=0 libc=0 extras=1 archive=0`); a wrong pick usually means the wanted build carries an extra token the others lack.
+Several candidates left: dload tries them best first — the lowest x86-64 microarchitecture level (`amd64_v3` after `amd64` or `amd64_v1`), then host libc, then the fewest extra name tokens, then archives, then the release order. Run with `-vvv` to see the rank of every asset (`Asset ... ranked: os=0 arch=0 level=0 libc=0 extras=1 archive=0`); a wrong pick usually means the wanted build carries an extra token the others lack.
 
 ## Stage 4 — binary extraction
 

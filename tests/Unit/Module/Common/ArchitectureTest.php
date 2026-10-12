@@ -21,6 +21,8 @@ class ArchitectureTest
         yield ['roadrunner-2024.1.5-linux-amd64.deb', Architecture::X86_64];
         yield ['protoc-27.3-win64.zip', Architecture::X86_64];
         yield ['temporal-test-server_1.33.0_macOS_arm64.tar.gz', Architecture::ARM_64];
+        yield ['tool_1.0.0_linux_amd64_v3.tar.gz', Architecture::X86_64];
+        yield ['tool-linux-x86-64-v3.tar.gz', Architecture::X86_64];
     }
 
     #[DataProvider('provideBuildNames')]

@@ -15,6 +15,7 @@ use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\CompanionRule;
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\ExtrasRule;
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\FormatRule;
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\LibcRule;
+use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\MicroarchitectureLevelRule;
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\NamePatternRule;
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\OperatingSystemRule;
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Rule\PackageRule;
@@ -56,6 +57,8 @@ final class AssetSelector
             new CompanionRule(),
             new OperatingSystemRule($operatingSystem),
             new ArchitectureRule($architecture, $operatingSystem),
+            // Right after the architecture: a level the CPU may lack outweighs the libc and the variant
+            new MicroarchitectureLevelRule(),
             // After the platform rules, so the report names only packages and archives built for the host. One whose
             // name carries no OS token, like `tool.dmg` or `tool.7z`, is gone by then and stays out of the report.
             new PackageRule(),

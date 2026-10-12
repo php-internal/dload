@@ -28,6 +28,7 @@ final class AssetNameTest
         yield 'universal macOS build' => ['hugo_0.139.0_darwin-universal.tar.gz', ['hugo']];
         yield 'all macOS architectures' => ['tool_1.0.0_macOS_all.tar.gz', ['tool']];
         yield 'universal not next to macOS' => ['universal-ctags-linux-x64.tar.gz', ['universal', 'ctags']];
+        yield 'microarchitecture level' => ['tool_1.0.0_linux_amd64_v3.tar.gz', ['tool']];
     }
 
     public static function provideUniversal(): iterable
@@ -40,6 +41,17 @@ final class AssetNameTest
         yield 'all without macOS' => ['tool-all-linux-amd64.tar.gz', false];
         yield 'universal without macOS' => ['universal-ctags-linux-x64.tar.gz', false];
         yield 'all inside a word' => ['install-darwin-allinone.zip', false];
+    }
+
+    public static function provideLevels(): iterable
+    {
+        yield 'no level' => ['tool_linux_amd64.tar.gz', 1];
+        yield 'v1' => ['tool_linux_amd64_v1.tar.gz', 1];
+        yield 'v2' => ['tool_linux_amd64_v2.tar.gz', 2];
+        yield 'v3 after x86_64' => ['tool-x86_64_v3-linux.tar.gz', 3];
+        yield 'v4 after x86-64' => ['tool-linux-x86-64-v4.tar.gz', 4];
+        yield 'version after the arch' => ['tool-linux-amd64-v2.1.0.tar.gz', 1];
+        yield 'arm' => ['tool-android-arm64-v8a.zip', 1];
     }
 
     /**
@@ -64,5 +76,12 @@ final class AssetNameTest
     public function universalMacOsBuildsAreReadFromTheName(string $name, bool $expected): void
     {
         Assert::same(AssetName::fromString($name)->universal, $expected);
+    }
+
+    #[DataProvider('provideLevels')]
+    #[Test]
+    public function theMicroarchitectureLevelIsReadFromTheName(string $name, int $expected): void
+    {
+        Assert::same(AssetName::fromString($name)->level, $expected);
     }
 }

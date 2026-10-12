@@ -32,13 +32,21 @@ final class AssetName
     private const UNIVERSAL = '/(?<![a-z0-9])(?:(?:darwin|macos)[-_.](?:universal2?|all)|(?:universal2?|all)[-_.](?:darwin|macos))(?![a-z0-9])/';
 
     /**
+     * x86-64 microarchitecture level right after the architecture, like `amd64_v3` or `x86-64-v2`,
+     * but not a version there, like `amd64-v2.1.0`.
+     */
+    private const LEVEL = '/(?<![a-z0-9])(?:amd64|x86[_-]64|x64)[-_]v([1-4])(?![a-z0-9]|\.\d)/';
+
+    /**
      * @param bool $universal Whether the asset is a macOS build for every Mac architecture.
+     * @param int<1, 4> $level x86-64 microarchitecture level the build requires; 1 when the name has none.
      * @param list<non-empty-string> $extras Name tokens that are not a platform, a version or an extension,
      *        like `profile` or `debug`. The tool name is one of them too.
      */
     private function __construct(
         public readonly ?Libc $libc,
         public readonly bool $universal,
+        public readonly int $level,
         public readonly array $extras,
     ) {}
 
@@ -49,8 +57,24 @@ final class AssetName
         return new self(
             libc: Libc::tryFromBuildName($name),
             universal: \preg_match(self::UNIVERSAL, $lower) === 1,
+            level: self::level($lower),
             extras: self::extras($lower),
         );
+    }
+
+    /**
+     * @return int<1, 4>
+     */
+    private static function level(string $name): int
+    {
+        \preg_match(self::LEVEL, $name, $matches);
+
+        return match ($matches[1] ?? null) {
+            '2' => 2,
+            '3' => 3,
+            '4' => 4,
+            default => 1,
+        };
     }
 
     /**
@@ -69,6 +93,7 @@ final class AssetName
             flags: \PREG_SPLIT_NO_EMPTY,
         );
 
+        // The version filter also drops a microarchitecture level like `v3`, which has its own rank
         return \array_values(\array_filter(
             $tokens === false ? [] : $tokens,
             static fn(string $token): bool => \preg_match('/^v?\d+$/', $token) !== 1,
