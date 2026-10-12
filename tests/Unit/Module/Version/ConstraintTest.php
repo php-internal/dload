@@ -215,8 +215,8 @@ final class ConstraintTest
         yield 'base with multiple dashes' => [
             '^2.12.0-alpha.1-feature',
             '^2.12.0',
-            'alpha.1-feature',
-            Stability::Preview,
+            'feature',
+            Stability::Alpha,
             'Base version with multiple dashes and feature suffix',
         ];
 
@@ -259,6 +259,17 @@ final class ConstraintTest
         yield 'bare stability keyword at least with an explicit stability is a bound' => ['>=2.0-beta@alpha', '>=2.0', null, Stability::Alpha, 'Keyword bound of at least'];
         yield 'bare stability keyword of a tilde with an explicit stability is a bound' => ['~2.0-beta@alpha', '~2.0', null, Stability::Alpha, 'Keyword bound of a tilde'];
         yield 'pre-release bound after a comma without a space' => ['>=1.0,<2.0-RC1', '>=1.0,<2.0-RC1', null, Stability::RC, 'Comma before a bound'];
+
+        // A feature after the pre-release bound of a single range
+        yield 'feature after a numbered pre-release of a caret' => ['^3.5.0-beta.1-feature', '^3.5.0', 'feature', Stability::Beta, 'Feature after a caret bound'];
+        yield 'feature after a numbered pre-release of a tilde' => ['~3.5.0-beta.1-feature', '~3.5.0', 'feature', Stability::Beta, 'Feature after a tilde bound'];
+        yield 'feature after a numbered pre-release of at least' => ['>=3.5.0-beta.1-feature', '>=3.5.0', 'feature', Stability::Beta, 'Feature after an at least bound'];
+        yield 'feature after a glued pre-release' => ['^3.5.0-rc1-feature', '^3.5.0', 'feature', Stability::RC, 'Feature after a glued bound'];
+        yield 'feature after a bare stability keyword' => ['^3.5.0-beta-feature', '^3.5.0', 'feature', Stability::Beta, 'Feature after a bare keyword'];
+        yield 'hyphenated feature after a pre-release' => ['^3.5.0-beta.1-my-feature', '^3.5.0', 'my-feature', Stability::Beta, 'Hyphenated feature after a bound'];
+        yield 'feature after a pre-release with an explicit stability' => ['^3.5.0-beta.1-feature@alpha', '^3.5.0', 'feature', Stability::Alpha, 'Explicit stability over a bound'];
+        yield 'feature after an uppercase pre-release' => ['^3.5.0-BETA.1-Feature', '^3.5.0', 'Feature', Stability::Beta, 'Uppercase bound'];
+        yield 'exact pre-release before a feature' => ['3.5.0-beta.1-feature', '3.5.0-beta.1-feature', null, Stability::Beta, 'Exact release'];
 
         // A digit within a feature suffix is no pre-release bound
         yield 'numeric tail of a feature suffix' => ['^1.0.0-x64-1', '^1.0.0', 'x64-1', Stability::Preview, 'Numeric tail of a feature'];
@@ -658,6 +669,35 @@ final class ConstraintTest
         yield 'above a prefixed bare keyword on a release candidate' => ['>v2.0-beta', '2.0.0-RC1', true];
         yield 'caret from a bare keyword before build metadata on a release candidate' => ['^1.2.3-beta+5', '1.2.3-RC1', true];
         yield 'caret with build metadata like a bare keyword on a release candidate' => ['^1.2.3+5-beta', '1.2.3-RC1', false];
+
+        // A pre-release followed by a feature: exact names one release, a range filters by the feature
+        yield 'exact pre-release with a feature on itself' => ['3.5.0-beta.1-feature', 'v3.5.0-beta.1-feature', true];
+        yield 'exact pre-release with a feature in another case' => ['3.5.0-BETA.1-FEATURE', 'v3.5.0-beta.1-feature', true];
+        yield 'exact pre-release with a feature in another spelling' => ['3.5.0-beta1-feature', 'v3.5.0-beta.1-feature', true];
+        yield 'exact pre-release with a feature on the next pre-release' => ['3.5.0-beta.1-feature', 'v3.5.0-beta.2-feature', false];
+        yield 'exact pre-release with a feature on the pre-release alone' => ['3.5.0-beta.1-feature', 'v3.5.0-beta.1', false];
+        yield 'exact pre-release with a feature on the feature alone' => ['3.5.0-beta.1-feature', 'v3.5.0-feature', false];
+        yield 'exact pre-release with a feature on another feature' => ['3.5.0-beta.1-feature', 'v3.5.0-beta.1-other', false];
+        yield 'exact pre-release with a feature and an explicit stability' => ['3.5.0-beta.1-feature@beta', 'v3.5.0-beta.1-feature', true];
+        yield 'caret from a pre-release with a feature on itself' => ['^3.5.0-beta.1-feature', 'v3.5.0-beta.1-feature', true];
+        yield 'caret from an alpha with a feature on itself' => ['^2.12.0-alpha.1-feature', '2.12.0-alpha.1-feature', true];
+        yield 'caret from a pre-release with a feature on the next pre-release' => ['^3.5.0-beta.1-feature', 'v3.5.0-rc.1-feature', true];
+        yield 'caret from a pre-release with a feature on a later version' => ['^3.5.0-beta.1-feature', 'v3.5.1-beta.1-feature', true];
+        yield 'caret from a pre-release with a feature in another case' => ['^3.5.0-beta.1-feature', 'v3.5.0-BETA.1-Feature', true];
+        yield 'caret from a pre-release with a feature below the bound' => ['^3.5.0-beta.1-feature', 'v3.5.0-alpha.1-feature', false];
+        yield 'caret from a pre-release with a feature on an older version' => ['^3.5.0-beta.1-feature', 'v3.4.0-beta.1-feature', false];
+        yield 'caret from a pre-release with a feature on another feature' => ['^3.5.0-beta.1-feature', 'v3.5.0-beta.2-other', false];
+        yield 'caret from a pre-release with a feature on a release without it' => ['^3.5.0-beta.1-feature', 'v3.5.0-beta.2', false];
+        yield 'caret from a pre-release with a feature on a feature build' => ['^3.5.0-beta.1-feature', 'v3.6.0-feature', false];
+        yield 'caret from a pre-release with a feature and a looser stability' => ['^3.5.0-beta.1-feature@alpha', 'v3.6.0-feature', true];
+        yield 'caret from a pre-release with a feature and a stricter stability' => ['^3.5.0-beta.1-feature@rc', 'v3.5.0-beta.2-feature', false];
+        yield 'tilde from a pre-release with a feature' => ['~3.5.0-beta.1-feature', 'v3.5.2-rc.1-feature', true];
+        yield 'tilde from a pre-release with a feature past the minor' => ['~3.5.0-beta.1-feature', 'v3.6.0-rc.1-feature', false];
+        yield 'at least a pre-release with a feature' => ['>=3.5.0-beta.1-feature', 'v4.0.0-beta.1-feature', true];
+        yield 'at least a pre-release with a feature below the bound' => ['>=3.5.0-beta.2-feature', 'v3.5.0-beta.1-feature', false];
+        yield 'at least a glued pre-release with a feature' => ['>=3.5.0rc1-feature', 'v3.5.0-RC2-feature', true];
+        yield 'feature with a stability instead of a pre-release' => ['^3.5.0-feature@beta', 'v3.5.0-beta.1-feature', true];
+        yield 'bare stability keyword with a feature below the keyword' => ['^3.5.0-beta-feature@alpha', 'v3.5.0-alpha.1-feature', false];
 
         // A pre-release glued to the number
         yield 'caret from a glued release candidate on itself' => ['^2.0.0rc1', '2.0.0rc1', true];

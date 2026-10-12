@@ -13,7 +13,7 @@ use Internal\DLoad\Module\Common\Stability;
  * - Version ranges in the Composer syntax, see {@see Range}: ^2.12.0, ~1.20, >=1.0 <2.0 || ^3.0
  * - Feature suffixes of ranges: ^2.12.0-feature, ~1.20.0-hotfix, ^1.0.0-my-feature
  * - Minimum stability, explicit or taken from the pre-releases of the constraint: ^2.12.0@beta, ^2.12.0-beta
- * - Combined constraints: ^2.12.0-feature@beta
+ * - Combined constraints: ^2.12.0-feature@beta, ^2.12.0-beta.1-feature
  * - Exact releases, a pre-release or a tail included: 3.5.0-beta.1, 2.0-beta, 1.0.0-1, 2.12.0-hotfix, 2.0.0rc1
  * - Pre-release bounds of ranges and comparisons: >=3.5.0-beta.1 <3.5.0-RC1, ^1.0 || ^2.0-beta.1, >2.0-beta, ^2.0.0rc1
  * - Build metadata, which does not count: >=1.2.3+build.5, 3.5.0-beta.1+5
@@ -40,8 +40,9 @@ final class Constraint implements \Stringable
 
     /**
      * @var PreRelease|null $preRelease Pre-release of a single version the constraint is bound to,
-     *      e.g. `beta.1` of `3.5.0-beta.1`. Null when there is none, when a tail follows it, or when
-     *      the constraint has several terms: their pre-releases stay in {@see $versionConstraint}.
+     *      e.g. `beta.1` of `3.5.0-beta.1` or of `^3.5.0-beta.1-feature`. Null when there is none, when a tail
+     *      follows it in an exact version, or when the constraint has several terms: their pre-releases stay
+     *      in {@see $versionConstraint}.
      */
     public readonly ?PreRelease $preRelease;
 
@@ -79,6 +80,7 @@ final class Constraint implements \Stringable
         # Without a hyphen, a tail starts with a letter, as in "2.0.0rc1" or "1.0.0.Final"; ".x" is a wildcard, a glued "x" a patch letter.
         $matcher = null;
         $tail = '';
+        $feature = '';
         $preRelease = null;
         if (\preg_match(
             '/^(?:==?)?\s*v?(\d+(?:\.\d+)*)(-[\w.-]+|[._]?(?=[a-z])(?!(?<=\.)x(?![a-z\d]))[\w.-]+)?$/i',
@@ -97,6 +99,19 @@ final class Constraint implements \Stringable
             $singleTerm = \preg_match('/[\s,|]/', (string) \preg_replace('/^[<>=!~^]*\s*/', '', $origin)) !== 1;
             $singleTerm and $tail = $bounds[0];
             $preRelease = PreRelease::fromString(\ltrim($tail, '-._'));
+        } elseif (\preg_match(
+            '/^([<>=!~^]*\s*v?\d+(?:\.\d+)*)(' . Range::preReleasePattern() . ')-([\w.-]+)$/i',
+            $origin,
+            $bound,
+        ) === 1) {
+            # A suffix after the pre-release bound of a single range is a feature: "^3.5.0-beta.1-feature"
+            /** @var non-empty-string $tail */
+            $tail = $bound[2];
+            $origin = $bound[1] . $tail;
+            $feature = $bound[3];
+            $matcher = Range::fromString($origin);
+            $stability ??= self::lowestStability([$tail]);
+            $preRelease = PreRelease::fromString(\ltrim($tail, '-._'));
         }
 
         $preRelease === null or $origin = \substr($origin, 0, -\strlen($tail));
@@ -104,7 +119,7 @@ final class Constraint implements \Stringable
 
         # The hyphen of a range like "1.0 - 2.0" stands between spaces and does not start a suffix
         [$version, $suffix] = $matcher !== null || \preg_match('/\s-\s/', $origin) === 1
-            ? [$origin, '']
+            ? [$origin, $feature]
             : \explode('-', $origin, 2) + [1 => ''];
         if ($suffix !== '') {
             // Check if suffix is a stability keyword (only if no explicit stability provided)
