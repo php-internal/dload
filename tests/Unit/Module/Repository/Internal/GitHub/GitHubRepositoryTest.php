@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Internal\DLoad\Tests\Unit\Module\Repository\Internal\GitHub;
 
-use Internal\DLoad\Module\Config\Schema\GitHub as GitHubConfig;
 use Internal\DLoad\Module\HttpClient\Internal\NyholmFactoryImpl;
 use Internal\DLoad\Module\Registry\Internal\PassThroughRegistry;
 use Internal\DLoad\Module\Registry\Internal\StoredVersionRegistry;
@@ -299,7 +298,7 @@ final class GitHubRepositoryTest
         $httpFactory = new NyholmFactoryImpl($logger);
 
         return new RepositoryApi(
-            new Client($httpFactory, $client, new GitHubConfig()),
+            new Client($httpFactory, $client),
             $httpFactory,
             'owner',
             'repo',

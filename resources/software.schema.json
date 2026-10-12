@@ -74,7 +74,7 @@
                 },
                 "uri": {
                   "type": "string",
-                  "description": "Repository URI identifier"
+                  "description": "Repository path on the public host, like `owner/repo`, or a URL with a scheme for a self-hosted server, like `https://ghe.example.com/owner/repo`"
                 },
                 "asset-pattern": {
                   "type": "string",

@@ -34,7 +34,10 @@ final class Repository
     #[XPath('@type')]
     public string $type = 'github';
 
-    /** @var non-empty-string $uri Repository URI identifier */
+    /**
+     * @var non-empty-string $uri Repository path on the public host, like `owner/repo`, or a URL
+     *      like `https://ghe.example.com/owner/repo` for a self-hosted server.
+     */
     #[XPath('@uri')]
     public string $uri;
 

@@ -30,9 +30,12 @@ abstract class ResponseValidator
 
     /**
      * @param bool $authenticated Whether an API token is configured.
+     * @param non-empty-string|null $tokenVariable Environment variable the token is read from,
+     *        null for the provider default.
      */
     public function __construct(
         protected readonly bool $authenticated,
+        private readonly ?string $tokenVariable = null,
     ) {}
 
     /**
@@ -127,9 +130,17 @@ abstract class ResponseValidator
     abstract protected function providerName(): string;
 
     /**
+     * @return non-empty-string Environment variable that holds the API token of the public host.
+     */
+    abstract protected function defaultTokenEnvVariable(): string;
+
+    /**
      * @return non-empty-string Environment variable that holds the API token.
      */
-    abstract protected function tokenEnvVariable(): string;
+    protected function tokenEnvVariable(): string
+    {
+        return $this->tokenVariable ?? $this->defaultTokenEnvVariable();
+    }
 
     /**
      * @return non-empty-string How the provider calls a repository, e.g. `repository` or `project`.

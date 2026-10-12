@@ -60,6 +60,7 @@ DLoad 解决了 PHP 项目中的一个实际问题：如何在分发 PHP 代码�
 - [自定义软件注册表](#自定义软件注册表)
     - [定义软件](#定义软件)
     - [软件要素](#软件要素)
+    - [自托管服务器](#自托管服务器)
 - [使用场景](#使用场景)
     - [开发环境配置](#开发环境配置)
     - [新项目创建](#新项目创建)
@@ -581,8 +582,8 @@ DLoad 会自动处理构建过程：
 
 #### 仓库配置
 
-- **type**：目前支持 "github"
-- **uri**：仓库路径（例如 "username/repo"）
+- **type**："github" 或 "gitlab"
+- **uri**：仓库路径（例如 "username/repo"），或仓库在自托管服务器上的 URL，参见 [自托管服务器](#自托管服务器)
 - **asset-pattern**：匹配发布资源的正则表达式模式
 - **tag-prefix**：发布标签中版本号之前的文本，例如 `bun-v1.4.2` 中的 `bun-`。标签不以它开头的发布会被忽略，因此对于按组件打标签的 monorepo（release-please），只会使用选定的组件
 
@@ -597,6 +598,52 @@ DLoad 会自动处理构建过程：
 - **pattern**：匹配文件的正则表达式模式
 - **extract-path**：可选的解压目录
 - 在任何系统上都能工作（无操作系统/架构过滤）
+
+### 自托管服务器
+
+位于 GitHub Enterprise Server、自托管 GitLab 或任何其他本地部署实例上的仓库，在 `uri` 中用它的 URL 指定，
+而不是 `github.com` / `gitlab.com` 上的路径：
+
+```xml
+<registry>
+    <software name="Tool" alias="tool">
+        <repository type="github" uri="https://ghe.example.com/my-org/tool" />
+    </software>
+    <software name="Other" alias="other">
+        <repository type="gitlab" uri="https://gitlab.example.com:8443/group/subgroup/other" />
+    </software>
+</registry>
+```
+
+- URL 的协议、主机和端口即服务器，路径即仓库：GitHub 为 `owner/repo`，GitLab 为包含子组的完整项目路径。
+  末尾的 `/` 和 `.git` 后缀会被忽略，因此克隆 URL 也可以使用。指向仓库内部页面的 URL（`/releases`、`/-/tags`）会报错。
+- 协议是必需的：`ghe.example.com/my-org/tool` 不是 URL，dload 永远不会从中取得服务器。
+- 公共主机的 URL（`https://github.com/owner/repo`、`https://gitlab.com/group/project`）表示公共主机，与普通路径相同。
+- GitHub Enterprise Server 的 API 位于 `{server}/api/v3`，GitLab 的 API 位于 `{server}/api/v4`。
+  不支持安装在相对 URL 根路径下的 GitLab（`https://example.com/gitlab/...`）。
+
+每个服务器的令牌通过以其命名的环境变量声明：`DLOAD_TOKEN_` 后接大写的主机，其中点替换为 `_`，
+连字符替换为 `__`；非默认端口跟在 `___` 之后。IPv6 地址以 `_` 开头并列出全部八个分组。每个服务器都有
+自己的变量名，因此 `ghe.example.com` 和 `ghe-example.com` 永远不会共用令牌。协议不属于变量名的一部分。
+
+| 服务器                    | 令牌变量                                        |
+|---------------------------|-------------------------------------------------|
+| `github.com`              | `DLOAD_TOKEN_GITHUB_COM`，其次是 `GITHUB_TOKEN` |
+| `gitlab.com`              | `DLOAD_TOKEN_GITLAB_COM`，其次是 `GITLAB_TOKEN` |
+| `ghe.example.com`         | `DLOAD_TOKEN_GHE_EXAMPLE_COM`                   |
+| `git-lab.example.com`     | `DLOAD_TOKEN_GIT__LAB_EXAMPLE_COM`              |
+| `gitlab.example.com:8443` | `DLOAD_TOKEN_GITLAB_EXAMPLE_COM___8443`         |
+| `http://[::1]:8080`       | `DLOAD_TOKEN__0_0_0_0_0_0_0_1___8080`           |
+
+```bash
+DLOAD_TOKEN_GHE_EXAMPLE_COM=your_token_here ./vendor/bin/dload get
+```
+
+配置无法选择读取哪个变量，因此第三方的 `dload.xml` 无法把你的令牌发送到任何地方。`GITHUB_TOKEN` 和 `GITLAB_TOKEN`
+永远不会发送到自托管服务器，而某个服务器的令牌只会发送到与之完全一致的协议、主机和端口，服务器重定向到其他地址时令牌会被丢弃。
+
+允许使用普通的 `http`，例如用于测试中的本地模拟 API（`uri="http://127.0.0.1:8080/owner/repo"`），但令牌
+只会通过它发送到 `localhost`、`127.0.0.0/8` 和 `[::1]`。
 
 ## 使用场景
 
@@ -674,6 +721,9 @@ GITLAB_TOKEN=your_token_here ./vendor/bin/dload get
 ```
 
 在 CI/CD 环境变量中添加此配置，以便自动下载。
+
+`DLOAD_TOKEN_GITHUB_COM` 和 `DLOAD_TOKEN_GITLAB_COM` 优先于 `GITHUB_TOKEN` 和 `GITLAB_TOKEN`，
+当这些名称已被其他工具占用时很有用。自托管服务器有各自的变量，参见 [自托管服务器](#自托管服务器)。
 
 ## Gitlab CI 配置
 

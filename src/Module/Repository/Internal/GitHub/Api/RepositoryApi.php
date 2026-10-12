@@ -25,8 +25,11 @@ use Psr\Http\Message\UriInterface;
  */
 final class RepositoryApi
 {
-    private const URL_REPOSITORY = 'https://api.github.com/repos/%s';
-    private const URL_RELEASES = 'https://api.github.com/repos/%s/releases';
+    /** API base of the public GitHub; GitHub Enterprise Server serves it at `{server}/api/v3`. */
+    public const DEFAULT_BASE_URL = 'https://api.github.com';
+
+    private const URL_REPOSITORY = '%s/repos/%s';
+    private const URL_RELEASES = '%s/repos/%s/releases';
 
     /**
      * Number of releases to ask for in a single page. GitHub serves 30 by default and allows up to
@@ -42,6 +45,7 @@ final class RepositoryApi
     /**
      * @param non-empty-string $owner
      * @param non-empty-string $repo
+     * @param non-empty-string $baseUrl API base URL without a trailing slash.
      */
     public function __construct(
         private readonly Client $client,
@@ -49,6 +53,7 @@ final class RepositoryApi
         string $owner,
         string $repo,
         private readonly Logger $logger,
+        private readonly string $baseUrl = self::DEFAULT_BASE_URL,
     ) {
         $this->repositoryPath = $owner . '/' . $repo;
     }
@@ -68,7 +73,7 @@ final class RepositoryApi
      */
     public function getRepository(): RepositoryInfo
     {
-        $response = $this->request(Method::Get, \sprintf(self::URL_REPOSITORY, $this->repositoryPath));
+        $response = $this->request(Method::Get, \sprintf(self::URL_REPOSITORY, $this->baseUrl, $this->repositoryPath));
 
         /** @var array{
          *     name: string,
@@ -207,7 +212,7 @@ final class RepositoryApi
     private function releasesRequest(int $page): ResponseInterface
     {
         $uri = $this->httpFactory->uri(
-            \sprintf(self::URL_RELEASES, $this->repositoryPath),
+            \sprintf(self::URL_RELEASES, $this->baseUrl, $this->repositoryPath),
             ['page' => $page, 'per_page' => self::RELEASES_PER_PAGE],
         );
 
