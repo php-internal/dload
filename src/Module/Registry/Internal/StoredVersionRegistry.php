@@ -25,7 +25,9 @@ use Internal\DLoad\Service\Logger;
  *    attached after the check are updated too.
  * 2. **Serve.** The stored releases are yielded segment by segment without any request.
  * 3. **Extend.** When the consumer runs past the stored releases and the listing is not known
- *    to be complete, older pages are fetched one by one and appended to the record.
+ *    to be complete, older pages are fetched one by one and appended to the record. After a
+ *    check, the stored releases below the checked ones are first confirmed to be where they
+ *    were, as a deletion among them would shift the listing.
  *
  * A check that fails while releases are stored falls back to the stored ones: an outage or a rate
  * limit should not break what worked a minute ago. A rate limit is reported once per run in plain
@@ -60,8 +62,10 @@ final class StoredVersionRegistry implements VersionRegistry
     {
         $record = $this->storage->load($id) ?? RepositoryRecord::empty($id);
 
+        // Within the TTL the stored list is taken as it is, head and tail alike
+        $verified = $record->count();
         if ($this->refresh || $record->isStale(($this->clock)(), $this->ttl)) {
-            $record = $this->check($record, $source);
+            [$record, $verified] = $this->check($record, $source);
         } else {
             $this->logger->debug('Releases of `%s` are served from the version registry.', (string) $id);
         }
@@ -75,7 +79,7 @@ final class StoredVersionRegistry implements VersionRegistry
         }
 
         // Older releases are loaded only when the consumer actually needs them
-        yield from $this->extend($record, $source);
+        yield from $this->extend($record, $source, $verified);
     }
 
     public function attach(RepositoryId $id, string $software): void
@@ -116,9 +120,13 @@ final class StoredVersionRegistry implements VersionRegistry
     /**
      * Fetches the releases published since the last check and stores the result.
      *
+     * Besides the record, tells how many of its leading releases the check has seen in place:
+     * the stored releases beyond them may have shifted since they were stored.
+     *
+     * @return array{RepositoryRecord, int<0, max>}
      * @throws RepositoryException When the source fails and nothing is stored to fall back on.
      */
-    private function check(RepositoryRecord $record, ReleaseSource $source): RepositoryRecord
+    private function check(RepositoryRecord $record, ReleaseSource $source): array
     {
         try {
             $fetched = [];
@@ -136,7 +144,7 @@ final class StoredVersionRegistry implements VersionRegistry
                         $record->count(),
                     );
 
-                    return $record;
+                    return [$record, \count($fetched)];
                 }
 
                 $fetched = [...$fetched, ...$page->releases];
@@ -151,38 +159,83 @@ final class StoredVersionRegistry implements VersionRegistry
                 }
             }
 
-            return $this->persist(
+            // A listing without a single page has no releases at all
+            $fetched === [] and $complete = true;
+
+            $record = $this->persist(
                 $record
                     ->withHead($fetched)
                     ->withComplete($complete)
                     ->withCheckedAt(($this->clock)()),
             );
+
+            return [$record, \count($fetched)];
         } catch (RepositoryException $e) {
             $record->count() > 0 or throw $e;
 
             $this->report($e, $record);
 
-            return $record;
+            return [$record, 0];
         }
     }
 
     /**
      * Loads the releases older than the stored ones page by page, persisting every page.
      *
+     * The source pages by position, and a stored release deleted upstream below the verified
+     * ones moves every older release up by one. So past them the loading starts one release
+     * earlier and expects the last stored release there; when another one shows up, the
+     * unverified tail is dropped and loaded again, without repeating to the consumer what it was
+     * served from the stored list. The extra release lies on the page needed anyway, unless the
+     * stored list ends exactly on a page boundary: then it costs one more request.
+     *
+     * @param int<0, max> $verified Number of leading stored releases known to be in place.
+     * @param RepositoryRecord|null $served The releases the consumer has been served already.
      * @return \Generator<int, list<ReleaseRecord>, mixed, void>
      * @throws RepositoryException
      */
-    private function extend(RepositoryRecord $record, ReleaseSource $source): \Generator
-    {
-        foreach ($source->pages($record->count()) as $page) {
+    private function extend(
+        RepositoryRecord $record,
+        ReleaseSource $source,
+        int $verified,
+        ?RepositoryRecord $served = null,
+    ): \Generator {
+        $served ??= $record;
+        $anchor = $verified < $record->count() ? $record->lastTag() : null;
+        /** @var int<0, max> $offset */
+        $offset = $anchor === null ? $record->count() : $record->count() - 1;
+
+        foreach ($source->pages($offset) as $page) {
+            $releases = $page->releases;
+            if ($anchor !== null) {
+                if (($releases[0] ?? null)?->tag !== $anchor) {
+                    $this->logger->debug(
+                        'The listing of `%s` has shifted below the %d checked release(s): the stored tail is loaded again.',
+                        (string) $record->id,
+                        $verified,
+                    );
+
+                    $record = $this->persist($record->withoutTail($verified));
+                    yield from $this->extend($record, $source, $record->count(), $served);
+
+                    return;
+                }
+
+                $anchor = null;
+                $releases = \array_slice($releases, 1);
+            }
+
             $new = \array_values(\array_filter(
-                $page->releases,
+                $releases,
                 static fn(ReleaseRecord $release): bool => !$record->has($release->tag),
             ));
 
             $record = $this->persist($record->withTail($new)->withComplete($page->last));
 
-            $visible = ReleaseRecord::visible($new);
+            $visible = ReleaseRecord::visible(\array_values(\array_filter(
+                $new,
+                static fn(ReleaseRecord $release): bool => !$served->has($release->tag),
+            )));
             $visible === [] or yield $visible;
         }
 

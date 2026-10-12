@@ -182,6 +182,42 @@ final class GitHubRepositoryTest
     }
 
     #[Test]
+    public function repositoryWithoutReleasesListsNothing(): void
+    {
+        $client = new PagedClientStub(pages: 0);
+
+        Assert::same(self::names(self::createRepository($client, self::registry(new InMemoryRegistryStorage()))), []);
+        Assert::same($client->requestedPages(), [1]);
+        Assert::same(\iterator_to_array((new GitHubReleaseSource(self::api($client)))->pages(150), false), []);
+    }
+
+    #[Test]
+    public function serverCappingThePageSizeIsAskedForEveryPageOnce(): void
+    {
+        // Six releases, two per page whatever `per_page` says; the first run needs three of them
+        $storage = new InMemoryRegistryStorage();
+        $firstClient = new PagedClientStub(pages: 3, releasesPerPage: 2, perPageLimit: 2);
+        $seen = 0;
+        foreach (self::createRepository($firstClient, self::registry($storage))->getReleases() as $release) {
+            unset($release);
+            if (++$seen === 3) {
+                break;
+            }
+        }
+
+        // The first page tells the page size, so the tail continues on page 2, not on page 1 again
+        Assert::same($firstClient->requestedPages(), [1, 2]);
+
+        // A later run learns the page size from the first page anew and jumps to the right one
+        $secondClient = new PagedClientStub(pages: 3, releasesPerPage: 2, perPageLimit: 2);
+        $all = self::names(self::createRepository($secondClient, self::registry($storage)));
+
+        Assert::same($secondClient->requestedPages(), [1, 3]);
+        Assert::same(\count($all), 6);
+        Assert::same(\count(\array_unique($all)), 6);
+    }
+
+    #[Test]
     public function theSameCollectionIsReturnedOnEveryCall(): void
     {
         $repository = self::createRepository(new PagedClientStub(pages: 1));

@@ -300,6 +300,54 @@ final class RepositoryRecord
         ]);
     }
 
+    /**
+     * Drops the releases from the given position on; the list is incomplete afterwards.
+     *
+     * @param int<0, max> $from Number of releases to keep.
+     */
+    public function withoutTail(int $from): self
+    {
+        if ($from >= $this->count()) {
+            return $this;
+        }
+
+        $segments = [];
+        $kept = 0;
+        foreach ($this->segments as $segment) {
+            if ($kept + $segment->count() <= $from) {
+                $segments[] = $segment;
+                $kept += $segment->count();
+                continue;
+            }
+
+            /** @var non-empty-list<ReleaseRecord> $releases */
+            $releases = \array_slice($segment->releases(), 0, $from - $kept);
+            $from > $kept and $segments[] = ReleaseSegment::fresh($segment->key, $releases);
+            break;
+        }
+
+        return $this->with(complete: false, segments: $segments);
+    }
+
+    /**
+     * Tag of the oldest stored release, or `null` when nothing is stored.
+     *
+     * @return non-empty-string|null
+     */
+    public function lastTag(): ?string
+    {
+        $segments = $this->segments;
+        $last = \end($segments);
+        if ($last === false) {
+            return null;
+        }
+
+        $tags = $last->tags;
+        $tag = \end($tags);
+
+        return $tag === false ? null : $tag;
+    }
+
     public function withCheckedAt(int $checkedAt): self
     {
         return $this->with(checkedAt: $checkedAt);

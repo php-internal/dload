@@ -214,6 +214,34 @@ final class RepositoryRecordTest
     }
 
     #[Test]
+    public function tailIsDroppedFromInsideASegment(): void
+    {
+        $record = self::record(self::range(250, 1))->withComplete(true);
+        Assert::same(self::sizes($record), [50, 100, 100]);
+
+        $updated = $record->withoutTail(120);
+
+        Assert::same(self::sizes($updated), [50, 70]);
+        Assert::same(self::keys($updated), ['0001', '0002']);
+        Assert::same($updated->lastTag(), 'v131');
+        Assert::false($updated->complete);
+        Assert::false($updated->segments[0]->dirty);
+        Assert::true($updated->segments[1]->dirty);
+    }
+
+    #[Test]
+    public function tailIsDroppedAtASegmentBoundary(): void
+    {
+        $record = self::record(self::range(250, 1));
+
+        Assert::same(self::sizes($record->withoutTail(150)), [50, 100]);
+        Assert::same(self::sizes($record->withoutTail(0)), []);
+        Assert::null($record->withoutTail(0)->lastTag());
+        Assert::same($record->withoutTail(250), $record);
+        Assert::same($record->lastTag(), 'v1');
+    }
+
+    #[Test]
     public function stalenessDependsOnTheLastCheck(): void
     {
         $never = RepositoryRecord::empty(self::id());

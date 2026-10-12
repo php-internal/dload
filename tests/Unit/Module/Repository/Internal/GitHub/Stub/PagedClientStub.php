@@ -26,16 +26,18 @@ final class PagedClientStub implements ClientInterface
     public array $requests = [];
 
     /**
-     * @param int<1, max> $pages Number of pages the list is split into when 100 releases are requested per page.
+     * @param int<0, max> $pages Number of pages the list is split into when 100 releases are requested per page.
      * @param int<1, max> $releasesPerPage Number of releases on every such page.
      * @param int<0, max> $drafts Draft releases listed on top, as the API shows them to the token holder.
      * @param int<0, max> $broken Number of the newest published releases that cannot be decoded.
+     * @param int<1, max>|null $perPageLimit Greatest number of releases served per page whatever `per_page` asks for.
      */
     public function __construct(
         private readonly int $pages = 1,
         private readonly int $releasesPerPage = 100,
         private readonly int $drafts = 0,
         private readonly int $broken = 0,
+        private readonly ?int $perPageLimit = null,
     ) {}
 
     public function sendRequest(RequestInterface $request): ResponseInterface
@@ -44,7 +46,7 @@ final class PagedClientStub implements ClientInterface
         $this->requests[] = $query;
 
         $page = self::pageOf($query);
-        $perPage = self::perPageOf($query);
+        $perPage = \min(self::perPageOf($query), $this->perPageLimit ?? \PHP_INT_MAX);
         $all = $this->allReleases();
 
         // Serve the slice the real API would serve for the requested page size
