@@ -52,18 +52,6 @@ final class PreRelease implements \Stringable
     }
 
     /**
-     * Resolves a stability keyword, including the `a` and `b` abbreviations of alpha and beta.
-     */
-    public static function stability(string $keyword): ?Stability
-    {
-        return Stability::fromString($keyword) ?? match (\strtolower($keyword)) {
-            'a' => Stability::Alpha,
-            'b' => Stability::Beta,
-            default => null,
-        };
-    }
-
-    /**
      * Regular expression alternation of every keyword {@see stability()} accepts.
      *
      * @return non-empty-string
@@ -75,6 +63,18 @@ final class PreRelease implements \Stringable
         \usort($keywords, static fn(string $a, string $b): int => \strlen($b) <=> \strlen($a));
 
         return \implode('|', \array_map(static fn(string $keyword): string => \preg_quote($keyword, '/'), $keywords));
+    }
+
+    /**
+     * Regular expression of a stability keyword with an optional number, read as a whole word: letters that
+     * run together are one word, so `a1`, `beta.2` and the `rc1` of `2.0.0rc1` or `rc1_linux` are keywords,
+     * while the `a` of `arm64` or `ga` and the `b` of `build.5` are not.
+     *
+     * @return non-empty-string
+     */
+    public static function wordPattern(): string
+    {
+        return '(?<![a-z])(?:' . self::keywordPattern() . ')(?:[._-]?\d+)?(?![a-z\d])';
     }
 
     /**
@@ -93,5 +93,17 @@ final class PreRelease implements \Stringable
     public function __toString(): string
     {
         return $this->number === 0 ? $this->stability->value : $this->stability->value . '.' . $this->number;
+    }
+
+    /**
+     * Resolves a stability keyword, including the `a` and `b` abbreviations of alpha and beta.
+     */
+    private static function stability(string $keyword): ?Stability
+    {
+        return Stability::fromString($keyword) ?? match (\strtolower($keyword)) {
+            'a' => Stability::Alpha,
+            'b' => Stability::Beta,
+            default => null,
+        };
     }
 }
