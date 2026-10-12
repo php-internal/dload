@@ -120,7 +120,7 @@ final class Show extends Base
                     '  <info>%s</info> (%s) %s',
                     Logger::text($download->software),
                     Logger::text($binary->getVersionString() ?? 'unknown'),
-                    $binary->getPath(),
+                    Logger::text((string) $binary->getPath()),
                 ));
             }
 
@@ -169,7 +169,7 @@ final class Show extends Base
                 '  <info>%s</info> (%s) %s',
                 Logger::text($software->getId()),
                 Logger::text($binary->getVersionString() ?? 'unknown'),
-                $binary->getPath(),
+                Logger::text((string) $binary->getPath()),
             ));
         }
 
@@ -311,7 +311,7 @@ final class Show extends Base
         $binaryPath = $binary->getPath();
 
         $output->writeln('<info>Binary information:</info>');
-        $output->writeln(\sprintf('  <info>Full path:</info> %s', $binaryPath->absolute()));
+        $output->writeln(\sprintf('  <info>Full path:</info> %s', Logger::text((string) $binaryPath->absolute())));
         $output->writeln(\sprintf('  <info>Version:</info> %s', Logger::text($binary->getVersionString() ?? 'unknown')));
         $output->writeln(\sprintf('  <info>Size:</info> %s', $this->formatSize($binary->getSize())));
 

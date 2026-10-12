@@ -101,7 +101,13 @@ final class LoggerTest
     public function tagsInStackTraceArgumentsArePrintedLiterally(string $argument, string $rendered): void
     {
         $output = new BufferedOutput(decorated: true);
-        $exception = (static fn(string $id): \RuntimeException => new \RuntimeException('failed'))($argument);
+        // php.ini-production, as on CI, drops the arguments from traces
+        $ignoreArgs = \ini_set('zend.exception_ignore_args', '0');
+        try {
+            $exception = (static fn(string $id): \RuntimeException => new \RuntimeException('failed'))($argument);
+        } finally {
+            $ignoreArgs === false or \ini_set('zend.exception_ignore_args', $ignoreArgs);
+        }
 
         (new Logger($output))->exception($exception, important: true);
 
