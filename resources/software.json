@@ -294,6 +294,29 @@
                 "name": "bun",
                 "version-command": "--version"
             }
+        },
+        {
+            "name": "flyctl",
+            "alias": "flyctl",
+            "description": "Command line tools for fly.io services",
+            "homepage": "https://fly.io",
+            "repositories": [
+                {
+                    "type": "github",
+                    "uri": "superfly/flyctl",
+                    "asset-pattern": "/^flyctl_.*/"
+                }
+            ],
+            "binary": {
+                "name": "fly",
+                "pattern": "/^flyctl(?:\\.exe)?$/",
+                "version-command": "version"
+            },
+            "files": [
+                {
+                    "pattern": "/^wintun\\.dll$/"
+                }
+            ]
         }
     ]
 }
