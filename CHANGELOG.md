@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.19.2](https://github.com/php-internal/dload/compare/1.19.1...1.19.2) (2026-10-28)
+
+
+### Code Refactoring
+
+* annotate, finalise and prune internal classes flagged by architecture rules ([3d6649c](https://github.com/php-internal/dload/commit/3d6649cd0a1ad6ac83df73b70bb33cfa08170bdf))
+
 ## [1.19.1](https://github.com/php-internal/dload/compare/1.19.0...1.19.1) (2026-10-28)
 
 
