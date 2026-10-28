@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.19.1](https://github.com/php-internal/dload/compare/1.19.0...1.19.1) (2026-10-28)
+
+
+### Bug Fixes
+
+* **downloader:** prefer the host-arch macOS build over a universal one ([268d181](https://github.com/php-internal/dload/commit/268d181f5d0e6f69d5e3b495281dae6560ecef1b))
+* **downloader:** select protoc builds for macOS and Linux arm64 (`osx`, `aarch_64`) ([#172](https://github.com/php-internal/dload/issues/172)) ([268d181](https://github.com/php-internal/dload/commit/268d181f5d0e6f69d5e3b495281dae6560ecef1b))
+
 ## [1.19.0](https://github.com/php-internal/dload/compare/1.18.0...1.19.0) (2026-10-12)
 
 
