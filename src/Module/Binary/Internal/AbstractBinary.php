@@ -9,6 +9,9 @@ use Internal\DLoad\Module\Binary\BinaryVersion;
 use Internal\DLoad\Module\Config\Schema\Embed\Binary as BinaryConfig;
 use Internal\Path;
 
+/**
+ * @internal
+ */
 abstract class AbstractBinary implements Binary
 {
     private ?BinaryVersion $versionOutput = null;

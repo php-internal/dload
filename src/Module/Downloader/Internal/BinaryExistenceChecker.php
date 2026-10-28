@@ -12,6 +12,8 @@ use Internal\DLoad\Module\Config\Schema\Embed\Binary;
  *
  * Handles operating system specific considerations for binary names,
  * such as .exe extensions on Windows.
+ *
+ * @internal
  */
 final class BinaryExistenceChecker
 {

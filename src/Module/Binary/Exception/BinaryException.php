@@ -7,4 +7,4 @@ namespace Internal\DLoad\Module\Binary\Exception;
 /**
  * Base exception for binary operations.
  */
-class BinaryException extends \RuntimeException {}
+abstract class BinaryException extends \RuntimeException {}

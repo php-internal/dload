@@ -180,11 +180,6 @@
       <code><![CDATA[$softwareArray]]></code>
     </MixedAssignment>
   </file>
-  <file src="src/Module/HttpClient/Internal/NyholmFactoryImpl.php">
-    <ClassMustBeFinal>
-      <code><![CDATA[NyholmFactoryImpl]]></code>
-    </ClassMustBeFinal>
-  </file>
   <file src="src/Module/Repository/Collection/ReleasesCollection.php">
     <LessSpecificReturnStatement>
       <code><![CDATA[\ltrim(\str_replace(
