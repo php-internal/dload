@@ -17,7 +17,8 @@ use Internal\DLoad\Tools\StructArmed\Rule\InternalNamespaceMustBeAnnotatedIntern
 use Internal\DLoad\Tools\StructArmed\Rule\ModulesMustNotDependCyclicallyRule;
 
 // Paths resolve against the project root: `composer structarmed` runs from there.
-$kernel = ['src/Module/Common', 'src/Module/Config', 'src/Module/Version', 'src/Service', 'src/Info.php'];
+// Binary belongs here: the public `DloadResult` hands out a `Binary`.
+$kernel = ['src/Module/Binary', 'src/Module/Common', 'src/Module/Config', 'src/Module/Version', 'src/Service', 'src/Info.php'];
 
 $architecture = Architecture::define()
     // Defining Source ourselves keeps StructArmed from synthesising it from composer.json,

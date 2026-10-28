@@ -4,13 +4,6 @@ declare(strict_types=1);
 
 return [
     [
-        'rule' => 'kernel.must_not_depend_on_modules',
-        'message' => 'Class [Internal\DLoad\Module\Common\DloadResult] in layer [Kernel] must not depend on [Internal\DLoad\Module\Binary\Binary] which belongs to layer [Modules]',
-        'file' => 'src/Module/Common/DloadResult.php',
-        'class' => 'Internal\DLoad\Module\Common\DloadResult',
-        'layer' => 'Kernel',
-    ],
-    [
         'rule' => 'modules.must_not_depend_cyclically',
         'message' => 'Class [Internal\DLoad\Module\Registry\Internal\StoredVersionRegistry] depends on module [Repository], closing the module cycle [Registry -> Repository -> Registry]',
         'file' => 'src/Module/Registry/Internal/StoredVersionRegistry.php',
