@@ -22,14 +22,14 @@ final class AssetName
     /**
      * Platform tokens: OS, architecture, libc and the vendor part of target triples.
      */
-    private const PLATFORM = '/(?<![a-z0-9])(?:x86[_-]64|amd64|arm64|aarch64|x64|win64|win32|windows|linux|darwin|macos|apple|alpine|android|bsd|freebsd|unknown|pc|musl(?:eabi(?:hf)?)?|gnu(?:eabi(?:hf)?)?|glibc)(?![a-z0-9])/';
+    private const PLATFORM = '/(?<![a-z0-9])(?:x86[_-]64|amd64|arm64|aarch[_-]?64|x64|win64|win32|windows|linux|darwin|macos|osx|apple|alpine|android|bsd|freebsd|unknown|pc|musl(?:eabi(?:hf)?)?|gnu(?:eabi(?:hf)?)?|glibc)(?![a-z0-9])/';
 
     /**
-     * macOS build for every Mac architecture, like `darwin-universal` or `macOS_all`.
+     * macOS build for every Mac architecture, like `darwin-universal`, `osx-universal_binary` or `macOS_all`.
      *
      * `universal` and `all` count only next to the macOS token: elsewhere they are ordinary words.
      */
-    private const UNIVERSAL = '/(?<![a-z0-9])(?:(?:darwin|macos)[-_.](?:universal2?|all)|(?:universal2?|all)[-_.](?:darwin|macos))(?![a-z0-9])/';
+    private const UNIVERSAL = '/(?<![a-z0-9])(?:(?:darwin|macos|osx)[-_.](?:universal(?:2|_binary)?|all)|(?:universal2?|all)[-_.](?:darwin|macos|osx))(?![a-z0-9])/';
 
     /**
      * x86-64 microarchitecture level right after the architecture, like `amd64_v3` or `x86-64-v2`,

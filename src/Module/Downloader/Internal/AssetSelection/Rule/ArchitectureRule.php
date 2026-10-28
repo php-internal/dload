@@ -11,10 +11,10 @@ use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Candidate;
 use Internal\DLoad\Module\Downloader\Internal\AssetSelection\Selection;
 
 /**
- * Prefers assets built for the host architecture, then the ones the host emulates.
+ * Prefers assets built for the host architecture, then universal macOS builds on macOS,
+ * then the ones the host emulates.
  *
- * A universal macOS build counts as built for the host architecture on macOS. A strict selection
- * removes the assets the host cannot run; otherwise they are ranked last.
+ * A strict selection removes the assets the host cannot run; otherwise they are ranked last.
  *
  * @internal
  * @psalm-internal Internal\DLoad\Module\Downloader
@@ -24,8 +24,11 @@ final class ArchitectureRule implements AssetRule
     /** Name of the rank this rule gives. */
     public const KEY = 'arch';
 
+    /** Rank of a macOS build for every Mac architecture: larger than the build for the host one. */
+    public const UNIVERSAL = 1;
+
     /** Rank of an asset the host runs only through emulation. */
-    public const EMULATED = 1;
+    public const EMULATED = 2;
 
     public function __construct(
         private readonly Architecture $architecture,
@@ -40,19 +43,19 @@ final class ArchitectureRule implements AssetRule
 
         return $next($selection->rank(
             self::KEY,
-            fn(Candidate $candidate): int => $this->rank($candidate) ?? 2,
+            fn(Candidate $candidate): int => $this->rank($candidate) ?? 3,
         ));
     }
 
     /**
-     * @return int<0, 1>|null Null when the host cannot run the asset.
+     * @return int<0, 2>|null Null when the host cannot run the asset.
      */
     private function rank(Candidate $candidate): ?int
     {
         $arch = $candidate->asset->getArchitecture();
         return match (true) {
             $arch === $this->architecture => 0,
-            $candidate->name->universal && $this->operatingSystem === OperatingSystem::Darwin => 0,
+            $candidate->name->universal && $this->operatingSystem === OperatingSystem::Darwin => self::UNIVERSAL,
             // Rosetta 2 on macOS and the built-in emulation of Windows run x86-64 builds on ARM
             $arch === Architecture::X86_64
                 && $this->architecture === Architecture::ARM_64

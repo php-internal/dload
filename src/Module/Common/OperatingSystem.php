@@ -64,7 +64,7 @@ enum OperatingSystem: string implements Factoriable
         return match (\strtolower($name)) {
             'windows', 'win32', 'win64' => self::Windows,
             'bsd', 'freebsd' => self::BSD,
-            'darwin', 'macos' => self::Darwin,
+            'darwin', 'macos', 'osx' => self::Darwin,
             'android' => self::Android,
             // The libc is a separate trait, see {@see Libc}
             'linux', 'alpine', 'unknown-musl' => self::Linux,
@@ -80,7 +80,7 @@ enum OperatingSystem: string implements Factoriable
         }
 
         if (\preg_match(
-            '/(?:\b|_)(windows|linux|darwin|macos|alpine|bsd|freebsd|win32|win64)(?:\b|_)/i',
+            '/(?:\b|_)(windows|linux|darwin|macos|osx|alpine|bsd|freebsd|win32|win64)(?:\b|_)/i',
             $name,
             $matches,
         ) === 1) {

@@ -29,6 +29,8 @@ final class AssetNameTest
         yield 'all macOS architectures' => ['tool_1.0.0_macOS_all.tar.gz', ['tool']];
         yield 'universal not next to macOS' => ['universal-ctags-linux-x64.tar.gz', ['universal', 'ctags']];
         yield 'microarchitecture level' => ['tool_1.0.0_linux_amd64_v3.tar.gz', ['tool']];
+        yield 'osx and aarch_64' => ['protoc-36.2-osx-aarch_64.zip', ['protoc']];
+        yield 'universal binary' => ['protoc-36.2-osx-universal_binary.zip', ['protoc']];
     }
 
     public static function provideUniversal(): iterable
@@ -37,6 +39,8 @@ final class AssetNameTest
         yield 'universal before macOS' => ['tigerbeetle-universal-macos.zip', true];
         yield 'macOS_all' => ['tool_1.0.0_macOS_all.tar.gz', true];
         yield 'universal2' => ['tool-macos-universal2.zip', true];
+        yield 'osx-universal_binary' => ['protoc-36.2-osx-universal_binary.zip', true];
+        yield 'osx-universal' => ['tool-osx-universal.tar.gz', true];
         yield 'single architecture' => ['tool-darwin-arm64.tar.gz', false];
         yield 'all without macOS' => ['tool-all-linux-amd64.tar.gz', false];
         yield 'universal without macOS' => ['universal-ctags-linux-x64.tar.gz', false];
