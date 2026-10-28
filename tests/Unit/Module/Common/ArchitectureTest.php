@@ -23,6 +23,10 @@ class ArchitectureTest
         yield ['temporal-test-server_1.33.0_macOS_arm64.tar.gz', Architecture::ARM_64];
         yield ['tool_1.0.0_linux_amd64_v3.tar.gz', Architecture::X86_64];
         yield ['tool-linux-x86-64-v3.tar.gz', Architecture::X86_64];
+        yield ['protoc-36.2-linux-aarch_64.zip', Architecture::ARM_64];
+        yield ['protoc-36.2-osx-aarch_64.zip', Architecture::ARM_64];
+        yield ['protoc-36.2-osx-x86_64.zip', Architecture::X86_64];
+        yield ['protoc-36.2-osx-universal_binary.zip', null];
     }
 
     #[DataProvider('provideBuildNames')]

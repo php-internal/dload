@@ -30,8 +30,16 @@ final class ArchitectureRuleTest
 
     public static function provideMacArchitectures(): iterable
     {
-        yield 'Apple Silicon' => [Architecture::ARM_64, ArchitectureRule::EMULATED];
-        yield 'Intel' => [Architecture::X86_64, 0];
+        yield 'Apple Silicon' => [Architecture::ARM_64, [
+            'tool-darwin-universal.zip' => ArchitectureRule::UNIVERSAL,
+            'tool-darwin-x86_64.zip' => ArchitectureRule::EMULATED,
+            'tool-darwin-aarch64.zip' => 0,
+        ]];
+        yield 'Intel' => [Architecture::X86_64, [
+            'tool-darwin-universal.zip' => ArchitectureRule::UNIVERSAL,
+            'tool-darwin-x86_64.zip' => 0,
+            'tool-darwin-aarch64.zip' => 3,
+        ]];
     }
 
     #[Test]
@@ -52,9 +60,9 @@ final class ArchitectureRuleTest
         );
 
         Assert::same(RuleRunner::ranks($selection, 'arch'), [
-            'tool-x86_64.zip' => 2,
+            'tool-x86_64.zip' => 3,
             'tool-aarch64.zip' => 0,
-            'tool.zip' => 2,
+            'tool.zip' => 3,
         ]);
     }
 
@@ -65,7 +73,7 @@ final class ArchitectureRuleTest
         $selection = RuleRunner::run(new ArchitectureRule(Architecture::ARM_64, $os), self::ASSETS);
 
         Assert::same(RuleRunner::ranks($selection, 'arch'), [
-            'tool-x86_64.zip' => 1,
+            'tool-x86_64.zip' => ArchitectureRule::EMULATED,
             'tool-aarch64.zip' => 0,
         ]);
     }
@@ -79,19 +87,20 @@ final class ArchitectureRuleTest
         Assert::same(RuleRunner::ranks($selection, 'arch'), ['tool-x86_64.zip' => 0]);
     }
 
+    /**
+     * @param array<non-empty-string, int> $expected
+     */
     #[DataProvider('provideMacArchitectures')]
     #[Test]
-    public function aUniversalBuildIsNativeOnMacOs(Architecture $arch, int $x86Rank): void
+    public function aUniversalBuildRanksRightAfterTheHostBuildOnMacOs(Architecture $arch, array $expected): void
     {
         $selection = RuleRunner::run(new ArchitectureRule($arch, OperatingSystem::Darwin), [
             'tool-darwin-universal.zip',
             'tool-darwin-x86_64.zip',
-        ]);
+            'tool-darwin-aarch64.zip',
+        ], strict: false);
 
-        Assert::same(RuleRunner::ranks($selection, 'arch'), [
-            'tool-darwin-universal.zip' => 0,
-            'tool-darwin-x86_64.zip' => $x86Rank,
-        ]);
+        Assert::same(RuleRunner::ranks($selection, 'arch'), $expected);
     }
 
     #[Test]
@@ -102,7 +111,7 @@ final class ArchitectureRuleTest
 
         Assert::same(RuleRunner::ranks(RuleRunner::run($rule, $assets), 'arch'), ['tool-linux-x86_64.zip' => 0]);
         Assert::same(RuleRunner::ranks(RuleRunner::run($rule, $assets, strict: false), 'arch'), [
-            'tool-darwin-universal.zip' => 2,
+            'tool-darwin-universal.zip' => 3,
             'tool-linux-x86_64.zip' => 0,
         ]);
     }

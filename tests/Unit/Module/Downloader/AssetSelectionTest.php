@@ -127,6 +127,27 @@ final class AssetSelectionTest
         'vortex-driver-zig-x86_64-linux.zip',
     ];
 
+    /**
+     * Assets of the Protocol Buffers v36.2 release: `osx` for macOS and `aarch_64` for arm64.
+     */
+    private const PROTOC_ASSETS = [
+        'protobuf-36.2.bazel.tar.gz',
+        'protobuf-36.2.bazel.tar.gz.intoto.jsonl',
+        'protobuf-36.2.tar.gz',
+        'protobuf-36.2.zip',
+        'protoc-36.2-linux-aarch_64.zip',
+        'protoc-36.2-linux-ppcle_64.zip',
+        'protoc-36.2-linux-s390_64.zip',
+        'protoc-36.2-linux-x86_32.zip',
+        'protoc-36.2-linux-x86_64.zip',
+        'protoc-36.2-osx-aarch_64.zip',
+        'protoc-36.2-osx-universal_binary.zip',
+        'protoc-36.2-osx-x86_64.zip',
+        'protoc-36.2-win32.zip',
+        'protoc-36.2-win64.zip',
+        'tool_integrity.bzl',
+    ];
+
     private string $tempDir;
 
     public static function provideBunHosts(): \Generator
@@ -160,6 +181,15 @@ final class AssetSelectionTest
         yield 'Linux x64 musl' => [Architecture::X86_64, Libc::Musl, 'mago-1.51.2-x86_64-unknown-linux-musl.tar.gz'];
         yield 'Linux arm64 glibc' => [Architecture::ARM_64, Libc::Gnu, 'mago-1.51.2-aarch64-unknown-linux-gnu.tar.gz'];
         yield 'Linux arm64 musl' => [Architecture::ARM_64, Libc::Musl, 'mago-1.51.2-aarch64-unknown-linux-musl.tar.gz'];
+    }
+
+    public static function provideProtocHosts(): \Generator
+    {
+        yield 'Linux x64' => [OperatingSystem::Linux, Architecture::X86_64, 'protoc-36.2-linux-x86_64.zip'];
+        yield 'Linux arm64' => [OperatingSystem::Linux, Architecture::ARM_64, 'protoc-36.2-linux-aarch_64.zip'];
+        yield 'macOS x64' => [OperatingSystem::Darwin, Architecture::X86_64, 'protoc-36.2-osx-x86_64.zip'];
+        yield 'macOS arm64' => [OperatingSystem::Darwin, Architecture::ARM_64, 'protoc-36.2-osx-aarch_64.zip'];
+        yield 'Windows x64' => [OperatingSystem::Windows, Architecture::X86_64, 'protoc-36.2-win64.zip'];
     }
 
     #[DataProvider('provideBunHosts')]
@@ -246,6 +276,39 @@ final class AssetSelectionTest
         );
 
         Assert::same($result->file->getFilename(), $expected);
+    }
+
+    #[DataProvider('provideProtocHosts')]
+    #[Test]
+    public function protocBuildForTheHostIsSelected(OperatingSystem $os, Architecture $arch, string $expected): void
+    {
+        $result = $this->download(
+            self::registryEntry('protoc'),
+            'protocolbuffers/protobuf',
+            'v36.2',
+            self::PROTOC_ASSETS,
+            $os,
+            $arch,
+            Libc::Gnu,
+        );
+
+        Assert::same($result->file->getFilename(), $expected);
+    }
+
+    #[Test]
+    public function protocUniversalBuildIsSelectedWithoutAnArmBuild(): void
+    {
+        $result = $this->download(
+            self::registryEntry('protoc'),
+            'protocolbuffers/protobuf',
+            'v36.2',
+            ['protoc-36.2-linux-aarch_64.zip', 'protoc-36.2-osx-universal_binary.zip', 'protoc-36.2-osx-x86_64.zip'],
+            OperatingSystem::Darwin,
+            Architecture::ARM_64,
+            Libc::Gnu,
+        );
+
+        Assert::same($result->file->getFilename(), 'protoc-36.2-osx-universal_binary.zip');
     }
 
     #[BeforeTest]

@@ -25,6 +25,8 @@ class OperatingSystemTest
         yield ['temporal-test-server_1.33.0_macOS_arm64.tar.gz', OperatingSystem::Darwin];
         yield ['bun-linux-x64-android-baseline.zip', OperatingSystem::Android];
         yield ['tool-aarch64-linux-android.tar.gz', OperatingSystem::Android];
+        yield ['protoc-36.2-osx-aarch_64.zip', OperatingSystem::Darwin];
+        yield ['protoc-36.2-osx-universal_binary.zip', OperatingSystem::Darwin];
     }
 
     public static function provideHosts(): iterable
@@ -52,6 +54,12 @@ class OperatingSystemTest
     public function androidCanBeRequestedByName(): void
     {
         Assert::same(OperatingSystem::tryFromString('android'), OperatingSystem::Android);
+    }
+
+    #[Test]
+    public function osxIsReadAsDarwin(): void
+    {
+        Assert::same(OperatingSystem::tryFromString('osx'), OperatingSystem::Darwin);
     }
 
     #[Test]

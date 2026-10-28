@@ -37,12 +37,12 @@ curl -s "https://api.github.com/repos/<owner>/<repo>/releases/tags/<tag>" \
 
 After filtering, dload picks the host's variant with:
 
-- OS: `/(?:\b|_)(windows|linux|darwin|macos|alpine|bsd|freebsd|win32|win64)(?:\b|_)/i`; an `android` token makes it Android, a bare `musl` makes it Linux
-- Arch: `/(?:\b|_)(amd64|arm64|aarch64|x86[_-]64|x64|win64)(?:\b|_)/i`
+- OS: `/(?:\b|_)(windows|linux|darwin|macos|osx|alpine|bsd|freebsd|win32|win64)(?:\b|_)/i`; an `android` token makes it Android, a bare `musl` makes it Linux
+- Arch: `/(?:\b|_)(amd64|arm64|aarch[_-]?64|x86[_-]64|x64|win64)(?:\b|_)/i`
 
 A candidate that matches neither is discarded. Common offenders:
 
-- Non-standard tokens: `linux64`, `osx`. A universal macOS build (`darwin-universal`, `macOS_all`) has no arch token but is kept on macOS: `universal`, `universal2` or `all` next to `darwin`/`macos` counts as the host arch.
+- Non-standard tokens: `linux64`, `macosx`. A universal macOS build (`darwin-universal`, `osx-universal_binary`, `macOS_all`) has no arch token but is kept on macOS: `universal`, `universal2`, `universal_binary` or `all` next to `darwin`/`macos`/`osx` runs on the host arch, ranked right after the host-arch build.
 - No arch separator: `tool-linux64.tar.gz` — the OS matches, no arch token is extractable.
 
 Compare with the host: `php -r "echo PHP_OS_FAMILY, ' / ', php_uname('m'), PHP_EOL;"`.

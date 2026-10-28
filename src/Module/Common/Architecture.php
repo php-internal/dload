@@ -45,14 +45,14 @@ enum Architecture: string implements Factoriable
     {
         return match ($arch) {
             'AMD64', 'amd64', 'x64', 'x86_64', 'x86-64', 'win64' => self::X86_64,
-            'arm64', 'aarch64' => self::ARM_64,
+            'arm64', 'aarch64', 'aarch_64', 'aarch-64' => self::ARM_64,
             default => null,
         };
     }
 
     public static function tryFromBuildName(string $name): ?self
     {
-        if (\preg_match('/(?:\b|_)(amd64|arm64|aarch64|x86[_-]64|x64|win64)(?:\b|_)/i', $name, $matches) !== 1) {
+        if (\preg_match('/(?:\b|_)(amd64|arm64|aarch[_-]?64|x86[_-]64|x64|win64)(?:\b|_)/i', $name, $matches) !== 1) {
             return null;
         }
 
