@@ -18,7 +18,7 @@ use Symfony\Component\HttpClient\Psr18Client;
 /**
  * @internal
  */
-class NyholmFactoryImpl implements Factory
+final class NyholmFactoryImpl implements Factory
 {
     public function __construct(
         private readonly Logger $logger,
