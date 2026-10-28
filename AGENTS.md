@@ -6,6 +6,7 @@ A PHP CLI (`vendor/bin/dload`, also shipped as a PHAR) that downloads binaries a
 - `resources/software.json` is the built-in software registry; `dload.xsd` is the schema of `dload.xml`.
 - `1.x` is the development and release branch: branch from it and target pull requests at it.
 - Tests run on Testo: `vendor/bin/testo --json`. Static analysis: `composer psalm`. Code style: `composer cs:fix`.
+- Architecture rules run on StructArmed: `composer structarmed`, after a one-time `composer bin structarmed install` (it lives isolated in `tools/structarmed`). `structarmed.php` there defines the layers and rules; `baseline.php` is known debt — after cutting some, shrink it with `composer structarmed:baseline`.
 
 ## Docs and skills follow behaviour
 

@@ -8,6 +8,7 @@ on:  # yamllint disable-line rule:truthy
       - '.php-cs-fixer.dist.php'
       - 'psalm*'
       - 'composer.*'
+      - 'tools/structarmed/**'
   push:
     paths:
       - 'src/**'
@@ -15,6 +16,7 @@ on:  # yamllint disable-line rule:truthy
       - '.php-cs-fixer.dist.php'
       - 'psalm*'
       - 'composer.*'
+      - 'tools/structarmed/**'
 
 name: 🔍 Static analysis
 
@@ -58,3 +60,32 @@ jobs:
 
       - name: 🔍 Run static analysis using vimeo/psalm
         run: composer psalm:ci
+
+  structarmed:
+    timeout-minutes: 4
+    runs-on: ubuntu-latest
+    concurrency:
+      cancel-in-progress: true
+      group: structarmed-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+    steps:
+      - name: 📦 Check out the codebase
+        uses: actions/checkout@v7
+
+      - name: 🛠️ Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          ini-values: error_reporting=E_ALL
+          coverage: none
+
+      - name: 📥 Install dependencies with composer
+        uses: ramsey/composer-install@v3
+        with:
+          dependency-versions: locked
+
+      # StructArmed lives in its own tools/structarmed namespace, which the root install skips.
+      - name: 📥 Install StructArmed
+        run: composer bin structarmed install --ansi
+
+      - name: 🏛️ Check architecture rules using boundwize/structarmed
+        run: composer structarmed:ci

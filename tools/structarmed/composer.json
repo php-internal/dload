@@ -1,0 +1,14 @@
+{
+    "require": {
+        "boundwize/structarmed": "^0.19.10",
+        "roxblnfk/unpoly": "^1.8.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "Internal\\DLoad\\Tools\\StructArmed\\": "src/"
+        }
+    },
+    "config": {
+        "platform-check": false
+    }
+}

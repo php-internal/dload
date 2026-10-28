@@ -34,6 +34,7 @@
         "symfony/http-client": "^6.4 || ^7 || ^8"
     },
     "require-dev": {
+        "bamarni/composer-bin-plugin": "^1.9",
         "buggregator/trap": "^1.15",
         "composer/semver": "^3.4",
         "dereuromark/composer-prefer-lowest": "^0.1.10",
@@ -65,6 +66,7 @@
     ],
     "config": {
         "allow-plugins": {
+            "bamarni/composer-bin-plugin": true,
             "ergebnis/composer-normalize": true,
             "infection/extension-installer": true,
             "llm/skills": true
@@ -75,6 +77,11 @@
         "sort-packages": true
     },
     "extra": {
+        "bamarni-bin": {
+            "bin-links": true,
+            "forward-command": false,
+            "target-directory": "tools"
+        },
         "skills": {
             "source": "skills"
         }
@@ -95,6 +102,9 @@
         "psalm:ci": "psalm --output-format=github --shepherd --show-info=false --stats --threads=4",
         "refactor": "rector process --config=rector.php",
         "refactor:ci": "rector process --config=rector.php --dry-run --ansi",
+        "structarmed": "structarmed analyse --config=tools/structarmed/structarmed.php",
+        "structarmed:baseline": "structarmed analyse --config=tools/structarmed/structarmed.php --generate-baseline=tools/structarmed/baseline.php",
+        "structarmed:ci": "structarmed analyse --config=tools/structarmed/structarmed.php --no-progress --report=github",
         "test": [
             "testo --ansi --no-coverage"
         ],

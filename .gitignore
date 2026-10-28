@@ -7,3 +7,6 @@
 /.env
 *.log
 *.exe
+/tools/*/vendor/
+/tools/*/.agents/
+/tools/*/.claude/
